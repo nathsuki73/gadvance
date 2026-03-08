@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { handleSignIn, handleSignOut } from "../../lib/auth";
+import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import React from "react";
 
 const SignIn = () => {
@@ -25,80 +26,94 @@ const SignIn = () => {
 
             {/* Header */}
             {session ? (
-              <>
+              <div className="animate-in fade-in duration-500">
                 <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                  Welcome, {session.user?.name}!
+                  Welcome back!
                 </h1>
                 <p className="text-gray-400 mb-10 text-sm">
-                  You are now signed in.
+                  Logged in as{" "}
+                  <span className="text-teal-600 font-medium">
+                    {session.user?.email}
+                  </span>
                 </p>
                 <button
                   onClick={handleSignOut}
-                  className="px-6 py-3 text-white bg-red-500 rounded-lg hover:bg-red-600"
+                  className="px-8 py-3 text-white bg-red-500 rounded-xl font-semibold hover:bg-red-600 transition-all shadow-md"
                 >
                   Sign Out
                 </button>
-              </>
+              </div>
             ) : (
               <>
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                <h1 className="text-4xl font-bold text-gray-900 mb-2 leading-tight">
                   Hello, <br /> Welcome Back
                 </h1>
                 <p className="text-gray-400 mb-10 text-sm">
-                  Welcome back to your special place
+                  Sign in to access your projects and settings.
                 </p>
 
-                {/* Form (optional, still works for email/password if you add backend) */}
                 <form className="space-y-4">
+                  {/* Email Input */}
                   <div>
                     <input
                       type="email"
-                      placeholder="johndoe@gmail.com"
-                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all text-gray-600 placeholder-gray-400"
+                      placeholder="Email Address"
+                      className="w-full px-4 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50"
                     />
                   </div>
-                  <div>
+
+                  {/* Password Input */}
+                  <div className="relative">
                     <input
                       type="password"
-                      placeholder="••••••••••••••••"
-                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all text-gray-600 placeholder-gray-400"
+                      placeholder="Password"
+                      className="w-full px-4 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50"
                     />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                      <a
+                        href="#"
+                        className="text-xs font-semibold text-teal-600 hover:text-teal-700"
+                      >
+                        Forgot?
+                      </a>
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs font-medium py-2">
-                    <label className="flex items-center gap-2 cursor-pointer text-gray-400">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-500"
-                        defaultChecked
-                      />
-                      Remember me
+                  {/* Remember Me */}
+                  <div className="flex items-center gap-2 py-2">
+                    <input
+                      type="checkbox"
+                      id="remember"
+                      className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-500 cursor-pointer"
+                      defaultChecked
+                    />
+                    <label
+                      htmlFor="remember"
+                      className="text-xs font-medium text-gray-400 cursor-pointer select-none"
+                    >
+                      Keep me logged in
                     </label>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-teal-600 transition-colors"
-                    >
-                      Forgot Password?
-                    </a>
                   </div>
 
-                  {/* Sign In Buttons */}
-                  <div className="flex flex-col gap-3 mt-4">
-                    <button
-                      type="button"
-                      onClick={handleSignIn} // Google Sign In
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-sm font-semibold transition-colors"
-                    >
-                      Sign in with Google
-                    </button>
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    className="w-full bg-[#00A8CC] hover:bg-[#0096b6] text-white px-8 py-4 rounded-xl text-sm font-bold transition-all shadow-lg shadow-teal-100"
+                  >
+                    Sign In
+                  </button>
 
-                    <button
-                      type="submit"
-                      className="bg-[#00A8CC] hover:bg-[#0096b6] text-white px-8 py-2.5 rounded-lg text-sm font-semibold transition-colors"
-                    >
-                      Sign In with Email
-                    </button>
+                  {/* Divider */}
+                  <div className="relative flex items-center py-6">
+                    <div className="flex-grow border-t border-gray-100"></div>
+                    <span className="flex-shrink mx-4 text-gray-300 text-xs uppercase tracking-widest">
+                      Or continue with
+                    </span>
+                    <div className="flex-grow border-t border-gray-100"></div>
                   </div>
+
+                  {/* Google SSO Button - Now at the Bottom */}
+                  <GoogleButton onClick={handleSignIn} />
                 </form>
               </>
             )}
@@ -109,10 +124,10 @@ const SignIn = () => {
             <p className="text-sm text-gray-500 mt-8">
               Don't have an account?{" "}
               <a
-                href="/signup"
-                className="text-teal-500 font-semibold hover:underline"
+                href="/auth/signup"
+                className="text-teal-600 font-bold hover:underline"
               >
-                Sign Up
+                Create Account
               </a>
             </p>
           )}
@@ -120,8 +135,12 @@ const SignIn = () => {
 
         {/* Right Side: Decorative Gradient Panel */}
         <div className="hidden lg:block lg:w-1/2 p-6">
-          <div className="w-full h-full bg-gradient-to-br from-[#4fd1c5] to-[#00a8cc] rounded-[2.5rem]">
-            {/* Illustration or image can go here */}
+          <div className="w-full h-full bg-gradient-to-br from-[#4fd1c5] to-[#00a8cc] rounded-[2.5rem] flex flex-col items-center justify-center p-12 text-white text-center">
+            <h2 className="text-3xl font-bold mb-4">Focus on your growth.</h2>
+            <p className="opacity-80 font-light leading-relaxed">
+              Join thousands of developers building the future of SaaS with
+              Gadvance.
+            </p>
           </div>
         </div>
       </div>
