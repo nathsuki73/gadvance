@@ -44,13 +44,13 @@ const Header = () => {
       {/* Auth Buttons */}
       <div className="flex items-center gap-6">
         <Link
-          href="/signin"
+          href="/auth/signin"
           className="text-zinc-600 hover:text-black font-medium transition-colors"
         >
           Sign In
         </Link>
         <Link
-          href="/signup"
+          href="/auth/signup"
           className="rounded-lg bg-[#00A9D1] px-6 py-2.5 text-white font-medium hover:bg-[#0089a8] transition-all"
         >
           Sign Up
