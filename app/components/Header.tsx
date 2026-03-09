@@ -22,7 +22,7 @@ const Header = () => {
           About
         </Link>
         <Link
-          href="/courses"
+          href="/workspace"
           className="text-zinc-600 hover:text-black transition-colors"
         >
           Courses
