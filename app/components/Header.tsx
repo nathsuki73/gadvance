@@ -4,14 +4,17 @@ import React from "react";
 const Header = () => {
   return (
     <header className="flex items-center justify-between px-8 py-4 bg-white border-b border-zinc-100">
-      {/* Logo Section */}
-      <div className="flex items-center gap-2">
+      {/* Clickable Logo Section */}
+      <Link
+        href="/"
+        className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+      >
         <div className="relative h-8 w-8">
-          {/* Replace with your actual logo file path */}
+          {/* Logo Gradient Circle */}
           <div className="h-full w-full bg-gradient-to-tr from-teal-400 to-orange-400 rounded-full" />
         </div>
         <span className="text-xl font-semibold tracking-tight">Gadvance</span>
-      </div>
+      </Link>
 
       {/* Navigation Links */}
       <nav className="hidden md:flex items-center gap-10">
