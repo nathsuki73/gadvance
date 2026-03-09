@@ -234,9 +234,14 @@ const Hero = () => {
                 />
               </div>
             </div>
-            <button className="w-full rounded-lg bg-teal-600 px-4 py-2 font-semibold text-white transition hover:bg-teal-700">
+            <Link
+              href="/course"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full rounded-lg bg-teal-600 px-4 py-2 text-center font-semibold text-white transition hover:bg-teal-700"
+            >
               Continue Learning →
-            </button>
+            </Link>
           </div>
 
           {/* Course Card 2 - Women in Leadership */}
