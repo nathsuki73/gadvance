@@ -71,7 +71,7 @@ const SignIn = () => {
                     />
                     <div className="absolute right-4 top-1/2 -translate-y-1/2">
                       <a
-                        href="#"
+                        href="/auth/forgot-password"
                         className="text-xs font-semibold text-teal-600 hover:text-teal-700"
                       >
                         Forgot?
