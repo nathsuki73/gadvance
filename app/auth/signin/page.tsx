@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { handleSignIn, handleSignOut } from "../../lib/auth";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import React from "react";
-import Link from "next/link"; // Added this import
+import Link from "next/link";
 
 const SignIn = () => {
   const { data: session } = useSession();
@@ -52,6 +52,7 @@ const SignIn = () => {
                 </p>
 
                 <form className="space-y-4">
+                  {/* Email */}
                   <div>
                     <input
                       type="email"
@@ -60,44 +61,33 @@ const SignIn = () => {
                     />
                   </div>
 
-                  <div className="relative">
+                  {/* Password */}
+                  <div>
                     <input
                       type="password"
                       placeholder="Password"
                       className="w-full px-4 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50"
                     />
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    {/* Forgot Password Link - Now Right Aligned Below Input */}
+                    <div className="flex justify-end mt-2">
                       <Link
                         href="/auth/forgot-password"
-                        className="text-xs font-semibold text-teal-600 hover:text-teal-700"
+                        className="text-xs font-semibold text-teal-600 hover:text-teal-700 transition-colors"
                       >
-                        Forgot?
+                        Forgot Password?
                       </Link>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 py-2">
-                    <input
-                      type="checkbox"
-                      id="remember"
-                      className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-500 cursor-pointer"
-                      defaultChecked
-                    />
-                    <label
-                      htmlFor="remember"
-                      className="text-xs font-medium text-gray-400 cursor-pointer select-none"
-                    >
-                      Keep me logged in
-                    </label>
-                  </div>
-
+                  {/* Submit Button */}
                   <button
                     type="submit"
-                    className="w-full bg-[#00A8CC] hover:bg-[#0096b6] text-white px-8 py-4 rounded-xl text-sm font-bold transition-all shadow-lg shadow-teal-100"
+                    className="w-full bg-[#00A8CC] hover:bg-[#0096b6] text-white px-8 py-4 rounded-xl text-sm font-bold transition-all shadow-lg shadow-teal-100 mt-2"
                   >
                     Sign In
                   </button>
 
+                  {/* Divider */}
                   <div className="relative flex items-center py-6">
                     <div className="flex-grow border-t border-gray-100"></div>
                     <span className="flex-shrink mx-4 text-gray-300 text-xs uppercase tracking-widest">
@@ -114,9 +104,10 @@ const SignIn = () => {
 
           {!session && (
             <p className="text-sm text-gray-500 mt-8">
-              Don't have an account? {/* FIXED: Changed <a> to <Link> */}
+              Don't have an account?{" "}
               <Link
                 href="/auth/signup"
+                replace
                 className="text-teal-600 font-bold hover:underline"
               >
                 Create Account
