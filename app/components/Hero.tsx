@@ -170,12 +170,14 @@ const Hero = () => {
                     strokeLinejoin="round"
                     strokeWidth={2}
                     d="M12 21a9 9 0 100-18 9 9 0 000 18zm0 0a8.956 8.956 0 01-6.364-2.636m12.728 0A8.956 8.956 0 0021 12a9 9 0 11-9 9 9.009 9.009 0 001.636-.636m0-15.464A8.956 8.956 0 0112 3a9 9 0 109 9 9.009 9.009 0 00-1.636-.636"
-                  />                  <path
+                  />{" "}
+                  <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
                     d="M12 3v18M3 12h18"
-                  />                </svg>
+                  />{" "}
+                </svg>
               </div>
               <span className="rounded-full bg-teal-100 px-3 py-1 text-xs font-semibold text-teal-800">
                 Foundational
@@ -224,7 +226,9 @@ const Hero = () => {
             </div>
             <div className="mb-4">
               <div className="mb-1 flex justify-between text-sm">
-                <span className="font-semibold text-zinc-900">Your Progress</span>
+                <span className="font-semibold text-zinc-900">
+                  Your Progress
+                </span>
                 <span className="font-semibold text-teal-600">65%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-gray-200">
@@ -309,7 +313,9 @@ const Hero = () => {
             </div>
             <div className="mb-4">
               <div className="mb-1 flex justify-between text-sm">
-                <span className="font-semibold text-zinc-900">Your Progress</span>
+                <span className="font-semibold text-zinc-900">
+                  Your Progress
+                </span>
                 <span className="font-semibold text-teal-600">45%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-gray-200">
@@ -389,7 +395,9 @@ const Hero = () => {
             </div>
             <div className="mb-4">
               <div className="mb-1 flex justify-between text-sm">
-                <span className="font-semibold text-zinc-900">Your Progress</span>
+                <span className="font-semibold text-zinc-900">
+                  Your Progress
+                </span>
                 <span className="font-semibold text-teal-600">80%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-gray-200">
@@ -463,7 +471,9 @@ const Hero = () => {
             </div>
             <div className="mb-4">
               <div className="mb-1 flex justify-between text-sm">
-                <span className="font-semibold text-zinc-900">Your Progress</span>
+                <span className="font-semibold text-zinc-900">
+                  Your Progress
+                </span>
                 <span className="font-semibold text-teal-600">30%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-gray-200">
@@ -484,38 +494,6 @@ const Hero = () => {
           <button className="rounded-lg border-2 border-gray-300 px-8 py-3 font-semibold text-gray-500 transition hover:text-orange-400 hover:border-orange-400">
             View All Courses
           </button>
-        </div>
-
-        {/* Impact Dashboard Section */}
-        <div className="mt-50 flex flex-col items-center space-y-4 text-center">
-          {/* Icon */}
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal-100">
-            <svg
-              className="h-8 w-8 text-teal-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
-          </div>
-
-          {/* Title */}
-          <h2 className="text-4xl font-bold text-zinc-900">
-            Impact Dashboard
-          </h2>
-
-          {/* Description */}
-          <p className="max-w-2xl text-base text-zinc-600">
-            Track progress, measure impact, and visualize gender participation
-            metrics across our platform.
-          </p>
         </div>
       </div>
     </section>
