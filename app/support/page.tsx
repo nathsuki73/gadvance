@@ -1,5 +1,6 @@
 import React from "react";
 import Header from "@/app/components/Header";
+import Footer from "@/app/components/Footer";
 import { HelpCircle, LifeBuoy, Mail, FileText } from "lucide-react";
 
 const Support = () => {
@@ -17,8 +18,9 @@ const Support = () => {
             How can we help?
           </h1>
           <p className="text-zinc-500 max-w-2xl mx-auto text-lg leading-relaxed">
-            Search our knowledge base or reach out to our team. We're here to
-            ensure your learning journey with Gadvance is smooth and impactful.
+            Search our knowledge base or reach out to our team. We&apos;re here
+            to ensure your learning journey with Gadvance is smooth and
+            impactful.
           </p>
         </div>
 
@@ -45,8 +47,8 @@ const Support = () => {
             </div>
             <h3 className="text-xl font-bold mb-3">Documentation</h3>
             <p className="text-zinc-500 text-sm leading-relaxed mb-6">
-              Learn more about our platform's features and how to maximize your
-              learning.
+              Learn more about our platform&apos;s features and how to maximize
+              your learning.
             </p>
             <button className="text-teal-600 font-bold text-sm hover:underline">
               Read Docs →
@@ -60,8 +62,8 @@ const Support = () => {
             </div>
             <h3 className="text-xl font-bold mb-3">Contact Us</h3>
             <p className="text-zinc-500 text-sm leading-relaxed mb-6">
-              Can't find what you're looking for? Talk to a member of our
-              support team.
+              Can&apos;t find what you&apos;re looking for? Talk to a member of
+              our support team.
             </p>
             <button className="text-pink-600 font-bold text-sm hover:underline">
               Send Message →
@@ -76,6 +78,9 @@ const Support = () => {
           </p>
         </div>
       </main>
+
+      {/* Footer added here */}
+      <Footer />
     </div>
   );
 };

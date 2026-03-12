@@ -1,5 +1,6 @@
 import React from "react";
 import Header from "@/app/components/Header";
+import Footer from "@/app/components/Footer";
 import { Users, MessageSquare, Share2 } from "lucide-react";
 
 const Community = () => {
@@ -58,6 +59,9 @@ const Community = () => {
           </div>
         </div>
       </main>
+
+      {/* Footer added here */}
+      <Footer />
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import React from "react";
 import Header from "@/app/components/Header";
+import Footer from "@/app/components/Footer";
 
 const About = () => {
   return (
@@ -12,6 +13,9 @@ const About = () => {
           learning experience for everyone.
         </p>
       </main>
+
+      {/* Footer added here */}
+      <Footer />
     </div>
   );
 };
