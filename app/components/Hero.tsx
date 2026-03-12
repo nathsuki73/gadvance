@@ -491,9 +491,12 @@ const Hero = () => {
 
         {/* View All Courses Button */}
         <div className="mt-12 flex justify-center">
-          <button className="rounded-lg border-2 border-gray-300 px-8 py-3 font-semibold text-gray-500 transition hover:text-orange-400 hover:border-orange-400">
+          <Link
+            href="/workspace"
+            className="rounded-lg border-2 border-gray-300 px-8 py-3 font-semibold text-gray-500 transition-all hover:text-orange-400 hover:border-orange-400 inline-block"
+          >
             View All Courses
-          </button>
+          </Link>
         </div>
       </div>
     </section>
