@@ -21,11 +21,10 @@ const CourseCard = ({
   tag,
 }: CourseCardProps) => {
   return (
-    <div className="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-all">
-      {/* Top Section */}
-      <div className="h-36 w-full relative flex items-center justify-center bg-zinc-50">
+    <article className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-[0_1px_0_rgba(17,24,39,0.02)] transition-all hover:shadow-md">
+      <div className="relative flex h-34 w-full items-center justify-center bg-zinc-50 md:h-36">
         <span
-          className="absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
+          className="absolute right-4 top-4 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em]"
           style={{
             color: color,
             borderColor: color,
@@ -34,19 +33,18 @@ const CourseCard = ({
         >
           {tag}
         </span>
-        <BookOpen className="w-12 h-12 text-zinc-300" />
+        <BookOpen className="h-12 w-12 text-zinc-300" strokeWidth={1.8} />
       </div>
 
-      {/* Content */}
-      <div className="p-6 flex flex-col flex-1">
-        <h3 className="font-extrabold text-xl leading-tight mb-3 text-zinc-900">
+      <div className="flex flex-col p-6">
+        <h3 className="mb-3 text-[2rem] font-black leading-[1.05] tracking-tight text-zinc-900 md:text-[2.05rem]">
           {title}
         </h3>
-        <p className="text-sm text-zinc-500 mb-4 line-clamp-2 leading-relaxed">
+        <p className="mb-5 line-clamp-2 text-base leading-relaxed text-zinc-500">
           {description}
         </p>
 
-        <div className="flex items-center gap-4 text-xs font-medium text-zinc-400 mb-6">
+        <div className="mb-6 flex items-center gap-4 text-sm font-medium text-zinc-400">
           <div className="flex items-center gap-1">
             <Clock size={14} /> {duration}
           </div>
@@ -55,13 +53,12 @@ const CourseCard = ({
           </div>
         </div>
 
-        {/* Progress */}
-        <div className="mt-auto">
-          <div className="flex justify-between items-center mb-2 font-black uppercase text-[10px] tracking-tighter">
+        <div>
+          <div className="mb-2 flex items-center justify-between text-[11px] font-black uppercase tracking-tight">
             <span className="text-zinc-400">Your Progress</span>
             <span style={{ color: color }}>{progress}%</span>
           </div>
-          <div className="h-2.5 w-full bg-zinc-100 rounded-full mb-6">
+          <div className="mb-6 h-2.5 w-full rounded-full bg-zinc-200">
             <div
               className="h-full rounded-full transition-all duration-700"
               style={{ width: `${progress}%`, backgroundColor: color }}
@@ -69,14 +66,14 @@ const CourseCard = ({
           </div>
 
           <button
-            className="w-full py-3.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 hover:brightness-95 transition-all"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-lg font-black text-white transition-all hover:brightness-95"
             style={{ backgroundColor: color }}
           >
             Continue Learning <span>→</span>
           </button>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 

@@ -1,94 +1,79 @@
+import { Clock3, Star, Users, ChevronDown, Plus } from "lucide-react";
+
 type SubHeaderProps = {
-	title?: string;
-	pathLabel?: string;
-	duration?: string;
-	learners?: string;
-	reviews?: string;
+  title?: string;
+  pathLabel?: string;
+  duration?: string;
+  learners?: string;
+  reviews?: string;
+  description?: string;
 };
 
 export default function SubHeader({
-	title = "AI Fundamentals: Foundations for Understanding AI (Earn a digital credential!)",
-	pathLabel = "Learning Plan",
-	duration = "About 9 hours",
-	learners = "5,206",
-	reviews = "283",
+  title = "Advanced Machine Learning Foundations",
+  pathLabel = "Learning Path > Artificial Intelligence",
+  duration = "10 hours",
+  learners = "8,500 enrolled",
+  reviews = "4.8/5",
+  description = "Master the fundamental concepts and practical applications of advanced machine learning. This comprehensive course covers neural networks, deep learning architectures, and real-world implementation strategies. You'll gain hands-on experience with industry-standard tools and frameworks while building production-ready ML models.",
 }: SubHeaderProps) {
-	return (
-		<section className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 bg-zinc-900">
-			<div className="relative z-10 flex flex-col px-4 md:flex-row md:items-center md:px-8 lg:px-12">
-				<div className="h-24 w-full shrink-0 bg-[#d6458f] md:h-28 md:w-52" />
+  return (
+    <section className="rounded-3xl border border-zinc-200 bg-[#F4F5F7] p-5 shadow-sm md:p-8">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.7fr_0.9fr] lg:items-start">
+        <div>
+          <p className="text-[11px] text-zinc-600 md:text-xs">{pathLabel}</p>
 
-				<div className="hidden h-24 w-px bg-zinc-700/60 md:block md:h-28" />
+          <div className="mt-2 flex items-center gap-3 md:gap-4">
+            <div
+              className="flex h-18 w-18 shrink-0 items-center justify-center rounded-xl border border-dashed border-[#9CB2D5] bg-[#E9EEF8] p-2 text-xs font-semibold uppercase tracking-wide text-[#4B648C] md:h-24 md:w-24 md:p-3"
+              aria-label="Badge placeholder"
+            >
+              Badge
+            </div>
 
-				<div className="flex flex-1 flex-col gap-3 px-4 py-4 md:px-6 md:py-5">
-					<p className="text-sm text-[#9be3d6]">{pathLabel}</p>
+            <h1 className="text-xl font-black tracking-tight text-[#0A2144] md:text-3xl">
+              {title}
+            </h1>
+          </div>
 
-					<h2 className="text-xl font-semibold leading-tight tracking-tight text-white md:text-3xl">
-						{title}
-					</h2>
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[#31415C] md:text-sm">
+            <span className="inline-flex items-center gap-2.5">
+              <Clock3 className="h-3.5 w-3.5 text-zinc-500" />
+              {duration}
+            </span>
+            <span className="inline-flex items-center gap-2.5">
+              <Users className="h-3.5 w-3.5 text-zinc-500" />
+              {learners}
+            </span>
+            <span className="inline-flex items-center gap-2.5 font-semibold text-[#13284A]">
+              <Star className="h-3.5 w-3.5 fill-[#EAB308] text-[#EAB308]" />
+              {reviews}
+            </span>
+          </div>
 
-					<div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-zinc-300">
-						<span className="inline-flex items-center gap-1.5">
-							<svg
-								className="h-4 w-4 text-[#00aeef]"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-								viewBox="0 0 24 24"
-								aria-hidden="true"
-							>
-								<circle cx="12" cy="12" r="9" />
-								<path d="M12 7v5l3 2" strokeLinecap="round" strokeLinejoin="round" />
-							</svg>
-							{duration}
-						</span>
+          <p className="mt-4 max-w-4xl text-sm leading-relaxed text-[#253A5C] md:text-base">
+            {description}
+          </p>
+        </div>
 
-						<span className="inline-flex items-center gap-1.5">
-							<svg
-								className="h-4 w-4 text-[#ef8700]"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-								viewBox="0 0 24 24"
-								aria-hidden="true"
-							>
-								<path
-									d="M16 19a4 4 0 00-8 0M12 12a3 3 0 100-6 3 3 0 000 6M20 19a4 4 0 00-3-3.87M17 6.13a3 3 0 010 5.75M4 19a4 4 0 013-3.87M7 6.13a3 3 0 000 5.75"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								/>
-							</svg>
-							{learners}
-						</span>
+        <aside className="rounded-3xl border border-zinc-300 bg-[#F4F5F7] p-5 shadow-[0_2px_6px_rgba(15,23,42,0.06)] md:p-7">
+          <button
+            type="button"
+            className="flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-[#11B5AA] px-3 text-sm font-bold text-white transition hover:bg-[#0DA297] md:text-base"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Enroll Now
+          </button>
 
-						<span className="inline-flex items-center gap-1.5">
-							<span className="inline-flex text-amber-400">★★★★★</span>
-							{reviews}
-						</span>
-					</div>
-				</div>
-
-				<button
-					type="button"
-					className="mx-4 mb-4 inline-flex items-center gap-2 self-start rounded-md border border-zinc-700 bg-zinc-800/80 px-3 py-2 text-sm text-zinc-100 transition hover:border-[#00aeef] hover:text-[#00aeef] md:mx-6 md:mb-0 md:self-center"
-				>
-					<svg
-						className="h-4 w-4"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-						viewBox="0 0 24 24"
-						aria-hidden="true"
-					>
-						<path d="M8.59 13.51l6.83 3.98" strokeLinecap="round" />
-						<path d="M15.41 6.51L8.59 10.49" strokeLinecap="round" />
-						<circle cx="18" cy="5" r="3" />
-						<circle cx="6" cy="12" r="3" />
-						<circle cx="18" cy="19" r="3" />
-					</svg>
-					Share
-				</button>
-			</div>
-		</section>
-	);
+          <button
+            type="button"
+            className="mt-2.5 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-transparent px-3 text-xs font-medium text-[#1E3252] transition hover:bg-zinc-50 md:text-sm"
+          >
+            More Actions
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        </aside>
+      </div>
+    </section>
+  );
 }
