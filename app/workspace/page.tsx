@@ -1,5 +1,6 @@
 import React from "react";
 import Header from "@/app/components/Header";
+import Footer from "@/app/components/Footer";
 import CourseCard from "@/app/components/CourseCard";
 import { Search } from "lucide-react";
 
@@ -76,6 +77,9 @@ const Workspace = () => {
           />
         </div>
       </main>
+
+      {/* Footer added here */}
+      <Footer />
     </div>
   );
 };

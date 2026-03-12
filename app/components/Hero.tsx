@@ -1,6 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import Statistics from "./statistics";
 
 const Hero = () => {
   return (
@@ -325,9 +326,14 @@ const Hero = () => {
                 />
               </div>
             </div>
-            <button className="w-full rounded-lg bg-orange-500 px-4 py-2 font-semibold text-white transition hover:bg-teal-700">
+            <Link
+              href="/course"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full rounded-lg bg-orange-500 px-4 py-2 text-center font-semibold text-white transition hover:bg-orange-700"
+            >
               Continue Learning →
-            </button>
+            </Link>
           </div>
 
           {/* Course Card 3 - Workplace Rights & Advocacy */}
@@ -407,9 +413,14 @@ const Hero = () => {
                 />
               </div>
             </div>
-            <button className="w-full rounded-lg bg-teal-600 px-4 py-2 font-semibold text-white transition hover:bg-teal-700">
+            <Link
+              href="/course"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full rounded-lg bg-teal-600 px-4 py-2 text-center font-semibold text-white transition hover:bg-teal-700"
+            >
               Continue Learning →
-            </button>
+            </Link>
           </div>
 
           {/* Course Card 4 - Mental Health & Wellness */}
@@ -483,19 +494,29 @@ const Hero = () => {
                 />
               </div>
             </div>
-            <button className="w-full rounded-lg bg-pink-500 px-4 py-2 font-semibold text-white transition hover:bg-pink-600">
+            <Link
+              href="/course"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full rounded-lg bg-pink-500 px-4 py-2 text-center font-semibold text-white transition hover:bg-pink-700"
+            >
               Continue Learning →
-            </button>
+            </Link>
           </div>
         </div>
 
         {/* View All Courses Button */}
         <div className="mt-12 flex justify-center">
-          <button className="rounded-lg border-2 border-gray-300 px-8 py-3 font-semibold text-gray-500 transition hover:text-orange-400 hover:border-orange-400">
+          <Link
+            href="/workspace"
+            className="rounded-lg border-2 border-gray-300 px-8 py-3 font-semibold text-gray-500 transition-all hover:text-orange-400 hover:border-orange-400 inline-block"
+          >
             View All Courses
-          </button>
+          </Link>
         </div>
       </div>
+
+      <Statistics />
     </section>
   );
 };
