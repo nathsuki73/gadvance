@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, Circle, ShieldCheck, ShieldAlert } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
+import { CheckCircle2 } from "lucide-react";
+import PhaseWrapper from "@/app/components/PhaseWrapper";
 
 const SignUp = () => {
   const [step, setStep] = useState(1);
@@ -20,7 +21,7 @@ const SignUp = () => {
     confirmPassword: "",
   });
 
-  // Academic Data
+  // Data Constants
   const universities = ["Laguna State Polytechnic University"];
   const degrees = [
     "BS Computer Science",
@@ -38,7 +39,7 @@ const SignUp = () => {
     "Irregular",
   ];
 
-  // Password Logic: 8+ chars, 1 uppercase, 1 number
+  // Password Strength Logic
   const passwordCriteria = {
     length: formData.password.length >= 8,
     uppercase: /[A-Z]/.test(formData.password),
@@ -46,31 +47,32 @@ const SignUp = () => {
   };
   const isPasswordStrong = Object.values(passwordCriteria).every(Boolean);
 
-  // Validation Logic
-  // Requires at least First and Last name to proceed
+  // Phase Validation
   const isStep1Valid =
     formData.firstName.length > 1 &&
     formData.lastName.length > 1 &&
     formData.gender !== "";
-
   const isStep2Valid =
     formData.university !== "" &&
     formData.degree !== "" &&
     formData.yearLevel !== "";
-
   const isStep3Valid =
     formData.email.includes("@") &&
     isPasswordStrong &&
     formData.password === formData.confirmPassword;
-
-  const nextStep = () => setStep((prev) => prev + 1);
-  const prevStep = () => setStep((prev) => prev - 1);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  const nextStep = () => setStep((prev) => prev + 1);
+  const prevStep = () => setStep((prev) => prev - 1);
+
+  // Reusable Tailwind classes for inputs
+  const inputStyle =
+    "w-full p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 outline-none focus:ring-2 focus:ring-zinc-200 transition-all text-zinc-700 placeholder-zinc-400";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -121,44 +123,42 @@ const SignUp = () => {
           <div className="flex-grow">
             <AnimatePresence mode="wait">
               {step === 1 && (
-                <motion.div
-                  key="step1"
-                  initial={{ x: 20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -20, opacity: 0 }}
-                  className="space-y-4"
+                <PhaseWrapper
+                  key="phase1"
+                  title={
+                    <>
+                      Tell us about <br />
+                      <span className="text-teal-500">yourself.</span>
+                    </>
+                  }
+                  primaryButtonText="Continue"
+                  isPrimaryDisabled={!isStep1Valid}
+                  onPrimaryClick={nextStep}
                 >
-                  <h1 className="text-3xl font-black">
-                    Tell us about <br />
-                    <span className="text-teal-500">yourself.</span>
-                  </h1>
-
                   <div className="grid grid-cols-2 gap-4">
                     <input
                       name="firstName"
                       placeholder="First Name"
-                      className="w-full p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 outline-none focus:ring-2 focus:ring-teal-500/20 transition-all"
+                      className={inputStyle}
                       onChange={handleInputChange}
                     />
                     <input
                       name="lastName"
                       placeholder="Last Name"
-                      className="w-full p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 outline-none focus:ring-2 focus:ring-teal-500/20 transition-all"
+                      className={inputStyle}
                       onChange={handleInputChange}
                     />
                   </div>
-
                   <input
                     name="middleName"
                     placeholder="Middle Name (Optional)"
-                    className="w-full p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 outline-none focus:ring-2 focus:ring-teal-500/20 transition-all"
+                    className={inputStyle}
                     onChange={handleInputChange}
                   />
-
                   <select
                     name="gender"
                     value={formData.gender}
-                    className="w-full p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 outline-none focus:ring-2 focus:ring-teal-500/20 text-zinc-500"
+                    className={inputStyle}
                     onChange={handleInputChange}
                   >
                     <option value="">Select Gender</option>
@@ -166,34 +166,28 @@ const SignUp = () => {
                     <option value="female">Female</option>
                     <option value="other">Other</option>
                   </select>
-
-                  <button
-                    disabled={!isStep1Valid}
-                    onClick={nextStep}
-                    className="w-full py-4 bg-[#00A8CC] text-white rounded-xl font-bold disabled:opacity-30 transition-all shadow-lg shadow-teal-100 mt-2"
-                  >
-                    Continue
-                  </button>
-                </motion.div>
+                </PhaseWrapper>
               )}
 
-              {/* ... Steps 2 and 3 remain functionally the same ... */}
               {step === 2 && (
-                <motion.div
-                  key="step2"
-                  initial={{ x: 20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -20, opacity: 0 }}
-                  className="space-y-4"
+                <PhaseWrapper
+                  key="phase2"
+                  title={
+                    <>
+                      Your Academic <br />
+                      <span className="text-orange-500">Profile.</span>
+                    </>
+                  }
+                  primaryButtonText="Next Phase"
+                  isPrimaryDisabled={!isStep2Valid}
+                  onPrimaryClick={nextStep}
+                  onBackClick={prevStep}
+                  showBackButton
                 >
-                  <h1 className="text-3xl font-black">
-                    Your Academic <br />
-                    <span className="text-orange-500">Profile.</span>
-                  </h1>
                   <select
                     name="university"
                     value={formData.university}
-                    className="w-full p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 outline-none focus:ring-2 focus:ring-orange-500/20 text-zinc-500"
+                    className={inputStyle}
                     onChange={handleInputChange}
                   >
                     <option value="">Select University</option>
@@ -206,7 +200,7 @@ const SignUp = () => {
                   <select
                     name="degree"
                     value={formData.degree}
-                    className="w-full p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 outline-none focus:ring-2 focus:ring-orange-500/20 text-zinc-500"
+                    className={inputStyle}
                     onChange={handleInputChange}
                   >
                     <option value="">Select Course/Degree</option>
@@ -219,7 +213,7 @@ const SignUp = () => {
                   <select
                     name="yearLevel"
                     value={formData.yearLevel}
-                    className="w-full p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 outline-none focus:ring-2 focus:ring-orange-500/20 text-zinc-500"
+                    className={inputStyle}
                     onChange={handleInputChange}
                   >
                     <option value="">Select Year Level</option>
@@ -229,50 +223,36 @@ const SignUp = () => {
                       </option>
                     ))}
                   </select>
-                  <div className="flex gap-4 pt-2">
-                    <button
-                      onClick={prevStep}
-                      className="w-1/3 py-4 border border-zinc-200 rounded-xl font-bold text-zinc-400"
-                    >
-                      Back
-                    </button>
-                    <button
-                      disabled={!isStep2Valid}
-                      onClick={nextStep}
-                      className="w-2/3 py-4 bg-[#FF7A00] text-white rounded-xl font-bold disabled:opacity-30 shadow-lg shadow-orange-100"
-                    >
-                      Next Phase
-                    </button>
-                  </div>
-                </motion.div>
+                </PhaseWrapper>
               )}
 
               {step === 3 && (
-                <motion.div
-                  key="step3"
-                  initial={{ x: 20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -20, opacity: 0 }}
-                  className="space-y-4"
+                <PhaseWrapper
+                  key="phase3"
+                  title={
+                    <>
+                      Secure your <br />
+                      <span className="text-teal-500">account.</span>
+                    </>
+                  }
+                  primaryButtonText="Complete Sign Up"
+                  isPrimaryDisabled={!isStep3Valid}
+                  onBackClick={prevStep}
+                  showBackButton
                 >
-                  <h1 className="text-3xl font-black">
-                    Secure your <br />
-                    <span className="text-teal-500">account.</span>
-                  </h1>
                   <input
                     name="email"
                     type="email"
                     placeholder="Email Address"
-                    className="w-full p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 outline-none focus:ring-2 focus:ring-teal-500/20"
+                    className={inputStyle}
                     onChange={handleInputChange}
                   />
-
                   <div className="space-y-2">
                     <input
                       name="password"
                       type="password"
                       placeholder="Password"
-                      className="w-full p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 outline-none focus:ring-2 focus:ring-teal-500/20"
+                      className={inputStyle}
                       onChange={handleInputChange}
                     />
                     <div className="grid grid-cols-3 gap-2 px-1">
@@ -290,30 +270,14 @@ const SignUp = () => {
                       Must include 8+ chars, 1 uppercase, and 1 number
                     </p>
                   </div>
-
                   <input
                     name="confirmPassword"
                     type="password"
                     placeholder="Confirm Password"
-                    className="w-full p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 outline-none focus:ring-2 focus:ring-teal-500/20"
+                    className={inputStyle}
                     onChange={handleInputChange}
                   />
-
-                  <div className="flex gap-4 mt-6">
-                    <button
-                      onClick={prevStep}
-                      className="w-1/3 py-4 border border-zinc-200 rounded-xl font-bold text-zinc-400"
-                    >
-                      Back
-                    </button>
-                    <button
-                      disabled={!isStep3Valid}
-                      className="w-2/3 py-4 bg-[#00A8CC] text-white rounded-xl font-bold disabled:opacity-30 shadow-lg shadow-teal-100"
-                    >
-                      Complete Sign Up
-                    </button>
-                  </div>
-                </motion.div>
+                </PhaseWrapper>
               )}
             </AnimatePresence>
           </div>
@@ -329,23 +293,17 @@ const SignUp = () => {
           </p>
         </div>
 
-        {/* Right Side Panel */}
+        {/* Right Side: Decorative Panel */}
         <div className="hidden lg:block lg:w-1/2 p-6">
           <div className="w-full h-full bg-gradient-to-br from-[#4fd1c5] to-[#00a8cc] rounded-[2.5rem] flex flex-col items-center justify-center p-12 text-white text-center">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <h2 className="text-4xl font-black mb-6">
-                Start your <br />
-                journey.
-              </h2>
-              <p className="opacity-80 font-medium leading-relaxed">
-                Unlock specialized courses, community insights, and global
-                networking designed for the next generation of leaders.
-              </p>
-            </motion.div>
+            <h2 className="text-4xl font-black mb-6">
+              Start your <br />
+              journey.
+            </h2>
+            <p className="opacity-80 font-medium leading-relaxed">
+              Unlock specialized courses, community insights, and global
+              networking designed for the next generation of leaders.
+            </p>
           </div>
         </div>
       </div>
