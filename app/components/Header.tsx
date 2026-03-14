@@ -19,25 +19,25 @@ const Header = () => {
       {/* Navigation Links */}
       <nav className="hidden md:flex items-center gap-10">
         <Link
-          href="/about"
+          href="/workspace/about"
           className="text-zinc-600 hover:text-black transition-colors"
         >
           About
         </Link>
         <Link
-          href="/workspace"
+          href="/workspace/courses"
           className="text-zinc-600 hover:text-black transition-colors"
         >
           Courses
         </Link>
         <Link
-          href="/community"
+          href="/workspace/community"
           className="text-zinc-600 hover:text-black transition-colors"
         >
           Community
         </Link>
         <Link
-          href="/support"
+          href="/workspace/support"
           className="text-zinc-600 hover:text-black transition-colors"
         >
           Support
