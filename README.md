@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 GADvance
+**Empowering Equality. Advancing Development.**
 
-## Getting Started
+GADvance is a comprehensive web application designed to promote **Gender and Development (GAD)** initiatives within San Pablo City, Laguna. By leveraging technology, GADvance aims to bridge the gender gap, provide accessible support services, and foster an inclusive community for all residents.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🌟 The Mission
+In the Philippines, nearly 99% of people hold some form of gender bias, often perceiving it as "natural." GADvance challenges this narrative by:
+* **Increasing Awareness:** Educating the youth and residents on gender equality.
+* **Providing Support:** Offering a safe, digital space for gender-based violence (GBV) resources.
+* **Data-Driven Action:** Helping the University GAD Office monitor and implement gender mainstreaming effectively.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Tech Stack
+This project is built to be lightweight, fast, and cost-effective:
+* **Frontend:** React / Svelte – Providing a responsive, user-friendly experience.
+* **Backend:** PHP – Hosted on Hostinger for reliable server-side logic.
+* **Database:** MySQL – Structured data management for census and reporting.
+* **Authentication:** Custom OTP (One-Time Password) System – Secure, free, and accessible via Hostinger SMTP.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ✨ Key Features
+* **Secure OTP Login:** Simple email-based verification for both students and outside residents (No Google SSO wait times).
+* **Resource Hub:** A library of GAD-related laws and educational materials tailored for San Pablo City.
+* **Support Services:** Direct access to local counselors, emergency hotlines, and reporting mechanisms.
+* **Engagement Analytics:** Tracking community participation to measure progress toward SDGs.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🤖 Future AI Roadmap (NLP)
+We plan to integrate Natural Language Processing to further the GAD mission:
+* **Bias Detection:** Analyzing social media-style inputs to flag implicit gender biases.
+* **Simplified Advocacy:** Using NLP to "translate" complex GAD laws into easy-to-understand local dialects and "Taglish."
+* **Smart Triage:** Categorizing support requests automatically to ensure urgent cases reach the GAD office faster.
 
-## Learn More
+## 🚀 Getting Started
+1.  **Clone the repo**
+    ```bash
+    git clone [https://github.com/your-username/gadvance.git](https://github.com/your-username/gadvance.git)
+    ```
+2.  **Setup the Database**
+    * Import the provided SQL schema into your Hostinger MySQL database.
+3.  **Configure Environment**
+    * Update `db_config.php` with your Hostinger database and SMTP credentials.
+4.  **Deploy**
+    * Upload the files to your `public_html` via FTP or Git Deployment.
 
-To learn more about Next.js, take a look at the following resources:
+## 📈 Alignment with SDGs
+* **Goal 3:** Good Health and Well-being
+* **Goal 4:** Quality Education
+* **Goal 5:** Gender Equality
+* **Goal 10:** Reduced Inequalities
+* **Goal 16:** Peace, Justice, and Strong Institutions
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+*Developed with ❤️ for the community of San Pablo City.*
