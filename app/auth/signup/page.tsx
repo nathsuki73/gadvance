@@ -5,10 +5,29 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import { handleSignIn } from "../../lib/auth";
+import { handleRegistration } from "./actions";
+import { z } from "zod"; // 1. Import Zod
+
+// 2. Define the validation schema
+const signUpSchema = z
+  .object({
+    email: z.string().email("Invalid email address"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 const SignUp = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({}); // State for errors
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -17,27 +36,53 @@ const SignUp = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error for a field when the user starts typing again
+    if (errors[e.target.name]) {
+      setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
 
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+    // 3. Validate using Zod
+    const result = signUpSchema.safeParse(formData);
+
+    if (!result.success) {
+      const formattedErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        formattedErrors[String(issue.path[0])] = issue.message;
+      });
+      setErrors(formattedErrors);
       return;
     }
 
     setLoading(true);
 
-    // Logic: 1. Lookup in DB -> 2. Password Verify -> 3. SMTP OTP Send
-    setTimeout(() => {
+    try {
+      // Call the Server Action we just made
+      const response = await handleRegistration(formData.email);
+
+      if (response.success) {
+        setLoading(false);
+        // Move to the OTP page and pass the email so it can be displayed
+        router.push(
+          `/auth/verify-otp?context=signup&email=${encodeURIComponent(formData.email)}`,
+        );
+      } else {
+        setLoading(false);
+        // Show the server error (e.g., SMTP failure) in your Zod error state
+        setErrors({ email: response.error || "An error occurred" });
+      }
+    } catch (err) {
       setLoading(false);
-      router.push("/auth/verify-otp");
-    }, 1500);
+      setErrors({ email: "Connection failed. Check your network." });
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans text-zinc-900">
       <div className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-sm flex overflow-hidden min-h-[650px] border border-zinc-100">
         {/* Left Side: Form Content */}
         <div className="w-full lg:w-1/2 p-8 md:p-16 flex flex-col justify-between">
@@ -61,36 +106,53 @@ const SignUp = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Email */}
-              <input
-                required
-                name="email"
-                type="email"
-                placeholder="Email Address"
-                onChange={handleInputChange}
-                className="w-full px-4 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50"
-              />
+              <div>
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="Email Address"
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-4 rounded-xl border ${errors.email ? "border-red-400" : "border-gray-200"} focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50`}
+                />
+                {errors.email && (
+                  <p className="text-[10px] text-red-500 font-bold mt-1 ml-2 uppercase tracking-wider">
+                    {errors.email}
+                  </p>
+                )}
+              </div>
 
               {/* Password */}
-              <input
-                required
-                name="password"
-                type="password"
-                placeholder="Password"
-                onChange={handleInputChange}
-                className="w-full px-4 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50"
-              />
+              <div>
+                <input
+                  name="password"
+                  type="password"
+                  placeholder="Password"
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-4 rounded-xl border ${errors.password ? "border-red-400" : "border-gray-200"} focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50`}
+                />
+                {errors.password && (
+                  <p className="text-[10px] text-red-500 font-bold mt-1 ml-2 uppercase tracking-wider">
+                    {errors.password}
+                  </p>
+                )}
+              </div>
 
               {/* Confirm Password */}
-              <input
-                required
-                name="confirmPassword"
-                type="password"
-                placeholder="Confirm Password"
-                onChange={handleInputChange}
-                className="w-full px-4 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50"
-              />
+              <div>
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="Confirm Password"
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-4 rounded-xl border ${errors.confirmPassword ? "border-red-400" : "border-gray-200"} focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50`}
+                />
+                {errors.confirmPassword && (
+                  <p className="text-[10px] text-red-500 font-bold mt-1 ml-2 uppercase tracking-wider">
+                    {errors.confirmPassword}
+                  </p>
+                )}
+              </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={loading}
@@ -99,7 +161,6 @@ const SignUp = () => {
                 {loading ? "Creating Account..." : "Sign Up"}
               </button>
 
-              {/* Divider */}
               <div className="relative flex items-center py-6">
                 <div className="flex-grow border-t border-gray-100"></div>
                 <span className="flex-shrink mx-4 text-gray-300 text-[10px] uppercase tracking-widest font-bold">
@@ -108,7 +169,6 @@ const SignUp = () => {
                 <div className="flex-grow border-t border-gray-100"></div>
               </div>
 
-              {/* Google Only SSO */}
               <GoogleButton onClick={handleSignIn} />
             </form>
           </div>
