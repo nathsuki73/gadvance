@@ -27,6 +27,8 @@ type CourseModule = {
   enrolled: string;
   progress: number;
   tag: string;
+  status: "Active" | "Under Review" | "Draft";
+  accent: string;
   icon: "globe" | "briefcase" | "target" | "wellness";
   blocks: ModuleBlock[];
 };
@@ -41,6 +43,8 @@ const courseModules: CourseModule[] = [
     duration: "4 weeks",
     enrolled: "12,500",
     tag: "Foundational",
+    status: "Active",
+    accent: "#14b8a6",
     icon: "globe",
     blocks: [
       {
@@ -94,6 +98,8 @@ const courseModules: CourseModule[] = [
     duration: "6 weeks",
     enrolled: "8,900",
     tag: "Professional",
+    status: "Active",
+    accent: "#f97316",
     icon: "briefcase",
     blocks: [
       {
@@ -133,6 +139,8 @@ const courseModules: CourseModule[] = [
     duration: "5 weeks",
     enrolled: "10,200",
     tag: "Legal",
+    status: "Under Review",
+    accent: "#a855f7",
     icon: "target",
     blocks: [
       {
@@ -168,6 +176,8 @@ const courseModules: CourseModule[] = [
     duration: "3 weeks",
     enrolled: "15,800",
     tag: "Wellness",
+    status: "Draft",
+    accent: "#22c55e",
     icon: "wellness",
     blocks: [
       {
@@ -210,22 +220,41 @@ const CourseCard = ({
 }) => {
   const Icon = iconByType[module.icon];
 
+  const statusClasses: Record<CourseModule["status"], string> = {
+    Active: "bg-emerald-100 text-emerald-700",
+    "Under Review": "bg-amber-100 text-amber-700",
+    Draft: "bg-zinc-200 text-zinc-600",
+  };
+
   return (
-    <button
-      onClick={onClick}
-      className="group flex flex-col gap-5 rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm transition-all hover:border-zinc-300 hover:shadow-md"
-    >
+    <article className="group flex flex-col gap-5 rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm transition-all hover:border-zinc-300 hover:shadow-md">
       <div className="flex items-start justify-between">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-[#a129ff] to-[#6d22eb] text-white shadow-sm">
+        <div
+          className="flex h-12 w-12 items-center justify-center rounded-xl text-white shadow-sm"
+          style={{ backgroundColor: module.accent }}
+        >
           <Icon size={20} strokeWidth={2.2} />
         </div>
-        <span className="rounded-full bg-[#efe2ff] px-2.5 py-1 text-xs font-semibold text-[#7f39d8]">
-          {module.tag}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className="rounded-full px-2.5 py-1 text-xs font-semibold"
+            style={{
+              backgroundColor: `${module.accent}20`,
+              color: module.accent,
+            }}
+          >
+            {module.tag}
+          </span>
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClasses[module.status]}`}
+          >
+            {module.status}
+          </span>
+        </div>
       </div>
 
       <div>
-        <h3 className="text-3xl font-black tracking-tight text-[#5c20b0]">
+        <h3 className="text-[2.05rem] font-black tracking-tight text-zinc-900">
           {module.title}
         </h3>
         <p className="mt-2 text-[1.15rem] leading-relaxed text-zinc-600">
@@ -247,23 +276,34 @@ const CourseCard = ({
       <div>
         <div className="mb-1.5 flex items-center justify-between text-[1.05rem] text-zinc-500">
           <span>Your Progress</span>
-          <span className="font-bold text-[#8f36df]">{module.progress}%</span>
+          <span className="font-bold" style={{ color: module.accent }}>
+            {module.progress}%
+          </span>
         </div>
         <div className="h-2 rounded-full bg-zinc-300">
           <div
-            className="h-2 rounded-full bg-[#08061a]"
-            style={{ width: `${module.progress}%` }}
+            className="h-2 rounded-full"
+            style={{
+              backgroundColor: module.accent,
+              width: `${module.progress}%`,
+            }}
           />
         </div>
       </div>
 
-      <div className="mt-1 rounded-lg bg-linear-to-r from-[#9e1cf6] to-[#7023ea] px-4 py-2.5 text-center text-base font-semibold text-white">
-        <span className="inline-flex items-center gap-1.5">
-          Continue Learning
-          <ArrowUpRight size={15} />
-        </span>
+      <div className="mt-1">
+        <button
+          type="button"
+          onClick={onClick}
+          className="w-full rounded-lg bg-[#14b8a6] px-4 py-2.5 text-center text-base font-semibold text-white transition-colors hover:bg-[#0d9f8e]"
+        >
+          <span className="inline-flex items-center gap-1.5">
+            Continue Learning
+            <ArrowUpRight size={15} />
+          </span>
+        </button>
       </div>
-    </button>
+    </article>
   );
 };
 
