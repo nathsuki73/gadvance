@@ -7,16 +7,27 @@ import {
   ModuleContentViewer,
   type ModuleBlock,
 } from "@/app/components/moduleViewer";
-import { ArrowLeft, Search } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  Briefcase,
+  Clock3,
+  Globe,
+  Heart,
+  Search,
+  Target,
+  Users,
+} from "lucide-react";
 
 type CourseModule = {
   id: number;
   title: string;
   description: string;
   duration: string;
+  enrolled: string;
   progress: number;
-  color: string;
   tag: string;
+  icon: "globe" | "briefcase" | "target" | "wellness";
   blocks: ModuleBlock[];
 };
 
@@ -25,11 +36,12 @@ const courseModules: CourseModule[] = [
     id: 1,
     title: "Gender Equality Fundamentals",
     description:
-      "Principles and importance of gender equality in modern society.",
+      "Understanding the principles and importance of gender equality in modern society.",
     progress: 65,
     duration: "4 weeks",
-    color: "#009B8E",
+    enrolled: "12,500",
     tag: "Foundational",
+    icon: "globe",
     blocks: [
       {
         id: "m1-title",
@@ -80,8 +92,9 @@ const courseModules: CourseModule[] = [
       "Developing leadership skills and breaking barriers in professional environments.",
     progress: 45,
     duration: "6 weeks",
-    color: "#FF7A00",
+    enrolled: "8,900",
     tag: "Professional",
+    icon: "briefcase",
     blocks: [
       {
         id: "m2-section",
@@ -115,11 +128,12 @@ const courseModules: CourseModule[] = [
     id: 3,
     title: "Workplace Rights & Advocacy",
     description:
-      "Workplace rights, discrimination prevention, and advocacy strategies.",
+      "Learn about workplace rights, discrimination prevention, and advocacy strategies.",
     progress: 80,
     duration: "5 weeks",
-    color: "#009B8E",
+    enrolled: "10,200",
     tag: "Legal",
+    icon: "target",
     blocks: [
       {
         id: "m3-title",
@@ -152,8 +166,9 @@ const courseModules: CourseModule[] = [
       "Supporting mental well-being and building resilience in challenging environments.",
     progress: 30,
     duration: "3 weeks",
-    color: "#FF3B9E",
+    enrolled: "15,800",
     tag: "Wellness",
+    icon: "wellness",
     blocks: [
       {
         id: "m4-section",
@@ -179,6 +194,13 @@ const courseModules: CourseModule[] = [
   },
 ];
 
+const iconByType = {
+  globe: Globe,
+  briefcase: Briefcase,
+  target: Target,
+  wellness: Heart,
+} as const;
+
 const CourseCard = ({
   module,
   onClick,
@@ -186,47 +208,61 @@ const CourseCard = ({
   module: CourseModule;
   onClick: () => void;
 }) => {
+  const Icon = iconByType[module.icon];
+
   return (
     <button
       onClick={onClick}
-      className="group flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 text-left shadow-sm transition-all hover:border-zinc-300 hover:shadow-md"
+      className="group flex flex-col gap-5 rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm transition-all hover:border-zinc-300 hover:shadow-md"
     >
       <div className="flex items-start justify-between">
-        <div
-          className="h-2 w-24 rounded-full"
-          style={{ backgroundColor: module.color }}
-        />
-        <span
-          className="rounded px-2 py-1 text-xs font-semibold"
-          style={{ backgroundColor: `${module.color}20`, color: module.color }}
-        >
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-[#a129ff] to-[#6d22eb] text-white shadow-sm">
+          <Icon size={20} strokeWidth={2.2} />
+        </div>
+        <span className="rounded-full bg-[#efe2ff] px-2.5 py-1 text-xs font-semibold text-[#7f39d8]">
           {module.tag}
         </span>
       </div>
+
       <div>
-        <h3 className="text-lg font-bold tracking-tight text-zinc-900">
+        <h3 className="text-3xl font-black tracking-tight text-[#5c20b0]">
           {module.title}
         </h3>
-        <p className="mt-2 text-sm text-zinc-600">{module.description}</p>
+        <p className="mt-2 text-[1.15rem] leading-relaxed text-zinc-600">
+          {module.description}
+        </p>
       </div>
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
-          <div className="flex justify-between text-xs text-zinc-600 mb-1">
-            <span>Progress</span>
-            <span>{module.progress}%</span>
-          </div>
-          <div className="h-2 rounded-full bg-zinc-100">
-            <div
-              className="h-2 rounded-full transition-all"
-              style={{
-                width: `${module.progress}%`,
-                backgroundColor: module.color,
-              }}
-            />
-          </div>
+
+      <div className="flex items-center gap-5 text-[1.05rem] text-zinc-500">
+        <span className="inline-flex items-center gap-1.5">
+          <Clock3 size={15} className="text-[#8f36df]" />
+          {module.duration}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Users size={15} className="text-[#8f36df]" />
+          {module.enrolled} enrolled
+        </span>
+      </div>
+
+      <div>
+        <div className="mb-1.5 flex items-center justify-between text-[1.05rem] text-zinc-500">
+          <span>Your Progress</span>
+          <span className="font-bold text-[#8f36df]">{module.progress}%</span>
+        </div>
+        <div className="h-2 rounded-full bg-zinc-300">
+          <div
+            className="h-2 rounded-full bg-[#08061a]"
+            style={{ width: `${module.progress}%` }}
+          />
         </div>
       </div>
-      <div className="text-xs text-zinc-500">{module.duration}</div>
+
+      <div className="mt-1 rounded-lg bg-linear-to-r from-[#9e1cf6] to-[#7023ea] px-4 py-2.5 text-center text-base font-semibold text-white">
+        <span className="inline-flex items-center gap-1.5">
+          Continue Learning
+          <ArrowUpRight size={15} />
+        </span>
+      </div>
     </button>
   );
 };
@@ -238,7 +274,7 @@ const Workspace = () => {
 
   if (selectedModule) {
     return (
-      <div className="min-h-screen bg-[#F9FAFB] font-sans text-zinc-900">
+      <div className="min-h-screen bg-[#f4f4f6] font-sans text-zinc-900">
         <Header />
 
         <main className="mx-auto max-w-7xl px-6 py-10">
@@ -256,16 +292,10 @@ const Workspace = () => {
                 <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
                   Module {selectedModule.id}
                 </span>
-                <span
-                  className="rounded-full px-3 py-1 text-xs font-semibold"
-                  style={{
-                    backgroundColor: `${selectedModule.color}20`,
-                    color: selectedModule.color,
-                  }}
-                >
+                <span className="rounded-full bg-[#efe2ff] px-3 py-1 text-xs font-semibold text-[#7f39d8]">
                   {selectedModule.progress}% complete
                 </span>
-                <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
+                <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
                   {selectedModule.duration}
                 </span>
               </div>
@@ -288,7 +318,7 @@ const Workspace = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] font-sans text-zinc-900">
+    <div className="min-h-screen bg-[#f4f4f6] font-sans text-zinc-900">
       <Header />
 
       <main className="mx-auto max-w-7xl px-6 py-10">
@@ -317,7 +347,7 @@ const Workspace = () => {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           {courseModules.map((module) => (
             <CourseCard
               key={module.id}
