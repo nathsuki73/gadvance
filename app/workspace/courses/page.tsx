@@ -408,7 +408,7 @@ const Workspace = () => {
             </header>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
-              <aside className="h-fit rounded-xl border border-zinc-200 bg-[#f7f8fa] p-4">
+              <aside className="sticky top-24 h-fit self-start rounded-xl border border-zinc-200 bg-[#f7f8fa] p-4">
                 <h2 className="mb-3 text-xl font-bold text-zinc-900">
                   Module Structure
                 </h2>
