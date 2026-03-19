@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck, ArrowLeft, Mail, GraduationCap } from "lucide-react";
 import Link from "next/link";
+import { verifyOTP } from "../signup/actions";
 
 const OTPContent = () => {
   const router = useRouter();
@@ -86,11 +87,25 @@ const OTPContent = () => {
     if (fullCode.length < 6) return;
 
     setLoading(true);
-    // Simulate backend verification delay
-    setTimeout(() => {
+
+    try {
+      // 2. Call your Server Action
+      const result = await verifyOTP(email, fullCode);
+
+      if (result.success) {
+        // 3. Success! Move to next page
+        router.push(currentUI.nextPath);
+      } else {
+        // 4. Handle errors (Invalid or Expired)
+        alert(result.error);
+        setOtp(["", "", "", "", "", ""]); // Clear inputs
+        inputRefs.current[0]?.focus(); // Reset focus
+      }
+    } catch (err) {
+      alert("Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
-      router.push(currentUI.nextPath);
-    }, 1500);
+    }
   };
 
   return (
