@@ -1,11 +1,13 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import Footer from "@/app/components/Footer";
 import Header from "@/app/components/Header";
 import {
   ModuleContentViewer,
   type ModuleBlock,
 } from "@/app/components/moduleViewer";
-import { Search } from "lucide-react";
+import { ArrowLeft, Search } from "lucide-react";
 
 type CourseModule = {
   id: number;
@@ -13,6 +15,8 @@ type CourseModule = {
   description: string;
   duration: string;
   progress: number;
+  color: string;
+  tag: string;
   blocks: ModuleBlock[];
 };
 
@@ -21,9 +25,11 @@ const courseModules: CourseModule[] = [
     id: 1,
     title: "Gender Equality Fundamentals",
     description:
-      "Understand key concepts, history, and practical steps for gender equity.",
-    duration: "4 weeks",
+      "Principles and importance of gender equality in modern society.",
     progress: 65,
+    duration: "4 weeks",
+    color: "#009B8E",
+    tag: "Foundational",
     blocks: [
       {
         id: "m1-title",
@@ -71,9 +77,11 @@ const courseModules: CourseModule[] = [
     id: 2,
     title: "Women in Leadership",
     description:
-      "Learn leadership frameworks, communication strategies, and mentorship pathways.",
-    duration: "6 weeks",
+      "Developing leadership skills and breaking barriers in professional environments.",
     progress: 45,
+    duration: "6 weeks",
+    color: "#FF7A00",
+    tag: "Professional",
     blocks: [
       {
         id: "m2-section",
@@ -107,9 +115,11 @@ const courseModules: CourseModule[] = [
     id: 3,
     title: "Workplace Rights & Advocacy",
     description:
-      "Build confidence around legal rights, reporting systems, and advocacy actions.",
-    duration: "5 weeks",
+      "Workplace rights, discrimination prevention, and advocacy strategies.",
     progress: 80,
+    duration: "5 weeks",
+    color: "#009B8E",
+    tag: "Legal",
     blocks: [
       {
         id: "m3-title",
@@ -139,9 +149,11 @@ const courseModules: CourseModule[] = [
     id: 4,
     title: "Mental Health & Wellness",
     description:
-      "Develop resilience habits and support systems for sustained well-being.",
-    duration: "3 weeks",
+      "Supporting mental well-being and building resilience in challenging environments.",
     progress: 30,
+    duration: "3 weeks",
+    color: "#FF3B9E",
+    tag: "Wellness",
     blocks: [
       {
         id: "m4-section",
@@ -167,7 +179,114 @@ const courseModules: CourseModule[] = [
   },
 ];
 
+const CourseCard = ({
+  module,
+  onClick,
+}: {
+  module: CourseModule;
+  onClick: () => void;
+}) => {
+  return (
+    <button
+      onClick={onClick}
+      className="group flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 text-left shadow-sm transition-all hover:border-zinc-300 hover:shadow-md"
+    >
+      <div className="flex items-start justify-between">
+        <div
+          className="h-2 w-24 rounded-full"
+          style={{ backgroundColor: module.color }}
+        />
+        <span
+          className="rounded px-2 py-1 text-xs font-semibold"
+          style={{ backgroundColor: `${module.color}20`, color: module.color }}
+        >
+          {module.tag}
+        </span>
+      </div>
+      <div>
+        <h3 className="text-lg font-bold tracking-tight text-zinc-900">
+          {module.title}
+        </h3>
+        <p className="mt-2 text-sm text-zinc-600">{module.description}</p>
+      </div>
+      <div className="flex items-center gap-4">
+        <div className="flex-1">
+          <div className="flex justify-between text-xs text-zinc-600 mb-1">
+            <span>Progress</span>
+            <span>{module.progress}%</span>
+          </div>
+          <div className="h-2 rounded-full bg-zinc-100">
+            <div
+              className="h-2 rounded-full transition-all"
+              style={{
+                width: `${module.progress}%`,
+                backgroundColor: module.color,
+              }}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="text-xs text-zinc-500">{module.duration}</div>
+    </button>
+  );
+};
+
 const Workspace = () => {
+  const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
+
+  const selectedModule = courseModules.find((m) => m.id === selectedModuleId);
+
+  if (selectedModule) {
+    return (
+      <div className="min-h-screen bg-[#F9FAFB] font-sans text-zinc-900">
+        <Header />
+
+        <main className="mx-auto max-w-7xl px-6 py-10">
+          <button
+            onClick={() => setSelectedModuleId(null)}
+            className="mb-6 inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+          >
+            <ArrowLeft size={16} />
+            Back to courses
+          </button>
+
+          <article className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+            <header className="mb-6 border-b border-zinc-100 pb-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
+                  Module {selectedModule.id}
+                </span>
+                <span
+                  className="rounded-full px-3 py-1 text-xs font-semibold"
+                  style={{
+                    backgroundColor: `${selectedModule.color}20`,
+                    color: selectedModule.color,
+                  }}
+                >
+                  {selectedModule.progress}% complete
+                </span>
+                <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
+                  {selectedModule.duration}
+                </span>
+              </div>
+              <h1 className="mt-4 text-3xl font-bold tracking-tight text-zinc-900">
+                {selectedModule.title}
+              </h1>
+              <p className="mt-2 text-zinc-600">{selectedModule.description}</p>
+            </header>
+
+            <ModuleContentViewer
+              blocks={selectedModule.blocks}
+              className="space-y-5"
+            />
+          </article>
+        </main>
+
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F9FAFB] font-sans text-zinc-900">
       <Header />
@@ -192,39 +311,19 @@ const Workspace = () => {
           </div>
         </div>
 
-        <div className="mb-6 flex items-end justify-between">
-          <h2 className="text-3xl font-black tracking-tight">Course Modules</h2>
+        <div className="mb-10 flex items-end justify-between">
+          <h2 className="text-3xl font-black tracking-tight">
+            Educational Programs
+          </h2>
         </div>
 
-        <div className="space-y-8">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           {courseModules.map((module) => (
-            <article
+            <CourseCard
               key={module.id}
-              className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-8"
-            >
-              <header className="mb-6 border-b border-zinc-100 pb-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
-                    Module {module.id}
-                  </span>
-                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                    {module.progress}% complete
-                  </span>
-                  <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
-                    {module.duration}
-                  </span>
-                </div>
-                <h3 className="mt-4 text-2xl font-bold tracking-tight text-zinc-900">
-                  {module.title}
-                </h3>
-                <p className="mt-2 text-zinc-600">{module.description}</p>
-              </header>
-
-              <ModuleContentViewer
-                blocks={module.blocks}
-                className="space-y-4"
-              />
-            </article>
+              module={module}
+              onClick={() => setSelectedModuleId(module.id)}
+            />
           ))}
         </div>
       </main>
