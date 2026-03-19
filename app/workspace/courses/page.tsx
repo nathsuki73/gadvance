@@ -3,10 +3,7 @@
 import React, { useMemo, useState } from "react";
 import Footer from "@/app/components/Footer";
 import Header from "@/app/components/Header";
-import {
-  ModuleContentViewer,
-  type ModuleBlock,
-} from "@/app/components/moduleViewer";
+import { BlockRenderer, type ModuleBlock } from "@/app/components/moduleViewer";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -105,30 +102,31 @@ const courseModules: CourseModule[] = [
     icon: "briefcase",
     blocks: [
       {
-        id: "m2-section",
-        type: "section",
-        title: "Leadership Skills",
-        description:
-          "Focus on confidence, decision making, and strategic communication.",
-        children: [
-          {
-            id: "m2-title",
-            type: "title",
-            text: "Leading Teams with Clarity",
-            level: 3,
-          },
-          {
-            id: "m2-para",
-            type: "paragraph",
-            text: "Effective leaders align team goals, create trust, and communicate expectations consistently.",
-          },
-        ],
+        id: "m2-title",
+        type: "title",
+        text: "Module 2: Leadership Skills",
+        level: 2,
+      },
+      {
+        id: "m2-para",
+        type: "paragraph",
+        text: "Focus on confidence, decision making, strategic communication, and mentorship pathways.",
       },
       {
         id: "m2-video",
         type: "video",
         title: "Women Leaders in Practice",
         url: "https://www.youtube.com/watch?v=Q0sZc0r2B5Y",
+      },
+      {
+        id: "m2-quiz",
+        type: "quiz",
+        question: "Which skill most directly improves team alignment?",
+        options: [
+          "Clear communication",
+          "Avoiding feedback",
+          "Working in isolation",
+        ],
       },
     ],
   },
@@ -141,7 +139,7 @@ const courseModules: CourseModule[] = [
     duration: "5 weeks",
     enrolled: "10,200",
     tag: "Legal",
-    accent: "#a855f7",
+    accent: "#10b981",
     icon: "target",
     blocks: [
       {
@@ -166,6 +164,14 @@ const courseModules: CourseModule[] = [
           "Immediately publish details on social media",
         ],
       },
+      {
+        id: "m3-game",
+        type: "game",
+        title: "Policy Path Simulator",
+        description:
+          "Practice choosing reporting paths in realistic scenarios.",
+        href: "#",
+      },
     ],
   },
   {
@@ -181,24 +187,35 @@ const courseModules: CourseModule[] = [
     icon: "wellness",
     blocks: [
       {
-        id: "m4-section",
-        type: "section",
-        title: "Wellness Toolkit",
-        children: [
-          {
-            id: "m4-para",
-            type: "paragraph",
-            text: "Small daily routines such as reflection, movement, and boundary setting reduce long-term stress load.",
-          },
-          {
-            id: "m4-game",
-            type: "game",
-            title: "Stress Reset Simulator",
-            description:
-              "Choose healthy responses in realistic day-to-day stress situations.",
-            href: "#",
-          },
-        ],
+        id: "m4-title",
+        type: "title",
+        text: "Module 4: Wellness Toolkit",
+        level: 2,
+      },
+      {
+        id: "m4-para",
+        type: "paragraph",
+        text: "Small daily routines such as reflection, movement, and boundary setting reduce long-term stress load.",
+      },
+      {
+        id: "m4-video",
+        type: "video",
+        title: "Resilience Basics",
+        url: "https://www.youtube.com/watch?v=hnpQrMqDoqE",
+      },
+      {
+        id: "m4-quiz",
+        type: "quiz",
+        question: "Which action supports sustainable stress recovery?",
+        options: ["Sleep routine", "Skipping meals", "Overworking"],
+      },
+      {
+        id: "m4-game",
+        type: "game",
+        title: "Stress Reset Simulator",
+        description:
+          "Choose healthy responses in realistic day-to-day stress situations.",
+        href: "#",
       },
     ],
   },
@@ -230,26 +247,19 @@ const getBlockLabel = (block: ModuleBlock): string => {
   }
 };
 
-const buildModuleNavItems = (
-  blocks: ModuleBlock[],
-  prefix = "",
-): ModuleNavItem[] => {
-  return blocks.flatMap((block, index) => {
-    const idBase =
-      typeof block.id === "string" || typeof block.id === "number"
-        ? String(block.id)
-        : `${prefix}${index}`;
-    const current: ModuleNavItem = {
-      id: idBase,
-      label: getBlockLabel(block),
-    };
+const getBlockAnchorId = (block: ModuleBlock, index: number): string => {
+  const rawId =
+    typeof block.id === "string" || typeof block.id === "number"
+      ? String(block.id)
+      : `${block.type}-${index}`;
+  return `module-block-${rawId}`;
+};
 
-    if (block.type === "section" && block.children?.length) {
-      return [current, ...buildModuleNavItems(block.children, `${idBase}-`)];
-    }
-
-    return [current];
-  });
+const buildModuleNavItems = (blocks: ModuleBlock[]): ModuleNavItem[] => {
+  return blocks.map((block, index) => ({
+    id: getBlockAnchorId(block, index),
+    label: getBlockLabel(block),
+  }));
 };
 
 const CourseCard = ({
@@ -350,6 +360,14 @@ const Workspace = () => {
 
   const displayedNavId = activeNavId || moduleNavItems[0]?.id || "";
 
+  const handleModuleNavClick = (navId: string) => {
+    setActiveNavId(navId);
+    const target = document.getElementById(navId);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   if (selectedModule) {
     return (
       <div className="min-h-screen bg-[#f4f4f6] font-sans text-zinc-900">
@@ -401,7 +419,7 @@ const Workspace = () => {
                       <button
                         key={item.id}
                         type="button"
-                        onClick={() => setActiveNavId(item.id)}
+                        onClick={() => handleModuleNavClick(item.id)}
                         className="w-full rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
                         style={
                           isActive
@@ -424,11 +442,16 @@ const Workspace = () => {
                 </div>
               </aside>
 
-              <div>
-                <ModuleContentViewer
-                  blocks={selectedModule.blocks}
-                  className="space-y-5"
-                />
+              <div className="space-y-5">
+                {selectedModule.blocks.map((block, index) => {
+                  const anchorId = getBlockAnchorId(block, index);
+                  const key = block.id ?? `${block.type}-${index}`;
+                  return (
+                    <section key={key} id={anchorId} className="scroll-mt-24">
+                      <BlockRenderer block={block} />
+                    </section>
+                  );
+                })}
               </div>
             </div>
           </article>
