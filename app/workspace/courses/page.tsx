@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Footer from "@/app/components/Footer";
 import Header from "@/app/components/Header";
 import {
@@ -27,10 +27,14 @@ type CourseModule = {
   enrolled: string;
   progress: number;
   tag: string;
-  status: "Active" | "Under Review" | "Draft";
   accent: string;
   icon: "globe" | "briefcase" | "target" | "wellness";
   blocks: ModuleBlock[];
+};
+
+type ModuleNavItem = {
+  id: string;
+  label: string;
 };
 
 const courseModules: CourseModule[] = [
@@ -43,7 +47,6 @@ const courseModules: CourseModule[] = [
     duration: "4 weeks",
     enrolled: "12,500",
     tag: "Foundational",
-    status: "Active",
     accent: "#14b8a6",
     icon: "globe",
     blocks: [
@@ -98,7 +101,6 @@ const courseModules: CourseModule[] = [
     duration: "6 weeks",
     enrolled: "8,900",
     tag: "Professional",
-    status: "Active",
     accent: "#f97316",
     icon: "briefcase",
     blocks: [
@@ -139,7 +141,6 @@ const courseModules: CourseModule[] = [
     duration: "5 weeks",
     enrolled: "10,200",
     tag: "Legal",
-    status: "Under Review",
     accent: "#a855f7",
     icon: "target",
     blocks: [
@@ -176,8 +177,7 @@ const courseModules: CourseModule[] = [
     duration: "3 weeks",
     enrolled: "15,800",
     tag: "Wellness",
-    status: "Draft",
-    accent: "#22c55e",
+    accent: "#ec4899",
     icon: "wellness",
     blocks: [
       {
@@ -211,6 +211,47 @@ const iconByType = {
   wellness: Heart,
 } as const;
 
+const getBlockLabel = (block: ModuleBlock): string => {
+  switch (block.type) {
+    case "title":
+      return "Title";
+    case "section":
+      return "Section";
+    case "paragraph":
+      return "Paragraph";
+    case "video":
+      return "Video";
+    case "quiz":
+      return "Quiz";
+    case "game":
+      return "Game";
+    default:
+      return "Block";
+  }
+};
+
+const buildModuleNavItems = (
+  blocks: ModuleBlock[],
+  prefix = "",
+): ModuleNavItem[] => {
+  return blocks.flatMap((block, index) => {
+    const idBase =
+      typeof block.id === "string" || typeof block.id === "number"
+        ? String(block.id)
+        : `${prefix}${index}`;
+    const current: ModuleNavItem = {
+      id: idBase,
+      label: getBlockLabel(block),
+    };
+
+    if (block.type === "section" && block.children?.length) {
+      return [current, ...buildModuleNavItems(block.children, `${idBase}-`)];
+    }
+
+    return [current];
+  });
+};
+
 const CourseCard = ({
   module,
   onClick,
@@ -219,12 +260,6 @@ const CourseCard = ({
   onClick: () => void;
 }) => {
   const Icon = iconByType[module.icon];
-
-  const statusClasses: Record<CourseModule["status"], string> = {
-    Active: "bg-emerald-100 text-emerald-700",
-    "Under Review": "bg-amber-100 text-amber-700",
-    Draft: "bg-zinc-200 text-zinc-600",
-  };
 
   return (
     <article className="group flex flex-col gap-5 rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm transition-all hover:border-zinc-300 hover:shadow-md">
@@ -239,16 +274,11 @@ const CourseCard = ({
           <span
             className="rounded-full px-2.5 py-1 text-xs font-semibold"
             style={{
-              backgroundColor: `${module.accent}20`,
-              color: module.accent,
+              backgroundColor: "#bceee6",
+              color: "#056f64",
             }}
           >
             {module.tag}
-          </span>
-          <span
-            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClasses[module.status]}`}
-          >
-            {module.status}
           </span>
         </div>
       </div>
@@ -264,11 +294,11 @@ const CourseCard = ({
 
       <div className="flex items-center gap-5 text-[1.05rem] text-zinc-500">
         <span className="inline-flex items-center gap-1.5">
-          <Clock3 size={15} className="text-[#8f36df]" />
+          <Clock3 size={15} className="text-zinc-500" />
           {module.duration}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <Users size={15} className="text-[#8f36df]" />
+          <Users size={15} className="text-zinc-500" />
           {module.enrolled} enrolled
         </span>
       </div>
@@ -295,7 +325,8 @@ const CourseCard = ({
         <button
           type="button"
           onClick={onClick}
-          className="w-full rounded-lg bg-[#14b8a6] px-4 py-2.5 text-center text-base font-semibold text-white transition-colors hover:bg-[#0d9f8e]"
+          className="w-full rounded-lg px-4 py-2.5 text-center text-base font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ backgroundColor: module.accent }}
         >
           <span className="inline-flex items-center gap-1.5">
             Continue Learning
@@ -309,8 +340,15 @@ const CourseCard = ({
 
 const Workspace = () => {
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
+  const [activeNavId, setActiveNavId] = useState<string>("");
 
   const selectedModule = courseModules.find((m) => m.id === selectedModuleId);
+  const moduleNavItems = useMemo(
+    () => (selectedModule ? buildModuleNavItems(selectedModule.blocks) : []),
+    [selectedModule],
+  );
+
+  const displayedNavId = activeNavId || moduleNavItems[0]?.id || "";
 
   if (selectedModule) {
     return (
@@ -319,7 +357,10 @@ const Workspace = () => {
 
         <main className="mx-auto max-w-7xl px-6 py-10">
           <button
-            onClick={() => setSelectedModuleId(null)}
+            onClick={() => {
+              setSelectedModuleId(null);
+              setActiveNavId("");
+            }}
             className="mb-6 inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
           >
             <ArrowLeft size={16} />
@@ -332,7 +373,10 @@ const Workspace = () => {
                 <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
                   Module {selectedModule.id}
                 </span>
-                <span className="rounded-full bg-[#efe2ff] px-3 py-1 text-xs font-semibold text-[#7f39d8]">
+                <span
+                  className="rounded-full px-3 py-1 text-xs font-semibold text-white"
+                  style={{ backgroundColor: selectedModule.accent }}
+                >
                   {selectedModule.progress}% complete
                 </span>
                 <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
@@ -345,10 +389,48 @@ const Workspace = () => {
               <p className="mt-2 text-zinc-600">{selectedModule.description}</p>
             </header>
 
-            <ModuleContentViewer
-              blocks={selectedModule.blocks}
-              className="space-y-5"
-            />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
+              <aside className="h-fit rounded-xl border border-zinc-200 bg-[#f7f8fa] p-4">
+                <h2 className="mb-3 text-xl font-bold text-zinc-900">
+                  Module Structure
+                </h2>
+                <div className="space-y-2">
+                  {moduleNavItems.map((item) => {
+                    const isActive = item.id === displayedNavId;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setActiveNavId(item.id)}
+                        className="w-full rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
+                        style={
+                          isActive
+                            ? {
+                                borderColor: selectedModule.accent,
+                                backgroundColor: `${selectedModule.accent}1A`,
+                                color: selectedModule.accent,
+                              }
+                            : {
+                                borderColor: "#e4e4e7",
+                                backgroundColor: "#ffffff",
+                                color: "#111827",
+                              }
+                        }
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </aside>
+
+              <div>
+                <ModuleContentViewer
+                  blocks={selectedModule.blocks}
+                  className="space-y-5"
+                />
+              </div>
+            </div>
           </article>
         </main>
 
@@ -392,7 +474,10 @@ const Workspace = () => {
             <CourseCard
               key={module.id}
               module={module}
-              onClick={() => setSelectedModuleId(module.id)}
+              onClick={() => {
+                setSelectedModuleId(module.id);
+                setActiveNavId("");
+              }}
             />
           ))}
         </div>
