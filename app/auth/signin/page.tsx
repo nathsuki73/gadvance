@@ -3,43 +3,61 @@
 import { useSession } from "next-auth/react";
 import { handleSignIn, handleSignOut } from "../../lib/auth";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
-import React from "react";
+import React, { useEffect } from "react"; // Added useEffect
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // Added useRouter
 
 const SignIn = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Handle Redirect Logic
+  useEffect(() => {
+    if (status === "authenticated") {
+      if (session?.user?.status === "onboarding") {
+        router.push("/onboarding");
+      } else {
+        router.push("/workspace/module");
+      }
+    }
+  }, [status, session, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white w-full max-w-5xl rounded-3xl shadow-sm flex overflow-hidden min-h-[600px]">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans">
+      <div className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-sm flex overflow-hidden min-h-[600px] border border-zinc-100">
         <div className="w-full lg:w-1/2 p-8 md:p-16 flex flex-col justify-between">
           <div>
             {/* Logo */}
             <div className="flex items-center gap-2 mb-12">
               <div className="w-8 h-8 bg-gradient-to-tr from-orange-400 to-teal-400 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">G</span>
+                <span className="text-white text-[10px] font-black">G</span>
               </div>
               <span className="font-bold text-gray-800 tracking-tight text-lg">
                 Gadvance
               </span>
             </div>
 
-            {session ? (
-              <div className="animate-in fade-in duration-500">
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                  Welcome back!
+            {status === "loading" ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-sm text-gray-400">Verifying session...</p>
+              </div>
+            ) : session ? (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <h1 className="text-4xl font-bold text-gray-900 mb-2 leading-tight">
+                  Welcome back, <br />
+                  <span className="text-teal-500">
+                    {session.user?.email?.split("@")[0]}
+                  </span>
                 </h1>
                 <p className="text-gray-400 mb-10 text-sm">
-                  Logged in as{" "}
-                  <span className="text-teal-600 font-medium">
-                    {session.user?.email}
-                  </span>
+                  Redirecting you to your workspace...
                 </p>
                 <button
-                  onClick={handleSignOut}
-                  className="px-8 py-3 text-white bg-red-500 rounded-xl font-semibold hover:bg-red-600 transition-all shadow-md"
+                  onClick={() => handleSignOut()}
+                  className="px-8 py-4 text-xs text-gray-400 font-bold uppercase tracking-widest hover:text-red-500 transition-all"
                 >
-                  Sign Out
+                  Switch Account
                 </button>
               </div>
             ) : (
@@ -51,13 +69,16 @@ const SignIn = () => {
                   Sign in to access your projects and settings.
                 </p>
 
-                <form className="space-y-4">
+                <form
+                  className="space-y-4"
+                  onSubmit={(e) => e.preventDefault()}
+                >
                   {/* Email */}
                   <div>
                     <input
                       type="email"
                       placeholder="Email Address"
-                      className="w-full px-4 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50"
+                      className="w-full px-4 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50"
                     />
                   </div>
 
@@ -66,9 +87,8 @@ const SignIn = () => {
                     <input
                       type="password"
                       placeholder="Password"
-                      className="w-full px-4 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50"
+                      className="w-full px-4 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50"
                     />
-                    {/* Forgot Password Link - Now Right Aligned Below Input */}
                     <div className="flex justify-end mt-2">
                       <Link
                         href="/auth/forgot-password"
@@ -82,7 +102,7 @@ const SignIn = () => {
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    className="w-full bg-[#00A8CC] hover:bg-[#0096b6] text-white px-8 py-4 rounded-xl text-sm font-bold transition-all shadow-lg shadow-teal-100 mt-2"
+                    className="w-full bg-[#00A8CC] hover:bg-[#0096b6] text-white px-8 py-4 rounded-xl text-sm font-bold transition-all shadow-lg shadow-teal-100 mt-2 active:scale-[0.98]"
                   >
                     Sign In
                   </button>
@@ -90,7 +110,7 @@ const SignIn = () => {
                   {/* Divider */}
                   <div className="relative flex items-center py-6">
                     <div className="flex-grow border-t border-gray-100"></div>
-                    <span className="flex-shrink mx-4 text-gray-300 text-xs uppercase tracking-widest">
+                    <span className="flex-shrink mx-4 text-gray-300 text-[10px] uppercase tracking-widest font-bold">
                       Or continue with
                     </span>
                     <div className="flex-grow border-t border-gray-100"></div>
@@ -102,12 +122,11 @@ const SignIn = () => {
             )}
           </div>
 
-          {!session && (
+          {!session && status !== "loading" && (
             <p className="text-sm text-gray-500 mt-8">
               Don't have an account?{" "}
               <Link
                 href="/auth/signup"
-                replace
                 className="text-teal-600 font-bold hover:underline"
               >
                 Create Account

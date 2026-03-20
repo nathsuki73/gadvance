@@ -1,308 +1,230 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence } from "framer-motion";
-import { CheckCircle2 } from "lucide-react";
-import PhaseWrapper from "@/app/components/PhaseWrapper";
+import { useRouter } from "next/navigation";
+import { GoogleButton } from "@/app/components/ui/GoogleButton";
+import { handleSignIn } from "../../lib/auth";
+import { handleRegistration } from "./actions";
+import { z } from "zod";
+import { useSession } from "next-auth/react";
+
+const signUpSchema = z
+  .object({
+    email: z.string().email("Invalid email address"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 const SignUp = () => {
-  const [step, setStep] = useState(1);
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    middleName: "",
-    gender: "",
-    university: "",
-    degree: "",
-    yearLevel: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
 
-  // Data Constants
-  const universities = ["Laguna State Polytechnic University"];
-  const degrees = [
-    "BS Computer Science",
-    "BS Information Technology",
-    "BS Information Systems",
-    "BS Engineering",
-    "BS Education",
-    "BS Business Administration",
-  ];
-  const yearLevels = [
-    "1st Year",
-    "2nd Year",
-    "3rd Year",
-    "4th Year",
-    "Irregular",
-  ];
+  // Handle auto-redirect if session exists
+  useEffect(() => {
+    if (status === "authenticated") {
+      if (session?.user?.status === "onboarding") {
+        router.push("/onboarding");
+      } else {
+        router.push("/workspace/module");
+      }
+    }
+  }, [status, session, router]);
 
-  // Password Strength Logic
-  const passwordCriteria = {
-    length: formData.password.length >= 8,
-    uppercase: /[A-Z]/.test(formData.password),
-    number: /[0-9]/.test(formData.password),
-  };
-  const isPasswordStrong = Object.values(passwordCriteria).every(Boolean);
-
-  // Phase Validation
-  const isStep1Valid =
-    formData.firstName.length > 1 &&
-    formData.lastName.length > 1 &&
-    formData.gender !== "";
-  const isStep2Valid =
-    formData.university !== "" &&
-    formData.degree !== "" &&
-    formData.yearLevel !== "";
-  const isStep3Valid =
-    formData.email.includes("@") &&
-    isPasswordStrong &&
-    formData.password === formData.confirmPassword;
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (errors[e.target.name]) {
+      setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
+    }
   };
 
-  const nextStep = () => setStep((prev) => prev + 1);
-  const prevStep = () => setStep((prev) => prev - 1);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
 
-  // Reusable Tailwind classes for inputs
-  const inputStyle =
-    "w-full p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 outline-none focus:ring-2 focus:ring-zinc-200 transition-all text-zinc-700 placeholder-zinc-400";
+    const result = signUpSchema.safeParse(formData);
+    if (!result.success) {
+      const formattedErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        formattedErrors[String(issue.path[0])] = issue.message;
+      });
+      setErrors(formattedErrors);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await handleRegistration(formData.email);
+      if (response.success) {
+        setLoading(false);
+        router.push(
+          `/auth/verify-otp?context=signup&email=${encodeURIComponent(formData.email)}`,
+        );
+      } else {
+        setLoading(false);
+        setErrors({ email: response.error || "An error occurred" });
+      }
+    } catch (err) {
+      setLoading(false);
+      setErrors({ email: "Connection failed. Check your network." });
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans text-zinc-900">
       <div className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-sm flex overflow-hidden min-h-[650px] border border-zinc-100">
-        {/* Left Side: Onboarding Content */}
-        <div className="w-full lg:w-1/2 p-8 md:p-12 flex flex-col">
-          {/* Logo */}
-          <div className="flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 bg-gradient-to-tr from-orange-400 to-teal-400 rounded-full flex items-center justify-center text-white text-[10px] font-black">
-              G
+        <div className="w-full lg:w-1/2 p-8 md:p-16 flex flex-col justify-between">
+          <div>
+            {/* Logo */}
+            <div className="flex items-center gap-2 mb-10">
+              <div className="w-8 h-8 bg-gradient-to-tr from-orange-400 to-teal-400 rounded-full flex items-center justify-center">
+                <span className="text-white text-[10px] font-black">G</span>
+              </div>
+              <span className="font-bold text-gray-800 tracking-tight text-lg">
+                Gadvance
+              </span>
             </div>
-            <span className="font-bold text-gray-800 tracking-tight">
-              Gadvance
-            </span>
-          </div>
 
-          {/* Progress Bar */}
-          <div className="flex items-center justify-between mb-12 relative px-4">
-            <div className="absolute top-1/2 left-0 w-full h-[2px] bg-zinc-100 -translate-y-1/2 z-0" />
-            {[1, 2, 3].map((num) => (
-              <div
-                key={num}
-                className="relative z-10 flex flex-col items-center gap-2 bg-white px-2"
-              >
-                {step > num ? (
-                  <CheckCircle2
-                    className="text-teal-500 bg-white rounded-full"
-                    size={24}
-                  />
-                ) : (
-                  <div
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${step === num ? "border-teal-500 bg-teal-500 text-white" : "border-zinc-200 bg-white text-zinc-300"}`}
-                  >
-                    {step === num && (
-                      <div className="w-2 h-2 bg-white rounded-full" />
+            {/* --- ADDED LOADING STATE START --- */}
+            {status === "loading" ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-sm text-gray-400 font-medium">
+                  Verifying session...
+                </p>
+              </div>
+            ) : status === "authenticated" ? (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <h1 className="text-4xl font-bold text-gray-900 mb-2 leading-tight">
+                  Welcome back!
+                </h1>
+                <p className="text-gray-400 mb-10 text-sm">
+                  Redirecting you to your workspace...
+                </p>
+              </div>
+            ) : (
+              /* --- ADDED LOADING STATE END --- */
+              <>
+                <h1 className="text-4xl font-bold text-gray-900 mb-2 leading-tight">
+                  Create <br />{" "}
+                  <span className="text-teal-500">New Account</span>
+                </h1>
+                <p className="text-gray-400 mb-8 text-sm">
+                  Please fill in the details below to secure your account.
+                </p>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <input
+                      name="email"
+                      type="email"
+                      placeholder="Email Address"
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-4 rounded-xl border ${
+                        errors.email ? "border-red-400" : "border-gray-200"
+                      } focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50`}
+                    />
+                    {errors.email && (
+                      <p className="text-[10px] text-red-500 font-bold mt-1 ml-2 uppercase tracking-wider">
+                        {errors.email}
+                      </p>
                     )}
                   </div>
-                )}
-                <span
-                  className={`text-[10px] font-bold uppercase tracking-widest ${step === num ? "text-zinc-900" : "text-zinc-400"}`}
-                >
-                  Phase {num}
-                </span>
-              </div>
-            ))}
-          </div>
 
-          <div className="flex-grow">
-            <AnimatePresence mode="wait">
-              {step === 1 && (
-                <PhaseWrapper
-                  key="phase1"
-                  title={
-                    <>
-                      Tell us about <br />
-                      <span className="text-teal-500">yourself.</span>
-                    </>
-                  }
-                  primaryButtonText="Continue"
-                  isPrimaryDisabled={!isStep1Valid}
-                  onPrimaryClick={nextStep}
-                >
-                  <div className="grid grid-cols-2 gap-4">
-                    <input
-                      name="firstName"
-                      placeholder="First Name"
-                      className={inputStyle}
-                      onChange={handleInputChange}
-                    />
-                    <input
-                      name="lastName"
-                      placeholder="Last Name"
-                      className={inputStyle}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <input
-                    name="middleName"
-                    placeholder="Middle Name (Optional)"
-                    className={inputStyle}
-                    onChange={handleInputChange}
-                  />
-                  <select
-                    name="gender"
-                    value={formData.gender}
-                    className={inputStyle}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
-                </PhaseWrapper>
-              )}
-
-              {step === 2 && (
-                <PhaseWrapper
-                  key="phase2"
-                  title={
-                    <>
-                      Your Academic <br />
-                      <span className="text-orange-500">Profile.</span>
-                    </>
-                  }
-                  primaryButtonText="Next Phase"
-                  isPrimaryDisabled={!isStep2Valid}
-                  onPrimaryClick={nextStep}
-                  onBackClick={prevStep}
-                  showBackButton
-                >
-                  <select
-                    name="university"
-                    value={formData.university}
-                    className={inputStyle}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select University</option>
-                    {universities.map((u) => (
-                      <option key={u} value={u}>
-                        {u}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    name="degree"
-                    value={formData.degree}
-                    className={inputStyle}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select Course/Degree</option>
-                    {degrees.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    name="yearLevel"
-                    value={formData.yearLevel}
-                    className={inputStyle}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select Year Level</option>
-                    {yearLevels.map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </select>
-                </PhaseWrapper>
-              )}
-
-              {step === 3 && (
-                <PhaseWrapper
-                  key="phase3"
-                  title={
-                    <>
-                      Secure your <br />
-                      <span className="text-teal-500">account.</span>
-                    </>
-                  }
-                  primaryButtonText="Complete Sign Up"
-                  isPrimaryDisabled={!isStep3Valid}
-                  onBackClick={prevStep}
-                  showBackButton
-                >
-                  <input
-                    name="email"
-                    type="email"
-                    placeholder="Email Address"
-                    className={inputStyle}
-                    onChange={handleInputChange}
-                  />
-                  <div className="space-y-2">
+                  <div>
                     <input
                       name="password"
                       type="password"
                       placeholder="Password"
-                      className={inputStyle}
                       onChange={handleInputChange}
+                      className={`w-full px-4 py-4 rounded-xl border ${
+                        errors.password ? "border-red-400" : "border-gray-200"
+                      } focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50`}
                     />
-                    <div className="grid grid-cols-3 gap-2 px-1">
-                      <div
-                        className={`h-1 rounded-full ${passwordCriteria.length ? "bg-teal-500" : "bg-zinc-200"}`}
-                      />
-                      <div
-                        className={`h-1 rounded-full ${passwordCriteria.uppercase ? "bg-teal-500" : "bg-zinc-200"}`}
-                      />
-                      <div
-                        className={`h-1 rounded-full ${passwordCriteria.number ? "bg-teal-500" : "bg-zinc-200"}`}
-                      />
-                    </div>
-                    <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
-                      Must include 8+ chars, 1 uppercase, and 1 number
-                    </p>
+                    {errors.password && (
+                      <p className="text-[10px] text-red-500 font-bold mt-1 ml-2 uppercase tracking-wider">
+                        {errors.password}
+                      </p>
+                    )}
                   </div>
-                  <input
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="Confirm Password"
-                    className={inputStyle}
-                    onChange={handleInputChange}
-                  />
-                </PhaseWrapper>
-              )}
-            </AnimatePresence>
+
+                  <div>
+                    <input
+                      name="confirmPassword"
+                      type="password"
+                      placeholder="Confirm Password"
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-4 rounded-xl border ${
+                        errors.confirmPassword
+                          ? "border-red-400"
+                          : "border-gray-200"
+                      } focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-gray-600 placeholder-gray-400 bg-gray-50/50`}
+                    />
+                    {errors.confirmPassword && (
+                      <p className="text-[10px] text-red-500 font-bold mt-1 ml-2 uppercase tracking-wider">
+                        {errors.confirmPassword}
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-[#00A8CC] hover:bg-[#0096b6] text-white px-8 py-4 rounded-xl text-sm font-bold transition-all shadow-lg shadow-teal-100 mt-2 active:scale-[0.98] disabled:opacity-70"
+                  >
+                    {loading ? "Creating Account..." : "Sign Up"}
+                  </button>
+
+                  <div className="relative flex items-center py-6">
+                    <div className="flex-grow border-t border-gray-100"></div>
+                    <span className="flex-shrink mx-4 text-gray-300 text-[10px] uppercase tracking-widest font-bold">
+                      Or continue with
+                    </span>
+                    <div className="flex-grow border-t border-gray-100"></div>
+                  </div>
+
+                  <GoogleButton onClick={handleSignIn} />
+                </form>
+              </>
+            )}
           </div>
 
-          <p className="text-xs text-zinc-400 text-center mt-8">
-            Already have an account?{" "}
-            <Link
-              href="/auth/signin"
-              className="text-teal-600 font-black hover:underline"
-            >
-              Sign In
-            </Link>
-          </p>
+          {!session && status !== "loading" && (
+            <p className="text-sm text-gray-500 mt-8">
+              Already have an account?{" "}
+              <Link
+                href="/auth/signin"
+                className="text-teal-600 font-bold hover:underline"
+              >
+                Sign In
+              </Link>
+            </p>
+          )}
         </div>
 
         {/* Right Side: Decorative Panel */}
         <div className="hidden lg:block lg:w-1/2 p-6">
           <div className="w-full h-full bg-gradient-to-br from-[#4fd1c5] to-[#00a8cc] rounded-[2.5rem] flex flex-col items-center justify-center p-12 text-white text-center">
-            <h2 className="text-4xl font-black mb-6">
-              Start your <br />
-              journey.
-            </h2>
-            <p className="opacity-80 font-medium leading-relaxed">
-              Unlock specialized courses, community insights, and global
-              networking designed for the next generation of leaders.
+            <h2 className="text-3xl font-bold mb-4">Focus on your growth.</h2>
+            <p className="opacity-80 font-light leading-relaxed">
+              Join thousands of students and professionals building the future
+              of SaaS with Gadvance.
             </p>
           </div>
         </div>
