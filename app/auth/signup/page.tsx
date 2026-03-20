@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import { handleSignIn } from "../../lib/auth";
 import { handleRegistration } from "./actions";
 import { z } from "zod"; // 1. Import Zod
+import { useSession } from "next-auth/react";
 
 // 2. Define the validation schema
 const signUpSchema = z
@@ -27,12 +28,24 @@ const signUpSchema = z
 const SignUp = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { data: session, status } = useSession();
   const [errors, setErrors] = useState<Record<string, string>>({}); // State for errors
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     confirmPassword: "",
   });
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      // Check the status we stored in the JWT
+      if (session?.user?.status === "onboarding") {
+        router.push("/onboarding");
+      } else {
+        router.push("/workspace/module");
+      }
+    }
+  }, [status, session, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
