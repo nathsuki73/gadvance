@@ -8,22 +8,31 @@ const ModulePage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Handle redirects inside useEffect
   useEffect(() => {
+    // 1. If not logged in, go to sign in
     if (status === "unauthenticated") {
       router.push("/auth/signin");
-    } else if (
-      status === "authenticated" &&
-      session?.user?.status === "onboarding"
-    ) {
+      return;
+    }
+
+    // 2. STATED INTENT: If status is onboarding, FORCE redirect to onboarding
+    if (status === "authenticated" && session?.user?.status === "onboarding") {
+      console.log("User is in onboarding state, redirecting...");
       router.push("/onboarding");
     }
   }, [status, session, router]);
 
-  // Show loading state
-  if (status === "loading") {
+  // 3. DO NOT RENDER THE UI if the user shouldn't be here
+  if (status === "loading" || session?.user?.status === "onboarding") {
     return (
-      <div className="p-8 text-center text-gray-500">Loading Session...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
+            Synchronizing Workspace...
+          </p>
+        </div>
+      </div>
     );
   }
 

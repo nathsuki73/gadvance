@@ -15,9 +15,38 @@ export const authOptions: NextAuthOptions = {
   ],
   secret: nextAuthSecret,
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session, profile }) {
+      // 1. Initial Login
       if (user) {
-        // Fetch both status and profile info in one go
+        const [rows]: any = await pool.query(
+          `SELECT u.status, p.first_name, p.last_name 
+       FROM users u 
+       LEFT JOIN profiles p ON u.id = p.user_id 
+       WHERE u.email = ?`,
+          [user.email],
+        );
+
+        if (rows.length > 0 && rows[0].first_name) {
+          // User already exists in DB with a profile
+          token.status = rows[0].status;
+          token.name = `${rows[0].first_name} ${rows[0].last_name}`;
+        } else {
+          // NEW USER or NO PROFILE YET:
+          // Grab names from the Google Profile to populate the form
+          const googleProfile = profile as any;
+          token.status = rows[0]?.status || "onboarding";
+
+          // We set the token name from Google so Onboarding.tsx can see it
+          if (googleProfile) {
+            token.name = `${googleProfile.given_name} ${googleProfile.family_name}`;
+          } else {
+            token.name = "New Student";
+          }
+        }
+      }
+
+      // 2. Handle the 'update' trigger (No changes needed here)
+      if (trigger === "update") {
         const [rows]: any = await pool.query(
           `SELECT u.status, p.first_name, p.last_name 
        FROM users u 
@@ -26,13 +55,20 @@ export const authOptions: NextAuthOptions = {
           [token.email],
         );
 
-        if (rows.length > 0) {
+        if (rows[0]) {
           token.status = rows[0].status;
-          // Combine names into a single string for easy use
-          token.name = `${rows[0].first_name} ${rows[0].last_name}`.trim();
+          token.name = `${rows[0].first_name} ${rows[0].last_name}`;
         }
       }
+
       return token;
+    },
+    async session({ session, token }: any) {
+      if (session?.user) {
+        session.user.status = token.status; // Now frontend can see 'onboarding'
+        session.user.name = token.name; // Fixes the 'null' name issue
+      }
+      return session;
     },
     async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
@@ -47,7 +83,7 @@ export const authOptions: NextAuthOptions = {
           if (rows.length === 0) {
             // Get the 'user' role ID (usually 2 based on your previous SQL)
             const [roleRows]: any = await pool.query(
-              "SELECT id FROM roles WHERE name = 'user' LIMIT 1",
+              "SELECT id FROM roles WHERE name = 'student' LIMIT 1",
             );
             const roleId = roleRows[0]?.id || 2;
 
@@ -55,19 +91,6 @@ export const authOptions: NextAuthOptions = {
             const [userResult]: any = await pool.query(
               "INSERT INTO users (email, role_id, status) VALUES (?, ?, 'onboarding')",
               [user.email, roleId],
-            );
-
-            // 4. Insert into the existing profiles table using the new user's ID
-            const newUserId = userResult.insertId;
-
-            const googleProfile = profile as any;
-            await pool.query(
-              "INSERT INTO profiles (user_id, first_name, last_name) VALUES (?, ?, ?)",
-              [
-                newUserId,
-                googleProfile?.given_name,
-                googleProfile?.family_name,
-              ],
             );
           }
 
