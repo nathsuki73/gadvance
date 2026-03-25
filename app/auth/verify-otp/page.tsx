@@ -6,6 +6,12 @@ import { ShieldCheck, ArrowLeft, Mail, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { verifyOTP } from "../signup/actions";
 
+const formatDuration = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+};
+
 const OTPContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,7 +55,12 @@ const OTPContent = () => {
   // 2. OTP Input State & Refs
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [attemptsLeft, setAttemptsLeft] = useState<number | null>(null);
+  const [blockSecondsRemaining, setBlockSecondsRemaining] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const isBlocked = blockSecondsRemaining > 0;
 
   const handleChange = (value: string, index: number) => {
     if (isNaN(Number(value))) return;
@@ -82,9 +93,19 @@ const OTPContent = () => {
     return () => clearInterval(interval);
   }, [timer]);
 
+  useEffect(() => {
+    if (!isBlocked) return;
+
+    const interval = setInterval(() => {
+      setBlockSecondsRemaining((prev) => Math.max(prev - 1, 0));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isBlocked]);
+
   const handleVerify = async () => {
     const fullCode = otp.join("");
-    if (fullCode.length < 6) return;
+    if (fullCode.length < 6 || isBlocked) return;
 
     setLoading(true);
 
@@ -94,15 +115,20 @@ const OTPContent = () => {
 
       if (result.success) {
         // 3. Success! Move to next page
+        setStatusMessage(null);
+        setAttemptsLeft(null);
+        setBlockSecondsRemaining(0);
         router.push(currentUI.nextPath);
       } else {
-        // 4. Handle errors (Invalid or Expired)
-        alert(result.error);
+        // 4. Render verification status in the UI
+        setStatusMessage(result.error);
+        setAttemptsLeft(result.attemptsLeft ?? null);
+        setBlockSecondsRemaining(result.blockSecondsRemaining ?? 0);
         setOtp(["", "", "", "", "", ""]); // Clear inputs
         inputRefs.current[0]?.focus(); // Reset focus
       }
     } catch (err) {
-      alert("Something went wrong. Please try again.");
+      setStatusMessage("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -168,11 +194,27 @@ const OTPContent = () => {
 
         <button
           onClick={handleVerify}
-          disabled={loading || otp.join("").length < 6}
+          disabled={loading || isBlocked || otp.join("").length < 6}
           className="w-full bg-[#00A8CC] hover:bg-[#0096b6] text-white py-4 rounded-xl font-bold transition-all mb-6 shadow-lg shadow-teal-100 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none disabled:active:scale-100"
         >
           {loading ? "Verifying..." : currentUI.button}
         </button>
+
+        {statusMessage && (
+          <div className="mb-6 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-left">
+            <p className="text-sm font-semibold text-rose-700">{statusMessage}</p>
+            {isBlocked && (
+              <p className="mt-1 text-xs font-bold text-rose-600">
+                Block ends in {formatDuration(blockSecondsRemaining)}
+              </p>
+            )}
+            {!isBlocked && attemptsLeft !== null && (
+              <p className="mt-1 text-xs font-bold text-rose-600">
+                Remaining attempts: {attemptsLeft}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Resend Logic */}
         <div className="flex flex-col items-center gap-4">
@@ -182,8 +224,11 @@ const OTPContent = () => {
                 setTimer(60);
                 setCanResend(false);
                 setOtp(["", "", "", "", "", ""]);
+                setStatusMessage(null);
+                setAttemptsLeft(null);
               }}
-              className="text-teal-600 font-black text-sm hover:underline"
+              disabled={isBlocked}
+              className="text-teal-600 font-black text-sm hover:underline disabled:opacity-50 disabled:no-underline"
             >
               Resend Code
             </button>
