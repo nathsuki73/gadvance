@@ -1,4 +1,5 @@
 import pool from "@/app/lib/db";
+import { randomUUID } from "crypto";
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
@@ -15,49 +16,72 @@ export const authOptions: NextAuthOptions = {
   ],
   secret: nextAuthSecret,
   callbacks: {
-    async jwt({ token, user, trigger, session, profile }) {
+    async jwt({ token, user, profile, trigger }) {
       // 1. Initial Login
       if (user) {
         const [rows]: any = await pool.query(
-          `SELECT u.status, p.first_name, p.last_name 
-       FROM users u 
-       LEFT JOIN profiles p ON u.id = p.user_id 
-       WHERE u.email = ?`,
+          `SELECT u.id, u.status, p.first_name, p.last_name 
+          FROM users u 
+          LEFT JOIN profiles p ON u.id = p.user_id 
+          WHERE u.email = ?`,
           [user.email],
         );
 
-        if (rows.length > 0 && rows[0].first_name) {
-          // User already exists in DB with a profile
-          token.status = rows[0].status;
-          token.name = `${rows[0].first_name} ${rows[0].last_name}`;
-        } else {
-          // NEW USER or NO PROFILE YET:
-          // Grab names from the Google Profile to populate the form
-          const googleProfile = profile as any;
-          token.status = rows[0]?.status || "onboarding";
+        const userId = rows[0]?.id;
 
-          // We set the token name from Google so Onboarding.tsx can see it
-          if (googleProfile) {
-            token.name = `${googleProfile.given_name} ${googleProfile.family_name}`;
-          } else {
-            token.name = "New Student";
-          }
+        // Assign user info to JWT token
+        token.status = rows[0]?.status || "onboarding";
+        token.name =
+          rows[0]?.first_name && rows[0]?.last_name
+            ? `${rows[0].first_name} ${rows[0].last_name}`
+            : profile
+              ? `${(profile as any).given_name || profile.name || ""} ${(profile as any).family_name || ""}`.trim()
+              : "New Student";
+
+        // -----------------------------
+        // CREATE user_session record
+        // -----------------------------
+        if (userId) {
+          const sessionToken = randomUUID(); // unique session ID
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 7); // session valid for 7 days
+
+          await pool.query(
+            `INSERT INTO user_sessions 
+              (user_id, session_token, device_name, ip_address, user_agent, expires_at)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+              userId,
+              sessionToken,
+              "unknown", // you can replace with real device name
+              "unknown", // replace with real IP if you have access
+              "unknown", // replace with user-agent from request headers
+              expiresAt,
+            ],
+          );
+
+          // Attach session token to JWT so frontend can reference it
+          token.sessionToken = sessionToken;
         }
       }
 
-      // 2. Handle the 'update' trigger (No changes needed here)
-      if (trigger === "update") {
+      // Session update from the client (e.g., after onboarding) should refresh
+      // status/name from DB without creating a new user_session row.
+      if (trigger === "update" && token?.email) {
         const [rows]: any = await pool.query(
-          `SELECT u.status, p.first_name, p.last_name 
-       FROM users u 
-       LEFT JOIN profiles p ON u.id = p.user_id 
-       WHERE u.email = ?`,
+          `SELECT u.status, p.first_name, p.last_name
+           FROM users u
+           LEFT JOIN profiles p ON u.id = p.user_id
+           WHERE u.email = ?
+           LIMIT 1`,
           [token.email],
         );
 
-        if (rows[0]) {
-          token.status = rows[0].status;
-          token.name = `${rows[0].first_name} ${rows[0].last_name}`;
+        if (rows?.length) {
+          token.status = rows[0].status || token.status || "onboarding";
+          if (rows[0].first_name && rows[0].last_name) {
+            token.name = `${rows[0].first_name} ${rows[0].last_name}`;
+          }
         }
       }
 
