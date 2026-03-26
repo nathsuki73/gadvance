@@ -9,6 +9,8 @@ type QuizDisplayProps = {
   explanation?: string;
 };
 
+const VIOLATION_LOCK_MS = 15000;
+
 const getOptionText = (option: string | QuizOption): string => {
   if (typeof option === "string") {
     return option;
@@ -30,12 +32,56 @@ const preventClipboardShortcut = (event: React.KeyboardEvent<HTMLElement>) => {
   }
 };
 
+const getShortcutType = (
+  event: Pick<KeyboardEvent, "key" | "altKey" | "metaKey" | "shiftKey">,
+): "screenshot" | "altTab" | "windowsTab" | null => {
+  const key = event.key.toLowerCase();
+  const isScreenshotShortcut =
+    key === "printscreen" || (event.metaKey && event.shiftKey && key === "s");
+
+  if (isScreenshotShortcut) {
+    return "screenshot";
+  }
+
+  if (event.altKey && key === "tab") {
+    return "altTab";
+  }
+
+  if (event.metaKey && key === "tab") {
+    return "windowsTab";
+  }
+
+  return null;
+};
+
 const QuizDisplay = ({ question, options, explanation }: QuizDisplayProps) => {
   const [isOutOfFocus, setIsOutOfFocus] = useState(false);
+  const [lockUntil, setLockUntil] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const [violationCount, setViolationCount] = useState(0);
   const outOfFocusRef = useRef(false);
+  const lastShortcutAtRef = useRef<number | null>(null);
 
   useEffect(() => {
+    const incrementViolation = () => {
+      setViolationCount((current) => current + 1);
+      setLockUntil(Date.now() + VIOLATION_LOCK_MS);
+    };
+
+    const incrementFromBestSignal = () => {
+      const lastShortcutAt = lastShortcutAtRef.current;
+      const nowAt = Date.now();
+
+      if (lastShortcutAt && nowAt - lastShortcutAt <= 1500) {
+        incrementViolation();
+        lastShortcutAtRef.current = null;
+        return;
+      }
+
+      // Fallback: if browser does not expose OS shortcut keys, still count focus-loss attempts.
+      incrementViolation();
+    };
+
     const setFocusState = (nextOutOfFocus: boolean) => {
       if (outOfFocusRef.current === nextOutOfFocus) {
         return;
@@ -45,7 +91,7 @@ const QuizDisplay = ({ question, options, explanation }: QuizDisplayProps) => {
       setIsOutOfFocus(nextOutOfFocus);
 
       if (nextOutOfFocus) {
-        setViolationCount((current) => current + 1);
+        incrementFromBestSignal();
       }
     };
 
@@ -61,18 +107,60 @@ const QuizDisplay = ({ question, options, explanation }: QuizDisplayProps) => {
       setFocusState(document.hidden);
     };
 
+    const handleWindowKeyDown = (event: KeyboardEvent) => {
+      const violationType = getShortcutType(event);
+
+      if (!violationType) {
+        return;
+      }
+
+      lastShortcutAtRef.current = Date.now();
+
+      // Screenshot keys may not always trigger focus loss, so count them immediately.
+      if (violationType === "screenshot") {
+        incrementViolation();
+      }
+    };
+
     handleVisibilityChange();
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("blur", handleWindowBlur);
     window.addEventListener("focus", handleWindowFocus);
+    window.addEventListener("keydown", handleWindowKeyDown);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("blur", handleWindowBlur);
       window.removeEventListener("focus", handleWindowFocus);
+      window.removeEventListener("keydown", handleWindowKeyDown);
     };
   }, []);
+
+  useEffect(() => {
+    if (!lockUntil) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      const nextNow = Date.now();
+      setNow(nextNow);
+
+      if (nextNow >= lockUntil) {
+        window.clearInterval(interval);
+      }
+    }, 200);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [lockUntil]);
+
+  const remainingLockSeconds = lockUntil
+    ? Math.max(0, Math.ceil((lockUntil - now) / 1000))
+    : 0;
+  const isTemporarilyLocked = Boolean(lockUntil && remainingLockSeconds > 0);
+  const isContentHidden = isOutOfFocus || isTemporarilyLocked;
 
   return (
     <article
@@ -83,18 +171,25 @@ const QuizDisplay = ({ question, options, explanation }: QuizDisplayProps) => {
       onContextMenu={preventClipboardAction}
       onKeyDown={preventClipboardShortcut}
     >
-      {violationCount > 0 ? (
-        <p className="mb-3 rounded-lg border border-amber-300 bg-amber-100 px-3 py-2 text-xs font-medium text-amber-900">
-          Warning: quiz lost focus {violationCount}{" "}
-          {violationCount === 1 ? "time" : "times"}.
+      <div className="mb-3 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-700">
+        <p className="mb-1 font-semibold text-zinc-900">
+          Security counter (temporary student view)
         </p>
-      ) : null}
+        <p>Total violations: {violationCount}</p>
+        <p>Includes screenshot, Alt+Tab, and Win+Tab violations.</p>
+        <p className="text-zinc-500">Final product: visible to admins only.</p>
+        {violationCount > 0 ? (
+          <p className="mt-1 font-medium text-amber-700">
+            Warning: suspicious activity detected.
+          </p>
+        ) : null}
+      </div>
 
       <div
         className={
-          isOutOfFocus ? "pointer-events-none select-none blur-sm" : ""
+          isContentHidden ? "pointer-events-none select-none blur-sm" : ""
         }
-        aria-hidden={isOutOfFocus}
+        aria-hidden={isContentHidden}
       >
         <h3 className="text-base font-semibold text-zinc-900 md:text-lg">
           {question}
@@ -122,9 +217,11 @@ const QuizDisplay = ({ question, options, explanation }: QuizDisplayProps) => {
         ) : null}
       </div>
 
-      {isOutOfFocus ? (
+      {isContentHidden ? (
         <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-zinc-900/70 p-4 text-center text-sm font-medium text-white backdrop-blur-sm">
-          Quiz content is hidden while this tab is out of focus.
+          {isOutOfFocus
+            ? "Quiz content is hidden while this tab is out of focus."
+            : `Quiz content is temporarily hidden for ${remainingLockSeconds}s after suspicious shortcut use.`}
         </div>
       ) : null}
     </article>
