@@ -22,16 +22,6 @@ const preventClipboardAction = (event: React.SyntheticEvent) => {
   event.preventDefault();
 };
 
-const preventClipboardShortcut = (event: React.KeyboardEvent<HTMLElement>) => {
-  const key = event.key.toLowerCase();
-  const isClipboardShortcut =
-    (event.ctrlKey || event.metaKey) && ["c", "v", "x"].includes(key);
-
-  if (isClipboardShortcut) {
-    event.preventDefault();
-  }
-};
-
 const getShortcutType = (
   event: Pick<KeyboardEvent, "key" | "altKey" | "metaKey" | "shiftKey">,
 ): "screenshot" | "altTab" | "windowsTab" | null => {
@@ -59,6 +49,7 @@ const QuizDisplay = ({ question, options, explanation }: QuizDisplayProps) => {
   const [lockUntil, setLockUntil] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [violationCount, setViolationCount] = useState(0);
+  const [clipboardShortcutCount, setClipboardShortcutCount] = useState(0);
   const outOfFocusRef = useRef(false);
   const lastShortcutAtRef = useRef<number | null>(null);
 
@@ -108,6 +99,15 @@ const QuizDisplay = ({ question, options, explanation }: QuizDisplayProps) => {
     };
 
     const handleWindowKeyDown = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+      const isClipboardShortcut =
+        (event.ctrlKey || event.metaKey) && ["c", "v", "x"].includes(key);
+
+      if (isClipboardShortcut) {
+        event.preventDefault();
+        setClipboardShortcutCount((current) => current + 1);
+      }
+
       const violationType = getShortcutType(event);
 
       if (!violationType) {
@@ -119,6 +119,7 @@ const QuizDisplay = ({ question, options, explanation }: QuizDisplayProps) => {
       // Screenshot keys may not always trigger focus loss, so count them immediately.
       if (violationType === "screenshot") {
         incrementViolation();
+        lastShortcutAtRef.current = null;
       }
     };
 
@@ -163,20 +164,14 @@ const QuizDisplay = ({ question, options, explanation }: QuizDisplayProps) => {
   const isContentHidden = isOutOfFocus || isTemporarilyLocked;
 
   return (
-    <article
-      className="relative rounded-2xl border border-zinc-200 bg-zinc-50 p-4 md:p-5"
-      onCopy={preventClipboardAction}
-      onCut={preventClipboardAction}
-      onPaste={preventClipboardAction}
-      onContextMenu={preventClipboardAction}
-      onKeyDown={preventClipboardShortcut}
-    >
+    <div className="space-y-3">
       <div className="mb-3 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-700">
         <p className="mb-1 font-semibold text-zinc-900">
           Security counter (temporary student view)
         </p>
         <p>Total violations: {violationCount}</p>
         <p>Includes screenshot, Alt+Tab, and Win+Tab violations.</p>
+        <p>Ctrl/Cmd + C/V/X attempts: {clipboardShortcutCount}</p>
         <p className="text-zinc-500">Final product: visible to admins only.</p>
         {violationCount > 0 ? (
           <p className="mt-1 font-medium text-amber-700">
@@ -185,46 +180,54 @@ const QuizDisplay = ({ question, options, explanation }: QuizDisplayProps) => {
         ) : null}
       </div>
 
-      <div
-        className={
-          isContentHidden ? "pointer-events-none select-none blur-sm" : ""
-        }
-        aria-hidden={isContentHidden}
+      <article
+        className="relative rounded-2xl border border-zinc-200 bg-zinc-50 p-4 md:p-5"
+        onCopy={preventClipboardAction}
+        onCut={preventClipboardAction}
+        onPaste={preventClipboardAction}
+        onContextMenu={preventClipboardAction}
       >
-        <h3 className="text-base font-semibold text-zinc-900 md:text-lg">
-          {question}
-        </h3>
-        <ul className="mt-4 space-y-2">
-          {options.map((option, index) => {
-            const text = getOptionText(option);
-            const optionKey =
-              typeof option === "string"
-                ? `${text}-${index}`
-                : (option.id ?? `${text}-${index}`);
+        <div
+          className={
+            isContentHidden ? "pointer-events-none select-none blur-sm" : ""
+          }
+          aria-hidden={isContentHidden}
+        >
+          <h3 className="text-base font-semibold text-zinc-900 md:text-lg">
+            {question}
+          </h3>
+          <ul className="mt-4 space-y-2">
+            {options.map((option, index) => {
+              const text = getOptionText(option);
+              const optionKey =
+                typeof option === "string"
+                  ? `${text}-${index}`
+                  : (option.id ?? `${text}-${index}`);
 
-            return (
-              <li
-                key={optionKey}
-                className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700"
-              >
-                {text}
-              </li>
-            );
-          })}
-        </ul>
-        {explanation ? (
-          <p className="mt-3 text-sm text-zinc-600">{explanation}</p>
-        ) : null}
-      </div>
-
-      {isContentHidden ? (
-        <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-zinc-900/70 p-4 text-center text-sm font-medium text-white backdrop-blur-sm">
-          {isOutOfFocus
-            ? "Quiz content is hidden while this tab is out of focus."
-            : `Quiz content is temporarily hidden for ${remainingLockSeconds}s after suspicious shortcut use.`}
+              return (
+                <li
+                  key={optionKey}
+                  className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700"
+                >
+                  {text}
+                </li>
+              );
+            })}
+          </ul>
+          {explanation ? (
+            <p className="mt-3 text-sm text-zinc-600">{explanation}</p>
+          ) : null}
         </div>
-      ) : null}
-    </article>
+
+        {isContentHidden ? (
+          <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-zinc-900/70 p-4 text-center text-sm font-medium text-white backdrop-blur-sm">
+            {isOutOfFocus
+              ? "Quiz content is hidden while this tab is out of focus."
+              : `Quiz content is temporarily hidden for ${remainingLockSeconds}s after suspicious shortcut use.`}
+          </div>
+        ) : null}
+      </article>
+    </div>
   );
 };
 
