@@ -1,11 +1,54 @@
 import pool from "@/app/lib/db";
 import { randomUUID } from "crypto";
+import { headers } from "next/headers";
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID!;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET!;
 const nextAuthSecret = process.env.NEXTAUTH_SECRET!;
+
+function toSingleHeaderValue(value: string | null): string | null {
+  if (!value) return null;
+  const first = value.split(",")[0]?.trim();
+  return first || null;
+}
+
+function inferDeviceName(
+  userAgent: string,
+  platformHint: string | null,
+): string {
+  const ua = userAgent.toLowerCase();
+  const platform = (platformHint || "").replace(/"/g, "").trim();
+
+  if (ua.includes("iphone")) return "iPhone";
+  if (ua.includes("ipad")) return "iPad";
+  if (ua.includes("android")) return "Android Device";
+  if (ua.includes("windows")) return "Windows PC";
+  if (ua.includes("mac os") || ua.includes("macintosh")) return "Mac";
+  if (ua.includes("linux")) return "Linux PC";
+
+  return platform || "Unknown Device";
+}
+
+async function getRequestMetadata() {
+  const h = await headers();
+
+  const userAgent = h.get("user-agent") || "unknown";
+  const forwardedFor = toSingleHeaderValue(h.get("x-forwarded-for"));
+  const realIp = toSingleHeaderValue(h.get("x-real-ip"));
+  const cfIp = toSingleHeaderValue(h.get("cf-connecting-ip"));
+  const ipAddress = forwardedFor || realIp || cfIp || "unknown";
+
+  const platformHint = h.get("sec-ch-ua-platform");
+  const deviceName = inferDeviceName(userAgent, platformHint);
+
+  return {
+    deviceName,
+    ipAddress,
+    userAgent,
+  };
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -45,19 +88,14 @@ export const authOptions: NextAuthOptions = {
           const sessionToken = randomUUID(); // unique session ID
           const expiresAt = new Date();
           expiresAt.setDate(expiresAt.getDate() + 7); // session valid for 7 days
+          const { deviceName, ipAddress, userAgent } =
+            await getRequestMetadata();
 
           await pool.query(
             `INSERT INTO user_sessions 
               (user_id, session_token, device_name, ip_address, user_agent, expires_at)
             VALUES (?, ?, ?, ?, ?, ?)`,
-            [
-              userId,
-              sessionToken,
-              "unknown", // you can replace with real device name
-              "unknown", // replace with real IP if you have access
-              "unknown", // replace with user-agent from request headers
-              expiresAt,
-            ],
+            [userId, sessionToken, deviceName, ipAddress, userAgent, expiresAt],
           );
 
           // Attach session token to JWT so frontend can reference it
