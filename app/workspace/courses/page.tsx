@@ -8,12 +8,14 @@ import {
   ArrowLeft,
   ArrowUpRight,
   Briefcase,
+  ChevronRight,
   Clock3,
   Globe,
   Heart,
   Search,
   Target,
   Users,
+  X,
 } from "lucide-react";
 
 type CourseModule = {
@@ -351,6 +353,7 @@ const CourseCard = ({
 const Workspace = () => {
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [activeNavId, setActiveNavId] = useState<string>("");
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const selectedModule = courseModules.find((m) => m.id === selectedModuleId);
   const moduleNavItems = useMemo(
@@ -366,6 +369,7 @@ const Workspace = () => {
     if (target) {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+    setIsMobileNavOpen(false);
   };
 
   if (selectedModule) {
@@ -378,6 +382,7 @@ const Workspace = () => {
             onClick={() => {
               setSelectedModuleId(null);
               setActiveNavId("");
+              setIsMobileNavOpen(false);
             }}
             className="mb-6 inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
           >
@@ -407,8 +412,21 @@ const Workspace = () => {
               <p className="mt-2 text-zinc-600">{selectedModule.description}</p>
             </header>
 
+            <button
+              type="button"
+              onClick={() => setIsMobileNavOpen(true)}
+              className={`fixed left-0 top-1/2 z-30 -translate-y-1/2 rounded-r-lg border border-l-0 border-zinc-200 bg-[#f7f8fa] p-2.5 text-zinc-700 shadow-sm transition-colors hover:bg-zinc-100 lg:hidden ${
+                isMobileNavOpen
+                  ? "pointer-events-none opacity-0"
+                  : "opacity-100"
+              }`}
+              aria-label="Open module structure"
+            >
+              <ChevronRight size={18} />
+            </button>
+
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
-              <aside className="sticky top-24 h-fit self-start rounded-xl border border-zinc-200 bg-[#f7f8fa] p-4">
+              <aside className="sticky top-24 hidden h-fit self-start rounded-xl border border-zinc-200 bg-[#f7f8fa] p-4 lg:block">
                 <h2 className="mb-3 text-xl font-bold text-zinc-900">
                   Module Structure
                 </h2>
@@ -453,6 +471,71 @@ const Workspace = () => {
                   );
                 })}
               </div>
+            </div>
+
+            <div
+              className={`fixed inset-0 z-40 transition-opacity duration-300 lg:hidden ${
+                isMobileNavOpen
+                  ? "opacity-100"
+                  : "pointer-events-none opacity-0"
+              }`}
+              aria-hidden={!isMobileNavOpen}
+            >
+              <button
+                type="button"
+                onClick={() => setIsMobileNavOpen(false)}
+                className="absolute inset-0 bg-black/35"
+                aria-label="Close module structure"
+              />
+
+              <aside
+                className={`absolute left-0 top-0 h-full w-[84%] max-w-sm border-r border-zinc-200 bg-[#f7f8fa] p-4 shadow-xl transition-transform duration-300 ${
+                  isMobileNavOpen ? "translate-x-0" : "-translate-x-full"
+                }`}
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-zinc-900">
+                    Module Structure
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileNavOpen(false)}
+                    className="rounded-md border border-zinc-300 bg-white p-1.5 text-zinc-700"
+                    aria-label="Close navigation panel"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {moduleNavItems.map((item) => {
+                    const isActive = item.id === displayedNavId;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => handleModuleNavClick(item.id)}
+                        className="w-full rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
+                        style={
+                          isActive
+                            ? {
+                                borderColor: selectedModule.accent,
+                                backgroundColor: `${selectedModule.accent}1A`,
+                                color: selectedModule.accent,
+                              }
+                            : {
+                                borderColor: "#e4e4e7",
+                                backgroundColor: "#ffffff",
+                                color: "#111827",
+                              }
+                        }
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </aside>
             </div>
           </article>
         </main>
@@ -500,6 +583,7 @@ const Workspace = () => {
               onClick={() => {
                 setSelectedModuleId(module.id);
                 setActiveNavId("");
+                setIsMobileNavOpen(false);
               }}
             />
           ))}

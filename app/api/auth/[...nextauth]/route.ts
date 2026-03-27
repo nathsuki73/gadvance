@@ -1,10 +1,54 @@
 import pool from "@/app/lib/db";
+import { randomUUID } from "crypto";
+import { headers } from "next/headers";
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID!;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET!;
 const nextAuthSecret = process.env.NEXTAUTH_SECRET!;
+
+function toSingleHeaderValue(value: string | null): string | null {
+  if (!value) return null;
+  const first = value.split(",")[0]?.trim();
+  return first || null;
+}
+
+function inferDeviceName(
+  userAgent: string,
+  platformHint: string | null,
+): string {
+  const ua = userAgent.toLowerCase();
+  const platform = (platformHint || "").replace(/"/g, "").trim();
+
+  if (ua.includes("iphone")) return "iPhone";
+  if (ua.includes("ipad")) return "iPad";
+  if (ua.includes("android")) return "Android Device";
+  if (ua.includes("windows")) return "Windows PC";
+  if (ua.includes("mac os") || ua.includes("macintosh")) return "Mac";
+  if (ua.includes("linux")) return "Linux PC";
+
+  return platform || "Unknown Device";
+}
+
+async function getRequestMetadata() {
+  const h = await headers();
+
+  const userAgent = h.get("user-agent") || "unknown";
+  const forwardedFor = toSingleHeaderValue(h.get("x-forwarded-for"));
+  const realIp = toSingleHeaderValue(h.get("x-real-ip"));
+  const cfIp = toSingleHeaderValue(h.get("cf-connecting-ip"));
+  const ipAddress = forwardedFor || realIp || cfIp || "unknown";
+
+  const platformHint = h.get("sec-ch-ua-platform");
+  const deviceName = inferDeviceName(userAgent, platformHint);
+
+  return {
+    deviceName,
+    ipAddress,
+    userAgent,
+  };
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -15,49 +59,67 @@ export const authOptions: NextAuthOptions = {
   ],
   secret: nextAuthSecret,
   callbacks: {
-    async jwt({ token, user, trigger, session, profile }) {
+    async jwt({ token, user, profile, trigger }) {
       // 1. Initial Login
       if (user) {
         const [rows]: any = await pool.query(
-          `SELECT u.status, p.first_name, p.last_name 
-       FROM users u 
-       LEFT JOIN profiles p ON u.id = p.user_id 
-       WHERE u.email = ?`,
+          `SELECT u.id, u.status, p.first_name, p.last_name 
+          FROM users u 
+          LEFT JOIN profiles p ON u.id = p.user_id 
+          WHERE u.email = ?`,
           [user.email],
         );
 
-        if (rows.length > 0 && rows[0].first_name) {
-          // User already exists in DB with a profile
-          token.status = rows[0].status;
-          token.name = `${rows[0].first_name} ${rows[0].last_name}`;
-        } else {
-          // NEW USER or NO PROFILE YET:
-          // Grab names from the Google Profile to populate the form
-          const googleProfile = profile as any;
-          token.status = rows[0]?.status || "onboarding";
+        const userId = rows[0]?.id;
 
-          // We set the token name from Google so Onboarding.tsx can see it
-          if (googleProfile) {
-            token.name = `${googleProfile.given_name} ${googleProfile.family_name}`;
-          } else {
-            token.name = "New Student";
-          }
+        // Assign user info to JWT token
+        token.status = rows[0]?.status || "onboarding";
+        token.name =
+          rows[0]?.first_name && rows[0]?.last_name
+            ? `${rows[0].first_name} ${rows[0].last_name}`
+            : profile
+              ? `${(profile as any).given_name || profile.name || ""} ${(profile as any).family_name || ""}`.trim()
+              : "New Student";
+
+        // -----------------------------
+        // CREATE user_session record
+        // -----------------------------
+        if (userId) {
+          const sessionToken = randomUUID(); // unique session ID
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 7); // session valid for 7 days
+          const { deviceName, ipAddress, userAgent } =
+            await getRequestMetadata();
+
+          await pool.query(
+            `INSERT INTO user_sessions 
+              (user_id, session_token, device_name, ip_address, user_agent, expires_at)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+            [userId, sessionToken, deviceName, ipAddress, userAgent, expiresAt],
+          );
+
+          // Attach session token to JWT so frontend can reference it
+          token.sessionToken = sessionToken;
         }
       }
 
-      // 2. Handle the 'update' trigger (No changes needed here)
-      if (trigger === "update") {
+      // Session update from the client (e.g., after onboarding) should refresh
+      // status/name from DB without creating a new user_session row.
+      if (trigger === "update" && token?.email) {
         const [rows]: any = await pool.query(
-          `SELECT u.status, p.first_name, p.last_name 
-       FROM users u 
-       LEFT JOIN profiles p ON u.id = p.user_id 
-       WHERE u.email = ?`,
+          `SELECT u.status, p.first_name, p.last_name
+           FROM users u
+           LEFT JOIN profiles p ON u.id = p.user_id
+           WHERE u.email = ?
+           LIMIT 1`,
           [token.email],
         );
 
-        if (rows[0]) {
-          token.status = rows[0].status;
-          token.name = `${rows[0].first_name} ${rows[0].last_name}`;
+        if (rows?.length) {
+          token.status = rows[0].status || token.status || "onboarding";
+          if (rows[0].first_name && rows[0].last_name) {
+            token.name = `${rows[0].first_name} ${rows[0].last_name}`;
+          }
         }
       }
 
