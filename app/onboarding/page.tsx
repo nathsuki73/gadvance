@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { finishOnboarding } from "./actions";
+import { submitOnboardingToLaravel } from "./actions";
 
 const Onboarding = () => {
   const { data: session, update, status } = useSession();
@@ -27,23 +27,29 @@ const Onboarding = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!session?.accessToken) {
+      alert("Session expired. Please log in again.");
+      return;
+    }
+
     setLoading(true);
-
     const formData = new FormData(e.currentTarget);
-    const data = {
-      firstName: formData.get("firstName") as string,
-      middleName: formData.get("middleName") as string,
-      lastName: formData.get("lastName") as string,
-    };
 
-    const result = await finishOnboarding(data);
+    try {
+      // Direct browser-to-Laravel call
+      await submitOnboardingToLaravel({
+        firstName: formData.get("firstName") as string,
+        middleName: formData.get("middleName") as string,
+        lastName: formData.get("lastName") as string,
+        token: session.accessToken,
+      });
 
-    if (result.success) {
-      // 2. Trigger NextAuth to re-run the JWT/Session callbacks
+      // Refresh the NextAuth session to pick up the 'active' status from Laravel
       await update();
-      // The useEffect above will detect the 'active' status and redirect automatically
-    } else {
-      alert(result.error || "Failed to save profile.");
+    } catch (error: any) {
+      // Displays the specific error from Laravel
+      alert(error.message || "An unexpected error occurred");
+    } finally {
       setLoading(false);
     }
   };

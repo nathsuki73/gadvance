@@ -4,49 +4,35 @@ import pool from "@/app/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-export async function finishOnboarding(data: {
+export async function submitOnboardingToLaravel(data: {
   firstName: string;
-  middleName: string;
+  middleName?: string;
   lastName: string;
+  token: string;
 }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return { success: false, error: "Unauthorized" };
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/profile/create`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${data.token}`,
+      },
+      body: JSON.stringify({
+        firstName: data.firstName,
+        middleName: data.middleName,
+        lastName: data.lastName,
+      }),
+    },
+  );
 
-  const connection = await pool.getConnection();
+  const result = await response.json();
 
-  try {
-    await connection.beginTransaction();
-
-    // 1. Get the User ID from the email in the session
-    const [userRows]: any = await connection.query(
-      "SELECT id FROM users WHERE email = ? LIMIT 1",
-      [session.user.email],
-    );
-    const userId = userRows[0].id;
-
-    await connection.query(
-      `INSERT INTO profiles (user_id, first_name, middle_name, last_name) 
-       VALUES (?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE 
-       first_name = VALUES(first_name), 
-       middle_name = VALUES(middle_name), 
-       last_name = VALUES(last_name)`,
-      [userId, data.firstName, data.middleName || null, data.lastName],
-    );
-
-    // 3. THE CRITICAL STEP: Update the user status to 'active'
-    // This is what lets the Gatekeeper know they are finished!
-    await connection.query("UPDATE users SET status = 'active' WHERE id = ?", [
-      userId,
-    ]);
-
-    await connection.commit();
-    return { success: true };
-  } catch (error) {
-    await connection.rollback();
-    console.error("Onboarding Error:", error);
-    return { success: false, error: "Failed to finalize account." };
-  } finally {
-    connection.release();
+  if (!response.ok) {
+    // This catches Laravel validation errors (422) or server errors (500)
+    throw new Error(result.message || "Failed to save profile");
   }
+
+  return result;
 }
