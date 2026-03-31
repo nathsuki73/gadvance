@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { handleSignIn, handleSignOut } from "../../lib/auth";
+import { handleGoogleSignIn, handleSignOut } from "../../lib/auth";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import React, { useEffect } from "react"; // Added useEffect
 import Link from "next/link";
@@ -116,7 +116,7 @@ const SignIn = () => {
                     <div className="flex-grow border-t border-gray-100"></div>
                   </div>
 
-                  <GoogleButton onClick={handleSignIn} />
+                  <GoogleButton onClick={handleGoogleSignIn} />
                 </form>
               </>
             )}
