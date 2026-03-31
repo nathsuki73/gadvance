@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
-import { handleSignIn } from "../../lib/auth";
+import { handleGoogleSignIn } from "../../lib/auth";
 import { handleRegistration } from "./actions";
 import { z } from "zod";
 import { useSession } from "next-auth/react";
@@ -199,7 +199,7 @@ const SignUp = () => {
                     <div className="flex-grow border-t border-gray-100"></div>
                   </div>
 
-                  <GoogleButton onClick={handleSignIn} />
+                  <GoogleButton onClick={handleGoogleSignIn} />
                 </form>
               </>
             )}
