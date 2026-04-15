@@ -9,7 +9,7 @@ type onboardingParams = {
   lastName: string;
 };
 
-export async function finishOnBoarding(data: onboardingParams) {
+export async function finishOnBoarding(data: any) {
   const session = await getServerSession(authOptions);
 
   if (!session?.laravelJwt) {
@@ -21,9 +21,16 @@ export async function finishOnBoarding(data: onboardingParams) {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${session.laravelJwt}`,
+      Accept: "application/json",
     },
     body: JSON.stringify(data),
   });
 
-  return await res.json();
+  const result = await res.json();
+
+  if (!res.ok) {
+    return { success: false, error: result.error || "Server Error" };
+  }
+
+  return { success: true, user: result.user };
 }

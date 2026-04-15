@@ -36,16 +36,25 @@ const Onboarding = () => {
     lastName: "",
   });
 
-  const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
-    const result = await finishOnBoarding(form);
+    const formData = new FormData(e.currentTarget);
+    const payload = Object.fromEntries(formData.entries());
+
+    const result = await finishOnBoarding(payload);
 
     if (result.success) {
-      alert("Onboarding complete");
+      await update({
+        ...session,
+        user: { ...session?.user, status: "active" },
+      });
+
+      router.push("/workspace/module");
     } else {
       alert(result.error);
+      setLoading(false);
     }
   };
 
