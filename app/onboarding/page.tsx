@@ -14,6 +14,11 @@ const Onboarding = () => {
   const { data: session, update, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    firstName: "",
+    middleName: "",
+    lastName: "",
+  });
 
   // 1. TOP LEVEL HOOK: This watches for session updates globally
   useEffect(() => {
@@ -30,12 +35,6 @@ const Onboarding = () => {
   const [googleFirst, ...lastParts] = fullName.split(" ");
   const googleLast = lastParts.join(" ");
 
-  const [form, setForm] = useState({
-    firstName: "",
-    middleName: "",
-    lastName: "",
-  });
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -46,9 +45,11 @@ const Onboarding = () => {
     const result = await finishOnBoarding(payload);
 
     if (result.success) {
+      const nextStatus = result.user?.status ?? "active";
+
       await update({
         ...session,
-        user: { ...session?.user, status: "active" },
+        user: { ...session?.user, status: nextStatus },
       });
 
       router.push("/workspace/module");

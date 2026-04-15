@@ -94,7 +94,7 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         const authBridge = (
           user as typeof user & {
@@ -108,6 +108,22 @@ export const authOptions: NextAuthOptions = {
           token.name = authBridge.name || token.name || "New Student";
           token.email = authBridge.email || token.email;
           token.sessionToken = authBridge.sessionToken;
+        }
+      }
+
+      if (trigger === "update") {
+        const sessionUser = session?.user;
+
+        if (sessionUser?.status) {
+          token.status = sessionUser.status;
+        }
+
+        if (sessionUser?.name) {
+          token.name = sessionUser.name;
+        }
+
+        if (sessionUser?.email) {
+          token.email = sessionUser.email;
         }
       }
 
