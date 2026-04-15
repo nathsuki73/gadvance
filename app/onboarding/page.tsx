@@ -40,16 +40,34 @@ const Onboarding = () => {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const payload = Object.fromEntries(formData.entries());
+    const payload = {
+      firstName: String(formData.get("firstName") ?? ""),
+      middleName: String(formData.get("middleName") ?? ""),
+      lastName: String(formData.get("lastName") ?? ""),
+    };
 
     const result = await finishOnBoarding(payload);
 
     if (result.success) {
       const nextStatus = result.user?.status ?? "active";
+      const nextName = result.user?.name ?? session?.user?.name;
+      const nextEmail = result.user?.email ?? session?.user?.email;
+      const nextFirstName = result.userProfile?.first_name ?? payload.firstName;
+      const nextMiddleName =
+        result.userProfile?.middle_name ?? payload.middleName ?? "";
+      const nextLastName = result.userProfile?.last_name ?? payload.lastName;
 
       await update({
         ...session,
-        user: { ...session?.user, status: nextStatus },
+        user: {
+          ...session?.user,
+          status: nextStatus,
+          name: nextName,
+          email: nextEmail,
+          firstName: nextFirstName,
+          middleName: nextMiddleName || null,
+          lastName: nextLastName,
+        },
       });
 
       router.push("/workspace/module");

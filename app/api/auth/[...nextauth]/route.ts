@@ -121,6 +121,33 @@ export const authOptions: NextAuthOptions = {
           token.email = authBridge.email || token.email;
           token.sessionToken = authBridge.sessionToken;
         }
+
+        const profileUser = user as typeof user & {
+          firstName?: string;
+          middleName?: string | null;
+          lastName?: string;
+        };
+
+        if (profileUser.firstName) {
+          token.firstName = profileUser.firstName;
+        }
+
+        if (profileUser.middleName !== undefined) {
+          token.middleName = profileUser.middleName;
+        }
+
+        if (profileUser.lastName) {
+          token.lastName = profileUser.lastName;
+        }
+      }
+
+      if (trigger === "update" && token.laravelJwt) {
+        const latestIdentity = await refreshLaravelIdentity(token.laravelJwt);
+        if (latestIdentity) {
+          token.status = latestIdentity.status || token.status || "onboarding";
+          token.name = latestIdentity.name || token.name;
+          token.email = latestIdentity.email || token.email;
+        }
       }
 
       if (trigger === "update") {
@@ -137,14 +164,17 @@ export const authOptions: NextAuthOptions = {
         if (sessionUser?.email) {
           token.email = sessionUser.email;
         }
-      }
 
-      if (trigger === "update" && token.laravelJwt) {
-        const latestIdentity = await refreshLaravelIdentity(token.laravelJwt);
-        if (latestIdentity) {
-          token.status = latestIdentity.status || token.status || "onboarding";
-          token.name = latestIdentity.name || token.name;
-          token.email = latestIdentity.email || token.email;
+        if (sessionUser?.firstName) {
+          token.firstName = sessionUser.firstName;
+        }
+
+        if (sessionUser?.middleName !== undefined) {
+          token.middleName = sessionUser.middleName;
+        }
+
+        if (sessionUser?.lastName) {
+          token.lastName = sessionUser.lastName;
         }
       }
 
@@ -154,6 +184,9 @@ export const authOptions: NextAuthOptions = {
       if (session?.user) {
         session.user.status = token.status;
         session.user.name = token.name;
+        session.user.firstName = token.firstName;
+        session.user.middleName = token.middleName;
+        session.user.lastName = token.lastName;
       }
 
       session.laravelJwt = token.laravelJwt;
@@ -172,6 +205,8 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (exchanged?.token) {
+          const latestIdentity = await refreshLaravelIdentity(exchanged.token);
+
           const mutableUser = user as typeof user & {
             laravelAuth?: {
               token: string;
@@ -184,9 +219,9 @@ export const authOptions: NextAuthOptions = {
 
           mutableUser.laravelAuth = {
             token: exchanged.token,
-            status: exchanged.status,
-            name: exchanged.name,
-            email: exchanged.email,
+            status: latestIdentity?.status || exchanged.status,
+            name: latestIdentity?.name || exchanged.name,
+            email: latestIdentity?.email || exchanged.email,
             sessionToken: exchanged.sessionToken,
           };
         }

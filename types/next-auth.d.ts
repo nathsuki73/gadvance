@@ -8,6 +8,9 @@ declare module "next-auth" {
     user: {
       /** The user's custom database status. */
       status: "onboarding" | "active" | "suspended";
+      firstName?: string;
+      middleName?: string | null;
+      lastName?: string;
     } & DefaultSession["user"];
     laravelJwt?: string;
     sessionToken?: string;
@@ -15,6 +18,9 @@ declare module "next-auth" {
 
   interface User {
     status: string;
+    firstName?: string;
+    middleName?: string | null;
+    lastName?: string;
     laravelAuth?: {
       token: string;
       status?: string;
@@ -29,6 +35,9 @@ declare module "next-auth/jwt" {
   /** Returned by the `jwt` callback and `getToken`, when using JWT sessions */
   interface JWT {
     status: "onboarding" | "active" | "suspended";
+    firstName?: string;
+    middleName?: string | null;
+    lastName?: string;
     laravelJwt?: string;
     sessionToken?: string;
   }
