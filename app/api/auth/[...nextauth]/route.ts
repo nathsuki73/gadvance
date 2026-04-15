@@ -1,10 +1,15 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
-const googleClientId = process.env.GOOGLE_CLIENT_ID!;
+const googleClientId =
+  process.env.GOOGLE_CLIENT_ID ?? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET!;
 const nextAuthSecret = process.env.NEXTAUTH_SECRET!;
-const laravelAuthExchangeUrl = process.env.LARAVEL_AUTH_EXCHANGE_URL;
+const laravelAuthExchangeUrl =
+  process.env.LARAVEL_AUTH_EXCHANGE_URL ??
+  (process.env.NEXT_PUBLIC_API_URL
+    ? `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")}/api/auth/google/exchange`
+    : undefined);
 const laravelAuthRefreshUrl = process.env.LARAVEL_AUTH_REFRESH_URL;
 const jwtSharedSecret = process.env.LARAVEL_SSO_SECRET?.trim();
 
@@ -24,41 +29,48 @@ async function exchangeGoogleForLaravelToken(params: {
   googleIdToken?: string;
 }) {
   if (!laravelAuthExchangeUrl || !jwtSharedSecret) {
-    console.error(
-      "Missing Laravel handshake config. Set LARAVEL_AUTH_EXCHANGE_URL and JWT_SECRET.",
+    console.warn(
+      "Missing Laravel handshake config. Set LARAVEL_AUTH_EXCHANGE_URL and LARAVEL_SSO_SECRET.",
     );
     return null;
   }
 
-  const response = await fetch(laravelAuthExchangeUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-SSO-Secret": jwtSharedSecret,
-    },
-    body: JSON.stringify({
-      provider: "google",
-      email: params.email,
-      name: params.name,
-      image: params.image,
-      google_id: params.googleId,
-      google_id_token: params.googleIdToken,
-    }),
-  });
+  try {
+    const response = await fetch(laravelAuthExchangeUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-SSO-Secret": jwtSharedSecret,
+      },
+      body: JSON.stringify({
+        provider: "google",
+        email: params.email,
+        name: params.name,
+        image: params.image,
+        google_id: params.googleId,
+        google_id_token: params.googleIdToken,
+      }),
+    });
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(
-      `Laravel exchange failed (${response.status}): ${text || "empty response"}`,
-    );
+    if (!response.ok) {
+      const text = await response.text();
+      console.error(
+        `Laravel exchange failed (${response.status}) at ${laravelAuthExchangeUrl}: ${text || "empty response"}`,
+      );
+      return null;
+    }
+
+    const data = (await response.json()) as Partial<LaravelExchangeResponse>;
+    if (!data?.token) {
+      console.error("Laravel exchange response missing token field");
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Laravel exchange request error:", error);
+    return null;
   }
-
-  const data = (await response.json()) as Partial<LaravelExchangeResponse>;
-  if (!data?.token) {
-    throw new Error("Laravel exchange response missing token field");
-  }
-
-  return data;
 }
 
 async function refreshLaravelIdentity(laravelToken: string) {
@@ -85,7 +97,7 @@ async function refreshLaravelIdentity(laravelToken: string) {
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
-      clientId: googleClientId,
+      clientId: googleClientId || "",
       clientSecret: googleClientSecret,
     }),
   ],
@@ -151,19 +163,15 @@ export const authOptions: NextAuthOptions = {
     },
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        try {
-          const exchanged = await exchangeGoogleForLaravelToken({
-            email: user.email,
-            name: user.name,
-            image: user.image,
-            googleId: account.providerAccountId,
-            googleIdToken: account.id_token,
-          });
+        const exchanged = await exchangeGoogleForLaravelToken({
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          googleId: account.providerAccountId,
+          googleIdToken: account.id_token,
+        });
 
-          if (!exchanged?.token) {
-            return false;
-          }
-
+        if (exchanged?.token) {
           const mutableUser = user as typeof user & {
             laravelAuth?: {
               token: string;
@@ -181,12 +189,10 @@ export const authOptions: NextAuthOptions = {
             email: exchanged.email,
             sessionToken: exchanged.sessionToken,
           };
-
-          return true;
-        } catch (error) {
-          console.error("Laravel SSO exchange failed:", error);
-          return false;
         }
+
+        // Do not block Google sign-in when Laravel exchange is temporarily unavailable.
+        return true;
       }
       return true;
     },
