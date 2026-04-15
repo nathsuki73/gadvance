@@ -1,9 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  FormEvent,
+  SubmitEventHandler,
+} from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { finishOnboarding } from "./actions";
+import { finishOnBoarding } from "../actions/onboarding";
 
 const Onboarding = () => {
   const { data: session, update, status } = useSession();
@@ -25,26 +30,22 @@ const Onboarding = () => {
   const [googleFirst, ...lastParts] = fullName.split(" ");
   const googleLast = lastParts.join(" ");
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const [form, setForm] = useState({
+    firstName: "",
+    middleName: "",
+    lastName: "",
+  });
+
+  const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      firstName: formData.get("firstName") as string,
-      middleName: formData.get("middleName") as string,
-      lastName: formData.get("lastName") as string,
-    };
-
-    const result = await finishOnboarding(data);
+    const result = await finishOnBoarding(form);
 
     if (result.success) {
-      // 2. Trigger NextAuth to re-run the JWT/Session callbacks
-      await update();
-      // The useEffect above will detect the 'active' status and redirect automatically
+      alert("Onboarding complete");
     } else {
-      alert(result.error || "Failed to save profile.");
-      setLoading(false);
+      alert(result.error);
     }
   };
 

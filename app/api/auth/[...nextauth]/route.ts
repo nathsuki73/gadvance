@@ -15,7 +15,7 @@ const jwtSharedSecret = process.env.LARAVEL_SSO_SECRET?.trim();
 
 type LaravelExchangeResponse = {
   token: string;
-  status?: string;
+  status?: "onboarding" | "active" | "suspended";
   name?: string;
   email?: string;
   sessionToken?: string;
