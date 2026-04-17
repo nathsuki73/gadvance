@@ -59,6 +59,34 @@ function normalizeStatus(value: unknown): SupportedStatus | undefined {
   return undefined;
 }
 
+function buildProfileName(userProfile: Record<string, unknown> | undefined) {
+  if (!userProfile) {
+    return undefined;
+  }
+
+  if (typeof userProfile.name === "string" && userProfile.name.trim()) {
+    return userProfile.name;
+  }
+
+  const firstName =
+    typeof userProfile.first_name === "string"
+      ? userProfile.first_name.trim()
+      : "";
+  const middleName =
+    typeof userProfile.middle_name === "string"
+      ? userProfile.middle_name.trim()
+      : "";
+  const lastName =
+    typeof userProfile.last_name === "string"
+      ? userProfile.last_name.trim()
+      : "";
+
+  const profileName = [firstName, middleName, lastName]
+    .filter(Boolean)
+    .join(" ");
+  return profileName || undefined;
+}
+
 function mapLaravelIdentityResponse(
   data: unknown,
   fallbackStatus?: SupportedStatus,
@@ -84,14 +112,7 @@ function mapLaravelIdentityResponse(
           ? payload.access_token
           : undefined,
     status: normalizedStatus || fallbackStatus,
-    name:
-      typeof payload.name === "string"
-        ? payload.name
-        : typeof user?.name === "string"
-          ? user.name
-          : typeof userProfile?.name === "string"
-            ? userProfile.name
-            : undefined,
+    name: buildProfileName(userProfile),
     email:
       typeof payload.email === "string"
         ? payload.email

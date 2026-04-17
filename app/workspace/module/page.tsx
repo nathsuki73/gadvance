@@ -50,14 +50,16 @@ const ModulePage = () => {
     return null;
   }
 
-  const displayNameParts = [
-    session?.user?.firstName,
-    session?.user?.middleName,
-    session?.user?.lastName,
-  ].filter(Boolean);
-  const displayName = displayNameParts.length
-    ? displayNameParts.join(" ")
-    : session?.user?.name || "Student";
+  const displayName =
+    session?.user?.name ||
+    [
+      session?.user?.firstName,
+      session?.user?.middleName,
+      session?.user?.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ") ||
+    "Student";
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans">

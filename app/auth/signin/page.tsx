@@ -28,6 +28,18 @@ const SignIn = () => {
     }
   }, [status, session, router]);
 
+  const displayName =
+    [
+      session?.user?.firstName,
+      session?.user?.middleName,
+      session?.user?.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ") ||
+    session?.user?.name ||
+    session?.user?.email?.split("@")[0] ||
+    "Student";
+
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormData((current) => ({ ...current, [name]: value }));
@@ -95,9 +107,7 @@ const SignIn = () => {
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <h1 className="text-4xl font-bold text-gray-900 mb-2 leading-tight">
                   Welcome back, <br />
-                  <span className="text-teal-500">
-                    {session.user?.email?.split("@")[0]}
-                  </span>
+                  <span className="text-teal-500">{displayName}</span>
                 </h1>
                 <p className="text-gray-400 mb-10 text-sm">
                   Redirecting you to your workspace...
