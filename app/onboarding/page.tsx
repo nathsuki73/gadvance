@@ -60,7 +60,7 @@ const Onboarding = () => {
           lastName: nextLastName,
         },
       });
-
+      console.log("User", result);
       router.push("/workspace/module");
     } else {
       alert(result.error);

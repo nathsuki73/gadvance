@@ -8,7 +8,8 @@ const ModulePage = () => {
   const { data: session, status: authStatus } = useSession();
   const router = useRouter();
   const userStatus = session?.user?.status;
-  const hasCompletedOnboarding = userStatus?.trim().toLowerCase() === "active";
+  const normalizedStatus = userStatus?.trim().toLowerCase();
+  const isOnboarding = normalizedStatus === "onboarding";
 
   useEffect(() => {
     // 1. If not logged in, go to sign in
@@ -18,16 +19,16 @@ const ModulePage = () => {
     }
 
     // 2. Authenticated users who have not completed onboarding should finish it first.
-    if (authStatus === "authenticated" && !hasCompletedOnboarding) {
+    if (authStatus === "authenticated" && isOnboarding) {
       console.log("User is in onboarding state, redirecting...");
       router.push("/onboarding");
     }
-  }, [authStatus, hasCompletedOnboarding, router]);
+  }, [authStatus, isOnboarding, router]);
 
   // 3. DO NOT RENDER THE UI if the user shouldn't be here
   if (
     authStatus === "loading" ||
-    (authStatus === "authenticated" && !hasCompletedOnboarding)
+    (authStatus === "authenticated" && isOnboarding)
   ) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -44,7 +45,7 @@ const ModulePage = () => {
   // Prevent rendering the UI if we are about to redirect
   if (
     authStatus === "unauthenticated" ||
-    (authStatus === "authenticated" && !hasCompletedOnboarding)
+    (authStatus === "authenticated" && isOnboarding)
   ) {
     return null;
   }

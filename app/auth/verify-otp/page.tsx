@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck, ArrowLeft, Mail, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { verifyOTP } from "../signup/actions";
-import { getSession, signIn } from "next-auth/react";
+import { signIn } from "next-auth/react";
 
 const formatDuration = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -122,14 +122,6 @@ const OTPContent = () => {
           return;
         }
 
-        const session = await getSession();
-        const normalizedStatus = session?.user?.status?.trim().toLowerCase();
-
-        if (normalizedStatus === "active") {
-          router.push("/workspace/module");
-          return;
-        }
-
         router.push("/onboarding");
         return;
       }
@@ -152,7 +144,7 @@ const OTPContent = () => {
         setOtp(["", "", "", "", "", ""]); // Clear inputs
         inputRefs.current[0]?.focus(); // Reset focus
       }
-    } catch (err) {
+    } catch {
       setStatusMessage("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
