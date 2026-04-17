@@ -16,15 +16,31 @@ const jwtSharedSecret = process.env.LARAVEL_SSO_SECRET?.trim();
 const laravelApiBaseUrl =
   process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL;
 
-type LaravelExchangeResponse = {
-  token: string;
-  status?: "onboarding" | "active" | "suspended";
+type SupportedStatus = "onboarding" | "active" | "suspended";
+
+type LaravelAuthPayload = {
+  token?: string;
+  access_token?: string;
+  status?: string;
+  user_status?: string;
   name?: string;
   email?: string;
   sessionToken?: string;
+  session_token?: string;
+  user?: Record<string, unknown>;
+  user_profile?: Record<string, unknown>;
 };
 
-type SupportedStatus = "onboarding" | "active" | "suspended";
+type LaravelIdentity = {
+  token: string;
+  status?: SupportedStatus;
+  name?: string;
+  email?: string;
+  sessionToken?: string;
+  firstName?: string;
+  middleName?: string | null;
+  lastName?: string;
+};
 
 function normalizeStatus(value: unknown): SupportedStatus | undefined {
   if (typeof value !== "string") {
@@ -45,16 +61,20 @@ function normalizeStatus(value: unknown): SupportedStatus | undefined {
 
 function mapLaravelIdentityResponse(
   data: unknown,
-): Partial<LaravelExchangeResponse> {
+  fallbackStatus?: SupportedStatus,
+): Partial<LaravelIdentity> {
   if (!data || typeof data !== "object") {
     return {};
   }
 
-  const payload = data as Record<string, unknown>;
-  const user =
-    payload.user && typeof payload.user === "object"
-      ? (payload.user as Record<string, unknown>)
-      : undefined;
+  const payload = data as LaravelAuthPayload;
+  const user = payload.user;
+  const userProfile = payload.user_profile;
+  const normalizedStatus =
+    normalizeStatus(payload.status) ||
+    normalizeStatus(payload.user_status) ||
+    normalizeStatus(user?.status) ||
+    normalizeStatus(userProfile?.status);
 
   return {
     token:
@@ -63,29 +83,111 @@ function mapLaravelIdentityResponse(
         : typeof payload.access_token === "string"
           ? payload.access_token
           : undefined,
-    status:
-      normalizeStatus(payload.status) ||
-      normalizeStatus(payload.user_status) ||
-      normalizeStatus(user?.status),
+    status: normalizedStatus || fallbackStatus,
     name:
       typeof payload.name === "string"
         ? payload.name
         : typeof user?.name === "string"
           ? user.name
-          : undefined,
+          : typeof userProfile?.name === "string"
+            ? userProfile.name
+            : undefined,
     email:
       typeof payload.email === "string"
         ? payload.email
         : typeof user?.email === "string"
           ? user.email
-          : undefined,
+          : typeof userProfile?.email === "string"
+            ? userProfile.email
+            : undefined,
     sessionToken:
       typeof payload.sessionToken === "string"
         ? payload.sessionToken
         : typeof payload.session_token === "string"
           ? payload.session_token
           : undefined,
+    firstName:
+      typeof userProfile?.first_name === "string"
+        ? userProfile.first_name
+        : typeof user?.first_name === "string"
+          ? user.first_name
+          : undefined,
+    middleName:
+      typeof userProfile?.middle_name === "string"
+        ? userProfile.middle_name
+        : typeof user?.middle_name === "string"
+          ? user.middle_name
+          : null,
+    lastName:
+      typeof userProfile?.last_name === "string"
+        ? userProfile.last_name
+        : typeof user?.last_name === "string"
+          ? user.last_name
+          : undefined,
   };
+}
+
+async function completePasswordSignin(params: {
+  email: string;
+  password: string;
+}): Promise<LaravelIdentity | null> {
+  if (!laravelApiBaseUrl) {
+    console.warn("Missing API URL. Set API_URL or NEXT_PUBLIC_API_URL.");
+    return null;
+  }
+
+  const endpoint = `${laravelApiBaseUrl.replace(/\/$/, "")}/api/auth/signin`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        email: params.email,
+        password: params.password,
+      }),
+    });
+
+    let rawData: unknown = {};
+    try {
+      rawData = await response.json();
+    } catch {
+      rawData = {};
+    }
+
+    const mapped = mapLaravelIdentityResponse(rawData, "active");
+    if (!response.ok || !mapped.token) {
+      const message =
+        rawData && typeof rawData === "object"
+          ? ((rawData as Record<string, unknown>).error ??
+            (rawData as Record<string, unknown>).message)
+          : undefined;
+
+      console.warn("Laravel password sign-in failed", {
+        endpoint,
+        status: response.status,
+        message: typeof message === "string" ? message : undefined,
+      });
+      return null;
+    }
+
+    return {
+      token: mapped.token,
+      status: mapped.status,
+      name: mapped.name,
+      email: mapped.email,
+      sessionToken: mapped.sessionToken,
+      firstName: mapped.firstName,
+      middleName: mapped.middleName,
+      lastName: mapped.lastName,
+    };
+  } catch (error) {
+    console.error("Password sign-in request error:", error);
+    return null;
+  }
 }
 
 async function exchangeGoogleForLaravelToken(params: {
@@ -127,7 +229,13 @@ async function exchangeGoogleForLaravelToken(params: {
       return null;
     }
 
-    const rawData = (await response.json()) as unknown;
+    let rawData: unknown = {};
+    try {
+      rawData = await response.json();
+    } catch {
+      rawData = {};
+    }
+
     const data = mapLaravelIdentityResponse(rawData);
     if (!data?.token) {
       console.error("Laravel exchange response missing token field");
@@ -158,7 +266,13 @@ async function refreshLaravelIdentity(laravelToken: string) {
     return null;
   }
 
-  const rawData = (await response.json()) as unknown;
+  let rawData: unknown = {};
+  try {
+    rawData = await response.json();
+  } catch {
+    rawData = {};
+  }
+
   return mapLaravelIdentityResponse(rawData);
 }
 
@@ -182,23 +296,20 @@ async function completeSignupOtp(params: { email: string; otp: string }) {
     }),
   });
 
-  const rawData = (await response.json()) as unknown;
-  const mapped = mapLaravelIdentityResponse(rawData);
+  let rawData: unknown = {};
+  try {
+    rawData = await response.json();
+  } catch {
+    rawData = {};
+  }
+
+  const mapped = mapLaravelIdentityResponse(rawData, "onboarding");
 
   if (!response.ok || !mapped.token) {
     return null;
   }
 
   const latestIdentity = await refreshLaravelIdentity(mapped.token);
-
-  const payload =
-    rawData && typeof rawData === "object"
-      ? (rawData as Record<string, unknown>)
-      : undefined;
-  const userProfile =
-    payload?.user_profile && typeof payload.user_profile === "object"
-      ? (payload.user_profile as Record<string, unknown>)
-      : undefined;
 
   return {
     token: mapped.token,
@@ -209,53 +320,78 @@ async function completeSignupOtp(params: { email: string; otp: string }) {
     name: latestIdentity?.name || mapped.name,
     email: latestIdentity?.email || mapped.email,
     sessionToken: latestIdentity?.sessionToken || mapped.sessionToken,
-    firstName:
-      typeof userProfile?.first_name === "string"
-        ? userProfile.first_name
-        : undefined,
-    middleName:
-      typeof userProfile?.middle_name === "string"
-        ? userProfile.middle_name
-        : null,
-    lastName:
-      typeof userProfile?.last_name === "string"
-        ? userProfile.last_name
-        : undefined,
+    firstName: latestIdentity?.firstName || mapped.firstName,
+    middleName: latestIdentity?.middleName ?? mapped.middleName ?? null,
+    lastName: latestIdentity?.lastName || mapped.lastName,
   };
 }
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: "OTP",
+      name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         otp: { label: "OTP", type: "text" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         const email = credentials?.email?.trim();
         const otp = credentials?.otp?.trim();
+        const password = credentials?.password;
 
-        if (!email || !otp) {
+        if (!email) {
           return null;
         }
 
-        const completed = await completeSignupOtp({ email, otp });
+        if (otp) {
+          const completed = await completeSignupOtp({ email, otp });
+          if (!completed) {
+            return null;
+          }
+
+          const status = completed.status || "onboarding";
+
+          return {
+            id: email,
+            email: completed.email || email,
+            name: completed.name || email,
+            status,
+            firstName: completed.firstName,
+            middleName: completed.middleName,
+            lastName: completed.lastName,
+            laravelAuth: {
+              token: completed.token,
+              status,
+              name: completed.name || email,
+              email: completed.email || email,
+              sessionToken: completed.sessionToken,
+            },
+          };
+        }
+
+        if (!password || password.length === 0) {
+          return null;
+        }
+
+        const completed = await completePasswordSignin({ email, password });
         if (!completed) {
           return null;
         }
+
+        const status = completed.status || "active";
 
         return {
           id: email,
           email: completed.email || email,
           name: completed.name || email,
-          status: completed.status,
+          status,
           firstName: completed.firstName,
           middleName: completed.middleName,
           lastName: completed.lastName,
           laravelAuth: {
             token: completed.token,
-            status: completed.status,
+            status,
             name: completed.name || email,
             email: completed.email || email,
             sessionToken: completed.sessionToken,
@@ -277,9 +413,9 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         const authBridge = (
           user as typeof user & {
-            laravelAuth?: Partial<LaravelExchangeResponse>;
+            laravelAuth?: Partial<LaravelIdentity>;
           }
-        ).laravelAuth as Partial<LaravelExchangeResponse> | undefined;
+        ).laravelAuth as Partial<LaravelIdentity> | undefined;
 
         if (authBridge?.token) {
           const normalizedStatus = normalizeStatus(authBridge.status);
@@ -411,9 +547,9 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
-        // Do not block Google sign-in when Laravel exchange is temporarily unavailable.
         return true;
       }
+
       return true;
     },
   },
