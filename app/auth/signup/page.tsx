@@ -70,7 +70,11 @@ const SignUp = () => {
     setLoading(true);
 
     try {
-      const response = await handleRegistration(formData.email);
+      const response = await handleRegistration(
+        formData.email,
+        formData.password,
+        formData.confirmPassword,
+      );
       if (response.success) {
         setLoading(false);
         router.push(

@@ -33,6 +33,8 @@ function getRequiredApiBaseUrl() {
 
 export async function handleRegistration(
   email: string,
+  password: string,
+  passwordConfirmation: string,
 ): Promise<RegistrationResult> {
   try {
     const baseUrl = getRequiredApiBaseUrl();
@@ -42,7 +44,11 @@ export async function handleRegistration(
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({
+        email,
+        password,
+        password_confirmation: passwordConfirmation,
+      }),
       cache: "no-store",
     });
 
@@ -51,6 +57,7 @@ export async function handleRegistration(
       error?: string;
       message?: string;
       debug?: string;
+      errors?: Record<string, string[] | undefined>;
     };
 
     let payload: RegistrationPayload = {};
@@ -61,9 +68,20 @@ export async function handleRegistration(
     }
 
     if (!response.ok || payload.success === false) {
+      const firstValidationError = payload.errors
+        ? Object.values(payload.errors).find(
+            (messages): messages is string[] =>
+              Array.isArray(messages) && messages.length > 0,
+          )?.[0]
+        : undefined;
+
       return {
         success: false,
-        error: payload.error || payload.message || "Failed to send OTP.",
+        error:
+          firstValidationError ||
+          payload.error ||
+          payload.message ||
+          "Failed to send OTP.",
         statusCode: response.status,
         debug: payload.debug,
       };
