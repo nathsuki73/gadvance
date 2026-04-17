@@ -51,15 +51,13 @@ const ModulePage = () => {
   }
 
   const displayName =
-    session?.user?.name ||
     [
       session?.user?.firstName,
       session?.user?.middleName,
       session?.user?.lastName,
     ]
       .filter(Boolean)
-      .join(" ") ||
-    "Student";
+      .join(" ") || "Student";
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans">

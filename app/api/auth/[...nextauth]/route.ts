@@ -18,12 +18,17 @@ const laravelApiBaseUrl =
 
 type SupportedStatus = "onboarding" | "active" | "suspended";
 
+type UserProfilePayload = {
+  first_name?: string | null;
+  middle_name?: string | null;
+  last_name?: string | null;
+};
+
 type LaravelAuthPayload = {
   token?: string;
   access_token?: string;
   status?: string;
   user_status?: string;
-  name?: string;
   email?: string;
   sessionToken?: string;
   session_token?: string;
@@ -40,6 +45,7 @@ type LaravelIdentity = {
   firstName?: string;
   middleName?: string | null;
   lastName?: string;
+  userProfile?: UserProfilePayload;
 };
 
 function normalizeStatus(value: unknown): SupportedStatus | undefined {
@@ -59,13 +65,18 @@ function normalizeStatus(value: unknown): SupportedStatus | undefined {
   return undefined;
 }
 
+function composeNameParts(parts: Array<string | null | undefined>) {
+  const fullName = parts
+    .map((part) => (typeof part === "string" ? part.trim() : ""))
+    .filter(Boolean)
+    .join(" ");
+
+  return fullName || undefined;
+}
+
 function buildProfileName(userProfile: Record<string, unknown> | undefined) {
   if (!userProfile) {
     return undefined;
-  }
-
-  if (typeof userProfile.name === "string" && userProfile.name.trim()) {
-    return userProfile.name;
   }
 
   const firstName =
@@ -81,10 +92,28 @@ function buildProfileName(userProfile: Record<string, unknown> | undefined) {
       ? userProfile.last_name.trim()
       : "";
 
-  const profileName = [firstName, middleName, lastName]
-    .filter(Boolean)
-    .join(" ");
-  return profileName || undefined;
+  return composeNameParts([firstName, middleName, lastName]);
+}
+
+function mapUserProfile(
+  userProfile: Record<string, unknown> | undefined,
+): UserProfilePayload | undefined {
+  if (!userProfile) {
+    return undefined;
+  }
+
+  return {
+    first_name:
+      typeof userProfile.first_name === "string"
+        ? userProfile.first_name
+        : null,
+    middle_name:
+      typeof userProfile.middle_name === "string"
+        ? userProfile.middle_name
+        : null,
+    last_name:
+      typeof userProfile.last_name === "string" ? userProfile.last_name : null,
+  };
 }
 
 function mapLaravelIdentityResponse(
@@ -130,21 +159,16 @@ function mapLaravelIdentityResponse(
     firstName:
       typeof userProfile?.first_name === "string"
         ? userProfile.first_name
-        : typeof user?.first_name === "string"
-          ? user.first_name
-          : undefined,
+        : undefined,
     middleName:
       typeof userProfile?.middle_name === "string"
         ? userProfile.middle_name
-        : typeof user?.middle_name === "string"
-          ? user.middle_name
-          : null,
+        : null,
     lastName:
       typeof userProfile?.last_name === "string"
         ? userProfile.last_name
-        : typeof user?.last_name === "string"
-          ? user.last_name
-          : undefined,
+        : undefined,
+    userProfile: mapUserProfile(userProfile),
   };
 }
 
@@ -204,6 +228,7 @@ async function completePasswordSignin(params: {
       firstName: mapped.firstName,
       middleName: mapped.middleName,
       lastName: mapped.lastName,
+      userProfile: mapped.userProfile,
     };
   } catch (error) {
     console.error("Password sign-in request error:", error);
@@ -213,7 +238,6 @@ async function completePasswordSignin(params: {
 
 async function exchangeGoogleForLaravelToken(params: {
   email?: string | null;
-  name?: string | null;
   image?: string | null;
   googleId?: string;
   googleIdToken?: string;
@@ -235,7 +259,6 @@ async function exchangeGoogleForLaravelToken(params: {
       body: JSON.stringify({
         provider: "google",
         email: params.email,
-        name: params.name,
         image: params.image,
         google_id: params.googleId,
         google_id_token: params.googleIdToken,
@@ -338,12 +361,20 @@ async function completeSignupOtp(params: { email: string; otp: string }) {
       normalizeStatus(latestIdentity?.status) ||
       normalizeStatus(mapped.status) ||
       "onboarding",
-    name: latestIdentity?.name || mapped.name,
+    name: composeNameParts([
+      latestIdentity?.firstName,
+      latestIdentity?.middleName,
+      latestIdentity?.lastName,
+      mapped.firstName,
+      mapped.middleName,
+      mapped.lastName,
+    ]),
     email: latestIdentity?.email || mapped.email,
     sessionToken: latestIdentity?.sessionToken || mapped.sessionToken,
     firstName: latestIdentity?.firstName || mapped.firstName,
     middleName: latestIdentity?.middleName ?? mapped.middleName ?? null,
     lastName: latestIdentity?.lastName || mapped.lastName,
+    userProfile: latestIdentity?.userProfile || mapped.userProfile,
   };
 }
 
@@ -376,15 +407,24 @@ export const authOptions: NextAuthOptions = {
           return {
             id: email,
             email: completed.email || email,
-            name: completed.name || email,
+            name: composeNameParts([
+              completed.firstName,
+              completed.middleName,
+              completed.lastName,
+            ]),
             status,
             firstName: completed.firstName,
             middleName: completed.middleName,
             lastName: completed.lastName,
+            user_profile: completed.userProfile,
             laravelAuth: {
               token: completed.token,
               status,
-              name: completed.name || email,
+              name: composeNameParts([
+                completed.firstName,
+                completed.middleName,
+                completed.lastName,
+              ]),
               email: completed.email || email,
               sessionToken: completed.sessionToken,
             },
@@ -405,15 +445,24 @@ export const authOptions: NextAuthOptions = {
         return {
           id: email,
           email: completed.email || email,
-          name: completed.name || email,
+          name: composeNameParts([
+            completed.firstName,
+            completed.middleName,
+            completed.lastName,
+          ]),
           status,
           firstName: completed.firstName,
           middleName: completed.middleName,
           lastName: completed.lastName,
+          user_profile: completed.userProfile,
           laravelAuth: {
             token: completed.token,
             status,
-            name: completed.name || email,
+            name: composeNameParts([
+              completed.firstName,
+              completed.middleName,
+              completed.lastName,
+            ]),
             email: completed.email || email,
             sessionToken: completed.sessionToken,
           },
@@ -448,7 +497,6 @@ export const authOptions: NextAuthOptions = {
 
           token.laravelJwt = authBridge.token;
           token.status = normalizedStatus || "onboarding";
-          token.name = authBridge.name || token.name || "New Student";
           token.email = authBridge.email || token.email;
           token.sessionToken = authBridge.sessionToken;
         }
@@ -457,7 +505,17 @@ export const authOptions: NextAuthOptions = {
           firstName?: string;
           middleName?: string | null;
           lastName?: string;
+          user_profile?: UserProfilePayload;
         };
+
+        if (profileUser.user_profile) {
+          token.userProfile = profileUser.user_profile;
+          token.firstName =
+            profileUser.user_profile.first_name || token.firstName;
+          token.middleName =
+            profileUser.user_profile.middle_name ?? token.middleName;
+          token.lastName = profileUser.user_profile.last_name || token.lastName;
+        }
 
         if (profileUser.firstName) {
           token.firstName = profileUser.firstName;
@@ -470,6 +528,13 @@ export const authOptions: NextAuthOptions = {
         if (profileUser.lastName) {
           token.lastName = profileUser.lastName;
         }
+
+        token.name =
+          composeNameParts([
+            token.firstName,
+            token.middleName,
+            token.lastName,
+          ]) || token.name;
       }
 
       if (trigger === "update" && token.laravelJwt) {
@@ -479,20 +544,26 @@ export const authOptions: NextAuthOptions = {
             normalizeStatus(latestIdentity.status) ||
             normalizeStatus(token.status) ||
             "onboarding";
-          token.name = latestIdentity.name || token.name;
+          token.firstName = latestIdentity.firstName || token.firstName;
+          token.middleName = latestIdentity.middleName ?? token.middleName;
+          token.lastName = latestIdentity.lastName || token.lastName;
+          token.userProfile = latestIdentity.userProfile || token.userProfile;
+          token.name =
+            composeNameParts([
+              token.firstName,
+              token.middleName,
+              token.lastName,
+            ]) || token.name;
           token.email = latestIdentity.email || token.email;
         }
       }
 
       if (trigger === "update") {
         const sessionUser = session?.user;
+        const sessionUserProfile = session?.user_profile;
 
         if (sessionUser?.status) {
           token.status = normalizeStatus(sessionUser.status) || token.status;
-        }
-
-        if (sessionUser?.name) {
-          token.name = sessionUser.name;
         }
 
         if (sessionUser?.email) {
@@ -510,6 +581,20 @@ export const authOptions: NextAuthOptions = {
         if (sessionUser?.lastName) {
           token.lastName = sessionUser.lastName;
         }
+
+        if (sessionUserProfile) {
+          token.userProfile = sessionUserProfile;
+          token.firstName = sessionUserProfile.first_name || token.firstName;
+          token.middleName = sessionUserProfile.middle_name ?? token.middleName;
+          token.lastName = sessionUserProfile.last_name || token.lastName;
+        }
+
+        token.name =
+          composeNameParts([
+            token.firstName,
+            token.middleName,
+            token.lastName,
+          ]) || token.name;
       }
 
       return token;
@@ -523,6 +608,8 @@ export const authOptions: NextAuthOptions = {
         session.user.lastName = token.lastName;
       }
 
+      session.user_profile = token.userProfile;
+
       session.laravelJwt = token.laravelJwt;
       session.sessionToken = token.sessionToken;
 
@@ -532,7 +619,6 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === "google") {
         const exchanged = await exchangeGoogleForLaravelToken({
           email: user.email,
-          name: user.name,
           image: user.image,
           googleId: account.providerAccountId,
           googleIdToken: account.id_token,
@@ -542,6 +628,7 @@ export const authOptions: NextAuthOptions = {
           const latestIdentity = await refreshLaravelIdentity(exchanged.token);
 
           const mutableUser = user as typeof user & {
+            user_profile?: UserProfilePayload;
             laravelAuth?: {
               token: string;
               status?: string;
@@ -551,12 +638,22 @@ export const authOptions: NextAuthOptions = {
             };
           };
 
+          mutableUser.user_profile =
+            latestIdentity?.userProfile || exchanged.userProfile;
+
           mutableUser.laravelAuth = {
             token: exchanged.token,
             status:
               normalizeStatus(latestIdentity?.status) ||
               normalizeStatus(exchanged.status),
-            name: latestIdentity?.name || exchanged.name,
+            name: composeNameParts([
+              latestIdentity?.firstName,
+              latestIdentity?.middleName,
+              latestIdentity?.lastName,
+              exchanged.firstName,
+              exchanged.middleName,
+              exchanged.lastName,
+            ]),
             email: latestIdentity?.email || exchanged.email,
             sessionToken: exchanged.sessionToken,
           };

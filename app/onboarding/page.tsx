@@ -53,10 +53,8 @@ const Onboarding = () => {
     );
   }
 
-  // Split Google name
-  const fullName = session?.user?.name || "";
-  const [googleFirst, ...lastParts] = fullName.split(" ");
-  const googleLast = lastParts.join(" ");
+  const googleFirst = session?.user?.firstName || "";
+  const googleLast = session?.user?.lastName || "";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -78,7 +76,6 @@ const Onboarding = () => {
       }
 
       const nextStatus = result.user?.status ?? "active";
-      const nextName = result.user?.name ?? session?.user?.name;
       const nextEmail = result.user?.email ?? session?.user?.email;
       const nextFirstName = result.userProfile?.first_name ?? payload.firstName;
       const nextMiddleName =
@@ -87,10 +84,14 @@ const Onboarding = () => {
 
       const updatedSession = await update({
         ...session,
+        user_profile: {
+          first_name: nextFirstName,
+          middle_name: nextMiddleName || null,
+          last_name: nextLastName,
+        },
         user: {
           ...session?.user,
           status: nextStatus,
-          name: nextName,
           email: nextEmail,
           firstName: nextFirstName,
           middleName: nextMiddleName || null,
