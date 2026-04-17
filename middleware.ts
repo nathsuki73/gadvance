@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
+function isActiveStatus(value: unknown) {
+  return typeof value === "string" && value.trim().toLowerCase() === "active";
+}
+
 export async function middleware(request: NextRequest) {
   const token = await getToken({
     req: request,
@@ -14,7 +18,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(signInUrl);
   }
 
-  if (token.status === "active") {
+  if (isActiveStatus(token.status)) {
     const workspaceUrl = request.nextUrl.clone();
     workspaceUrl.pathname = "/workspace/module";
     workspaceUrl.search = "";

@@ -8,7 +8,7 @@ const ModulePage = () => {
   const { data: session, status: authStatus } = useSession();
   const router = useRouter();
   const userStatus = session?.user?.status;
-  const hasCompletedOnboarding = userStatus === "active";
+  const hasCompletedOnboarding = userStatus?.trim().toLowerCase() === "active";
 
   useEffect(() => {
     // 1. If not logged in, go to sign in

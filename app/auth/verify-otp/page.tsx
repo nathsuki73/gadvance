@@ -202,7 +202,9 @@ const OTPContent = () => {
 
         {statusMessage && (
           <div className="mb-6 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-left">
-            <p className="text-sm font-semibold text-rose-700">{statusMessage}</p>
+            <p className="text-sm font-semibold text-rose-700">
+              {statusMessage}
+            </p>
             {isBlocked && (
               <p className="mt-1 text-xs font-bold text-rose-600">
                 Block ends in {formatDuration(blockSecondsRemaining)}

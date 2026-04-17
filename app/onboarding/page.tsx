@@ -1,11 +1,6 @@
 "use client";
 
-import React, {
-  useState,
-  useEffect,
-  FormEvent,
-  SubmitEventHandler,
-} from "react";
+import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { finishOnBoarding } from "../actions/onboarding";
@@ -14,15 +9,11 @@ const Onboarding = () => {
   const { data: session, update, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    firstName: "",
-    middleName: "",
-    lastName: "",
-  });
 
   // 1. TOP LEVEL HOOK: This watches for session updates globally
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.status === "active") {
+    const normalizedStatus = session?.user?.status?.trim().toLowerCase();
+    if (status === "authenticated" && normalizedStatus === "active") {
       router.push("/workspace/module");
     }
   }, [session, status, router]);

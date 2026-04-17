@@ -21,6 +21,70 @@ type LaravelExchangeResponse = {
   sessionToken?: string;
 };
 
+type SupportedStatus = "onboarding" | "active" | "suspended";
+
+function normalizeStatus(value: unknown): SupportedStatus | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === "onboarding" ||
+    normalized === "active" ||
+    normalized === "suspended"
+  ) {
+    return normalized;
+  }
+
+  return undefined;
+}
+
+function mapLaravelIdentityResponse(
+  data: unknown,
+): Partial<LaravelExchangeResponse> {
+  if (!data || typeof data !== "object") {
+    return {};
+  }
+
+  const payload = data as Record<string, unknown>;
+  const user =
+    payload.user && typeof payload.user === "object"
+      ? (payload.user as Record<string, unknown>)
+      : undefined;
+
+  return {
+    token:
+      typeof payload.token === "string"
+        ? payload.token
+        : typeof payload.access_token === "string"
+          ? payload.access_token
+          : undefined,
+    status:
+      normalizeStatus(payload.status) ||
+      normalizeStatus(payload.user_status) ||
+      normalizeStatus(user?.status),
+    name:
+      typeof payload.name === "string"
+        ? payload.name
+        : typeof user?.name === "string"
+          ? user.name
+          : undefined,
+    email:
+      typeof payload.email === "string"
+        ? payload.email
+        : typeof user?.email === "string"
+          ? user.email
+          : undefined,
+    sessionToken:
+      typeof payload.sessionToken === "string"
+        ? payload.sessionToken
+        : typeof payload.session_token === "string"
+          ? payload.session_token
+          : undefined,
+  };
+}
+
 async function exchangeGoogleForLaravelToken(params: {
   email?: string | null;
   name?: string | null;
@@ -60,7 +124,8 @@ async function exchangeGoogleForLaravelToken(params: {
       return null;
     }
 
-    const data = (await response.json()) as Partial<LaravelExchangeResponse>;
+    const rawData = (await response.json()) as unknown;
+    const data = mapLaravelIdentityResponse(rawData);
     if (!data?.token) {
       console.error("Laravel exchange response missing token field");
       return null;
@@ -90,8 +155,8 @@ async function refreshLaravelIdentity(laravelToken: string) {
     return null;
   }
 
-  const data = (await response.json()) as Partial<LaravelExchangeResponse>;
-  return data;
+  const rawData = (await response.json()) as unknown;
+  return mapLaravelIdentityResponse(rawData);
 }
 
 export const authOptions: NextAuthOptions = {
@@ -115,8 +180,15 @@ export const authOptions: NextAuthOptions = {
         ).laravelAuth as Partial<LaravelExchangeResponse> | undefined;
 
         if (authBridge?.token) {
+          const normalizedStatus = normalizeStatus(authBridge.status);
+          if (!normalizedStatus) {
+            console.warn(
+              "Laravel auth bridge did not include a valid status; defaulting to onboarding.",
+            );
+          }
+
           token.laravelJwt = authBridge.token;
-          token.status = authBridge.status || "onboarding";
+          token.status = normalizedStatus || "onboarding";
           token.name = authBridge.name || token.name || "New Student";
           token.email = authBridge.email || token.email;
           token.sessionToken = authBridge.sessionToken;
@@ -144,7 +216,10 @@ export const authOptions: NextAuthOptions = {
       if (trigger === "update" && token.laravelJwt) {
         const latestIdentity = await refreshLaravelIdentity(token.laravelJwt);
         if (latestIdentity) {
-          token.status = latestIdentity.status || token.status || "onboarding";
+          token.status =
+            normalizeStatus(latestIdentity.status) ||
+            normalizeStatus(token.status) ||
+            "onboarding";
           token.name = latestIdentity.name || token.name;
           token.email = latestIdentity.email || token.email;
         }
@@ -154,7 +229,7 @@ export const authOptions: NextAuthOptions = {
         const sessionUser = session?.user;
 
         if (sessionUser?.status) {
-          token.status = sessionUser.status;
+          token.status = normalizeStatus(sessionUser.status) || token.status;
         }
 
         if (sessionUser?.name) {
@@ -219,11 +294,19 @@ export const authOptions: NextAuthOptions = {
 
           mutableUser.laravelAuth = {
             token: exchanged.token,
-            status: latestIdentity?.status || exchanged.status,
+            status:
+              normalizeStatus(latestIdentity?.status) ||
+              normalizeStatus(exchanged.status),
             name: latestIdentity?.name || exchanged.name,
             email: latestIdentity?.email || exchanged.email,
             sessionToken: exchanged.sessionToken,
           };
+
+          if (!mutableUser.laravelAuth.status) {
+            console.warn(
+              "Laravel handshake/refresh response did not return a usable status field.",
+            );
+          }
         }
 
         // Do not block Google sign-in when Laravel exchange is temporarily unavailable.

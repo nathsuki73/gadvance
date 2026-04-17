@@ -14,7 +14,8 @@ const SignIn = () => {
   // Handle Redirect Logic
   useEffect(() => {
     if (status === "authenticated") {
-      if (session?.user?.status === "onboarding") {
+      const normalizedStatus = session?.user?.status?.trim().toLowerCase();
+      if (normalizedStatus === "onboarding") {
         router.push("/onboarding");
       } else {
         router.push("/workspace/module");
@@ -124,7 +125,7 @@ const SignIn = () => {
 
           {!session && status !== "loading" && (
             <p className="text-sm text-gray-500 mt-8">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link
                 href="/auth/signup"
                 className="text-teal-600 font-bold hover:underline"

@@ -78,11 +78,19 @@ const SignUp = () => {
         );
       } else {
         setLoading(false);
-        setErrors({ email: response.error || "An error occurred" });
+        if (process.env.NODE_ENV !== "production") {
+          console.error("Registration failed:", {
+            statusCode: response.statusCode,
+            error: response.error,
+            debug: response.debug,
+          });
+        }
+        setErrors({ form: response.error || "An error occurred" });
       }
     } catch (err) {
       setLoading(false);
-      setErrors({ email: "Connection failed. Check your network." });
+      console.error("Registration Error:", err);
+      setErrors({ form: "Connection failed. Check your network." });
     }
   };
 
@@ -128,6 +136,12 @@ const SignUp = () => {
                 <p className="text-gray-400 mb-8 text-sm">
                   Please fill in the details below to secure your account.
                 </p>
+
+                {errors.form && (
+                  <p className="text-xs text-red-500 font-semibold mb-3">
+                    {errors.form}
+                  </p>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
