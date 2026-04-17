@@ -4,24 +4,35 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, ArrowLeft, KeyRound } from "lucide-react";
+import { sendForgotPasswordOtp } from "./actions";
 
 const ForgotPassword = () => {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     setLoading(true);
 
-    // Logic: 1. Check if email exists -> 2. Generate Reset OTP -> 3. SMTP Send
-    // Redirecting to our Smart OTP page with the reset context
-    setTimeout(() => {
+    try {
+      const response = await sendForgotPasswordOtp(email);
+
+      if (response.success) {
+        router.push(
+          `/auth/verify-otp?context=reset&email=${encodeURIComponent(email)}`,
+        );
+        return;
+      }
+
+      setErrorMessage(response.error || "Failed to send verification code.");
+    } catch {
+      setErrorMessage("Connection failed. Check your network.");
+    } finally {
       setLoading(false);
-      router.push(
-        `/auth/verify-otp?context=reset&email=${encodeURIComponent(email)}`,
-      );
-    }, 1500);
+    }
   };
 
   return (
@@ -48,6 +59,12 @@ const ForgotPassword = () => {
                 No worries! Enter your email and we'll send a 6-digit security
                 code to reset your password.
               </p>
+
+              {errorMessage && (
+                <p className="mb-4 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                  {errorMessage}
+                </p>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Email Input */}

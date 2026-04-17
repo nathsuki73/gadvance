@@ -4,7 +4,10 @@ import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck, ArrowLeft, Mail, GraduationCap } from "lucide-react";
 import Link from "next/link";
-import { verifyOTP } from "../signup/actions";
+import {
+  sendForgotPasswordOtp,
+  verifyForgotPasswordOtp,
+} from "../forgot-password/actions";
 import { signIn } from "next-auth/react";
 
 const formatDuration = (seconds: number) => {
@@ -50,6 +53,7 @@ const OTPContent = () => {
   // 2. OTP Input State & Refs
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [attemptsLeft, setAttemptsLeft] = useState<number | null>(null);
   const [blockSecondsRemaining, setBlockSecondsRemaining] = useState(0);
@@ -126,23 +130,19 @@ const OTPContent = () => {
         return;
       }
 
-      // 2. Call your Server Action
-      const result = await verifyOTP(email, fullCode);
+      const result = await verifyForgotPasswordOtp(email, fullCode);
 
       if (result.success) {
-        // 3. Success! Move to next page
         setStatusMessage(null);
         setAttemptsLeft(null);
         setBlockSecondsRemaining(0);
-
-        router.push(currentUI.nextPath);
+        router.push(`${currentUI.nextPath}?email=${encodeURIComponent(email)}`);
       } else {
-        // 4. Render verification status in the UI
         setStatusMessage(result.error);
         setAttemptsLeft(result.attemptsLeft ?? null);
         setBlockSecondsRemaining(result.blockSecondsRemaining ?? 0);
-        setOtp(["", "", "", "", "", ""]); // Clear inputs
-        inputRefs.current[0]?.focus(); // Reset focus
+        setOtp(["", "", "", "", "", ""]);
+        inputRefs.current[0]?.focus();
       }
     } catch {
       setStatusMessage("Something went wrong. Please try again.");
@@ -239,17 +239,38 @@ const OTPContent = () => {
         <div className="flex flex-col items-center gap-4">
           {canResend ? (
             <button
-              onClick={() => {
+              onClick={async () => {
+                if (context === "reset") {
+                  setResending(true);
+
+                  try {
+                    const resendResult = await sendForgotPasswordOtp(email);
+
+                    if (!resendResult.success) {
+                      setStatusMessage(
+                        resendResult.error ||
+                          "Failed to resend verification code.",
+                      );
+                      return;
+                    }
+                  } catch {
+                    setStatusMessage("Something went wrong. Please try again.");
+                    return;
+                  } finally {
+                    setResending(false);
+                  }
+                }
+
                 setTimer(60);
                 setCanResend(false);
                 setOtp(["", "", "", "", "", ""]);
                 setStatusMessage(null);
                 setAttemptsLeft(null);
               }}
-              disabled={isBlocked}
+              disabled={isBlocked || resending}
               className="text-teal-600 font-black text-sm hover:underline disabled:opacity-50 disabled:no-underline"
             >
-              Resend Code
+              {resending ? "Resending..." : "Resend Code"}
             </button>
           ) : (
             <p className="text-zinc-400 text-sm font-medium">
