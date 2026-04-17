@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck, ArrowLeft, Mail, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { verifyOTP } from "../signup/actions";
+import { getSession, signIn } from "next-auth/react";
 
 const formatDuration = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -104,6 +105,35 @@ const OTPContent = () => {
     setLoading(true);
 
     try {
+      // Signup OTP needs to establish a NextAuth session before navigating.
+      if (context === "signup") {
+        const authResult = await signIn("credentials", {
+          email,
+          otp: fullCode,
+          redirect: false,
+        });
+
+        if (!authResult || authResult.error) {
+          setStatusMessage("OTP verification failed.");
+          setAttemptsLeft(null);
+          setBlockSecondsRemaining(0);
+          setOtp(["", "", "", "", "", ""]);
+          inputRefs.current[0]?.focus();
+          return;
+        }
+
+        const session = await getSession();
+        const normalizedStatus = session?.user?.status?.trim().toLowerCase();
+
+        if (normalizedStatus === "active") {
+          router.push("/workspace/module");
+          return;
+        }
+
+        router.push("/onboarding");
+        return;
+      }
+
       // 2. Call your Server Action
       const result = await verifyOTP(email, fullCode);
 

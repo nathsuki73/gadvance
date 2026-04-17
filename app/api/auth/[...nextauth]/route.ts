@@ -1,5 +1,6 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 const googleClientId =
   process.env.GOOGLE_CLIENT_ID ?? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -12,6 +13,8 @@ const laravelAuthExchangeUrl =
     : undefined);
 const laravelAuthRefreshUrl = process.env.LARAVEL_AUTH_REFRESH_URL;
 const jwtSharedSecret = process.env.LARAVEL_SSO_SECRET?.trim();
+const laravelApiBaseUrl =
+  process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL;
 
 type LaravelExchangeResponse = {
   token: string;
@@ -159,8 +162,107 @@ async function refreshLaravelIdentity(laravelToken: string) {
   return mapLaravelIdentityResponse(rawData);
 }
 
+async function completeSignupOtp(params: { email: string; otp: string }) {
+  if (!laravelApiBaseUrl) {
+    console.warn("Missing API URL. Set API_URL or NEXT_PUBLIC_API_URL.");
+    return null;
+  }
+
+  const endpoint = `${laravelApiBaseUrl.replace(/\/$/, "")}/api/auth/signup/complete`;
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      email: params.email,
+      otp: params.otp,
+    }),
+  });
+
+  const rawData = (await response.json()) as unknown;
+  const mapped = mapLaravelIdentityResponse(rawData);
+
+  if (!response.ok || !mapped.token) {
+    return null;
+  }
+
+  const latestIdentity = await refreshLaravelIdentity(mapped.token);
+
+  const payload =
+    rawData && typeof rawData === "object"
+      ? (rawData as Record<string, unknown>)
+      : undefined;
+  const userProfile =
+    payload?.user_profile && typeof payload.user_profile === "object"
+      ? (payload.user_profile as Record<string, unknown>)
+      : undefined;
+
+  return {
+    token: mapped.token,
+    status:
+      normalizeStatus(latestIdentity?.status) ||
+      normalizeStatus(mapped.status) ||
+      "onboarding",
+    name: latestIdentity?.name || mapped.name,
+    email: latestIdentity?.email || mapped.email,
+    sessionToken: latestIdentity?.sessionToken || mapped.sessionToken,
+    firstName:
+      typeof userProfile?.first_name === "string"
+        ? userProfile.first_name
+        : undefined,
+    middleName:
+      typeof userProfile?.middle_name === "string"
+        ? userProfile.middle_name
+        : null,
+    lastName:
+      typeof userProfile?.last_name === "string"
+        ? userProfile.last_name
+        : undefined,
+  };
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
+    CredentialsProvider({
+      name: "OTP",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        otp: { label: "OTP", type: "text" },
+      },
+      async authorize(credentials) {
+        const email = credentials?.email?.trim();
+        const otp = credentials?.otp?.trim();
+
+        if (!email || !otp) {
+          return null;
+        }
+
+        const completed = await completeSignupOtp({ email, otp });
+        if (!completed) {
+          return null;
+        }
+
+        return {
+          id: email,
+          email: completed.email || email,
+          name: completed.name || email,
+          status: completed.status,
+          firstName: completed.firstName,
+          middleName: completed.middleName,
+          lastName: completed.lastName,
+          laravelAuth: {
+            token: completed.token,
+            status: completed.status,
+            name: completed.name || email,
+            email: completed.email || email,
+            sessionToken: completed.sessionToken,
+          },
+        };
+      },
+    }),
     GoogleProvider({
       clientId: googleClientId || "",
       clientSecret: googleClientSecret,
