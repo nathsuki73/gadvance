@@ -62,17 +62,20 @@ const Onboarding = () => {
     e.preventDefault();
     setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-    const payload = {
-      firstName: String(formData.get("firstName") ?? ""),
-      middleName: String(formData.get("middleName") ?? ""),
-      lastName: String(formData.get("lastName") ?? ""),
-    };
+    try {
+      const formData = new FormData(e.currentTarget);
+      const payload = {
+        firstName: String(formData.get("firstName") ?? ""),
+        middleName: String(formData.get("middleName") ?? ""),
+        lastName: String(formData.get("lastName") ?? ""),
+      };
 
-    const result = await finishOnBoarding(payload);
+      const result = await finishOnBoarding(payload);
 
-    if (result.success) {
-      setIsRedirecting(true);
+      if (!result.success) {
+        alert(result.error);
+        return;
+      }
 
       const nextStatus = result.user?.status ?? "active";
       const nextName = result.user?.name ?? session?.user?.name;
@@ -100,10 +103,14 @@ const Onboarding = () => {
         await waitForActiveSession();
       }
 
+      setIsRedirecting(true);
       console.log("User", result);
       router.replace("/workspace/module");
-    } else {
-      alert(result.error);
+    } catch (error) {
+      console.error("Failed to complete onboarding:", error);
+      alert("Unable to finish onboarding right now. Please try again.");
+      setIsRedirecting(false);
+    } finally {
       setLoading(false);
     }
   };

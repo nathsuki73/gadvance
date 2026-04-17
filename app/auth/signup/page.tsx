@@ -82,13 +82,6 @@ const SignUp = () => {
         );
       } else {
         setLoading(false);
-        if (process.env.NODE_ENV !== "production") {
-          console.error("Registration failed:", {
-            statusCode: response.statusCode,
-            error: response.error,
-            debug: response.debug,
-          });
-        }
         setErrors({ form: response.error || "An error occurred" });
       }
     } catch (err) {
