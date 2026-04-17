@@ -136,7 +136,10 @@ const OTPContent = () => {
         setStatusMessage(null);
         setAttemptsLeft(null);
         setBlockSecondsRemaining(0);
-        router.push(`${currentUI.nextPath}?email=${encodeURIComponent(email)}`);
+        const resetToken = result.resetToken || "";
+        router.push(
+          `${currentUI.nextPath}?email=${encodeURIComponent(email)}&reset_token=${encodeURIComponent(resetToken)}`,
+        );
       } else {
         setStatusMessage(result.error);
         setAttemptsLeft(result.attemptsLeft ?? null);
