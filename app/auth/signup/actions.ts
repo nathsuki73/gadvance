@@ -1,7 +1,13 @@
 "use server";
 
 type VerifyOtpResult =
-  | { success: true }
+  | {
+      success: true;
+      token?: string | null;
+      user?: unknown;
+      user_profile?: unknown;
+      message?: string;
+    }
   | {
       success: false;
       error: string;
@@ -25,7 +31,9 @@ function getRequiredApiBaseUrl() {
   return apiBaseUrl;
 }
 
-export async function handleRegistration(email: string): Promise<RegistrationResult> {
+export async function handleRegistration(
+  email: string,
+): Promise<RegistrationResult> {
   try {
     const baseUrl = getRequiredApiBaseUrl();
     const response = await fetch(`${baseUrl}/api/auth/signup`, {
@@ -78,7 +86,7 @@ export async function verifyOTP(
 ): Promise<VerifyOtpResult> {
   try {
     const baseUrl = getRequiredApiBaseUrl();
-    const response = await fetch(`${baseUrl}/api/auth/signup/verify-otp`, {
+    const response = await fetch(`${baseUrl}/api/auth/signup/complete`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -95,12 +103,21 @@ export async function verifyOTP(
       success?: boolean;
       error?: string;
       message?: string;
+      token?: string | null;
+      user?: unknown;
+      user_profile?: unknown;
       attemptsLeft?: number;
       blockSecondsRemaining?: number;
     };
 
     if (response.ok && result.success) {
-      return { success: true };
+      return {
+        success: true,
+        token: result.token,
+        user: result.user,
+        user_profile: result.user_profile,
+        message: result.message,
+      };
     }
 
     return {

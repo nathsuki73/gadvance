@@ -34,12 +34,6 @@ const OTPContent = () => {
       button: isInstitutional ? "Activate Student Account" : "Complete Sign Up",
       nextPath: "/onboarding",
     },
-    login: {
-      title: "Security Challenge",
-      description: "Enter the 6-digit security code to verify your identity.",
-      button: "Secure Login",
-      nextPath: "/dashboard",
-    },
     reset: {
       title: "Identity Check",
       description:
@@ -118,6 +112,7 @@ const OTPContent = () => {
         setStatusMessage(null);
         setAttemptsLeft(null);
         setBlockSecondsRemaining(0);
+
         router.push(currentUI.nextPath);
       } else {
         // 4. Render verification status in the UI
