@@ -20,12 +20,11 @@ type RegistrationResult =
   | { success: false; error: string; statusCode?: number; debug?: string };
 
 const apiBaseUrl =
-  process.env.API_URL?.replace(/\/$/, "") ||
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+  process.env.API_URL?.replace(/\/$/, "");
 
 function getRequiredApiBaseUrl() {
   if (!apiBaseUrl) {
-    throw new Error("Missing API URL. Set API_URL or NEXT_PUBLIC_API_URL.");
+    throw new Error("Missing API URL. Set API_URL.");
   }
 
   return apiBaseUrl;
