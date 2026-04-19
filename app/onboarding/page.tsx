@@ -1,49 +1,117 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { getSession, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { finishOnboarding } from "./actions";
+import { finishOnBoarding } from "../actions/onboarding";
 
 const Onboarding = () => {
   const { data: session, update, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const normalizedStatus = session?.user?.status?.trim().toLowerCase();
+  const shouldShowRedirecting =
+    isRedirecting ||
+    (status === "authenticated" && normalizedStatus === "active");
+
+  const waitForActiveSession = async () => {
+    for (let i = 0; i < 8; i += 1) {
+      const latest = await getSession();
+      const latestStatus = latest?.user?.status?.trim().toLowerCase();
+      if (latestStatus === "active") {
+        return true;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+
+    return false;
+  };
 
   // 1. TOP LEVEL HOOK: This watches for session updates globally
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.status === "active") {
-      router.push("/workspace/module");
+    if (status === "authenticated" && normalizedStatus === "active") {
+      router.replace("/workspace/module");
     }
-  }, [session, status, router]);
+  }, [status, normalizedStatus, router]);
 
   // Handle loading state
-  if (status === "loading") return null;
+  if (status === "loading" || shouldShowRedirecting) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6 font-sans">
+        <div className="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-sm border border-zinc-100 text-center">
+          <div className="w-12 h-12 bg-teal-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Almost there</h1>
+          <p className="text-gray-400 text-sm mt-2">
+            Redirecting you to Workspace Module...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-  // Split Google name
-  const fullName = session?.user?.name || "";
-  const [googleFirst, ...lastParts] = fullName.split(" ");
-  const googleLast = lastParts.join(" ");
+  const googleFirst = session?.user?.firstName || "";
+  const googleLast = session?.user?.lastName || "";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      firstName: formData.get("firstName") as string,
-      middleName: formData.get("middleName") as string,
-      lastName: formData.get("lastName") as string,
-    };
+    try {
+      const formData = new FormData(e.currentTarget);
+      const payload = {
+        firstName: String(formData.get("firstName") ?? ""),
+        middleName: String(formData.get("middleName") ?? ""),
+        lastName: String(formData.get("lastName") ?? ""),
+      };
 
-    const result = await finishOnboarding(data);
+      const result = await finishOnBoarding(payload);
 
-    if (result.success) {
-      // 2. Trigger NextAuth to re-run the JWT/Session callbacks
-      await update();
-      // The useEffect above will detect the 'active' status and redirect automatically
-    } else {
-      alert(result.error || "Failed to save profile.");
+      if (!result.success) {
+        alert(result.error);
+        return;
+      }
+
+      const nextStatus = result.user?.status ?? "active";
+      const nextEmail = result.user?.email ?? session?.user?.email;
+      const nextFirstName = result.userProfile?.first_name ?? payload.firstName;
+      const nextMiddleName =
+        result.userProfile?.middle_name ?? payload.middleName ?? "";
+      const nextLastName = result.userProfile?.last_name ?? payload.lastName;
+
+      const updatedSession = await update({
+        ...session,
+        user_profile: {
+          first_name: nextFirstName,
+          middle_name: nextMiddleName || null,
+          last_name: nextLastName,
+        },
+        user: {
+          ...session?.user,
+          status: nextStatus,
+          email: nextEmail,
+          firstName: nextFirstName,
+          middleName: nextMiddleName || null,
+          lastName: nextLastName,
+        },
+      });
+
+      const updatedStatus = updatedSession?.user?.status?.trim().toLowerCase();
+      if (updatedStatus !== "active") {
+        await waitForActiveSession();
+      }
+
+      setIsRedirecting(true);
+      console.log("User", result);
+      router.replace("/workspace/module");
+    } catch (error) {
+      console.error("Failed to complete onboarding:", error);
+      alert("Unable to finish onboarding right now. Please try again.");
+      setIsRedirecting(false);
+    } finally {
       setLoading(false);
     }
   };

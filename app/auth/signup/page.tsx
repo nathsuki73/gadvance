@@ -70,7 +70,11 @@ const SignUp = () => {
     setLoading(true);
 
     try {
-      const response = await handleRegistration(formData.email);
+      const response = await handleRegistration(
+        formData.email,
+        formData.password,
+        formData.confirmPassword,
+      );
       if (response.success) {
         setLoading(false);
         router.push(
@@ -78,11 +82,12 @@ const SignUp = () => {
         );
       } else {
         setLoading(false);
-        setErrors({ email: response.error || "An error occurred" });
+        setErrors({ form: response.error || "An error occurred" });
       }
     } catch (err) {
       setLoading(false);
-      setErrors({ email: "Connection failed. Check your network." });
+      console.error("Registration Error:", err);
+      setErrors({ form: "Connection failed. Check your network." });
     }
   };
 
@@ -128,6 +133,12 @@ const SignUp = () => {
                 <p className="text-gray-400 mb-8 text-sm">
                   Please fill in the details below to secure your account.
                 </p>
+
+                {errors.form && (
+                  <p className="text-xs text-red-500 font-semibold mb-3">
+                    {errors.form}
+                  </p>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>

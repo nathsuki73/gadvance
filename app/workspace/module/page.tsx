@@ -5,25 +5,31 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 const ModulePage = () => {
-  const { data: session, status } = useSession();
+  const { data: session, status: authStatus } = useSession();
   const router = useRouter();
+  const userStatus = session?.user?.status;
+  const normalizedStatus = userStatus?.trim().toLowerCase();
+  const isOnboarding = normalizedStatus === "onboarding";
 
   useEffect(() => {
     // 1. If not logged in, go to sign in
-    if (status === "unauthenticated") {
+    if (authStatus === "unauthenticated") {
       router.push("/auth/signin");
       return;
     }
 
-    // 2. STATED INTENT: If status is onboarding, FORCE redirect to onboarding
-    if (status === "authenticated" && session?.user?.status === "onboarding") {
+    // 2. Authenticated users who have not completed onboarding should finish it first.
+    if (authStatus === "authenticated" && isOnboarding) {
       console.log("User is in onboarding state, redirecting...");
       router.push("/onboarding");
     }
-  }, [status, session, router]);
+  }, [authStatus, isOnboarding, router]);
 
   // 3. DO NOT RENDER THE UI if the user shouldn't be here
-  if (status === "loading" || session?.user?.status === "onboarding") {
+  if (
+    authStatus === "loading" ||
+    (authStatus === "authenticated" && isOnboarding)
+  ) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-4">
@@ -37,11 +43,21 @@ const ModulePage = () => {
   }
 
   // Prevent rendering the UI if we are about to redirect
-  if (status === "unauthenticated" || session?.user?.status === "onboarding") {
+  if (
+    authStatus === "unauthenticated" ||
+    (authStatus === "authenticated" && isOnboarding)
+  ) {
     return null;
   }
 
-  const displayName = session?.user?.name || "Student";
+  const displayName =
+    [
+      session?.user?.firstName,
+      session?.user?.middleName,
+      session?.user?.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ") || "Student";
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans">
