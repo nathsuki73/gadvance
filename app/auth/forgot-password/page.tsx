@@ -56,7 +56,7 @@ const ForgotPassword = () => {
                 Forgot <br /> <span className="text-teal-500">Password?</span>
               </h1>
               <p className="text-gray-400 mb-10 text-sm max-w-sm font-medium">
-                No worries! Enter your email and we'll send a 6-digit security
+                No worries! Enter your email and we will send a 6-digit security
                 code to reset your password.
               </p>
 
