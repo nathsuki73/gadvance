@@ -25,21 +25,9 @@ const ModulePage = () => {
     }
   }, [authStatus, isOnboarding, router]);
 
-  // 3. DO NOT RENDER THE UI if the user shouldn't be here
-  if (
-    authStatus === "loading" ||
-    (authStatus === "authenticated" && isOnboarding)
-  ) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
-            Synchronizing Workspace...
-          </p>
-        </div>
-      </div>
-    );
+  // 3. Do not render while session state is still loading.
+  if (authStatus === "loading") {
+    return null;
   }
 
   // Prevent rendering the UI if we are about to redirect
