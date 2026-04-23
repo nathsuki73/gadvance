@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import logoIcon from "@/app/assets/logo.ico";
 
 const Footer = () => {
   return (
@@ -9,11 +10,15 @@ const Footer = () => {
           {/* Brand Identity Section */}
           <div className="flex flex-col space-y-6">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-tr from-orange-400 to-teal-400 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">G</span>
+              <div className="relative h-9 w-9 shrink-0">
+                <img
+                  src={logoIcon.src}
+                  alt="GADVance logo"
+                  className="h-full w-full object-contain"
+                />
               </div>
-              <span className="font-bold text-gray-800 tracking-tight text-lg">
-                Gadvance
+              <span className="text-xl font-semibold tracking-tight text-gray-800">
+                GADVance
               </span>
             </div>
             <p className="text-zinc-500 text-sm leading-relaxed max-w-xs">

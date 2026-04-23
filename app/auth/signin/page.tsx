@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { signIn as nextAuthSignIn, useSession } from "next-auth/react";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import { handleSignIn, handleSignOut } from "../../lib/auth";
+import logoIcon from "@/app/assets/logo.ico";
 
 const SignIn = () => {
   const { data: session, status } = useSession();
@@ -88,11 +89,15 @@ const SignIn = () => {
         <div className="w-full lg:w-1/2 p-8 md:p-16 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-12">
-              <div className="w-8 h-8 bg-gradient-to-tr from-orange-400 to-teal-400 rounded-full flex items-center justify-center">
-                <span className="text-white text-[10px] font-black">G</span>
+              <div className="relative h-9 w-9 shrink-0">
+                <img
+                  src={logoIcon.src}
+                  alt="GADVance logo"
+                  className="h-full w-full object-contain"
+                />
               </div>
-              <span className="font-bold text-gray-800 tracking-tight text-lg">
-                Gadvance
+              <span className="text-xl font-semibold tracking-tight text-gray-800">
+                GADVance
               </span>
             </div>
 
