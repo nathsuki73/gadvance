@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   BookOpen,
   Compass,
@@ -70,40 +71,28 @@ const workspaceLinks: WorkspaceLink[] = [
 
 export default function WorkspacePage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: session, status } = useSession();
+
+  const displayName =
+    session?.user?.firstName || session?.user?.name?.split(" ")[0] || "there";
+  const statusLabel = session?.user?.status ?? "Active";
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch("/api/auth/session", {
-          cache: "no-store",
-        });
-        if (!response.ok) {
-          router.replace("/auth/signin");
-          return;
-        }
+    if (status === "unauthenticated") {
+      router.replace("/auth/signin");
+    }
+  }, [status, router]);
 
-        const session = await response.json();
-        if (!session?.user) {
-          router.replace("/auth/signin");
-          return;
-        }
-
-        setIsLoading(false);
-      } catch {
-        router.replace("/auth/signin");
-      }
-    };
-
-    checkAuth();
-  }, [router]);
-
-  if (isLoading) {
+  if (status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#fffdf8]">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#00a9d1]/20 border-t-[#00a9d1]" />
       </div>
     );
+  }
+
+  if (status === "unauthenticated") {
+    return null;
   }
 
   return (
@@ -117,15 +106,26 @@ export default function WorkspacePage() {
         </div>
 
         <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <section className="mb-6 rounded-3xl border border-zinc-200 bg-white/90 px-5 py-4 shadow-[0_10px_60px_-30px_rgba(0,169,209,0.45)] backdrop-blur">
+            <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
+              Welcome back, <span className="text-teal-500">{displayName}</span>
+              !
+            </h1>
+            <p className="mt-1 text-sm text-zinc-500">
+              Status:{" "}
+              <span className="font-medium text-zinc-700">{statusLabel}</span>
+            </p>
+          </section>
+
           <section className="grid gap-6 rounded-3xl border border-[#00a9d1]/20 bg-white/90 p-7 shadow-[0_10px_60px_-30px_rgba(0,169,209,0.6)] backdrop-blur md:grid-cols-[1.2fr_0.8fr]">
             <div>
               <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#00a9d1]/10 px-3 py-1 text-xs font-semibold tracking-wider text-[#007a97] uppercase">
                 <Sparkles className="h-3.5 w-3.5" />
                 Your Learning Command Center
               </p>
-              <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-5xl">
+              <h2 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-5xl">
                 Build confidence through action, not just content.
-              </h1>
+              </h2>
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-600 sm:text-lg">
                 This workspace brings your courses, community, and support tools
                 together so every session moves you one step closer to real

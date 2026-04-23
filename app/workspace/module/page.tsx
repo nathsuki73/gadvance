@@ -1,109 +1,94 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { ArrowRight, Clock3, Users } from "lucide-react";
 import Header from "@/app/components/Header";
+import { courseModules } from "@/app/lib/courseModules";
 
 const ModulePage = () => {
-  const { data: session, status: authStatus } = useSession();
+  const { status: authStatus } = useSession();
   const router = useRouter();
-  const userStatus = session?.user?.status;
-  const normalizedStatus = userStatus?.trim().toLowerCase();
-  const isOnboarding = normalizedStatus === "onboarding";
 
   useEffect(() => {
-    // 1. If not logged in, go to sign in
     if (authStatus === "unauthenticated") {
       router.push("/auth/signin");
-      return;
     }
+  }, [authStatus, router]);
 
-    // 2. Authenticated users who have not completed onboarding should finish it first.
-    if (authStatus === "authenticated" && isOnboarding) {
-      console.log("User is in onboarding state, redirecting...");
-      router.push("/onboarding");
-    }
-  }, [authStatus, isOnboarding, router]);
-
-  // 3. Do not render while session state is still loading.
-  if (authStatus === "loading") {
+  if (authStatus === "loading" || authStatus === "unauthenticated") {
     return null;
   }
-
-  // Prevent rendering the UI if we are about to redirect
-  if (
-    authStatus === "unauthenticated" ||
-    (authStatus === "authenticated" && isOnboarding)
-  ) {
-    return null;
-  }
-
-  const displayName =
-    [
-      session?.user?.firstName,
-      session?.user?.middleName,
-      session?.user?.lastName,
-    ]
-      .filter(Boolean)
-      .join(" ") || "Student";
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans text-zinc-900">
       <div className="sticky top-0 z-10">
         <Header />
       </div>
 
-      <main className="max-w-6xl mx-auto p-8">
-        <header className="mb-10">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back,{" "}
-            <span className="text-teal-500">{displayName.split(" ")[0]}</span>!
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <header className="mb-8">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-teal-600">
+            Current Modules
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            Choose the module you want to continue.
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Status:{" "}
-            <span className="font-semibold text-zinc-700 capitalize">
-              {session?.user?.status}
-            </span>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-500 sm:text-base">
+            These are the same modules available in the courses area, arranged
+            here for quick access.
           </p>
         </header>
 
-        {/* Module Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[
-            {
-              id: 1,
-              title: "Introduction to AI",
-              desc: "The basics of intelligent agents.",
-            },
-            {
-              id: 2,
-              title: "Machine Learning Foundations",
-              desc: "Linear regression and beyond.",
-            },
-            {
-              id: 3,
-              title: "Neural Networks",
-              desc: "Building the brain of the machine.",
-            },
-          ].map((item) => (
-            <div
-              key={item.id}
-              className="bg-white p-6 rounded-4xl border border-zinc-100 shadow-sm hover:shadow-md transition-all group"
+        <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+          {courseModules.map((module) => (
+            <article
+              key={module.id}
+              className="group rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
             >
-              <div className="w-12 h-12 bg-teal-50 rounded-2xl mb-4 flex items-center justify-center text-teal-600 font-bold group-hover:bg-teal-500 group-hover:text-white transition-colors">
-                0{item.id}
+              <div className="flex items-center justify-between gap-3">
+                <span
+                  className="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white"
+                  style={{ backgroundColor: module.accent }}
+                >
+                  {module.tag}
+                </span>
+                <span className="text-xs font-medium text-zinc-400">
+                  Module {module.id}
+                </span>
               </div>
-              <h3 className="font-bold text-gray-800 mb-2">{item.title}</h3>
-              <p className="text-xs text-gray-400 leading-relaxed mb-6">
-                {item.desc}
+
+              <h2 className="mt-4 text-lg font-semibold tracking-tight text-zinc-900">
+                {module.title}
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-500">
+                {module.description}
               </p>
-              <button className="w-full py-3 bg-zinc-900 text-white rounded-xl text-xs font-bold hover:bg-teal-600 transition-colors">
+
+              <div className="mt-4 space-y-2 rounded-2xl bg-zinc-50 p-4 text-sm text-zinc-600">
+                <div className="flex items-center gap-2">
+                  <Clock3 className="h-4 w-4 text-zinc-400" />
+                  <span>{module.duration}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-zinc-400" />
+                  <span>{module.enrolled} learners enrolled</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() =>
+                  router.push(`/workspace/courses?moduleId=${module.id}`)
+                }
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-600"
+              >
                 Start Module
+                <ArrowRight className="h-4 w-4" />
               </button>
-            </div>
+            </article>
           ))}
-        </div>
+        </section>
       </main>
     </div>
   );
