@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Statistics from "./statistics";
 import ProtectedButton from "./ProtectedButton";
+import Slideshow from "./slideshow/page";
 
 const Hero = () => {
   return (
@@ -109,21 +110,9 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* Right Side: Geometric Graphic */}
-        <div className="relative flex items-center justify-center lg:justify-end">
-          {/* Tip: For the geometric art, you can export it as an SVG or PNG from your design tool. 
-                I'm using an <img> tag here as a placeholder for that specific asset.
-              */}
-          <div className="relative h-[400px] w-full max-w-[500px] md:h-[500px]">
-            {/* Replace '/hero-shapes.svg' with your actual image path */}
-            <Image
-              src="/hero-shapes.png"
-              alt="Geometric abstract art"
-              fill
-              priority
-              className="object-contain"
-            />
-          </div>
+        {/* Right Side: Slideshow */}
+        <div className="relative flex items-center justify-center lg:justify-end -mt-8 lg:-mt-12">
+          <Slideshow />
         </div>
       </div>
 
