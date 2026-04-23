@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import Footer from "@/app/components/Footer";
 import Header from "@/app/components/Header";
 import { BlockRenderer, type ModuleBlock } from "@/app/components/moduleViewer";
+import { useSession } from "next-auth/react";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -272,6 +273,17 @@ const CourseCard = ({
   onClick: () => void;
 }) => {
   const Icon = iconByType[module.icon];
+  const { data: session } = useSession();
+
+  const handleEnrollClick = () => {
+    if (!session?.user) {
+      // User is not authenticated, redirect to sign in page
+      window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(`/workspace/courses?moduleId=${module.id}`)}`;
+      return;
+    }
+    // User is authenticated, proceed with onClick
+    onClick();
+  };
 
   return (
     <article className="group flex flex-col gap-5 rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm transition-all hover:border-zinc-300 hover:shadow-md">
@@ -336,12 +348,12 @@ const CourseCard = ({
       <div className="mt-1">
         <button
           type="button"
-          onClick={onClick}
+          onClick={handleEnrollClick}
           className="w-full rounded-lg px-4 py-2.5 text-center text-base font-semibold text-white transition-opacity hover:opacity-90"
           style={{ backgroundColor: module.accent }}
         >
           <span className="inline-flex items-center gap-1.5">
-            Continue Learning
+            Enroll
             <ArrowUpRight size={15} />
           </span>
         </button>

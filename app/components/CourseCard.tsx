@@ -69,7 +69,7 @@ const CourseCard = ({
             className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-lg font-black text-white transition-all hover:brightness-95"
             style={{ backgroundColor: color }}
           >
-            Continue Learning <span>→</span>
+            Enroll <span>→</span>
           </button>
         </div>
       </div>
