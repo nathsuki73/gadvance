@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Header from "@/app/components/Header";
 
 const ModulePage = () => {
   const { data: session, status: authStatus } = useSession();
@@ -49,33 +50,9 @@ const ModulePage = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans">
-      {/* Navigation Bar */}
-      <nav className="bg-white border-b border-zinc-100 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-tr from-orange-400 to-teal-400 rounded-full flex items-center justify-center">
-            <span className="text-white text-[10px] font-black">G</span>
-          </div>
-          <span className="font-bold text-gray-800 tracking-tight">
-            Gadvance
-          </span>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            {/* DISPLAY FULL NAME HERE */}
-            <p className="text-xs font-bold text-gray-900">{displayName}</p>
-            <p className="text-[10px] text-teal-600 font-bold uppercase tracking-widest">
-              {session?.user?.email}
-            </p>
-          </div>
-          <button
-            onClick={() => signOut()}
-            className="text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors"
-          >
-            Log Out
-          </button>
-        </div>
-      </nav>
+      <div className="sticky top-0 z-10">
+        <Header />
+      </div>
 
       <main className="max-w-6xl mx-auto p-8">
         <header className="mb-10">
