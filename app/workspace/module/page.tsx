@@ -112,7 +112,7 @@ const ModulePage = () => {
           ].map((item) => (
             <div
               key={item.id}
-              className="bg-white p-6 rounded-[2rem] border border-zinc-100 shadow-sm hover:shadow-md transition-all group"
+              className="bg-white p-6 rounded-4xl border border-zinc-100 shadow-sm hover:shadow-md transition-all group"
             >
               <div className="w-12 h-12 bg-teal-50 rounded-2xl mb-4 flex items-center justify-center text-teal-600 font-bold group-hover:bg-teal-500 group-hover:text-white transition-colors">
                 0{item.id}
