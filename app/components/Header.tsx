@@ -4,6 +4,7 @@ import Link from "next/link";
 import React from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import logoIcon from "@/app/assets/logo.ico";
 
 const Header = () => {
   const { data: session } = useSession();
@@ -21,11 +22,14 @@ const Header = () => {
         onClick={handleLogoClick}
         className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer bg-transparent border-0 padding-0"
       >
-        <div className="relative h-8 w-8">
-          {/* Logo Gradient Circle */}
-          <div className="h-full w-full bg-gradient-to-tr from-teal-400 to-orange-400 rounded-full" />
+        <div className="relative h-9 w-9 shrink-0">
+          <img
+            src={logoIcon.src}
+            alt="GADVance logo"
+            className="h-full w-full object-contain"
+          />
         </div>
-        <span className="text-xl font-semibold tracking-tight">Gadvance</span>
+        <span className="text-xl font-semibold tracking-tight">GADVance</span>
       </button>
 
       {/* Navigation Links */}

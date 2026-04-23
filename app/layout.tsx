@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "./components/provider/SessionProvider";
+import logoIcon from "@/app/assets/logo.ico";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "GADvance",
   description: "Promoting Gender and Development",
+  icons: {
+    icon: logoIcon.src,
+  },
 };
 
 export default function RootLayout({
