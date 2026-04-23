@@ -323,26 +323,16 @@ const CourseCard = ({
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Users size={15} className="text-zinc-500" />
-          {module.enrolled} enrolled
+          {module.enrolled} learners enrolled
         </span>
       </div>
 
-      <div>
-        <div className="mb-1.5 flex items-center justify-between text-[1.05rem] text-zinc-500">
-          <span>Your Progress</span>
-          <span className="font-bold" style={{ color: module.accent }}>
-            {module.progress}%
-          </span>
-        </div>
-        <div className="h-2 rounded-full bg-zinc-300">
-          <div
-            className="h-2 rounded-full"
-            style={{
-              backgroundColor: module.accent,
-              width: `${module.progress}%`,
-            }}
-          />
-        </div>
+      <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-4">
+        <p className="text-sm font-semibold text-zinc-900">New enrollment</p>
+        <p className="mt-1 text-sm leading-relaxed text-zinc-600">
+          Start here with no prior progress required. We’ll guide you from the
+          basics forward.
+        </p>
       </div>
 
       <div className="mt-1">
@@ -389,7 +379,7 @@ const Workspace = () => {
       <div className="min-h-screen bg-[#f4f4f6] font-sans text-zinc-900">
         <Header />
 
-        <main className="mx-auto max-w-7xl px-6 py-10">
+        <main className="mx-auto max-w-380 px-6 py-10">
           <button
             onClick={() => {
               setSelectedModuleId(null);
@@ -402,26 +392,25 @@ const Workspace = () => {
             Back to courses
           </button>
 
-          <article className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+          <article className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-9">
             <header className="mb-6 border-b border-zinc-100 pb-4">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
                   Module {selectedModule.id}
                 </span>
-                <span
-                  className="rounded-full px-3 py-1 text-xs font-semibold text-white"
-                  style={{ backgroundColor: selectedModule.accent }}
-                >
-                  {selectedModule.progress}% complete
+                <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
+                  New enrollment
                 </span>
                 <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
                   {selectedModule.duration}
                 </span>
               </div>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight text-zinc-900">
+              <h1 className="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-[2.6rem]">
                 {selectedModule.title}
               </h1>
-              <p className="mt-2 text-zinc-600">{selectedModule.description}</p>
+              <p className="mt-2 max-w-3xl text-zinc-600">
+                {selectedModule.description}
+              </p>
             </header>
 
             <button
@@ -437,11 +426,15 @@ const Workspace = () => {
               <ChevronRight size={18} />
             </button>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
               <aside className="sticky top-24 hidden h-fit self-start rounded-xl border border-zinc-200 bg-[#f7f8fa] p-4 lg:block">
                 <h2 className="mb-3 text-xl font-bold text-zinc-900">
-                  Module Structure
+                  Start here
                 </h2>
+                <p className="mb-3 text-sm leading-relaxed text-zinc-600">
+                  Work through the course from the beginning. No progress is
+                  expected yet.
+                </p>
                 <div className="space-y-2">
                   {moduleNavItems.map((item) => {
                     const isActive = item.id === displayedNavId;
@@ -507,7 +500,7 @@ const Workspace = () => {
               >
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-xl font-bold text-zinc-900">
-                    Module Structure
+                    Start here
                   </h2>
                   <button
                     type="button"

@@ -23,7 +23,7 @@ const SignIn = () => {
       if (normalizedStatus === "onboarding") {
         router.push("/onboarding");
       } else {
-        router.push("/workspace/module");
+        router.push("/workspace");
       }
     }
   }, [status, session, router]);
