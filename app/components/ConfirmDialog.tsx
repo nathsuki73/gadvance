@@ -63,17 +63,23 @@ const ConfirmDialog = ({
               className="h-6 w-6"
               aria-hidden="true"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h12m0 0-4-4m4 4-4 4" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 5v-1a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-1" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 12h12m0 0-4-4m4 4-4 4"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 5v-1a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-1"
+              />
             </svg>
           </div>
 
           <h2 className="text-2xl font-semibold tracking-tight text-white">
             {title}
           </h2>
-          <p className="mt-3 text-sm leading-6 text-slate-300">
-            {description}
-          </p>
+          <p className="mt-3 text-sm leading-6 text-slate-300">{description}</p>
 
           <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button
