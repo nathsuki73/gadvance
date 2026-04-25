@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { signIn as nextAuthSignIn, useSession } from "next-auth/react";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import { handleSignIn, handleSignOut } from "../../lib/auth";
+import ConfirmDialog from "@/app/components/ConfirmDialog";
 import logoIcon from "@/app/assets/logo.ico";
 
 const SignIn = () => {
@@ -13,6 +14,7 @@ const SignIn = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSwitchAccountDialog, setShowSwitchAccountDialog] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -121,7 +123,7 @@ const SignIn = () => {
                   Redirecting you to your workspace...
                 </p>
                 <button
-                  onClick={() => handleSignOut()}
+                  onClick={() => setShowSwitchAccountDialog(true)}
                   className="px-8 py-4 text-xs text-gray-400 font-bold uppercase tracking-widest hover:text-red-500 transition-all"
                 >
                   Switch Account
@@ -221,6 +223,19 @@ const SignIn = () => {
             </p>
           </div>
         </div>
+
+        <ConfirmDialog
+          open={showSwitchAccountDialog}
+          title="Switch accounts?"
+          description="This will sign you out of the current account so you can choose a different one."
+          confirmLabel="Switch account"
+          cancelLabel="Cancel"
+          onCancel={() => setShowSwitchAccountDialog(false)}
+          onConfirm={() => {
+            setShowSwitchAccountDialog(false);
+            handleSignOut();
+          }}
+        />
       </div>
     </div>
   );

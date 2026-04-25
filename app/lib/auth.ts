@@ -1,7 +1,8 @@
 import { signIn, signOut, useSession } from "next-auth/react";
 
 export const handleSignIn = () => signIn("google");
-export const handleSignOut = () => signOut();
+export const handleSignOut = (options?: Parameters<typeof signOut>[0]) =>
+  signOut(options);
 
 /**
  * Helper function to check if user is authenticated

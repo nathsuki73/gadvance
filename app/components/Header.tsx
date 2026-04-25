@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import React from "react";
-import { useSession, signOut } from "next-auth/react";
+import React, { useState } from "react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import logoIcon from "@/app/assets/logo.ico";
+import { handleSignOut } from "@/app/lib/auth";
+import ConfirmDialog from "./ConfirmDialog";
 
 const Header = () => {
   const { data: session } = useSession();
   const isAuthenticated = !!session?.user;
   const router = useRouter();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const handleLogoClick = () => {
     router.push(isAuthenticated ? "/workspace" : "/");
@@ -71,7 +74,7 @@ const Header = () => {
               <p className="text-xs text-zinc-500">{session?.user?.email}</p>
             </div>
             <button
-              onClick={() => signOut({ callbackUrl: "/" })}
+              onClick={() => setShowLogoutDialog(true)}
               className="text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors"
             >
               Log Out
@@ -94,6 +97,20 @@ const Header = () => {
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={showLogoutDialog}
+        title="Log out of your account?"
+        description="You will be signed out and returned to the home page. You can always sign back in again.
+        "
+        confirmLabel="Log out"
+        cancelLabel="Stay signed in"
+        onCancel={() => setShowLogoutDialog(false)}
+        onConfirm={() => {
+          setShowLogoutDialog(false);
+          handleSignOut({ callbackUrl: "/" });
+        }}
+      />
     </header>
   );
 };
