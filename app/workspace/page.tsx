@@ -73,8 +73,25 @@ export default function WorkspacePage() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const displayName =
-    session?.user?.firstName || session?.user?.name?.split(" ")[0] || "there";
+  const displayName = (() => {
+    const firstName = session?.user?.firstName?.trim();
+    if (firstName) {
+      return firstName;
+    }
+
+    const fullName = session?.user?.name?.trim();
+    if (!fullName) {
+      return "there";
+    }
+
+    const commaSeparatedName = fullName.split(",")[1]?.trim();
+    if (commaSeparatedName) {
+      return commaSeparatedName.replace(/\s+[A-Z]\.??$/, "").trim() || "there";
+    }
+
+    const nameParts = fullName.split(/\s+/).filter(Boolean);
+    return nameParts.length > 1 ? nameParts[0] : "there";
+  })();
   const statusLabel = session?.user?.status ?? "Active";
 
   useEffect(() => {
