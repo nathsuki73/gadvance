@@ -166,6 +166,14 @@ const Header = () => {
                   >
                     Profile
                   </Link>
+                  <Link
+                    href="/workspace/settings"
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+                    role="menuitem"
+                    onClick={() => setShowProfileMenu(false)}
+                  >
+                    Settings
+                  </Link>
                   <button
                     type="button"
                     className="rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
