@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import logoIcon from "@/app/assets/logo.ico";
@@ -12,11 +12,46 @@ const Header = () => {
   const { data: session } = useSession();
   const isAuthenticated = !!session?.user;
   const router = useRouter();
+  const menuRef = useRef<HTMLDivElement>(null);
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const handleLogoClick = () => {
     router.push(isAuthenticated ? "/workspace" : "/");
   };
+
+  useEffect(() => {
+    if (!showProfileMenu) {
+      return;
+    }
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(target) &&
+        profileButtonRef.current &&
+        !profileButtonRef.current.contains(target)
+      ) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [showProfileMenu]);
 
   return (
     <header className="flex items-center justify-between px-8 py-4 bg-white border-b border-zinc-100">
@@ -66,19 +101,85 @@ const Header = () => {
       {/* Auth Buttons */}
       <div className="flex items-center gap-6">
         {isAuthenticated ? (
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-semibold text-zinc-900">
-                {session?.user?.name}
-              </p>
-              <p className="text-xs text-zinc-500">{session?.user?.email}</p>
-            </div>
+          <div className="relative flex items-center">
             <button
-              onClick={() => setShowLogoutDialog(true)}
-              className="text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors"
+              ref={profileButtonRef}
+              onClick={() => setShowProfileMenu((prev) => !prev)}
+              aria-expanded={showProfileMenu}
+              aria-haspopup="menu"
+              aria-label="Open profile options"
+              title="Profile"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-100"
             >
-              Log Out
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                className="h-5 w-5"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="8" r="3.5" />
+                <path d="M4.5 19a7.5 7.5 0 0 1 15 0" />
+              </svg>
             </button>
+
+            {showProfileMenu ? (
+              <div
+                ref={menuRef}
+                className="absolute right-0 top-full z-50 mt-3 w-72 rounded-xl border border-zinc-200 bg-white p-4 shadow-lg"
+                role="menu"
+                aria-label="Profile menu"
+              >
+                <div className="flex items-center gap-3 border-b border-zinc-100 pb-3">
+                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-zinc-100 text-zinc-600">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      className="h-5 w-5"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="8" r="3.5" />
+                      <path d="M4.5 19a7.5 7.5 0 0 1 15 0" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-zinc-900">
+                      {session?.user?.name ?? "User"}
+                    </p>
+                    <p className="truncate text-xs text-zinc-500">
+                      {session?.user?.email ?? "No email"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid gap-2">
+                  <Link
+                    href="/workspace"
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+                    role="menuitem"
+                    onClick={() => setShowProfileMenu(false)}
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    type="button"
+                    className="rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      setShowLogoutDialog(true);
+                    }}
+                  >
+                    Log out
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : (
           <>
