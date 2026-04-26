@@ -159,7 +159,7 @@ const Header = () => {
 
                 <div className="mt-3 grid gap-2">
                   <Link
-                    href="/workspace"
+                    href="/workspace/profile"
                     className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
                     role="menuitem"
                     onClick={() => setShowProfileMenu(false)}

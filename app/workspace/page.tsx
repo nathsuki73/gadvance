@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
+  CircleUserRound,
   BookOpen,
   Compass,
   Flame,
@@ -24,6 +25,15 @@ type WorkspaceLink = {
 };
 
 const workspaceLinks: WorkspaceLink[] = [
+  {
+    title: "My Profile",
+    description:
+      "View your account details, placeholders, and personal learning snapshot.",
+    href: "/workspace/profile",
+    icon: CircleUserRound,
+    badge: "Account",
+    accent: "from-sky-500 to-blue-500",
+  },
   {
     title: "Explore Courses",
     description:
