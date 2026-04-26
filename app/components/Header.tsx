@@ -54,7 +54,7 @@ const Header = () => {
   }, [showProfileMenu]);
 
   return (
-    <header className="flex items-center justify-between px-8 py-4 bg-white border-b border-zinc-100">
+    <header className="relative z-60 flex items-center justify-between px-8 py-4 bg-white border-b border-zinc-100">
       {/* Clickable Logo Section */}
       <button
         onClick={handleLogoClick}
@@ -128,7 +128,7 @@ const Header = () => {
             {showProfileMenu ? (
               <div
                 ref={menuRef}
-                className="absolute right-0 top-full z-50 mt-3 w-72 rounded-xl border border-zinc-200 bg-white p-4 shadow-lg"
+                className="pointer-events-auto absolute right-0 top-full z-70 mt-3 w-72 rounded-xl border border-zinc-200 bg-white p-4 shadow-lg"
                 role="menu"
                 aria-label="Profile menu"
               >
