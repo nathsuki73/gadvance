@@ -1,23 +1,29 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   Bell,
   Globe,
   Lock,
+  Moon,
   Palette,
   Shield,
   SlidersHorizontal,
   Sparkles,
+  Sun,
 } from "lucide-react";
 import Header from "@/app/components/Header";
 import Footer from "@/app/components/Footer";
+import { getStoredTheme, setTheme } from "@/app/lib/theme";
 
 const SettingsPage = () => {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const [isDarkMode, setIsDarkMode] = useState(
+    () => getStoredTheme() === "dark",
+  );
 
   const statusLabel = session?.user?.status ?? "Active";
 
@@ -26,6 +32,12 @@ const SettingsPage = () => {
       router.replace("/auth/signin");
     }
   }, [status, router]);
+
+  const handleThemeToggle = () => {
+    const nextDarkMode = !isDarkMode;
+    setIsDarkMode(nextDarkMode);
+    setTheme(nextDarkMode ? "dark" : "light");
+  };
 
   if (status === "loading") {
     return (
@@ -78,13 +90,46 @@ const SettingsPage = () => {
               </h2>
               <div className="mt-5 space-y-3">
                 <div className="rounded-xl border border-zinc-100 bg-zinc-50/60 p-4">
-                  <p className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">
-                    <Palette className="h-4 w-4 text-zinc-500" />
-                    Theme preference
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Light (placeholder)
-                  </p>
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">
+                        <Palette className="h-4 w-4 text-zinc-500" />
+                        Theme preference
+                      </p>
+                      <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-zinc-500">
+                        {isDarkMode ? (
+                          <>
+                            <Moon className="h-3.5 w-3.5" />
+                            Dark mode enabled
+                          </>
+                        ) : (
+                          <>
+                            <Sun className="h-3.5 w-3.5" />
+                            Light mode enabled
+                          </>
+                        )}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isDarkMode}
+                      aria-label="Toggle dark mode"
+                      onClick={handleThemeToggle}
+                      className={`relative inline-flex h-7 w-12 items-center rounded-full border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00a9d1] focus-visible:ring-offset-2 ${
+                        isDarkMode
+                          ? "border-[#00a9d1] bg-[#00a9d1]"
+                          : "border-zinc-300 bg-zinc-200"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                          isDarkMode ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
                 <div className="rounded-xl border border-zinc-100 bg-zinc-50/60 p-4">
                   <p className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">
