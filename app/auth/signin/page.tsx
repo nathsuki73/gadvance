@@ -6,12 +6,15 @@ import { useRouter } from "next/navigation";
 import { signIn as nextAuthSignIn, useSession } from "next-auth/react";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import { handleSignIn, handleSignOut } from "../../lib/auth";
+import ConfirmDialog from "@/app/components/ConfirmDialog";
+import logoIcon from "@/app/assets/logo.ico";
 
 const SignIn = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSwitchAccountDialog, setShowSwitchAccountDialog] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -23,7 +26,7 @@ const SignIn = () => {
       if (normalizedStatus === "onboarding") {
         router.push("/onboarding");
       } else {
-        router.push("/workspace/module");
+        router.push("/workspace");
       }
     }
   }, [status, session, router]);
@@ -88,11 +91,15 @@ const SignIn = () => {
         <div className="w-full lg:w-1/2 p-8 md:p-16 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-12">
-              <div className="w-8 h-8 bg-gradient-to-tr from-orange-400 to-teal-400 rounded-full flex items-center justify-center">
-                <span className="text-white text-[10px] font-black">G</span>
+              <div className="relative h-9 w-9 shrink-0">
+                <img
+                  src={logoIcon.src}
+                  alt="GADVance logo"
+                  className="h-full w-full object-contain"
+                />
               </div>
-              <span className="font-bold text-gray-800 tracking-tight text-lg">
-                Gadvance
+              <span className="text-xl font-semibold tracking-tight text-gray-800">
+                GADVance
               </span>
             </div>
 
@@ -116,7 +123,7 @@ const SignIn = () => {
                   Redirecting you to your workspace...
                 </p>
                 <button
-                  onClick={() => handleSignOut()}
+                  onClick={() => setShowSwitchAccountDialog(true)}
                   className="px-8 py-4 text-xs text-gray-400 font-bold uppercase tracking-widest hover:text-red-500 transition-all"
                 >
                   Switch Account
@@ -125,7 +132,7 @@ const SignIn = () => {
             ) : (
               <>
                 <h1 className="text-4xl font-bold text-gray-900 mb-2 leading-tight">
-                  Hello, <br /> Welcome Back
+                  Welcome to GADVance
                 </h1>
                 <p className="text-gray-400 mb-10 text-sm">
                   Sign in to access your projects and settings.
@@ -216,6 +223,19 @@ const SignIn = () => {
             </p>
           </div>
         </div>
+
+        <ConfirmDialog
+          open={showSwitchAccountDialog}
+          title="Switch accounts?"
+          description="This will sign you out of the current account so you can choose a different one."
+          confirmLabel="Switch account"
+          cancelLabel="Cancel"
+          onCancel={() => setShowSwitchAccountDialog(false)}
+          onConfirm={() => {
+            setShowSwitchAccountDialog(false);
+            handleSignOut();
+          }}
+        />
       </div>
     </div>
   );

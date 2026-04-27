@@ -16,12 +16,26 @@ export async function proxy(request: NextRequest) {
   const isOnboardingRoute = pathname === "/onboarding";
   const isWorkspaceRoute = pathname.startsWith("/workspace");
 
+  // Public pages that don't require authentication
+  const publicWorkspacePages = [
+    "/workspace/courses",
+    "/workspace/about",
+    "/workspace/community",
+    "/workspace/support",
+  ];
+
+  // Check if the route is a public workspace page or a subpage of a public page
+  const isPublicPage = publicWorkspacePages.some(
+    (page) => pathname === page || pathname.startsWith(page + "/"),
+  );
+
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
   });
 
-  if (!token && (isOnboardingRoute || isWorkspaceRoute)) {
+  // Only require auth for protected workspace routes and onboarding
+  if (!token && (isOnboardingRoute || (isWorkspaceRoute && !isPublicPage))) {
     const signInUrl = request.nextUrl.clone();
     signInUrl.pathname = "/auth/signin";
     signInUrl.searchParams.set("callbackUrl", pathname || "/onboarding");
@@ -35,7 +49,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(workspaceUrl);
   }
 
-  if (isWorkspaceRoute && isOnboardingStatus(token?.status)) {
+  if (isWorkspaceRoute && !isPublicPage && isOnboardingStatus(token?.status)) {
     const onboardingUrl = request.nextUrl.clone();
     onboardingUrl.pathname = "/onboarding";
     onboardingUrl.search = "";

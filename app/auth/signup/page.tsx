@@ -8,6 +8,7 @@ import { handleSignIn } from "../../lib/auth";
 import { handleRegistration } from "./actions";
 import { z } from "zod";
 import { useSession } from "next-auth/react";
+import logoIcon from "@/app/assets/logo.ico";
 
 const signUpSchema = z
   .object({
@@ -98,11 +99,15 @@ const SignUp = () => {
           <div>
             {/* Logo */}
             <div className="flex items-center gap-2 mb-10">
-              <div className="w-8 h-8 bg-gradient-to-tr from-orange-400 to-teal-400 rounded-full flex items-center justify-center">
-                <span className="text-white text-[10px] font-black">G</span>
+              <div className="relative h-9 w-9 shrink-0">
+                <img
+                  src={logoIcon.src}
+                  alt="GADVance logo"
+                  className="h-full w-full object-contain"
+                />
               </div>
-              <span className="font-bold text-gray-800 tracking-tight text-lg">
-                Gadvance
+              <span className="text-xl font-semibold tracking-tight text-gray-800">
+                GADVance
               </span>
             </div>
 

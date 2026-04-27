@@ -40,3 +40,73 @@ input:disabled,
 [aria-disabled="true"] {
   cursor: not-allowed;
 }
+
+/* Temporary global night mode. Remove `night-mode` from `app/layout.tsx` to revert. */
+body.night-mode {
+  --background: #070c16;
+  --foreground: #e4ebf7;
+  background:
+    radial-gradient(
+      1200px 700px at -10% -10%,
+      rgba(0, 169, 209, 0.15),
+      transparent 45%
+    ),
+    radial-gradient(
+      1000px 600px at 110% 0%,
+      rgba(255, 138, 0, 0.12),
+      transparent 45%
+    ),
+    #070c16;
+  color: #e4ebf7;
+}
+
+body.night-mode [class*="bg-[#fffdf8]"],
+body.night-mode [class*="bg-[#F9FAFB]"] {
+  background-color: #070c16 !important;
+}
+
+body.night-mode .bg-white,
+body.night-mode .bg-white\/90,
+body.night-mode .bg-zinc-50,
+body.night-mode .bg-zinc-100,
+body.night-mode .bg-gray-50 {
+  background-color: #101a2b !important;
+}
+
+body.night-mode .text-zinc-900,
+body.night-mode .text-gray-900,
+body.night-mode .text-gray-800,
+body.night-mode .text-black {
+  color: #f3f7ff !important;
+}
+
+body.night-mode .text-zinc-700,
+body.night-mode .text-zinc-600,
+body.night-mode .text-zinc-500,
+body.night-mode .text-zinc-400,
+body.night-mode .text-gray-600,
+body.night-mode .text-gray-500 {
+  color: #b9c4d8 !important;
+}
+
+body.night-mode .border-zinc-100,
+body.night-mode .border-zinc-200,
+body.night-mode .border-zinc-300,
+body.night-mode .border-gray-100,
+body.night-mode .border-gray-200 {
+  border-color: #253148 !important;
+}
+
+body.night-mode header,
+body.night-mode footer {
+  background-color: rgba(13, 22, 36, 0.9) !important;
+  backdrop-filter: blur(8px);
+}
+
+body.night-mode input,
+body.night-mode textarea,
+body.night-mode select {
+  background-color: #0f1727 !important;
+  color: #e4ebf7 !important;
+  border-color: #2a3854 !important;
+}

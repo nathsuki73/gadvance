@@ -1,7 +1,11 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Statistics from "./statistics";
+import ProtectedButton from "./ProtectedButton";
+import Slideshow from "./slideshow/page";
 
 const Hero = () => {
   return (
@@ -25,12 +29,15 @@ const Hero = () => {
           </div>
 
           <div>
-            <Link
-              href="/get-started"
+            <ProtectedButton
+              onClick={() => {
+                window.location.href = "/workspace";
+              }}
               className="inline-block rounded-md bg-[#00aeef] px-8 py-3 text-lg font-medium text-white transition-colors hover:bg-[#0092c9]"
+              redirectUrl="/workspace"
             >
               Get Started
-            </Link>
+            </ProtectedButton>
           </div>
 
           {/* Statistics Section */}
@@ -103,21 +110,9 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* Right Side: Geometric Graphic */}
-        <div className="relative flex items-center justify-center lg:justify-end">
-          {/* Tip: For the geometric art, you can export it as an SVG or PNG from your design tool. 
-                I'm using an <img> tag here as a placeholder for that specific asset.
-              */}
-          <div className="relative h-[400px] w-full max-w-[500px] md:h-[500px]">
-            {/* Replace '/hero-shapes.svg' with your actual image path */}
-            <Image
-              src="/hero-shapes.png"
-              alt="Geometric abstract art"
-              fill
-              priority
-              className="object-contain"
-            />
-          </div>
+        {/* Right Side: Slideshow */}
+        <div className="relative flex items-center justify-center lg:justify-end -mt-8 lg:-mt-12">
+          <Slideshow />
         </div>
       </div>
 
@@ -239,14 +234,15 @@ const Hero = () => {
                 />
               </div>
             </div>
-            <Link
-              href="/course"
-              target="_blank"
-              rel="noopener noreferrer"
+            <ProtectedButton
+              onClick={() => {
+                window.open("/course", "_blank");
+              }}
               className="block w-full rounded-lg bg-teal-600 px-4 py-2 text-center font-semibold text-white transition hover:bg-teal-700"
+              redirectUrl="/course"
             >
-              Continue Learning →
-            </Link>
+              Enroll →
+            </ProtectedButton>
           </div>
 
           {/* Course Card 2 - Women in Leadership */}
@@ -326,14 +322,15 @@ const Hero = () => {
                 />
               </div>
             </div>
-            <Link
-              href="/course"
-              target="_blank"
-              rel="noopener noreferrer"
+            <ProtectedButton
+              onClick={() => {
+                window.open("/course", "_blank");
+              }}
               className="block w-full rounded-lg bg-orange-500 px-4 py-2 text-center font-semibold text-white transition hover:bg-orange-700"
+              redirectUrl="/course"
             >
-              Continue Learning →
-            </Link>
+              Enroll →
+            </ProtectedButton>
           </div>
 
           {/* Course Card 3 - Workplace Rights & Advocacy */}
@@ -413,14 +410,15 @@ const Hero = () => {
                 />
               </div>
             </div>
-            <Link
-              href="/course"
-              target="_blank"
-              rel="noopener noreferrer"
+            <ProtectedButton
+              onClick={() => {
+                window.open("/course", "_blank");
+              }}
               className="block w-full rounded-lg bg-teal-600 px-4 py-2 text-center font-semibold text-white transition hover:bg-teal-700"
+              redirectUrl="/course"
             >
-              Continue Learning →
-            </Link>
+              Enroll →
+            </ProtectedButton>
           </div>
 
           {/* Course Card 4 - Mental Health & Wellness */}
@@ -494,14 +492,15 @@ const Hero = () => {
                 />
               </div>
             </div>
-            <Link
-              href="/course"
-              target="_blank"
-              rel="noopener noreferrer"
+            <ProtectedButton
+              onClick={() => {
+                window.open("/course", "_blank");
+              }}
               className="block w-full rounded-lg bg-pink-500 px-4 py-2 text-center font-semibold text-white transition hover:bg-pink-700"
+              redirectUrl="/course"
             >
-              Continue Learning →
-            </Link>
+              Enroll →
+            </ProtectedButton>
           </div>
         </div>
 

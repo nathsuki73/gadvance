@@ -474,6 +474,10 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   secret: nextAuthSecret,
+  pages: {
+    signIn: "/auth/signin",
+    error: "/auth/error",
+  },
   session: {
     strategy: "jwt",
   },
@@ -623,45 +627,50 @@ export const authOptions: NextAuthOptions = {
           googleIdToken: account.id_token,
         });
 
-        if (exchanged?.token) {
-          const latestIdentity = await refreshLaravelIdentity(exchanged.token);
+        if (!exchanged?.token) {
+          console.error(
+            "Blocked Google sign-in because Laravel handshake did not return a valid token.",
+          );
+          return false;
+        }
 
-          const mutableUser = user as typeof user & {
-            user_profile?: UserProfilePayload;
-            laravelAuth?: {
-              token: string;
-              status?: string;
-              name?: string;
-              email?: string;
-              sessionToken?: string;
-            };
+        const latestIdentity = await refreshLaravelIdentity(exchanged.token);
+
+        const mutableUser = user as typeof user & {
+          user_profile?: UserProfilePayload;
+          laravelAuth?: {
+            token: string;
+            status?: string;
+            name?: string;
+            email?: string;
+            sessionToken?: string;
           };
+        };
 
-          mutableUser.user_profile =
-            latestIdentity?.userProfile || exchanged.userProfile;
+        mutableUser.user_profile =
+          latestIdentity?.userProfile || exchanged.userProfile;
 
-          mutableUser.laravelAuth = {
-            token: exchanged.token,
-            status:
-              normalizeStatus(latestIdentity?.status) ||
-              normalizeStatus(exchanged.status),
-            name: composeNameParts([
-              latestIdentity?.firstName,
-              latestIdentity?.middleName,
-              latestIdentity?.lastName,
-              exchanged.firstName,
-              exchanged.middleName,
-              exchanged.lastName,
-            ]),
-            email: latestIdentity?.email || exchanged.email,
-            sessionToken: exchanged.sessionToken,
-          };
+        mutableUser.laravelAuth = {
+          token: exchanged.token,
+          status:
+            normalizeStatus(latestIdentity?.status) ||
+            normalizeStatus(exchanged.status),
+          name: composeNameParts([
+            latestIdentity?.firstName,
+            latestIdentity?.middleName,
+            latestIdentity?.lastName,
+            exchanged.firstName,
+            exchanged.middleName,
+            exchanged.lastName,
+          ]),
+          email: latestIdentity?.email || exchanged.email,
+          sessionToken: exchanged.sessionToken,
+        };
 
-          if (!mutableUser.laravelAuth.status) {
-            console.warn(
-              "Laravel handshake/refresh response did not return a usable status field.",
-            );
-          }
+        if (!mutableUser.laravelAuth.status) {
+          console.warn(
+            "Laravel handshake/refresh response did not return a usable status field.",
+          );
         }
 
         return true;
