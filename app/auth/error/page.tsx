@@ -27,9 +27,12 @@ const ERROR_COPY: Record<string, { title: string; description: string }> = {
   },
 };
 
-export default function AuthErrorPage() {
-  const searchParams = useSearchParams();
-  const errorCode = searchParams.get("error") || "Default";
+export default function AuthErrorPage({
+  searchParams,
+}: {
+  searchParams: { error?: string };
+}) {
+  const errorCode = searchParams.error || "Default";
   const errorMessage = ERROR_COPY[errorCode] || ERROR_COPY.Default;
 
   return (
