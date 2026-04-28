@@ -1,5 +1,6 @@
 export { default as BlockRenderer } from "./BlockRenderer";
 export { default as GameDisplay } from "./GameDisplay";
+export { default as ImageParagraphDisplay } from "./imageParagraphDisplay";
 export { default as ModuleContentViewer } from "./ModuleContentViewer";
 export { default as ParagraphDisplay } from "./ParagraphDisplay";
 export { default as QuizDisplay } from "./QuizDisplay";
