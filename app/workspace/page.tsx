@@ -132,8 +132,8 @@ export default function WorkspacePage() {
           <div className="absolute right-0 top-32 h-80 w-80 rounded-full bg-[#ff8a00]/15 blur-3xl" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <section className="mb-6 rounded-3xl border border-zinc-200 bg-white/90 px-5 py-4 shadow-[0_10px_60px_-30px_rgba(0,169,209,0.45)] backdrop-blur">
+        <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+          <section className="mb-4 rounded-3xl border border-zinc-200 bg-white/90 px-5 py-4 shadow-[0_10px_60px_-30px_rgba(0,169,209,0.45)] backdrop-blur">
             <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
               Welcome back, <span className="text-teal-500">{displayName}</span>
               !

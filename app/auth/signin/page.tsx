@@ -89,7 +89,7 @@ const SignIn = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans">
-      <div className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-sm flex overflow-hidden min-h-[600px] border border-zinc-100">
+      <div className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-sm flex overflow-hidden min-h-150 border border-zinc-100">
         <div className="w-full lg:w-1/2 p-8 md:p-16 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-12">
@@ -190,11 +190,11 @@ const SignIn = () => {
                   </button>
 
                   <div className="relative flex items-center py-6">
-                    <div className="flex-grow border-t border-gray-100"></div>
-                    <span className="flex-shrink mx-4 text-gray-300 text-[10px] uppercase tracking-widest font-bold">
+                    <div className="grow border-t border-gray-100"></div>
+                    <span className="shrink mx-4 text-gray-300 text-[10px] uppercase tracking-widest font-bold">
                       Or continue with
                     </span>
-                    <div className="flex-grow border-t border-gray-100"></div>
+                    <div className="grow border-t border-gray-100"></div>
                   </div>
 
                   <GoogleButton onClick={handleSignIn} />

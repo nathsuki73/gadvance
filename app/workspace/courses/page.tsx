@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   ArrowUpRight,
   Briefcase,
+  ChevronLeft,
   ChevronRight,
   Clock3,
   Globe,
@@ -157,6 +158,7 @@ const Workspace = () => {
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [activeNavId, setActiveNavId] = useState<string>("");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isStartHereCollapsed, setIsStartHereCollapsed] = useState(false);
 
   const selectedModule = courseModules.find((m) => m.id === selectedModuleId);
   const moduleNavItems = useMemo(
@@ -186,6 +188,7 @@ const Workspace = () => {
               setSelectedModuleId(null);
               setActiveNavId("");
               setIsMobileNavOpen(false);
+              setIsStartHereCollapsed(false);
             }}
             className="mb-6 inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
           >
@@ -193,7 +196,9 @@ const Workspace = () => {
             Back to courses
           </button>
 
-          <article className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-9">
+          <article className={`rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm transition-all duration-300 md:p-9 ${
+              isStartHereCollapsed ? "lg:ml-16" : "lg:ml-80"
+            }`}>
             <header className="mb-6 border-b border-zinc-100 pb-4">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
@@ -227,42 +232,86 @@ const Workspace = () => {
               <ChevronRight size={18} />
             </button>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-              <aside className="sticky top-24 hidden h-fit self-start rounded-xl border border-zinc-200 bg-[#f7f8fa] p-4 lg:block">
-                <h2 className="mb-3 text-xl font-bold text-zinc-900">
-                  Start here
-                </h2>
-                <p className="mb-3 text-sm leading-relaxed text-zinc-600">
-                  Work through the course from the beginning. No progress is
-                  expected yet.
-                </p>
-                <div className="space-y-2">
-                  {moduleNavItems.map((item) => {
-                    const isActive = item.id === displayedNavId;
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => handleModuleNavClick(item.id)}
-                        className="w-full rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
-                        style={
-                          isActive
-                            ? {
-                                borderColor: selectedModule.accent,
-                                backgroundColor: `${selectedModule.accent}1A`,
-                                color: selectedModule.accent,
-                              }
-                            : {
-                                borderColor: "#e4e4e7",
-                                backgroundColor: "#ffffff",
-                                color: "#111827",
-                              }
-                        }
-                      >
-                        {item.label}
-                      </button>
-                    );
-                  })}
+            <div className="relative">
+              <aside
+                className={`fixed left-0 top-0 z-20 hidden h-screen overflow-hidden border-r border-zinc-200 bg-[#f7f8fa] shadow-sm transition-all duration-300 lg:block ${
+                  isStartHereCollapsed ? "w-16" : "w-80"
+                }`}
+              >
+                <div className="flex h-full flex-col px-4 pb-4 pt-24">
+                  <div
+                    className={`flex items-start gap-3 ${
+                      isStartHereCollapsed
+                        ? "justify-center"
+                        : "justify-between"
+                    }`}
+                  >
+                    {!isStartHereCollapsed ? (
+                      <div>
+                        <h2 className="text-xl font-bold text-zinc-900">
+                          Start here
+                        </h2>
+                        <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+                          Work through the course from the beginning. No
+                          progress is expected yet.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="mt-24 -rotate-90 whitespace-nowrap text-sm font-bold text-zinc-900">
+                        Start here
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setIsStartHereCollapsed((current) => !current)
+                      }
+                      className="rounded-md border border-zinc-300 bg-white p-1.5 text-zinc-700 transition-colors hover:bg-zinc-50"
+                      aria-label={
+                        isStartHereCollapsed
+                          ? "Expand start here panel"
+                          : "Collapse start here panel"
+                      }
+                    >
+                      {isStartHereCollapsed ? (
+                        <ChevronRight size={16} />
+                      ) : (
+                        <ChevronLeft size={16} />
+                      )}
+                    </button>
+                  </div>
+
+                  {!isStartHereCollapsed && (
+                    <div className="mt-5 space-y-2 overflow-y-auto pr-1">
+                      {moduleNavItems.map((item) => {
+                        const isActive = item.id === displayedNavId;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => handleModuleNavClick(item.id)}
+                            className="w-full rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
+                            style={
+                              isActive
+                                ? {
+                                    borderColor: selectedModule.accent,
+                                    backgroundColor: `${selectedModule.accent}1A`,
+                                    color: selectedModule.accent,
+                                  }
+                                : {
+                                    borderColor: "#e4e4e7",
+                                    backgroundColor: "#ffffff",
+                                    color: "#111827",
+                                  }
+                            }
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </aside>
 
@@ -390,6 +439,7 @@ const Workspace = () => {
                 setSelectedModuleId(module.id);
                 setActiveNavId("");
                 setIsMobileNavOpen(false);
+                setIsStartHereCollapsed(false);
               }}
             />
           ))}
