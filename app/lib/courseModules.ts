@@ -66,6 +66,81 @@ export const courseModules: CourseModule[] = [
         href: "#",
         ctaLabel: "Play challenge",
       },
+      {
+        id: "m1-module2-title",
+        type: "title",
+        text: "Module 2: Gender Equality Fundamentals",
+        level: 2,
+      },
+      {
+        id: "m1-m2-section-1",
+        type: "section",
+        title: "Understanding Core Concepts",
+      },
+      {
+        id: "m1-m2-intro",
+        type: "paragraph",
+        text: "Gender equality is a human right and a prerequisite for peace, prosperity, and sustainable development. This section explores the foundational concepts, theoretical frameworks, and practical applications of gender equality across societies.",
+      },
+      {
+        id: "m1-m2-video-1",
+        type: "video",
+        title: "What is Gender Equality?",
+        url: "https://www.youtube.com/watch?v=hL5L9Q2qG4k",
+        description:
+          "Comprehensive overview of gender equality definitions and why it matters globally.",
+      },
+      {
+        id: "m1-m2-quiz-1",
+        type: "quiz",
+        question: "What is the primary goal of gender equality?",
+        options: [
+          "Fair rights, opportunities, and responsibilities for all genders",
+          "Eliminating all differences between genders",
+          "Giving power to women over men",
+        ],
+        explanation:
+          "Gender equality means fair treatment and equal opportunity regardless of gender, while respecting diversity.",
+      },
+      {
+        id: "m1-m2-section-2",
+        type: "section",
+        title: "Intersectionality in Gender Equality",
+      },
+      {
+        id: "m1-m2-para-intersectionality",
+        type: "paragraph",
+        text: "Intersectionality recognizes that gender equality must account for how gender intersects with race, class, ethnicity, disability, sexuality, and other identities. Understanding these intersections is crucial for creating truly inclusive gender equality initiatives.",
+      },
+      {
+        id: "m1-m2-video-2",
+        type: "video",
+        title: "Intersectionality Explained",
+        url: "https://www.youtube.com/watch?v=QJ2h7C7p2Tg",
+        description:
+          "Learn how multiple identities shape experiences of gender and inequality.",
+      },
+      {
+        id: "m1-m2-quiz-2",
+        type: "quiz",
+        question: "Why is intersectionality important in gender equality work?",
+        options: [
+          "It ensures solutions address diverse needs across different groups",
+          "It complicates the conversation unnecessarily",
+          "It focuses only on women's experiences",
+        ],
+        explanation:
+          "Intersectionality ensures gender equality initiatives don't leave anyone behind by recognizing overlapping identities.",
+      },
+      {
+        id: "m1-m2-game",
+        type: "game",
+        title: "Equality Framework Challenge",
+        description:
+          "Analyze scenarios to identify gender inequality factors and intersectional considerations.",
+        href: "#",
+        ctaLabel: "Play challenge",
+      },
     ],
   },
   {

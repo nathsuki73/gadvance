@@ -8,9 +8,12 @@ import { useSession } from "next-auth/react";
 import {
   ArrowLeft,
   ArrowUpRight,
+  BookOpen,
   Briefcase,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Circle,
   Clock3,
   Globe,
   Heart,
@@ -24,6 +27,8 @@ import { courseModules, type CourseModule } from "@/app/lib/courseModules";
 type ModuleNavItem = {
   id: string;
   label: string;
+  children?: ModuleNavItem[];
+  isModule?: boolean;
 };
 
 const iconByType = {
@@ -36,17 +41,17 @@ const iconByType = {
 const getBlockLabel = (block: ModuleBlock): string => {
   switch (block.type) {
     case "title":
-      return "Title";
+      return (block as any).text || "Title";
     case "section":
-      return "Section";
+      return (block as any).title || "Section";
     case "paragraph":
-      return "Paragraph";
+      return (block as any).text?.substring(0, 50) || "Paragraph";
     case "video":
-      return "Video";
+      return (block as any).title || "Video";
     case "quiz":
-      return "Quiz";
+      return (block as any).question || "Quiz";
     case "game":
-      return "Game";
+      return (block as any).title || "Game";
     default:
       return "Block";
   }
@@ -60,11 +65,53 @@ const getBlockAnchorId = (block: ModuleBlock, index: number): string => {
   return `module-block-${rawId}`;
 };
 
-const buildModuleNavItems = (blocks: ModuleBlock[]): ModuleNavItem[] => {
-  return blocks.map((block, index) => ({
-    id: getBlockAnchorId(block, index),
-    label: getBlockLabel(block),
-  }));
+const buildModuleNavItems = (selectedModule: CourseModule | undefined): ModuleNavItem[] => {
+  if (!selectedModule) return [];
+  
+  const modules: ModuleNavItem[] = [];
+  let currentModuleTitle = "";
+  let currentModuleChildren: ModuleNavItem[] = [];
+  let currentModuleId = "";
+  
+  selectedModule.blocks.forEach((block, index) => {
+    const blockId = getBlockAnchorId(block, index);
+    const blockLabel = getBlockLabel(block);
+    
+    // Check if this is a module title block (type "title" containing "Module")
+    if (block.type === "title" && (block as any).text?.includes("Module")) {
+      // Save previous module if exists
+      if (currentModuleTitle) {
+        modules.push({
+          id: currentModuleId,
+          label: currentModuleTitle,
+          children: currentModuleChildren,
+          isModule: true,
+        });
+      }
+      // Start new module
+      currentModuleTitle = blockLabel;
+      currentModuleId = blockId;
+      currentModuleChildren = [];
+    } else {
+      // Add block as child of current module
+      currentModuleChildren.push({
+        id: blockId,
+        label: blockLabel,
+      });
+    }
+  });
+  
+  // Don't forget the last module
+  if (currentModuleTitle) {
+    modules.push({
+      id: currentModuleId,
+      label: currentModuleTitle,
+      children: currentModuleChildren,
+      isModule: true,
+    });
+  }
+  
+  return modules;
 };
 
 const CourseCard = ({
@@ -159,14 +206,27 @@ const Workspace = () => {
   const [activeNavId, setActiveNavId] = useState<string>("");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isStartHereCollapsed, setIsStartHereCollapsed] = useState(false);
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
   const selectedModule = courseModules.find((m) => m.id === selectedModuleId);
   const moduleNavItems = useMemo(
-    () => (selectedModule ? buildModuleNavItems(selectedModule.blocks) : []),
+    () => buildModuleNavItems(selectedModule),
     [selectedModule],
   );
 
-  const displayedNavId = activeNavId || moduleNavItems[0]?.id || "";
+  const displayedNavId = activeNavId || (moduleNavItems[0]?.children?.[0]?.id) || "";
+
+  const toggleModuleExpanded = (moduleId: string) => {
+    setExpandedModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(moduleId)) {
+        next.delete(moduleId);
+      } else {
+        next.add(moduleId);
+      }
+      return next;
+    });
+  };
 
   const handleModuleNavClick = (navId: string) => {
     setActiveNavId(navId);
@@ -189,6 +249,7 @@ const Workspace = () => {
               setActiveNavId("");
               setIsMobileNavOpen(false);
               setIsStartHereCollapsed(false);
+              setExpandedModules(new Set());
             }}
             className="mb-6 inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
           >
@@ -249,17 +310,11 @@ const Workspace = () => {
                     {!isStartHereCollapsed ? (
                       <div>
                         <h2 className="text-xl font-bold text-zinc-900">
-                          Start here
+                          {selectedModule.title}
                         </h2>
-                        <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                          Work through the course from the beginning. No
-                          progress is expected yet.
-                        </p>
                       </div>
                     ) : (
-                      <div className="mt-24 -rotate-90 whitespace-nowrap text-sm font-bold text-zinc-900">
-                        Start here
-                      </div>
+                      <BookOpen size={20} className="text-zinc-900" />
                     )}
 
                     <button
@@ -285,29 +340,59 @@ const Workspace = () => {
                   {!isStartHereCollapsed && (
                     <div className="mt-5 space-y-2 overflow-y-auto pr-1">
                       {moduleNavItems.map((item) => {
-                        const isActive = item.id === displayedNavId;
+                        const isModuleExpanded = expandedModules.has(item.id);
+                        const hasChildren = item.children && item.children.length > 0;
                         return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => handleModuleNavClick(item.id)}
-                            className="w-full rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
-                            style={
-                              isActive
-                                ? {
-                                    borderColor: selectedModule.accent,
-                                    backgroundColor: `${selectedModule.accent}1A`,
-                                    color: selectedModule.accent,
-                                  }
-                                : {
-                                    borderColor: "#e4e4e7",
-                                    backgroundColor: "#ffffff",
-                                    color: "#111827",
-                                  }
-                            }
-                          >
-                            {item.label}
-                          </button>
+                          <div key={item.id}>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                item.isModule
+                                  ? toggleModuleExpanded(item.id)
+                                  : handleModuleNavClick(item.id)
+                              }
+                              className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
+                              style={{
+                                borderColor: selectedModule.accent,
+                                backgroundColor: item.isModule ? `${selectedModule.accent}0A` : "#ffffff",
+                                color: item.isModule ? selectedModule.accent : "#111827",
+                              }}
+                            >
+                              <span>{item.label}</span>
+                              {hasChildren && (
+                                <ChevronRight
+                                  size={14}
+                                  className={`transition-transform ${
+                                    isModuleExpanded ? "rotate-90" : ""
+                                  }`}
+                                />
+                              )}
+                            </button>
+                            {item.isModule && isModuleExpanded && hasChildren && (
+                              <div className="ml-3 mt-1 space-y-1 border-l border-zinc-200 pl-2">
+                              {item.children?.map((child) => {
+                                  const isActive = child.id === displayedNavId;
+                                  return (
+                                    <button
+                                      key={child.id}
+                                      type="button"
+                                      onClick={() => handleModuleNavClick(child.id)}
+                                      className="flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors"
+                                      style=
+                                      {{
+                                        borderColor: isActive ? selectedModule.accent : "#e4e4e7",
+                                        backgroundColor: isActive ? `${selectedModule.accent}1A` : "#ffffff",
+                                        color: isActive ? selectedModule.accent : "#111827",
+                                      }}
+                                    >
+                                      <Circle size={12} className="shrink-0" />
+                                      <span>{child.label}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
@@ -350,7 +435,7 @@ const Workspace = () => {
               >
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-xl font-bold text-zinc-900">
-                    Start here
+                    {selectedModule.title}
                   </h2>
                   <button
                     type="button"
@@ -364,29 +449,58 @@ const Workspace = () => {
 
                 <div className="space-y-2">
                   {moduleNavItems.map((item) => {
-                    const isActive = item.id === displayedNavId;
+                    const isModuleExpanded = expandedModules.has(item.id);
+                    const hasChildren = item.children && item.children.length > 0;
                     return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => handleModuleNavClick(item.id)}
-                        className="w-full rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
-                        style={
-                          isActive
-                            ? {
-                                borderColor: selectedModule.accent,
-                                backgroundColor: `${selectedModule.accent}1A`,
-                                color: selectedModule.accent,
-                              }
-                            : {
-                                borderColor: "#e4e4e7",
-                                backgroundColor: "#ffffff",
-                                color: "#111827",
-                              }
-                        }
-                      >
-                        {item.label}
-                      </button>
+                      <div key={item.id}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            item.isModule
+                              ? toggleModuleExpanded(item.id)
+                              : handleModuleNavClick(item.id)
+                          }
+                          className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
+                          style={{
+                            borderColor: selectedModule.accent,
+                            backgroundColor: item.isModule ? `${selectedModule.accent}0A` : "#ffffff",
+                            color: item.isModule ? selectedModule.accent : "#111827",
+                          }}
+                        >
+                          <span>{item.label}</span>
+                          {hasChildren && (
+                            <ChevronRight
+                              size={14}
+                              className={`transition-transform ${
+                                isModuleExpanded ? "rotate-90" : ""
+                              }`}
+                            />
+                          )}
+                        </button>
+                        {item.isModule && isModuleExpanded && hasChildren && (
+                          <div className="ml-3 mt-1 space-y-1 border-l border-zinc-200 pl-2">
+                            {item.children?.map((child) => {
+                              const isActive = child.id === displayedNavId;
+                              return (
+                                <button
+                                  key={child.id}
+                                  type="button"
+                                  onClick={() => handleModuleNavClick(child.id)}
+                                  className="flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors"
+                                  style={{
+                                    borderColor: isActive ? selectedModule.accent : "#e4e4e7",
+                                    backgroundColor: isActive ? `${selectedModule.accent}1A` : "#ffffff",
+                                    color: isActive ? selectedModule.accent : "#111827",
+                                  }}
+                                >
+                                  <Circle size={12} className="shrink-0" />
+                                  <span>{child.label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -440,6 +554,7 @@ const Workspace = () => {
                 setActiveNavId("");
                 setIsMobileNavOpen(false);
                 setIsStartHereCollapsed(false);
+                setExpandedModules(new Set([`module-${module.id}`]));
               }}
             />
           ))}
