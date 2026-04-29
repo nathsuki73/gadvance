@@ -242,7 +242,7 @@ const Workspace = () => {
       <div className="min-h-screen bg-[#f4f4f6] font-sans text-zinc-900">
         <Header />
 
-        <main className="mx-auto max-w-380 px-6 py-10">
+        <div className="mx-auto flex w-full max-w-380 justify-end px-6 pt-3">
           <button
             onClick={() => {
               setSelectedModuleId(null);
@@ -251,11 +251,14 @@ const Workspace = () => {
               setIsStartHereCollapsed(false);
               setExpandedModules(new Set());
             }}
-            className="mb-6 inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
           >
             <ArrowLeft size={16} />
-            Back to courses
+            Exit course
           </button>
+        </div>
+
+        <main className="mx-auto max-w-380 px-6 pb-10 pt-4">
 
           <article className={`rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm transition-all duration-300 md:p-9 ${
               isStartHereCollapsed ? "lg:ml-16" : "lg:ml-80"

@@ -1,3 +1,6 @@
+// DI PA TO CONNECTED SA INDEX.TSX
+
+
 import Image, { type StaticImageData } from "next/image";
 import React from "react";
 
