@@ -259,7 +259,7 @@ const Workspace = () => {
         </div>
 
         <main className="mx-auto max-w-380 px-6 pb-10 pt-4">
-
+          {/* Module Content Container */}
           <article className={`rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm transition-all duration-300 md:p-9 ${
               isStartHereCollapsed ? "lg:ml-16" : "lg:ml-80"
             }`}>
