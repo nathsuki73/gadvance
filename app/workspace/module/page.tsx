@@ -30,10 +30,10 @@ const ModulePage = () => {
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <header className="mb-8">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-teal-600">
-            Current Modules
+            Current Courses
           </p>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Choose the module you want to continue.
+            Choose the course you want to continue.
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-500 sm:text-base">
             These are the same modules available in the courses area, arranged

@@ -52,7 +52,7 @@ const workspaceLinks: WorkspaceLink[] = [
     accent: "from-orange-500 to-amber-500",
   },
   {
-    title: "Current Module",
+    title: "Current Course",
     description:
       "Jump straight into your active module and keep your streak alive.",
     href: "/workspace/module",
