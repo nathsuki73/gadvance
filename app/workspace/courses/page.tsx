@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import Footer from "@/app/components/Footer";
 import Header from "@/app/components/Header";
+import Pretest from "@/app/components/pretest";
 import { BlockRenderer, type ModuleBlock } from "@/app/components/moduleViewer";
 import { useSession } from "next-auth/react";
 import {
@@ -228,6 +229,7 @@ const CourseCard = ({
 
 const Workspace = () => {
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
+  const [isPretestCompleted, setIsPretestCompleted] = useState(false);
   const [activeNavId, setActiveNavId] = useState<string>("");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isStartHereCollapsed, setIsStartHereCollapsed] = useState(false);
@@ -265,10 +267,29 @@ const Workspace = () => {
     }
   };
 
+  const handlePretestComplete = () => {
+    setIsPretestCompleted(true);
+  };
+
   if (selectedModule) {
     return (
       <div className="min-h-screen bg-[#f4f4f6] font-sans text-zinc-900">
         {/* <Header /> */}
+
+        <Pretest
+          isOpen={!isPretestCompleted}
+          onClose={() => {
+            setSelectedModuleId(null);
+            setIsPretestCompleted(false);
+            setActiveNavId("");
+            setIsMobileNavOpen(false);
+            setIsStartHereCollapsed(false);
+            setExpandedModules(new Set());
+          }}
+          onComplete={handlePretestComplete}
+          moduleTitle={selectedModule.title}
+          accentColor={selectedModule.accent}
+        />
 
         <div className="mx-auto flex w-full max-w-380 justify-end px-6 pt-3">
           <button
@@ -286,8 +307,8 @@ const Workspace = () => {
           </button>
         </div>
 
-        <main className="mx-auto max-w-380 px-6 pb-10 pt-4">
-          {moduleArticles.map((article) => {
+        <main className="mx-auto max-w-380 px-6 pb-10 pt-4" style={{ opacity: isPretestCompleted ? 1 : 0.5, pointerEvents: isPretestCompleted ? "auto" : "none" }}>
+          {isPretestCompleted && moduleArticles.map((article) => {
             return (
               <article
                 key={article.id}
@@ -572,7 +593,8 @@ const Workspace = () => {
                 </div>
               </article>
             );
-          })}
+          })
+          }
         </main>
 
         <Footer />
@@ -617,6 +639,7 @@ const Workspace = () => {
               module={module}
               onClick={() => {
                 setSelectedModuleId(module.id);
+                setIsPretestCompleted(false);
                 setActiveNavId("");
                 setIsMobileNavOpen(false);
                 setIsStartHereCollapsed(false);
