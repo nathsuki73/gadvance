@@ -67,7 +67,7 @@ const Header = () => {
             className="h-full w-full object-contain"
           />
         </div>
-        <span className="text-xl font-semibold tracking-tight">GADVance</span>
+        <span className="text-xl font-semibold tracking-tight">GADvance</span>
       </button>
 
       {/* Navigation Links */}

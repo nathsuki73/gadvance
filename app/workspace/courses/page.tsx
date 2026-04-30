@@ -268,7 +268,7 @@ const Workspace = () => {
   if (selectedModule) {
     return (
       <div className="min-h-screen bg-[#f4f4f6] font-sans text-zinc-900">
-        <Header />
+        {/* <Header /> */}
 
         <div className="mx-auto flex w-full max-w-380 justify-end px-6 pt-3">
           <button
@@ -322,7 +322,7 @@ const Workspace = () => {
                       isStartHereCollapsed ? "w-16" : "w-80"
                     }`}
                   >
-                    <div className="flex h-full flex-col px-4 pb-4 pt-24">
+                    <div className="flex h-full flex-col px-4 pb-4 pt-6">
                       <div
                         className={`flex items-start gap-3 ${
                           isStartHereCollapsed
@@ -345,7 +345,9 @@ const Workspace = () => {
                           onClick={() =>
                             setIsStartHereCollapsed((current) => !current)
                           }
-                          className="rounded-md border border-zinc-300 bg-white p-1.5 text-zinc-700 transition-colors hover:bg-zinc-50"
+                          className={`rounded-md border border-zinc-300 bg-white p-1.5 text-zinc-700 transition-colors hover:bg-zinc-50 ${
+                            isStartHereCollapsed ? "-ml-3" : ""
+                          }`}
                           aria-label={
                             isStartHereCollapsed
                               ? "Expand start here panel"
@@ -501,6 +503,7 @@ const Workspace = () => {
                                   toggleModuleExpanded(item.id);
                                 }
                                 handleModuleNavClick(item.id);
+                                setIsMobileNavOpen(false);
                               }}
                               className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
                               style={{
@@ -534,9 +537,10 @@ const Workspace = () => {
                                       <button
                                         key={child.id}
                                         type="button"
-                                        onClick={() =>
-                                          handleModuleNavClick(child.id)
-                                        }
+                                        onClick={() => {
+                                          handleModuleNavClick(child.id);
+                                          setIsMobileNavOpen(false);
+                                        }}
                                         className="flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors"
                                         style={{
                                           borderColor: isActive
