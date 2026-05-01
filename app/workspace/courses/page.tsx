@@ -229,7 +229,9 @@ const CourseCard = ({
 
 const Workspace = () => {
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
-  const [isPretestCompleted, setIsPretestCompleted] = useState(false);
+  const [isPretestCompleted, setIsPretestCompleted] = useState(true);
+  const [pendingPretestNavId, setPendingPretestNavId] = useState<string | null>(null);
+  const [completedPretests, setCompletedPretests] = useState<Set<string>>(new Set());
   const [activeNavId, setActiveNavId] = useState<string>("");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isStartHereCollapsed, setIsStartHereCollapsed] = useState(false);
@@ -268,28 +270,35 @@ const Workspace = () => {
   };
 
   const handlePretestComplete = () => {
+    if (selectedModuleId !== null && pendingPretestNavId) {
+      const pretestKey = `${selectedModuleId}:${pendingPretestNavId}`;
+      setCompletedPretests((prev) => new Set(prev).add(pretestKey));
+    }
+
+    setPendingPretestNavId(null);
     setIsPretestCompleted(true);
   };
 
   if (selectedModule) {
-    return (
-      <div className="min-h-screen bg-[#f4f4f6] font-sans text-zinc-900">
-        {/* <Header /> */}
-
+    if (!isPretestCompleted) {
+      return (
         <Pretest
-          isOpen={!isPretestCompleted}
+          isOpen
           onClose={() => {
-            setSelectedModuleId(null);
-            setIsPretestCompleted(false);
-            setActiveNavId("");
+            setPendingPretestNavId(null);
+            setIsPretestCompleted(true);
             setIsMobileNavOpen(false);
-            setIsStartHereCollapsed(false);
-            setExpandedModules(new Set());
           }}
           onComplete={handlePretestComplete}
           moduleTitle={selectedModule.title}
           accentColor={selectedModule.accent}
         />
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-[#f4f4f6] font-sans text-zinc-900">
+        {/* <Header /> */}
 
         <div className="mx-auto flex w-full max-w-380 justify-end px-6 pt-3">
           <button
@@ -397,7 +406,15 @@ const Workspace = () => {
                                   type="button"
                                   onClick={() => {
                                     if (item.isModule) {
-                                      toggleModuleExpanded(item.id);
+                                      const pretestKey = `${selectedModule.id}:${item.id}`;
+                                      const isModulePretestCompleted = completedPretests.has(pretestKey);
+
+                                      if (!isModulePretestCompleted) {
+                                        setPendingPretestNavId(item.id);
+                                        setIsPretestCompleted(false);
+                                      } else {
+                                        toggleModuleExpanded(item.id);
+                                      }
                                     }
                                     handleModuleNavClick(item.id);
                                   }}
@@ -521,7 +538,15 @@ const Workspace = () => {
                               type="button"
                               onClick={() => {
                                 if (item.isModule) {
-                                  toggleModuleExpanded(item.id);
+                                  const pretestKey = `${selectedModule.id}:${item.id}`;
+                                  const isModulePretestCompleted = completedPretests.has(pretestKey);
+
+                                  if (!isModulePretestCompleted) {
+                                    setPendingPretestNavId(item.id);
+                                    setIsPretestCompleted(false);
+                                  } else {
+                                    toggleModuleExpanded(item.id);
+                                  }
                                 }
                                 handleModuleNavClick(item.id);
                                 setIsMobileNavOpen(false);
@@ -639,7 +664,8 @@ const Workspace = () => {
               module={module}
               onClick={() => {
                 setSelectedModuleId(module.id);
-                setIsPretestCompleted(false);
+                setIsPretestCompleted(true);
+                setPendingPretestNavId(null);
                 setActiveNavId("");
                 setIsMobileNavOpen(false);
                 setIsStartHereCollapsed(false);

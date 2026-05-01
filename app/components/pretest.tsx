@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ArrowRight, X, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronLeft } from "lucide-react";
 
 interface PretestProps {
   isOpen: boolean;
@@ -74,143 +74,108 @@ export default function Pretest({
   const isAnswered = answers[question.id] !== undefined;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-              Pre-test Assessment
-            </p>
-            <h2 className="mt-1 text-xl font-bold text-zinc-900">{moduleTitle}</h2>
-          </div>
-          {!isCompleted && (
+    <div className="min-h-screen bg-[#efeff1] pb-5 text-zinc-900 pt-2">
+      <div className="mx-auto w-full max-w-250 space-y-12">
+        <header className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-5">
             <button
               onClick={onClose}
-              className="rounded-lg border border-zinc-200 bg-white p-2 text-zinc-700 transition-colors hover:bg-zinc-50"
-              aria-label="Close pretest"
+              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-300 bg-[#f8f8f9] px-3.5 py-1.5 text-[0.68rem] font-semibold text-zinc-700 transition-colors hover:bg-zinc-100"
             >
-              <X size={20} />
+              <ChevronLeft size={16} />
+              Back to Modules
             </button>
-          )}
-        </div>
+            <div className="text-right">
+              <p className="text-[0.58rem] font-semibold uppercase tracking-[0.25em] text-zinc-500">
+                Pre-test Assessment
+              </p>
+              <h1 className="mt-0.5 text-[1.35rem] font-bold tracking-tight text-zinc-900 md:text-[1.65rem]">
+                {moduleTitle}
+              </h1>
+            </div>
+          </div>
+          <div className="h-0.75 w-full bg-zinc-200">
+            <div
+              className="h-full transition-all duration-300"
+              style={{ width: `${progress}%`, backgroundColor: accentColor }}
+            />
+          </div>
+        </header>
 
-        {/* Content */}
-        <div className="px-6 py-8">
+        <section className="mx-4 rounded-3xl border border-zinc-200 bg-white px-5 py-5 shadow-sm md:mx-5 md:px-6 md:py-6">
           {isCompleted ? (
-            <div className="text-center">
-              <div className="mb-6 flex justify-center">
+            <div className="py-4 text-center">
+              <div className="mb-4 flex justify-center">
                 <div
-                  className="flex h-16 w-16 items-center justify-center rounded-full"
+                  className="flex h-11 w-11 items-center justify-center rounded-full"
                   style={{ backgroundColor: `${accentColor}20` }}
                 >
-                  <CheckCircle2
-                    size={32}
-                    style={{ color: accentColor }}
-                  />
+                  <CheckCircle2 size={22} style={{ color: accentColor }} />
                 </div>
               </div>
-              <h3 className="mb-2 text-2xl font-bold text-zinc-900">
-                Pre-test Complete!
-              </h3>
-              <p className="mb-8 text-zinc-600">
-                Thank you for completing the assessment. Your responses will help us personalize your learning experience.
+              <h2 className="text-2xl font-black tracking-tight text-zinc-900">
+                Pre-test Complete
+              </h2>
+              <p className="mx-auto mt-2.5 max-w-xl text-xs leading-6 text-zinc-600">
+                Thank you for completing the assessment. Your responses will help us
+                personalize your learning experience.
               </p>
-              <div className="space-y-2 rounded-lg bg-zinc-50 p-4">
-                <p className="text-sm font-medium text-zinc-700">
-                  Questions Answered: <span className="font-semibold">{Object.keys(answers).length} of {pretestQuestions.length}</span>
-                </p>
+              <div className="mt-5 flex justify-end border-t border-zinc-200 pt-4">
+                <button
+                  onClick={handleFinish}
+                  className="inline-flex items-center mt-5 gap-1.5 rounded-full px-5 py-3 text-xs font-semibold text-white transition-opacity hover:opacity-95"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  Continue
+                  <ArrowRight size={12} />
+                </button>
               </div>
             </div>
           ) : (
             <>
-              {/* Progress Bar */}
-              <div className="mb-8">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-sm font-medium text-zinc-600">
-                    Question {currentQuestion + 1} of {pretestQuestions.length}
-                  </span>
-                  <span className="text-sm font-medium text-zinc-600">
-                    {Math.round(progress)}%
-                  </span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-zinc-200">
-                  <div
-                    className="h-full rounded-full transition-all duration-300"
+              <p className="text-xs text-zinc-600">
+                Question {currentQuestion + 1} of {pretestQuestions.length}
+              </p>
+
+              <h2 className="mt-3 text-[1.6rem] font-bold leading-snug tracking-tight text-zinc-900 md:text-[1.9rem]">
+                {question.question}
+              </h2>
+
+              <div className="mt-5 space-y-2.5">
+                {question.options.map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => handleSelectOption(option)}
+                    className="w-full rounded-xl border-2 px-4 py-4.5 text-left text-base font-semibold transition-all"
                     style={{
-                      width: `${progress}%`,
-                      backgroundColor: accentColor,
+                      borderColor:
+                        answers[question.id] === option ? accentColor : "#d4d4d8",
+                      backgroundColor:
+                        answers[question.id] === option
+                          ? `${accentColor}15`
+                          : "#ffffff",
+                      color: "#111827",
                     }}
-                  />
-                </div>
+                  >
+                    {option}
+                  </button>
+                ))}
               </div>
 
-              {/* Question */}
-              <div className="mb-8">
-                <h3 className="mb-6 text-lg font-semibold text-zinc-900">
-                  {question.question}
-                </h3>
-
-                {/* Options */}
-                <div className="space-y-3">
-                  {question.options.map((option) => (
-                    <button
-                      key={option}
-                      onClick={() => handleSelectOption(option)}
-                      className="w-full rounded-lg border-2 px-4 py-3 text-left font-medium transition-all"
-                      style={{
-                        borderColor:
-                          answers[question.id] === option ? accentColor : "#e4e4e7",
-                        backgroundColor:
-                          answers[question.id] === option
-                            ? `${accentColor}15`
-                            : "#ffffff",
-                        color: "#111827",
-                      }}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
+              <div className="mt-5 flex justify-end border-t border-zinc-200 pt-8">
+                <button
+                  onClick={handleNext}
+                  disabled={!isAnswered}
+                  className="inline-flex items-center gap-1.5 rounded-full px-5 py-3 text-xs font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  Next
+                  <ArrowRight size={12} />
+                </button>
               </div>
             </>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-4">
-          <button
-            onClick={isCompleted ? handleFinish : onClose}
-            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
-          >
-            {isCompleted ? "Continue" : "Skip"}
-          </button>
-          {!isCompleted && (
-            <button
-              onClick={handleNext}
-              disabled={!isAnswered}
-              className="inline-flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-white transition-opacity disabled:opacity-50"
-              style={{
-                backgroundColor: accentColor,
-              }}
-            >
-              Next
-              <ArrowRight size={16} />
-            </button>
-          )}
-          {isCompleted && (
-            <button
-              onClick={handleFinish}
-              className="inline-flex items-center gap-2 rounded-lg px-4 py-2 font-medium text-white transition-opacity"
-              style={{
-                backgroundColor: accentColor,
-              }}
-            >
-              Finish
-              <ArrowRight size={16} />
-            </button>
-          )}
-        </div>
+        </section>
       </div>
     </div>
   );
