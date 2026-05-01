@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Footer from "@/app/components/Footer";
 import Header from "@/app/components/Header";
 import Pretest from "@/app/components/pretest";
 import { BlockRenderer, type ModuleBlock } from "@/app/components/moduleViewer";
 import { useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowUpRight,
   BookOpen,
   Briefcase,
   CheckCircle2,
-  ChevronLeft,
   ChevronRight,
   Circle,
   Clock3,
@@ -30,6 +30,7 @@ type ModuleNavItem = {
   label: string;
   children?: ModuleNavItem[];
   isModule?: boolean;
+  isPretest?: boolean;
 };
 
 type ModuleArticle = {
@@ -140,6 +141,11 @@ const buildModuleNavItems = (selectedModule: CourseModule | undefined): ModuleNa
   }));
 };
 
+const getModuleNumberFromLabel = (label: string): number | null => {
+  const match = label.match(/Module\s+(\d+)/i);
+  return match ? Number(match[1]) : null;
+};
+
 const CourseCard = ({
   module,
   onClick,
@@ -153,11 +159,11 @@ const CourseCard = ({
   const handleEnrollClick = () => {
     if (!session?.user) {
       // User is not authenticated, redirect to sign in page
-      window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(`/workspace/courses?moduleId=${module.id}`)}`;
+      window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(`/workspace/module?courseId=${module.id}`)}`;
       return;
     }
-    // User is authenticated, proceed with onClick
-    onClick();
+    // User is authenticated, redirect to module page
+    window.location.href = `/workspace/module?courseId=${module.id}`;
   };
 
   return (
@@ -228,16 +234,19 @@ const CourseCard = ({
 };
 
 const Workspace = () => {
+  const searchParams = useSearchParams();
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [isPretestCompleted, setIsPretestCompleted] = useState(true);
   const [pendingPretestNavId, setPendingPretestNavId] = useState<string | null>(null);
   const [completedPretests, setCompletedPretests] = useState<Set<string>>(new Set());
   const [activeNavId, setActiveNavId] = useState<string>("");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [isStartHereCollapsed, setIsStartHereCollapsed] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
   const selectedModule = courseModules.find((m) => m.id === selectedModuleId);
+  const requestedModuleNumber = searchParams.get("module")
+    ? Number(searchParams.get("module"))
+    : null;
   const moduleArticles = useMemo(
     () => buildModuleArticles(selectedModule),
     [selectedModule],
@@ -246,8 +255,56 @@ const Workspace = () => {
     () => buildModuleNavItems(selectedModule),
     [selectedModule],
   );
+  const activeModuleArticle = useMemo(() => {
+    if (!requestedModuleNumber) {
+      return null;
+    }
 
-  const displayedNavId = activeNavId || (moduleNavItems[0]?.children?.[0]?.id) || "";
+    return moduleArticles.find(
+      (article) => getModuleNumberFromLabel(article.label) === requestedModuleNumber,
+    ) || null;
+  }, [moduleArticles, requestedModuleNumber]);
+  const visibleModuleArticles = activeModuleArticle ? [activeModuleArticle] : moduleArticles;
+  const visibleModuleNavItems = activeModuleArticle
+    ? moduleNavItems.filter((item) => item.id === activeModuleArticle.id)
+    : moduleNavItems;
+  const pretestNavItem: ModuleNavItem | null = selectedModule
+    ? {
+        id: `pretest-${selectedModule.id}`,
+        label: "Pretest",
+        isPretest: true,
+      }
+    : null;
+  const visibleStructureItems: ModuleNavItem[] = pretestNavItem
+    ? [pretestNavItem, ...visibleModuleNavItems]
+    : visibleModuleNavItems;
+
+  const displayedNavId = activeNavId || (visibleModuleNavItems[0]?.children?.[0]?.id) || "";
+
+  useEffect(() => {
+    const moduleId = searchParams.get("moduleId");
+    if (moduleId) {
+      setSelectedModuleId(Number(moduleId));
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!selectedModule || !requestedModuleNumber || visibleModuleArticles.length === 0) {
+      return;
+    }
+
+    const targetArticle = visibleModuleArticles[0];
+
+    if (targetArticle) {
+      setActiveNavId(targetArticle.id);
+      window.setTimeout(() => {
+        document.getElementById(targetArticle.id)?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 0);
+    }
+  }, [requestedModuleNumber, selectedModule, visibleModuleArticles]);
 
   const toggleModuleExpanded = (moduleId: string) => {
     setExpandedModules((prev) => {
@@ -279,23 +336,17 @@ const Workspace = () => {
     setIsPretestCompleted(true);
   };
 
-  if (selectedModule) {
-    if (!isPretestCompleted) {
-      return (
-        <Pretest
-          isOpen
-          onClose={() => {
-            setPendingPretestNavId(null);
-            setIsPretestCompleted(true);
-            setIsMobileNavOpen(false);
-          }}
-          onComplete={handlePretestComplete}
-          moduleTitle={selectedModule.title}
-          accentColor={selectedModule.accent}
-        />
-      );
+  const launchPretestForCurrentModule = () => {
+    const targetNavId = visibleModuleArticles[0]?.id;
+    if (!targetNavId) {
+      return;
     }
 
+    setPendingPretestNavId(targetNavId);
+    setIsPretestCompleted(false);
+  };
+
+  if (selectedModule) {
     return (
       <div className="min-h-screen bg-[#f4f4f6] font-sans text-zinc-900">
         {/* <Header /> */}
@@ -306,7 +357,6 @@ const Workspace = () => {
               setSelectedModuleId(null);
               setActiveNavId("");
               setIsMobileNavOpen(false);
-              setIsStartHereCollapsed(false);
               setExpandedModules(new Set());
             }}
             className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
@@ -316,15 +366,27 @@ const Workspace = () => {
           </button>
         </div>
 
-        <main className="mx-auto max-w-380 px-6 pb-10 pt-4" style={{ opacity: isPretestCompleted ? 1 : 0.5, pointerEvents: isPretestCompleted ? "auto" : "none" }}>
-          {isPretestCompleted && moduleArticles.map((article) => {
+        <main className="mx-auto max-w-380 px-6 pb-10 pt-4">
+          {!isPretestCompleted ? (
+            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-9">
+              <Pretest
+                isOpen
+                onClose={() => {
+                  setPendingPretestNavId(null);
+                  setIsPretestCompleted(true);
+                  setIsMobileNavOpen(false);
+                }}
+                onComplete={handlePretestComplete}
+                moduleTitle={selectedModule.title}
+                accentColor={selectedModule.accent}
+              />
+            </div>
+          ) : visibleModuleArticles.map((article) => {
             return (
               <article
                 key={article.id}
                 id={article.id}
-                className={`rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm transition-all duration-300 md:p-9 mb-6 ${
-                  isStartHereCollapsed ? "lg:ml-16" : "lg:ml-80"
-                }`}
+                className="mb-6 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm transition-all duration-300 md:p-9 lg:ml-80"
               >
                 <header className="mb-6 border-b border-zinc-100 pb-4">
                   <div className="flex flex-wrap items-center gap-3" />
@@ -348,53 +410,19 @@ const Workspace = () => {
 
                 <div className="relative">
                   <aside
-                    className={`fixed left-0 top-0 z-20 hidden h-screen overflow-hidden border-r border-zinc-200 bg-[#f7f8fa] shadow-sm transition-all duration-300 lg:block ${
-                      isStartHereCollapsed ? "w-16" : "w-80"
-                    }`}
+                    className="fixed left-0 top-0 z-20 hidden h-screen w-80 overflow-hidden border-r border-zinc-200 bg-[#f7f8fa] shadow-sm lg:block"
                   >
                     <div className="flex h-full flex-col px-4 pb-4 pt-6">
-                      <div
-                        className={`flex items-start gap-3 ${
-                          isStartHereCollapsed
-                            ? "justify-center"
-                            : "justify-between"
-                        }`}
-                      >
-                        {!isStartHereCollapsed ? (
-                          <div>
-                            <h2 className="text-xl font-bold text-zinc-900">
-                              {selectedModule.title}
-                            </h2>
-                          </div>
-                        ) : (
-                          <BookOpen size={20} className="text-zinc-900" />
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setIsStartHereCollapsed((current) => !current)
-                          }
-                          className={`rounded-md border border-zinc-300 bg-white p-1.5 text-zinc-700 transition-colors hover:bg-zinc-50 ${
-                            isStartHereCollapsed ? "-ml-3" : ""
-                          }`}
-                          aria-label={
-                            isStartHereCollapsed
-                              ? "Expand start here panel"
-                              : "Collapse start here panel"
-                          }
-                        >
-                          {isStartHereCollapsed ? (
-                            <ChevronRight size={16} />
-                          ) : (
-                            <ChevronLeft size={16} />
-                          )}
-                        </button>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h2 className="text-xl font-bold text-zinc-900">
+                            {selectedModule.title}
+                          </h2>
+                        </div>
                       </div>
 
-                      {!isStartHereCollapsed && (
-                        <div className="mt-5 space-y-2 overflow-y-auto pr-1">
-                          {moduleNavItems.map((item) => {
+                      <div className="mt-5 space-y-2 overflow-y-auto pr-1">
+                        {visibleStructureItems.map((item) => {
                             const isModuleExpanded = expandedModules.has(
                               item.id
                             );
@@ -405,6 +433,12 @@ const Workspace = () => {
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    if (item.isPretest) {
+                                      launchPretestForCurrentModule();
+                                      setActiveNavId(item.id);
+                                      return;
+                                    }
+
                                     if (item.isModule) {
                                       const pretestKey = `${selectedModule.id}:${item.id}`;
                                       const isModulePretestCompleted = completedPretests.has(pretestKey);
@@ -421,10 +455,14 @@ const Workspace = () => {
                                   className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
                                   style={{
                                     borderColor: selectedModule.accent,
-                                    backgroundColor: item.isModule
+                                    backgroundColor: item.isPretest
+                                      ? `${selectedModule.accent}14`
+                                      : item.isModule
                                       ? `${selectedModule.accent}0A`
                                       : "#ffffff",
-                                    color: item.isModule
+                                    color: item.isPretest
+                                      ? selectedModule.accent
+                                      : item.isModule
                                       ? selectedModule.accent
                                       : "#111827",
                                   }}
@@ -480,7 +518,6 @@ const Workspace = () => {
                             );
                           })}
                         </div>
-                      )}
                     </div>
                   </aside>
 
@@ -528,7 +565,7 @@ const Workspace = () => {
                     </div>
 
                     <div className="space-y-2">
-                      {moduleNavItems.map((item) => {
+                      {visibleModuleNavItems.map((item) => {
                         const isModuleExpanded = expandedModules.has(item.id);
                         const hasChildren =
                           item.children && item.children.length > 0;
@@ -668,7 +705,6 @@ const Workspace = () => {
                 setPendingPretestNavId(null);
                 setActiveNavId("");
                 setIsMobileNavOpen(false);
-                setIsStartHereCollapsed(false);
                 setExpandedModules(new Set([`module-${module.id}`]));
               }}
             />
