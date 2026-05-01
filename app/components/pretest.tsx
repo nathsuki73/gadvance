@@ -5,7 +5,7 @@ import { ArrowRight, CheckCircle2, ChevronLeft } from "lucide-react";
 
 interface PretestProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (hasAnswered?: boolean) => void;
   onComplete: () => void;
   moduleTitle?: string;
   accentColor?: string;
@@ -74,12 +74,15 @@ export default function Pretest({
   const isAnswered = answers[question.id] !== undefined;
 
   return (
-    <div className="min-h-screen bg-[#efeff1] pb-5 text-zinc-900 pt-2">
+    <div id="panel-1" className="min-h-screen bg-[#efeff1] pb-5 text-zinc-900 pt-2">
       <div className="mx-auto w-full max-w-250 space-y-12">
         <header className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
           <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-5">
             <button
-              onClick={onClose}
+              onClick={() => {
+                const hasAnswered = Object.keys(answers || {}).length > 0 || isCompleted;
+                onClose(hasAnswered);
+              }}
               className="inline-flex items-center gap-1.5 rounded-full border border-zinc-300 bg-[#f8f8f9] px-3.5 py-1.5 text-[0.68rem] font-semibold text-zinc-700 transition-colors hover:bg-zinc-100"
             >
               <ChevronLeft size={16} />
@@ -122,7 +125,46 @@ export default function Pretest({
               </p>
               <div className="mt-5 flex justify-end border-t border-zinc-200 pt-4">
                 <button
-                  onClick={handleFinish}
+                  onClick={() => {
+                    // const scrollToSecond = () => {
+                    //   const element = document.getElementById('mainPanel');
+                    //   if (!element) return;
+
+                    //   const targetPosition = element.offsetTop;
+                    //   const startPosition = window.pageYOffset;
+                    //   const distance = targetPosition - startPosition;
+                      
+                    //   // Increase duration (in milliseconds) to make it slower
+                    //   const duration = 1500; 
+
+                    //   window.scrollTo({
+                    //     top: targetPosition,
+                    //     behavior: 'smooth' // This is the fallback
+                    //   });
+
+                    //   // For precise control, we use a custom scroll function:
+                    //   let start: number | null = null;
+
+                    //   window.requestAnimationFrame(function step(timestamp: number) {
+                    //     if (start === null) start = timestamp;
+                    //     const progress = timestamp - start;
+                        
+                    //     // EaseInOutQuad formula for a smooth feel
+                    //     const percent = Math.min(progress / duration, 1);
+                    //     const ease = percent < 0.5 
+                    //       ? 2 * percent * percent 
+                    //       : -1 + (4 - 2 * percent) * percent;
+
+                    //     window.scrollTo(0, startPosition + distance * ease);
+
+                    //     if (progress < duration) {
+                    //       window.requestAnimationFrame(step);
+                    //     }
+                    //   });
+                    // };
+                    // scrollToSecond();
+                    handleFinish();
+                  }}
                   className="inline-flex items-center mt-5 gap-1.5 rounded-full px-5 py-3 text-xs font-semibold text-white transition-opacity hover:opacity-95"
                   style={{ backgroundColor: accentColor }}
                 >

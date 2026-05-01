@@ -13,6 +13,7 @@ import {
   BookOpen,
   Briefcase,
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
   Circle,
   Clock3,
@@ -236,12 +237,15 @@ const CourseCard = ({
 const Workspace = () => {
   const searchParams = useSearchParams();
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
-  const [isPretestCompleted, setIsPretestCompleted] = useState(true);
+  const [isPretestCompleted, setIsPretestCompleted] = useState(false);
+  const [subsectionsLocked, setSubsectionsLocked] = useState(false);
   const [pendingPretestNavId, setPendingPretestNavId] = useState<string | null>(null);
   const [completedPretests, setCompletedPretests] = useState<Set<string>>(new Set());
   const [activeNavId, setActiveNavId] = useState<string>("");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+  const [pendingScrollTargetId, setPendingScrollTargetId] = useState<string | null>(null);
+  const [isStructureCollapsed, setIsStructureCollapsed] = useState(false);
 
   const selectedModule = courseModules.find((m) => m.id === selectedModuleId);
   const requestedModuleNumber = searchParams.get("module")
@@ -264,22 +268,52 @@ const Workspace = () => {
       (article) => getModuleNumberFromLabel(article.label) === requestedModuleNumber,
     ) || null;
   }, [moduleArticles, requestedModuleNumber]);
-  const visibleModuleArticles = activeModuleArticle ? [activeModuleArticle] : moduleArticles;
-  const visibleModuleNavItems = activeModuleArticle
-    ? moduleNavItems.filter((item) => item.id === activeModuleArticle.id)
-    : moduleNavItems;
-  const pretestNavItem: ModuleNavItem | null = selectedModule
-    ? {
-        id: `pretest-${selectedModule.id}`,
-        label: "Pretest",
-        isPretest: true,
-      }
-    : null;
-  const visibleStructureItems: ModuleNavItem[] = pretestNavItem
-    ? [pretestNavItem, ...visibleModuleNavItems]
-    : visibleModuleNavItems;
+  
+  const visibleModuleArticles = useMemo(
+    () => (activeModuleArticle ? [activeModuleArticle] : moduleArticles),
+    [activeModuleArticle, moduleArticles],
+  );
+  
+  const visibleModuleNavItems = useMemo(
+    () =>
+      activeModuleArticle
+        ? moduleNavItems.filter((item) => item.id === activeModuleArticle.id)
+        : moduleNavItems,
+    [activeModuleArticle, moduleNavItems],
+  );
+  const visibleStructureItems: ModuleNavItem[] = useMemo(
+    () =>
+      visibleModuleNavItems.map((item) => {
+        if (!item.isModule || !selectedModule) {
+          return item;
+        }
+
+        return {
+          ...item,
+          children: [
+            {
+              id: `pretest-${selectedModule.id}`,
+              label: "Pretest",
+              isPretest: true,
+            },
+            ...(item.children ?? []),
+          ],
+        };
+      }),
+    [selectedModule, visibleModuleNavItems],
+  );
 
   const displayedNavId = activeNavId || (visibleModuleNavItems[0]?.children?.[0]?.id) || "";
+  //this is for the title of the structure sidebar, it will show the article title if an article is active, otherwise it will show the module title
+  const structureTitle = activeModuleArticle?.label || selectedModule?.title || "";
+  const desktopContentOffsetClass = isStructureCollapsed ? "lg:ml-16" : "lg:ml-80";
+
+  // Auto-expand modules when they load
+  useEffect(() => {
+    if (visibleModuleNavItems.length > 0) {
+      setExpandedModules(new Set(visibleModuleNavItems.map((item) => item.id)));
+    }
+  }, [visibleModuleNavItems]);
 
   useEffect(() => {
     const moduleId = searchParams.get("moduleId");
@@ -305,6 +339,34 @@ const Workspace = () => {
       }, 0);
     }
   }, [requestedModuleNumber, selectedModule, visibleModuleArticles]);
+
+  useEffect(() => {
+    if (!isPretestCompleted || !pendingScrollTargetId) {
+      return;
+    }
+
+    // window.setTimeout(() => {
+    //   const el = document.getElementById(pendingScrollTargetId!);
+    //   if (el) {
+    //     el.scrollIntoView({ behavior: "smooth", block: "start" });
+    //     // add animation class then remove after animation ends
+    //     el.classList.remove("subsection-animate");
+    //     // force reflow to restart animation if present
+    //     // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    //     el.offsetWidth;
+    //     el.classList.add("subsection-animate");
+    //     window.setTimeout(() => {
+    //       el.classList.remove("subsection-animate");
+    //     }, 1300);
+    //   }
+    // }, 0);
+    const scrollToSecond = () => {
+      const element = document.getElementById('mainPanel');
+      element?.scrollIntoView({ behavior: 'smooth' });
+    }; 
+
+    setPendingScrollTargetId(null);
+  }, [isPretestCompleted, pendingScrollTargetId]);
 
   const toggleModuleExpanded = (moduleId: string) => {
     setExpandedModules((prev) => {
@@ -332,8 +394,11 @@ const Workspace = () => {
       setCompletedPretests((prev) => new Set(prev).add(pretestKey));
     }
 
+    const firstSubsectionId = visibleModuleNavItems[0]?.children?.[0]?.id ?? null;
     setPendingPretestNavId(null);
+    setPendingScrollTargetId(firstSubsectionId);
     setIsPretestCompleted(true);
+    setSubsectionsLocked(false);
   };
 
   const launchPretestForCurrentModule = () => {
@@ -366,300 +431,326 @@ const Workspace = () => {
           </button>
         </div>
 
-        <main className="mx-auto max-w-380 px-6 pb-10 pt-4">
-          {!isPretestCompleted ? (
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-9">
-              <Pretest
-                isOpen
-                onClose={() => {
-                  setPendingPretestNavId(null);
-                  setIsPretestCompleted(true);
-                  setIsMobileNavOpen(false);
-                }}
-                onComplete={handlePretestComplete}
-                moduleTitle={selectedModule.title}
-                accentColor={selectedModule.accent}
-              />
-            </div>
-          ) : visibleModuleArticles.map((article) => {
-            return (
-              <article
-                key={article.id}
-                id={article.id}
-                className="mb-6 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm transition-all duration-300 md:p-9 lg:ml-80"
-              >
-                <header className="mb-6 border-b border-zinc-100 pb-4">
-                  <div className="flex flex-wrap items-center gap-3" />
-                  <h1 className="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-[2.6rem]">
-                    {article.label}
-                  </h1>
-                </header>
+        <main id='panel-2' className="mx-auto max-w-380 px-6 pb-10 pt-4">
+          <div className="relative min-h-[70vh]">
+            <button
+              type="button"
+              onClick={() => setIsMobileNavOpen(true)}
+              className={`fixed left-0 top-1/2 z-30 -translate-y-1/2 rounded-r-lg border border-l-0 border-zinc-200 bg-[#f7f8fa] p-2.5 text-zinc-700 shadow-sm transition-colors hover:bg-zinc-100 lg:hidden ${
+                isMobileNavOpen ? "pointer-events-none opacity-0" : "opacity-100"
+              }`}
+              aria-label="Open module structure"
+            >
+              <ChevronRight size={18} />
+            </button>
 
+            <aside
+              className={`fixed left-0 top-0 z-20 hidden h-screen overflow-hidden border-r border-zinc-200 bg-[#f7f8fa] shadow-sm transition-all duration-300 lg:block ${
+                isStructureCollapsed ? "w-16" : "w-80"
+              }`}
+            >
+              <div className="flex h-full flex-col px-4 pb-4 pt-6">
+                <div className="flex items-start justify-between gap-3">
+                  {!isStructureCollapsed && (
+                    <div>
+                      <h2 className="text-xl font-bold text-zinc-900">
+                        {structureTitle}
+                      </h2>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsStructureCollapsed((prev) => !prev)}
+                    className="ml-auto inline-flex items-center justify-center rounded-md border border-zinc-300 bg-white p-1.5 text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
+                    aria-label={
+                      isStructureCollapsed ? "Expand structure" : "Collapse structure"
+                    }
+                  >
+                    {isStructureCollapsed ? (
+                      <ChevronRight size={16} />
+                    ) : (
+                      <ChevronLeft size={16} />
+                    )}
+                  </button>
+                </div>
+
+                {!isStructureCollapsed && (
+                  <div className="mt-5 space-y-2 overflow-y-auto pr-1">
+                    {visibleStructureItems.map((item) => {
+                      const isModuleExpanded = expandedModules.has(item.id);
+                      const hasChildren = item.children && item.children.length > 0;
+                      return (
+                        <div key={item.id}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (item.isPretest) {
+                                launchPretestForCurrentModule();
+                                setActiveNavId(item.id);
+                                return;
+                              }
+
+                              if (item.isModule) {
+                                toggleModuleExpanded(item.id);
+                              }
+                              handleModuleNavClick(item.id);
+                            }}
+                            className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
+                            style={{
+                              borderColor: selectedModule.accent,
+                              backgroundColor: item.isPretest
+                                ? `${selectedModule.accent}14`
+                                : item.isModule
+                                ? `${selectedModule.accent}0A`
+                                : "#ffffff",
+                              color: item.isPretest
+                                ? selectedModule.accent
+                                : item.isModule
+                                ? selectedModule.accent
+                                : "#111827",
+                            }}
+                          >
+                            <span>{item.label}</span>
+                            {hasChildren && (
+                              <ChevronRight
+                                size={14}
+                                className={`transition-transform ${
+                                  isModuleExpanded ? "rotate-90" : ""
+                                }`}
+                              />
+                            )}
+                          </button>
+                          {item.isModule && isModuleExpanded && hasChildren && (
+                            <div className="ml-3 mt-1 space-y-1 border-l border-zinc-200 pl-2">
+                              {item.children?.map((child) => {
+                                const isActive = child.id === displayedNavId;
+                                return (
+                                  <button
+                                    key={child.id}
+                                    type="button"
+                                    onClick={() => {
+                                      if (subsectionsLocked && !child.isPretest) {
+                                        // prevent navigating to subsections if locked
+                                        return;
+                                      }
+                                      if (child.isPretest) {
+                                        launchPretestForCurrentModule();
+                                        setActiveNavId(child.id);
+                                        return;
+                                      }
+
+                                      handleModuleNavClick(child.id);
+                                    }}
+                                    className="flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors"
+                                    style={{
+                                      borderColor: isActive
+                                        ? selectedModule.accent
+                                        : "#e4e4e7",
+                                      backgroundColor: isActive
+                                        ? `${selectedModule.accent}1A`
+                                        : "#ffffff",
+                                      color: isActive
+                                        ? selectedModule.accent
+                                        : "#111827",
+                                    }}
+                                  >
+                                    <Circle size={12} className="shrink-0" />
+                                    <span>{child.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </aside>
+
+            <div className={`space-y-5 transition-all duration-300 ${desktopContentOffsetClass}`}>
+              {!isPretestCompleted ? (
+                <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-9">
+                  <Pretest
+                        isOpen
+                        onClose={(hasAnswered?: boolean) => {
+                          setPendingPretestNavId(null);
+                          // Determine if a pretest for this module was already completed
+                          const pretestKey =
+                            selectedModuleId !== null
+                              ? `${selectedModuleId}:${visibleModuleArticles[0]?.id}`
+                              : null;
+                          const alreadyCompleted = pretestKey
+                            ? completedPretests.has(pretestKey)
+                            : false;
+
+                          // Unlock if user answered in this session or the pretest was already completed
+                          if (hasAnswered || alreadyCompleted) {
+                            setSubsectionsLocked(false);
+                          } else {
+                            setSubsectionsLocked(true);
+                          }
+
+                          setIsPretestCompleted(true);
+                          setIsMobileNavOpen(false);
+                        }}
+                    onComplete={handlePretestComplete}
+                    moduleTitle={selectedModule.title}
+                    accentColor={selectedModule.accent}
+                  />
+                </div>
+              ) : (
+                visibleModuleArticles.map((article) => (
+                  <article
+                    key={article.id}
+                    id={article.id}
+                    className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm transition-all duration-300 md:p-9"
+                  >
+                    <header className="mb-6 border-b border-zinc-100 pb-4">
+                      <div className="flex flex-wrap items-center gap-3" />
+                      <h1 className="mt-4 text-3xl font-bold tracking-tight text-zinc-900 md:text-[2.6rem]">
+                        {article.label}
+                      </h1>
+                    </header>
+
+                    <div className="space-y-5">
+                      {article.blocks.map(({ block, anchorId, key }) => (
+                        <section key={key} id={anchorId} className="scroll-mt-24">
+                          <BlockRenderer block={block} />
+                        </section>
+                      ))}
+                    </div>
+                  </article>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div
+            className={`fixed inset-0 z-40 transition-opacity duration-300 lg:hidden ${
+              isMobileNavOpen ? "opacity-100" : "pointer-events-none opacity-0"
+            }`}
+            aria-hidden={!isMobileNavOpen}
+          >
+            <button
+              type="button"
+              onClick={() => setIsMobileNavOpen(false)}
+              className="absolute inset-0 bg-black/35"
+              aria-label="Close module structure"
+            />
+
+            <aside
+              className={`absolute left-0 top-0 h-full w-[84%] max-w-sm border-r border-zinc-200 bg-[#f7f8fa] p-4 shadow-xl transition-transform duration-300 ${
+                isMobileNavOpen ? "translate-x-0" : "-translate-x-full"
+              }`}
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-zinc-900">
+                  {structureTitle}
+                </h2>
                 <button
                   type="button"
-                  onClick={() => setIsMobileNavOpen(true)}
-                  className={`fixed left-0 top-1/2 z-30 -translate-y-1/2 rounded-r-lg border border-l-0 border-zinc-200 bg-[#f7f8fa] p-2.5 text-zinc-700 shadow-sm transition-colors hover:bg-zinc-100 lg:hidden ${
-                    isMobileNavOpen
-                      ? "pointer-events-none opacity-0"
-                      : "opacity-100"
-                  }`}
-                  aria-label="Open module structure"
+                  onClick={() => setIsMobileNavOpen(false)}
+                  className="rounded-md border border-zinc-300 bg-white p-1.5 text-zinc-700"
+                  aria-label="Close navigation panel"
                 >
-                  <ChevronRight size={18} />
+                  <X size={16} />
                 </button>
+              </div>
 
-                <div className="relative">
-                  <aside
-                    className="fixed left-0 top-0 z-20 hidden h-screen w-80 overflow-hidden border-r border-zinc-200 bg-[#f7f8fa] shadow-sm lg:block"
-                  >
-                    <div className="flex h-full flex-col px-4 pb-4 pt-6">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h2 className="text-xl font-bold text-zinc-900">
-                            {selectedModule.title}
-                          </h2>
-                        </div>
-                      </div>
-
-                      <div className="mt-5 space-y-2 overflow-y-auto pr-1">
-                        {visibleStructureItems.map((item) => {
-                            const isModuleExpanded = expandedModules.has(
-                              item.id
-                            );
-                            const hasChildren =
-                              item.children && item.children.length > 0;
+              <div className="space-y-2">
+                {visibleStructureItems.map((item) => {
+                  const isModuleExpanded = expandedModules.has(item.id);
+                  const hasChildren = item.children && item.children.length > 0;
+                  return (
+                    <div key={item.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (item.isModule) {
+                            toggleModuleExpanded(item.id);
+                          }
+                          if (item.isPretest) {
+                            launchPretestForCurrentModule();
+                            setActiveNavId(item.id);
+                          } else {
+                            handleModuleNavClick(item.id);
+                          }
+                          setIsMobileNavOpen(false);
+                        }}
+                        className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
+                        style={{
+                          borderColor: selectedModule.accent,
+                          backgroundColor: item.isModule
+                            ? `${selectedModule.accent}0A`
+                            : item.isPretest
+                            ? `${selectedModule.accent}14`
+                            : "#ffffff",
+                          color: item.isModule || item.isPretest
+                            ? selectedModule.accent
+                            : "#111827",
+                        }}
+                      >
+                        <span>{item.label}</span>
+                        {hasChildren && (
+                          <ChevronRight
+                            size={14}
+                            className={`transition-transform ${
+                              isModuleExpanded ? "rotate-90" : ""
+                            }`}
+                          />
+                        )}
+                      </button>
+                      {item.isModule && isModuleExpanded && hasChildren && (
+                        <div className="ml-3 mt-1 space-y-1 border-l border-zinc-200 pl-2">
+                          {item.children?.map((child) => {
+                            const isActive = child.id === displayedNavId;
                             return (
-                              <div key={item.id}>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (item.isPretest) {
-                                      launchPretestForCurrentModule();
-                                      setActiveNavId(item.id);
-                                      return;
-                                    }
+                              <button
+                                key={child.id}
+                                type="button"
+                                onClick={() => {
+                                  if (subsectionsLocked && !child.isPretest) {
+                                    return;
+                                  }
+                                  if (child.isPretest) {
+                                    launchPretestForCurrentModule();
+                                    setActiveNavId(child.id);
+                                    setIsMobileNavOpen(false);
+                                    return;
+                                  }
 
-                                    if (item.isModule) {
-                                      const pretestKey = `${selectedModule.id}:${item.id}`;
-                                      const isModulePretestCompleted = completedPretests.has(pretestKey);
-
-                                      if (!isModulePretestCompleted) {
-                                        setPendingPretestNavId(item.id);
-                                        setIsPretestCompleted(false);
-                                      } else {
-                                        toggleModuleExpanded(item.id);
-                                      }
-                                    }
-                                    handleModuleNavClick(item.id);
-                                  }}
-                                  className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
-                                  style={{
-                                    borderColor: selectedModule.accent,
-                                    backgroundColor: item.isPretest
-                                      ? `${selectedModule.accent}14`
-                                      : item.isModule
-                                      ? `${selectedModule.accent}0A`
-                                      : "#ffffff",
-                                    color: item.isPretest
-                                      ? selectedModule.accent
-                                      : item.isModule
-                                      ? selectedModule.accent
-                                      : "#111827",
-                                  }}
-                                >
-                                  <span>{item.label}</span>
-                                  {hasChildren && (
-                                    <ChevronRight
-                                      size={14}
-                                      className={`transition-transform ${
-                                        isModuleExpanded ? "rotate-90" : ""
-                                      }`}
-                                    />
-                                  )}
-                                </button>
-                                {item.isModule &&
-                                  isModuleExpanded &&
-                                  hasChildren && (
-                                    <div className="ml-3 mt-1 space-y-1 border-l border-zinc-200 pl-2">
-                                      {item.children?.map((child) => {
-                                        const isActive =
-                                          child.id === displayedNavId;
-                                        return (
-                                          <button
-                                            key={child.id}
-                                            type="button"
-                                            onClick={() =>
-                                              handleModuleNavClick(child.id)
-                                            }
-                                            className="flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors"
-                                            style={{
-                                              borderColor: isActive
-                                                ? selectedModule.accent
-                                                : "#e4e4e7",
-                                              backgroundColor: isActive
-                                                ? `${selectedModule.accent}1A`
-                                                : "#ffffff",
-                                              color: isActive
-                                                ? selectedModule.accent
-                                                : "#111827",
-                                            }}
-                                          >
-                                            <Circle
-                                              size={12}
-                                              className="shrink-0"
-                                            />
-                                            <span>{child.label}</span>
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-                              </div>
+                                  handleModuleNavClick(child.id);
+                                  setIsMobileNavOpen(false);
+                                }}
+                                className="flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors"
+                                style={{
+                                  borderColor: isActive
+                                    ? selectedModule.accent
+                                    : "#e4e4e7",
+                                  backgroundColor: isActive
+                                    ? `${selectedModule.accent}1A`
+                                    : "#ffffff",
+                                  color: isActive
+                                    ? selectedModule.accent
+                                    : "#111827",
+                                }}
+                              >
+                                <Circle size={12} className="shrink-0" />
+                                <span>{child.label}</span>
+                              </button>
                             );
                           })}
                         </div>
+                      )}
                     </div>
-                  </aside>
-
-                  <div className="space-y-5">
-                    {article.blocks.map(({ block, anchorId, key }) => (
-                      <section key={key} id={anchorId} className="scroll-mt-24">
-                        <BlockRenderer block={block} />
-                      </section>
-                    ))}
-                  </div>
-                </div>
-
-                <div
-                  className={`fixed inset-0 z-40 transition-opacity duration-300 lg:hidden ${
-                    isMobileNavOpen
-                      ? "opacity-100"
-                      : "pointer-events-none opacity-0"
-                  }`}
-                  aria-hidden={!isMobileNavOpen}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setIsMobileNavOpen(false)}
-                    className="absolute inset-0 bg-black/35"
-                    aria-label="Close module structure"
-                  />
-
-                  <aside
-                    className={`absolute left-0 top-0 h-full w-[84%] max-w-sm border-r border-zinc-200 bg-[#f7f8fa] p-4 shadow-xl transition-transform duration-300 ${
-                      isMobileNavOpen ? "translate-x-0" : "-translate-x-full"
-                    }`}
-                  >
-                    <div className="mb-4 flex items-center justify-between">
-                      <h2 className="text-xl font-bold text-zinc-900">
-                        {selectedModule.title}
-                      </h2>
-                      <button
-                        type="button"
-                        onClick={() => setIsMobileNavOpen(false)}
-                        className="rounded-md border border-zinc-300 bg-white p-1.5 text-zinc-700"
-                        aria-label="Close navigation panel"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-
-                    <div className="space-y-2">
-                      {visibleModuleNavItems.map((item) => {
-                        const isModuleExpanded = expandedModules.has(item.id);
-                        const hasChildren =
-                          item.children && item.children.length > 0;
-                        return (
-                          <div key={item.id}>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (item.isModule) {
-                                  const pretestKey = `${selectedModule.id}:${item.id}`;
-                                  const isModulePretestCompleted = completedPretests.has(pretestKey);
-
-                                  if (!isModulePretestCompleted) {
-                                    setPendingPretestNavId(item.id);
-                                    setIsPretestCompleted(false);
-                                  } else {
-                                    toggleModuleExpanded(item.id);
-                                  }
-                                }
-                                handleModuleNavClick(item.id);
-                                setIsMobileNavOpen(false);
-                              }}
-                              className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
-                              style={{
-                                borderColor: selectedModule.accent,
-                                backgroundColor: item.isModule
-                                  ? `${selectedModule.accent}0A`
-                                  : "#ffffff",
-                                color: item.isModule
-                                  ? selectedModule.accent
-                                  : "#111827",
-                              }}
-                            >
-                              <span>{item.label}</span>
-                              {hasChildren && (
-                                <ChevronRight
-                                  size={14}
-                                  className={`transition-transform ${
-                                    isModuleExpanded ? "rotate-90" : ""
-                                  }`}
-                                />
-                              )}
-                            </button>
-                            {item.isModule &&
-                              isModuleExpanded &&
-                              hasChildren && (
-                                <div className="ml-3 mt-1 space-y-1 border-l border-zinc-200 pl-2">
-                                  {item.children?.map((child) => {
-                                    const isActive =
-                                      child.id === displayedNavId;
-                                    return (
-                                      <button
-                                        key={child.id}
-                                        type="button"
-                                        onClick={() => {
-                                          handleModuleNavClick(child.id);
-                                          setIsMobileNavOpen(false);
-                                        }}
-                                        className="flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors"
-                                        style={{
-                                          borderColor: isActive
-                                            ? selectedModule.accent
-                                            : "#e4e4e7",
-                                          backgroundColor: isActive
-                                            ? `${selectedModule.accent}1A`
-                                            : "#ffffff",
-                                          color: isActive
-                                            ? selectedModule.accent
-                                            : "#111827",
-                                        }}
-                                      >
-                                        <Circle
-                                          size={12}
-                                          className="shrink-0"
-                                        />
-                                        <span>{child.label}</span>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </aside>
-                </div>
-              </article>
-            );
-          })
-          }
+                  );
+                })}
+              </div>
+            </aside>
+          </div>
         </main>
-
-        <Footer />
       </div>
     );
   }
@@ -701,10 +792,11 @@ const Workspace = () => {
               module={module}
               onClick={() => {
                 setSelectedModuleId(module.id);
-                setIsPretestCompleted(true);
+                  setIsPretestCompleted(false);
                 setPendingPretestNavId(null);
                 setActiveNavId("");
                 setIsMobileNavOpen(false);
+                  setPendingScrollTargetId(null);
                 setExpandedModules(new Set([`module-${module.id}`]));
               }}
             />
