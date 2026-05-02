@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Clock3, Users, ArrowLeft } from "lucide-react";
+import { ArrowRight, Clock, CheckCircle2, ArrowLeft } from "lucide-react";
 import Header from "@/app/components/Header";
 import { courseModules } from "@/app/lib/courseModules";
 
@@ -12,6 +12,7 @@ interface Module {
   number: number;
   title: string;
   description?: string;
+  duration?: string;
 }
 
 const ModulePage = () => {
@@ -82,67 +83,148 @@ const ModulePage = () => {
 
   // Show modules for a specific course
   if (courseId && modules.length > 0) {
+    const progressPercent = Math.round((1 / modules.length) * 100);
+
     return (
-      <div className="min-h-screen bg-[#F8FAFC] font-sans text-zinc-900">
+      <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
         <div className="sticky top-0 z-10">
           <Header />
         </div>
 
-        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-          <button
-            onClick={() => router.push("/workspace")}
-            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-zinc-600 hover:text-zinc-900"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Courses
-          </button>
-
-          <header className="mb-8">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-teal-600">
-              Course Modules
-            </p>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        {/* Hero Section */}
+        <div className="bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+          <div className="px-4 pt-8 pb-12 sm:px-6 lg:px-6"
+            style={{ backgroundColor: courseColor }}>
+            <button
+              onClick={() => router.push("/workspace")}
+              className="mb-6 inline-flex items-center gap-2 text-slate-300 hover:text-white transition"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Courses
+            </button>
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
               {courseName}
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-500 sm:text-base">
-              Explore the modules within this course. Start with Module 1 and
-              progress through each module at your own pace.
+            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-300">
+              Build a comprehensive understanding of gender equality principles,
+              workplace dynamics, and inclusive practices. This course equips you
+              with practical tools to drive meaningful change in your
+              organization.
             </p>
-          </header>
+            <div className="mt-6 flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-2 text-slate-300">
+                <Clock className="h-5 w-5" />
+                <span className="font-medium">About 4 hours</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-300">
+                <CheckCircle2 className="h-5 w-5" />
+                <span className="font-medium">{modules.length} Modules</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-          <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {modules.map((module) => (
-              <article
-                key={module.id}
-                className="group rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span
-                    className="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white"
-                    style={{ backgroundColor: courseColor }}
+        {/* Progress Section */}
+        <div className="border-b border-slate-200 bg-white">
+          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <div className="flex items-end justify-between mb-4">
+                <h2 className="text-2xl font-bold text-slate-900">
+                  Your Progress
+                </h2>
+                <span className="text-3xl font-bold text-teal-600"
+                  style={{ color: courseColor }}>
+                  {progressPercent}%
+                </span>
+              </div>
+              <p className="text-sm text-slate-600 mb-4">
+                1 of {modules.length} modules completed
+              </p>
+              <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-teal-500 transition-all duration-300"
+                  style={{ width: `${progressPercent}%`, backgroundColor: courseColor }}
+                />
+              </div>
+            </div>
+
+            {/* Module Progress Indicators */}
+            <div className="flex items-center justify-between gap-2">
+              {modules.map((module, index) => (
+                <div key={module.id} className="flex flex-col items-center">
+                  <div
+                    className={`h-12 w-12 rounded-full flex items-center justify-center font-semibold text-sm transition ${
+                      index === 0
+                        ? "bg-teal-500 text-white"
+                        : index === 1
+                        ? "border-2 border-teal-500 text-teal-600"
+                        : "bg-slate-100 text-slate-400"
+                    }`}
+                    style={{backgroundColor: courseColor}}
                   >
+                    {index === 0 ? (
+                      <CheckCircle2 className="h-6 w-6" />
+                    ) : (
+                      module.number
+                    )}
+                  </div>
+                  <span className="mt-2 text-xs font-medium text-slate-600 hidden sm:block">
                     Module {module.number}
                   </span>
                 </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
-                <h2 className="mt-4 text-lg font-semibold tracking-tight text-zinc-900">
+        {/* Course Modules Section */}
+        <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+          <h2 className="mb-8 text-3xl font-bold text-slate-900">
+            Course Modules
+          </h2>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {modules.map((module, index) => (
+              <article
+                key={module.id}
+                className="group flex flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-slate-300"
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Module {module.number}
+                  </p>
+                  <div className="flex items-center">
+                    {index === 0 && (
+                      <span className="inline-block px-2 py-1 text-xs font-semibold bg-teal-100 text-white rounded-full"
+                      style={{ backgroundColor: courseColor }}>
+                        ✓ Completed
+                      </span>
+                    )}
+                    {index === 1 && (
+                      <div className="flex items-center mt-2">
+                        <div className="w-12 h-1 bg-teal-500 rounded-full mr-2" 
+                        style={{ backgroundColor: courseColor }}>
+                        </div>
+                        <span className="text-xs font-medium text-teal-600">
+                          42%
+                        </span>
+                      </div>
+                    )} 
+                  </div>
+                </div>
+
+                <h3 className="text-lg font-semibold text-slate-900">
                   {module.title}
-                </h2>
+                </h3>
                 {module.description && (
-                  <p className="mt-2 text-sm leading-relaxed text-zinc-500">
+                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">
                     {module.description}
                   </p>
                 )}
 
-                <div className="mt-4 space-y-2 rounded-2xl bg-zinc-50 p-4 text-sm text-zinc-600">
-                  <div className="flex items-center gap-2">
-                    <Clock3 className="h-4 w-4 text-zinc-400" />
-                    <span>Self-paced learning</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-zinc-400" />
-                    <span>Interactive content</span>
-                  </div>
+                <div className="mt-4 mb-4 flex items-center gap-2 text-sm text-slate-500">
+                  <Clock className="h-4 w-4" />
+                  <span>{module.duration || "45 min"}</span>
                 </div>
 
                 <button
@@ -151,15 +233,15 @@ const ModulePage = () => {
                       `/workspace/courses?moduleId=${parseInt(courseId)}&module=${module.number}`
                     )
                   }
-                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl text-white px-4 py-3 text-sm font-semibold transition hover:opacity-90"
+                  className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-lg bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-600"
                   style={{ backgroundColor: courseColor }}
                 >
-                  Start Module
+                  {index === 0 ? "Review Module" : index === 1 ? "Resume" : "Start Module"}
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </article>
             ))}
-          </section>
+          </div>
         </main>
       </div>
     );
@@ -167,75 +249,67 @@ const ModulePage = () => {
 
   // Default view: show all courses
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans text-zinc-900">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
       <div className="sticky top-0 z-10">
         <Header />
       </div>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <header className="mb-8">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-teal-600">
-            Current Courses
-          </p>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Choose the course you want to continue.
+      {/* Hero Section */}
+      <div className="bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+            Course Modules
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-500 sm:text-base">
-            These are the same modules available in the courses area, arranged
-            here for quick access.
+          <p className="mt-4 max-w-2xl text-lg text-slate-300">
+            Continue learning from your available courses. Choose a course to
+            explore its modules and track your progress.
           </p>
-        </header>
+        </div>
+      </div>
 
-        <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {courseModules.map((module) => (
             <article
               key={module.id}
-              className="group rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+              className="group rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-slate-300"
             >
-              <div className="flex items-center justify-between gap-3">
+              <div className="mb-4 flex items-start justify-between">
                 <span
-                  className="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white"
+                  className="inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white"
                   style={{ backgroundColor: module.accent }}
                 >
                   {module.tag}
                 </span>
-                <span className="text-xs font-medium text-zinc-400">
-                  Module {module.id}
-                </span>
               </div>
 
-              <h2 className="mt-4 text-lg font-semibold tracking-tight text-zinc-900">
+              <h2 className="text-xl font-semibold text-slate-900">
                 {module.title}
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-500">
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 {module.description}
               </p>
 
-              <div className="mt-4 space-y-2 rounded-2xl bg-zinc-50 p-4 text-sm text-zinc-600">
-                <div className="flex items-center gap-2">
-                  <Clock3 className="h-4 w-4 text-zinc-400" />
-                  <span>{module.duration}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-zinc-400" />
-                  <span>{module.enrolled} learners enrolled</span>
-                </div>
+              <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
+                <Clock className="h-4 w-4" />
+                <span>{module.duration}</span>
               </div>
 
               <button
                 onClick={() =>
                   router.push(
-                    `/workspace/courses?moduleId=${module.id}&courseId=${module.id}`
+                    `/workspace/module?courseId=${module.id}`
                   )
                 }
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-600"
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg text-white px-4 py-2.5 text-sm font-semibold transition hover:opacity-90"
+                style={{ backgroundColor: module.accent }}
               >
-                Start Module
+                View Modules
                 <ArrowRight className="h-4 w-4" />
               </button>
             </article>
           ))}
-        </section>
+        </div>
       </main>
     </div>
   );
