@@ -78,7 +78,7 @@ export default function Pretest({
       <div className="mx-auto w-full max-w-250 space-y-12">
         <header className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
           <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-5">
-            <button
+            {/* <button
               onClick={() => {
                 const hasAnswered = Object.keys(answers || {}).length > 0 || isCompleted;
                 onClose(hasAnswered);
@@ -87,8 +87,8 @@ export default function Pretest({
             >
               <ChevronLeft size={16} />
               Back to Modules
-            </button>
-            <div className="text-right">
+            </button> */}
+            <div className="text-left">
               <p className="text-[0.58rem] font-semibold uppercase tracking-[0.25em] text-zinc-500">
                 Pre-test Assessment
               </p>
@@ -99,8 +99,8 @@ export default function Pretest({
           </div>
           <div className="h-0.75 w-full bg-zinc-200">
             <div
-              className="h-full transition-all duration-300"
-              style={{ width: `${progress}%`, backgroundColor: accentColor }}
+              className="h-full transition-all duration-300 bg-cyan-950"
+              style={{ width: `${progress}%` }}
             />
           </div>
         </header>
@@ -191,7 +191,7 @@ export default function Pretest({
                     className="w-full rounded-xl border-2 px-4 py-4.5 text-left text-base font-semibold transition-all"
                     style={{
                       borderColor:
-                        answers[question.id] === option ? accentColor : "#d4d4d8",
+                        answers[question.id] === option ? "#083344" : "#d4d4d8",
                       backgroundColor:
                         answers[question.id] === option
                           ? `${accentColor}15`
@@ -208,8 +208,7 @@ export default function Pretest({
                 <button
                   onClick={handleNext}
                   disabled={!isAnswered}
-                  className="inline-flex items-center gap-1.5 rounded-full px-5 py-3 text-xs font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-                  style={{ backgroundColor: accentColor }}
+                  className="inline-flex items-center gap-1.5 rounded-full px-5 py-3 text-xs font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50 bg-cyan-950"
                 >
                   Next
                   <ArrowRight size={12} />

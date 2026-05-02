@@ -497,16 +497,16 @@ const Workspace = () => {
                             }}
                             className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
                             style={{
-                              borderColor: selectedModule.accent,
+                              borderColor: "#083344",
                               backgroundColor: item.isPretest
                                 ? `${selectedModule.accent}14`
                                 : item.isModule
                                 ? `${selectedModule.accent}0A`
                                 : "#ffffff",
                               color: item.isPretest
-                                ? selectedModule.accent
+                                ? "#083344"
                                 : item.isModule
-                                ? selectedModule.accent
+                                ? "#083344"
                                 : "#111827",
                             }}
                           >
@@ -544,13 +544,13 @@ const Workspace = () => {
                                     className="flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors"
                                     style={{
                                       borderColor: isActive
-                                        ? selectedModule.accent
+                                        ? "#083344"
                                         : "#e4e4e7",
                                       backgroundColor: isActive
-                                        ? `${selectedModule.accent}1A`
+                                        ? `${selectedModule.accent}0A`
                                         : "#ffffff",
                                       color: isActive
-                                        ? selectedModule.accent
+                                        ? "#083344"
                                         : "#111827",
                                     }}
                                   >

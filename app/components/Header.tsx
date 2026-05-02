@@ -56,22 +56,24 @@ const Header = () => {
   return (
     <header className="relative z-60 flex items-center justify-between px-8 py-4 bg-white border-b border-zinc-100">
       {/* Clickable Logo Section */}
-      <button
-        onClick={handleLogoClick}
-        className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer bg-transparent border-0 padding-0"
-      >
-        <div className="relative h-9 w-9 shrink-0">
-          <img
-            src={logoIcon.src}
-            alt="GADVance logo"
-            className="h-full w-full object-contain"
-          />
-        </div>
-        <span className="text-xl font-semibold tracking-tight">GADvance</span>
-      </button>
+      <div className="flex-1">
+        <button
+          onClick={handleLogoClick}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer bg-transparent border-0 padding-0"
+        >
+          <div className="relative h-9 w-9 shrink-0">
+            <img
+              src={logoIcon.src}
+              alt="GADVance logo"
+              className="h-full w-full object-contain"
+            />
+          </div>
+          <span className="text-xl font-semibold tracking-tight">GADvance</span>
+        </button>
+      </div>
 
       {/* Navigation Links */}
-      <nav className="hidden md:flex items-center gap-10">
+      <nav className="hidden md:flex items-center gap-10 mr-15">
         <Link
           href="/workspace/about"
           className="text-zinc-600 hover:text-black transition-colors"
