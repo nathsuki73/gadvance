@@ -39,7 +39,6 @@ const ModulePage = () => {
 
         // Extract modules from course blocks
         const extractedModules: Module[] = [];
-        let currentModuleNumber = 0;
 
         course.blocks.forEach((block, index) => {
           if (
@@ -50,10 +49,9 @@ const ModulePage = () => {
             const text = (block as any).text;
             const match = text.match(/Module\s+(\d+):\s*(.+)/i);
             if (match) {
-              currentModuleNumber = parseInt(match[1]);
               extractedModules.push({
                 id: `module-${block.id}`,
-                number: currentModuleNumber,
+                number: extractedModules.length + 1,
                 title: match[2].trim(),
                 description: "",
               });
