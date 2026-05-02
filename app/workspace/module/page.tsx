@@ -91,8 +91,7 @@ const ModulePage = () => {
 
         {/* Hero Section */}
         <div className="bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
-          <div className="px-4 pt-8 pb-12 sm:px-6 lg:px-6"
-            style={{ backgroundColor: courseColor }}>
+          <div className="px-4 pt-8 pb-12 sm:px-6 lg:px-6 bg-cyan-950">
             <button
               onClick={() => router.push("/workspace")}
               className="mb-6 inline-flex items-center gap-2 text-slate-300 hover:text-white transition"
@@ -116,7 +115,7 @@ const ModulePage = () => {
               </div>
               <div className="flex items-center gap-2 text-slate-300">
                 <CheckCircle2 className="h-5 w-5" />
-                <span className="font-medium">{modules.length} Modules</span>
+                <span className="font-medium">{modules.length} {modules.length === 1 ? "Module" : "Modules"}</span>
               </div>
             </div>
           </div>
@@ -130,18 +129,17 @@ const ModulePage = () => {
                 <h2 className="text-2xl font-bold text-slate-900">
                   Your Progress
                 </h2>
-                <span className="text-3xl font-bold text-teal-600"
-                  style={{ color: courseColor }}>
+                <span className="text-3xl font-bold text-cyan-950">
                   {progressPercent}%
                 </span>
               </div>
               <p className="text-sm text-slate-600 mb-4">
-                1 of {modules.length} modules completed
+                1 of {modules.length} {modules.length === 1 ? "Module" : "Modules"} completed
               </p>
               <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-teal-500 transition-all duration-300"
-                  style={{ width: `${progressPercent}%`, backgroundColor: courseColor }}
+                  className="h-full bg-cyan-950 transition-all duration-300"
+                  style={{ width: `${progressPercent}%`}}
                 />
               </div>
             </div>
@@ -153,12 +151,11 @@ const ModulePage = () => {
                   <div
                     className={`h-12 w-12 rounded-full flex items-center justify-center font-semibold text-sm transition ${
                       index === 0
-                        ? "bg-teal-500 text-white"
+                        ? "bg-cyan-950 text-white"
                         : index === 1
-                        ? "border-2 border-teal-500 text-teal-600"
+                        ? "border-2 border-cyan-950 bg-cyan-950 text-white"
                         : "bg-slate-100 text-slate-400"
                     }`}
-                    style={{backgroundColor: courseColor}}
                   >
                     {index === 0 ? (
                       <CheckCircle2 className="h-6 w-6" />
@@ -193,17 +190,15 @@ const ModulePage = () => {
                   </p>
                   <div className="flex items-center">
                     {index === 0 && (
-                      <span className="inline-block px-2 py-1 text-xs font-semibold bg-teal-100 text-white rounded-full"
-                      style={{ backgroundColor: courseColor }}>
+                      <span className="inline-block px-2 py-1 text-xs font-semibold bg-cyan-950 text-white rounded-full">
                         ✓ Completed
                       </span>
                     )}
                     {index === 1 && (
                       <div className="flex items-center mt-2">
-                        <div className="w-12 h-1 bg-teal-500 rounded-full mr-2" 
-                        style={{ backgroundColor: courseColor }}>
+                        <div className="w-12 h-1 bg-cyan-950 rounded-full mr-2 ">
                         </div>
-                        <span className="text-xs font-medium text-teal-600">
+                        <span className="text-xs font-medium text-cyan-950">
                           42%
                         </span>
                       </div>
@@ -231,8 +226,7 @@ const ModulePage = () => {
                       `/workspace/courses?moduleId=${parseInt(courseId)}&module=${module.number}`
                     )
                   }
-                  className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-lg bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-600"
-                  style={{ backgroundColor: courseColor }}
+                  className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-lg bg-cyan-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-700"
                 >
                   {index === 0 ? "Review Module" : index === 1 ? "Resume" : "Start Module"}
                   <ArrowRight className="h-4 w-4" />
