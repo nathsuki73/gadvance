@@ -27,12 +27,13 @@ const ERROR_COPY: Record<string, { title: string; description: string }> = {
   },
 };
 
-export default function AuthErrorPage({
+export default async function AuthErrorPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: Promise<{ error?: string }>;
 }) {
-  const errorCode = searchParams.error || "Default";
+  const params = await searchParams;
+  const errorCode = params.error || "Default";
   const errorMessage = ERROR_COPY[errorCode] || ERROR_COPY.Default;
 
   return (
