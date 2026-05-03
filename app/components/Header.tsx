@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -12,7 +13,8 @@ const Header = () => {
   const { data: session } = useSession();
   const isAuthenticated = !!session?.user;
   const router = useRouter();
-  const menuRef = useRef<HTMLDivElement>(null);
+  const navMenuRef = useRef<HTMLDivElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   const [showMenu, setShowMenu] = useState(false);
@@ -32,9 +34,9 @@ const Header = () => {
       const target = event.target as Node;
       if (
         showMenu &&
-        menuRef.current &&
+        navMenuRef.current &&
         menuButtonRef.current &&
-        !menuRef.current.contains(target) &&
+        !navMenuRef.current.contains(target) &&
         !menuButtonRef.current.contains(target)
       ) {
         setShowMenu(false);
@@ -42,7 +44,9 @@ const Header = () => {
 
       if (
         showProfileMenu &&
+        profileMenuRef.current &&
         profileButtonRef.current &&
+        !profileMenuRef.current.contains(target) &&
         !profileButtonRef.current.contains(target)
       ) {
         setShowProfileMenu(false);
@@ -74,9 +78,11 @@ const Header = () => {
           className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer bg-transparent border-0 padding-0"
         >
           <div className="relative h-9 w-9 shrink-0">
-            <img
+            <Image
               src={logoIcon.src}
               alt="GADVance logo"
+              width={36}
+              height={36}
               className="h-full w-full object-contain"
             />
           </div>
@@ -111,7 +117,7 @@ const Header = () => {
 
           {showMenu ? (
             <div
-              ref={menuRef}
+              ref={navMenuRef}
               className="pointer-events-auto absolute left-0 top-full z-70 mt-3 w-56 rounded-xl border border-zinc-200 bg-white p-2 shadow-lg"
               role="menu"
               aria-label="Menu"
@@ -209,7 +215,7 @@ const Header = () => {
 
             {showProfileMenu ? (
               <div
-                ref={menuRef}
+                ref={profileMenuRef}
                 className="pointer-events-auto absolute right-0 top-full z-70 mt-3 w-72 rounded-xl border border-zinc-200 bg-white p-4 shadow-lg"
                 role="menu"
                 aria-label="Profile menu"
