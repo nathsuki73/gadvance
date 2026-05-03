@@ -99,26 +99,29 @@ const Header = () => {
             aria-expanded={showMenu}
             aria-haspopup="menu"
             aria-label="Open menu"
-            className="inline-flex items-center gap-2 rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-100"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-100"
           >
-            Menu
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.8"
-              className={`h-4 w-4 transition-transform ${showMenu ? "rotate-180" : ""}`}
+              strokeWidth="2"
+              className={`h-5 w-5 transition-transform duration-300 ${showMenu ? "rotate-90" : ""}`}
               aria-hidden="true"
             >
-              <path d="m6 9 6 6 6-6" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"
+              />
             </svg>
           </button>
 
           {showMenu ? (
             <div
               ref={navMenuRef}
-              className="pointer-events-auto absolute left-0 top-full z-70 mt-3 w-56 rounded-xl border border-zinc-200 bg-white p-2 shadow-lg"
+              className="pointer-events-auto absolute right-0 top-full z-70 mt-3 w-56 max-w-[calc(100vw-2rem)] rounded-xl border border-zinc-200 bg-white p-2 shadow-lg"
               role="menu"
               aria-label="Menu"
             >
