@@ -13,7 +13,9 @@ const Header = () => {
   const isAuthenticated = !!session?.user;
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
+  const [showMenu, setShowMenu] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
@@ -22,15 +24,24 @@ const Header = () => {
   };
 
   useEffect(() => {
-    if (!showProfileMenu) {
+    if (!showMenu && !showProfileMenu) {
       return;
     }
 
     const handleOutsideClick = (event: MouseEvent) => {
       const target = event.target as Node;
       if (
+        showMenu &&
         menuRef.current &&
+        menuButtonRef.current &&
         !menuRef.current.contains(target) &&
+        !menuButtonRef.current.contains(target)
+      ) {
+        setShowMenu(false);
+      }
+
+      if (
+        showProfileMenu &&
         profileButtonRef.current &&
         !profileButtonRef.current.contains(target)
       ) {
@@ -40,6 +51,7 @@ const Header = () => {
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        setShowMenu(false);
         setShowProfileMenu(false);
       }
     };
@@ -51,7 +63,7 @@ const Header = () => {
       document.removeEventListener("mousedown", handleOutsideClick);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [showProfileMenu]);
+  }, [showMenu, showProfileMenu]);
 
   return (
     <header className="relative z-60 flex items-center justify-between px-8 py-4 bg-white border-b border-zinc-100">
@@ -73,32 +85,100 @@ const Header = () => {
       </div>
 
       {/* Navigation Links */}
-      <nav className="hidden md:flex items-center gap-10 mr-15">
-        <Link
-          href="/workspace/about"
-          className="text-zinc-600 hover:text-black transition-colors"
-        >
-          About
-        </Link>
-        <Link
-          href="/workspace/courses"
-          className="text-zinc-600 hover:text-black transition-colors"
-        >
-          Courses
-        </Link>
-        <Link
-          href="/workspace/community"
-          className="text-zinc-600 hover:text-black transition-colors"
-        >
-          Community
-        </Link>
-        <Link
-          href="/workspace/support"
-          className="text-zinc-600 hover:text-black transition-colors"
-        >
-          Support
-        </Link>
-      </nav>
+      {isAuthenticated ? (
+        <div className="relative mr-6">
+          <button
+            ref={menuButtonRef}
+            onClick={() => setShowMenu((prev) => !prev)}
+            aria-expanded={showMenu}
+            aria-haspopup="menu"
+            aria-label="Open menu"
+            className="inline-flex items-center gap-2 rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-100"
+          >
+            Menu
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              className={`h-4 w-4 transition-transform ${showMenu ? "rotate-180" : ""}`}
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+
+          {showMenu ? (
+            <div
+              ref={menuRef}
+              className="pointer-events-auto absolute left-0 top-full z-70 mt-3 w-56 rounded-xl border border-zinc-200 bg-white p-2 shadow-lg"
+              role="menu"
+              aria-label="Menu"
+            >
+              <Link
+                href="/workspace/about"
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+                role="menuitem"
+                onClick={() => setShowMenu(false)}
+              >
+                About
+              </Link>
+              <Link
+                href="/workspace/courses"
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+                role="menuitem"
+                onClick={() => setShowMenu(false)}
+              >
+                Courses
+              </Link>
+              <Link
+                href="/workspace/community"
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+                role="menuitem"
+                onClick={() => setShowMenu(false)}
+              >
+                Community
+              </Link>
+              <Link
+                href="/workspace/support"
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+                role="menuitem"
+                onClick={() => setShowMenu(false)}
+              >
+                Support
+              </Link>
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <nav className="hidden md:flex items-center gap-10 mr-15">
+          <Link
+            href="/workspace/about"
+            className="text-zinc-600 hover:text-black transition-colors"
+          >
+            About
+          </Link>
+          <Link
+            href="/workspace/courses"
+            className="text-zinc-600 hover:text-black transition-colors"
+          >
+            Courses
+          </Link>
+          <Link
+            href="/workspace/community"
+            className="text-zinc-600 hover:text-black transition-colors"
+          >
+            Community
+          </Link>
+          <Link
+            href="/workspace/support"
+            className="text-zinc-600 hover:text-black transition-colors"
+          >
+            Support
+          </Link>
+        </nav>
+      )}
 
       {/* Auth Buttons */}
       <div className="flex items-center gap-6">
