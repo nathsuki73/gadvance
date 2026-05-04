@@ -19,7 +19,6 @@ type WorkspaceLink = {
   description: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  badge: string;
   accent: string;
 };
 
@@ -30,7 +29,6 @@ const workspaceLinks: WorkspaceLink[] = [
       "View your account details, placeholders, and personal learning snapshot.",
     href: "/workspace/profile",
     icon: CircleUserRound,
-    badge: "Account",
     accent: "from-sky-500 to-blue-500",
   },
   {
@@ -39,7 +37,6 @@ const workspaceLinks: WorkspaceLink[] = [
       "Browse active learning tracks and continue where you left off.",
     href: "/workspace/courses",
     icon: BookOpen,
-    badge: "Learning",
     accent: "from-teal-500 to-cyan-500",
   },
   {
@@ -47,7 +44,6 @@ const workspaceLinks: WorkspaceLink[] = [
     description: "Join discussion threads and connect with peer advocates.",
     href: "/workspace/community",
     icon: MessageSquareHeart,
-    badge: "Network",
     accent: "from-orange-500 to-amber-500",
   },
   {
@@ -56,7 +52,6 @@ const workspaceLinks: WorkspaceLink[] = [
       "Jump straight into your active module and keep your streak alive.",
     href: "/workspace/module",
     icon: Flame,
-    badge: "In Progress",
     accent: "from-rose-500 to-orange-500",
   },
   {
@@ -65,7 +60,6 @@ const workspaceLinks: WorkspaceLink[] = [
       "Understand mission, outcomes, and how this workspace is built.",
     href: "/workspace/about",
     icon: Compass,
-    badge: "Overview",
     accent: "from-sky-500 to-teal-500",
   },
   {
@@ -73,7 +67,6 @@ const workspaceLinks: WorkspaceLink[] = [
     description: "Get guidance, FAQs, and direct help when you need it.",
     href: "/workspace/support",
     icon: HandHelping,
-    badge: "Help",
     accent: "from-emerald-500 to-teal-500",
   },
 ];
@@ -101,7 +94,6 @@ export default function WorkspacePage() {
     const nameParts = fullName.split(/\s+/).filter(Boolean);
     return nameParts.length > 1 ? nameParts[0] : "there";
   })();
-  const statusLabel = session?.user?.status ?? "Active";
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -137,20 +129,13 @@ export default function WorkspacePage() {
               Welcome back, <span className="text-teal-500">{displayName}</span>
               !
             </h1>
-            <p className="mt-1 text-sm text-zinc-500">
-              Status:{" "}
-              <span className="font-medium text-zinc-700">{statusLabel}</span>
-            </p>
           </section>
 
           <section className="mt-10">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">
-                Workspace Shortcuts
+                Workspace
               </h2>
-              <p className="text-sm text-zinc-500">
-                Fast access to your main areas
-              </p>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -169,9 +154,6 @@ export default function WorkspacePage() {
                       >
                         <Icon className="h-5 w-5" />
                       </div>
-                      <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
-                        {item.badge}
-                      </span>
                     </div>
                     <h3 className="mt-4 text-lg font-semibold text-zinc-900">
                       {item.title}
