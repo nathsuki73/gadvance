@@ -10,7 +10,6 @@ import {
   Flame,
   HandHelping,
   MessageSquareHeart,
-  Sparkles,
 } from "lucide-react";
 import Header from "@/app/components/Header";
 import Footer from "@/app/components/Footer";
@@ -142,70 +141,6 @@ export default function WorkspacePage() {
               Status:{" "}
               <span className="font-medium text-zinc-700">{statusLabel}</span>
             </p>
-          </section>
-
-          <section className="grid gap-6 rounded-3xl border border-[#00a9d1]/20 bg-white/90 p-7 shadow-[0_10px_60px_-30px_rgba(0,169,209,0.6)] backdrop-blur md:grid-cols-[1.2fr_0.8fr]">
-            <div>
-              <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#00a9d1]/10 px-3 py-1 text-xs font-semibold tracking-wider text-[#007a97] uppercase">
-                <Sparkles className="h-3.5 w-3.5" />
-                Your Learning Command Center
-              </p>
-              <h2 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-5xl">
-                Build confidence through action, not just content.
-              </h2>
-              <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-600 sm:text-lg">
-                This workspace brings your courses, community, and support tools
-                together so every session moves you one step closer to real
-                impact.
-              </p>
-
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => router.push("/workspace/courses")}
-                  className="rounded-xl bg-[#00a9d1] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#00a9d1]/25 transition hover:bg-[#0089a8]"
-                >
-                  Continue Learning
-                </button>
-                <button
-                  onClick={() => router.push("/workspace/community")}
-                  className="rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50"
-                >
-                  Open Community
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-zinc-100 bg-linear-to-br from-zinc-50 to-white p-5">
-              <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase">
-                Today at a Glance
-              </h2>
-              <div className="mt-4 space-y-3">
-                <div className="rounded-xl border border-zinc-100 bg-white p-4">
-                  <p className="text-xs font-medium text-zinc-500">
-                    Current focus
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-zinc-900">
-                    Workplace Rights & Advocacy
-                  </p>
-                </div>
-                <div className="rounded-xl border border-zinc-100 bg-white p-4">
-                  <p className="text-xs font-medium text-zinc-500">
-                    Weekly target
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-zinc-900">
-                    Complete 2 lessons and 1 quiz
-                  </p>
-                </div>
-                <div className="rounded-xl border border-zinc-100 bg-white p-4">
-                  <p className="text-xs font-medium text-zinc-500">
-                    Support status
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-zinc-900">
-                    No pending requests
-                  </p>
-                </div>
-              </div>
-            </div>
           </section>
 
           <section className="mt-10">
