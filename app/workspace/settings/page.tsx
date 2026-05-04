@@ -7,23 +7,25 @@ import {
   Bell,
   Globe,
   Lock,
-  MoonStar,
   Palette,
   Shield,
   SlidersHorizontal,
   Sparkles,
-  Sun,
 } from "lucide-react";
 import Header from "@/app/components/Header";
 import Footer from "@/app/components/Footer";
-import { getStoredTheme, setTheme } from "@/app/lib/theme";
+import { getStoredTheme, getSystemTheme, setTheme } from "@/app/lib/theme";
 
 const SettingsPage = () => {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [isDarkMode, setIsDarkMode] = useState(
-    () => getStoredTheme() === "dark",
+  const [themePreference, setThemePreference] = useState(
+    () => getStoredTheme() ?? "system",
   );
+  const isDarkMode =
+    themePreference === "system"
+      ? getSystemTheme() === "dark"
+      : themePreference === "dark";
 
   const statusLabel = session?.user?.status ?? "Active";
 
@@ -33,10 +35,11 @@ const SettingsPage = () => {
     }
   }, [status, router]);
 
-  const handleThemeToggle = () => {
-    const nextDarkMode = !isDarkMode;
-    setIsDarkMode(nextDarkMode);
-    setTheme(nextDarkMode ? "dark" : "light");
+  const handleThemeChange = (value: string) => {
+    if (value === "light" || value === "dark" || value === "system") {
+      setThemePreference(value);
+      setTheme(value);
+    }
   };
 
   if (status === "loading") {
@@ -97,36 +100,31 @@ const SettingsPage = () => {
                         Theme preference
                       </p>
                       <p className="mt-1 text-xs text-zinc-500">
-                        {isDarkMode ? "Dark Mode" : "Light Mode"}
+                        {themePreference === "system"
+                          ? `System (${isDarkMode ? "Dark" : "Light"})`
+                          : themePreference === "dark"
+                            ? "Dark Mode"
+                            : "Light Mode"}
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={isDarkMode}
-                      aria-label="Toggle dark mode"
-                      onClick={handleThemeToggle}
-                      className={`relative inline-flex h-7 w-12 items-center rounded-full border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00a9d1] focus-visible:ring-offset-2 ${
-                        isDarkMode
-                          ? "border-[#00a9d1] bg-[#00a9d1]"
-                          : "border-zinc-300 bg-zinc-200"
-                      }`}
-                    >
-                      <span
-                        className={`inline-flex h-5 w-5 transform items-center justify-center rounded-full shadow-sm transition-transform ${
-                          isDarkMode
-                            ? "translate-x-6 bg-[#f8fafc]"
-                            : "translate-x-1 bg-[#ffffff]"
-                        }`}
+                    <div className="relative w-full max-w-52">
+                      <select
+                        aria-label="Theme preference"
+                        value={themePreference}
+                        onChange={(event) =>
+                          handleThemeChange(event.target.value)
+                        }
+                        className="w-full appearance-none rounded-full border border-zinc-300 bg-white px-4 py-2 pr-10 text-sm font-medium text-zinc-900 shadow-sm outline-none transition focus:border-[#00a9d1] focus:ring-2 focus:ring-[#00a9d1]/20"
                       >
-                        {isDarkMode ? (
-                          <MoonStar className="h-3.5 w-3.5 text-[#0f1727]" />
-                        ) : (
-                          <Sun className="h-3 w-3 text-amber-500" />
-                        )}
-                      </span>
-                    </button>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="system">System (default)</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-zinc-500">
+                        <Sparkles className="h-4 w-4 rotate-45" />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="rounded-xl border border-zinc-100 bg-zinc-50/60 p-4">
