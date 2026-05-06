@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import { handleSignIn } from "../../lib/auth";
@@ -9,6 +10,7 @@ import { handleRegistration } from "./actions";
 import { z } from "zod";
 import { useSession } from "next-auth/react";
 import logoIcon from "@/app/assets/logo.ico";
+import LoginImg from "@/app/assets/LoginImg.webp";
 
 const signUpSchema = z
   .object({
@@ -236,12 +238,14 @@ const SignUp = () => {
 
         {/* Right Side: Decorative Panel */}
         <div className="hidden lg:block lg:w-1/2 p-6">
-          <div className="w-full h-full bg-gradient-to-br from-[#4fd1c5] to-[#00a8cc] rounded-[2.5rem] flex flex-col items-center justify-center p-12 text-white text-center">
-            <h2 className="text-3xl font-bold mb-4">Focus on your growth.</h2>
-            <p className="opacity-80 font-light leading-relaxed">
-              Join thousands of students and professionals building the future
-              of SaaS with Gadvance.
-            </p>
+          <div className="relative h-full w-full overflow-hidden rounded-[2.5rem]">
+            <Image
+              src={LoginImg}
+              alt="Login illustration"
+              fill
+              priority
+              className="object-cover"
+            />
           </div>
         </div>
       </div>
