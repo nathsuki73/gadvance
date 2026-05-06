@@ -190,10 +190,10 @@ const CourseCard = ({
       </div>
 
       <div>
-        <h3 className="text-[2.05rem] font-black tracking-tight text-zinc-900">
+        <h3 className="text-xl sm:text-2xl md:text-2xl lg:text-3xl font-bold tracking-tight text-zinc-900">
           {module.title}
         </h3>
-        <p className="mt-2 text-[1.15rem] leading-relaxed text-zinc-600">
+        <p className="mt-2 text-sm sm:text-md md:text-md lg:text-lg leading-relaxed text-zinc-600">
           {module.description}
         </p>
       </div>
@@ -201,11 +201,11 @@ const CourseCard = ({
       <div className="flex items-center gap-5 text-[1.05rem] text-zinc-500">
         <span className="inline-flex items-center gap-1.5">
           <Clock3 size={15} className="text-zinc-500" />
-          {module.duration}
+          <p className="text-sm sm:text-md md:text-md lg:text-lg">{module.duration}</p>
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Users size={15} className="text-zinc-500" />
-          {module.enrolled} learners enrolled
+          <p className="text-sm sm:text-md md:text-md lg:text-lg">{module.enrolled} learners enrolled</p>
         </span>
       </div>
 
@@ -413,7 +413,7 @@ const Workspace = () => {
 
   if (selectedModule) {
     return (
-      <div className="min-h-screen bg-[#f4f4f6] font-sans text-zinc-900">
+      <div className="min-h-screen bg-white font-sans text-zinc-900">
         {/* <Header /> */}
 
         <div className="mx-auto flex w-full max-w-380 justify-end px-6 pt-3">
@@ -495,13 +495,12 @@ const Workspace = () => {
                               }
                               handleModuleNavClick(item.id);
                             }}
-                            className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
+                            className="flex w-full items-center justify-between rounded-md px-3 py-2 gap-x-4 text-left text-sm font-semibold transition-colors"
                             style={{
-                              borderColor: "#083344",
                               backgroundColor: item.isPretest
-                                ? `${selectedModule.accent}14`
+                                ? `#ffffff`
                                 : item.isModule
-                                ? `${selectedModule.accent}0A`
+                                ? `#ffffff`
                                 : "#ffffff",
                               color: item.isPretest
                                 ? "#083344"
@@ -510,7 +509,6 @@ const Workspace = () => {
                                 : "#111827",
                             }}
                           >
-                            <span>{item.label}</span>
                             {hasChildren && (
                               <ChevronRight
                                 size={14}
@@ -519,6 +517,7 @@ const Workspace = () => {
                                 }`}
                               />
                             )}
+                            <span>{item.label}</span>
                           </button>
                           {item.isModule && isModuleExpanded && hasChildren && (
                             <div className="ml-3 mt-1 space-y-1 border-l border-zinc-200 pl-2">
@@ -541,11 +540,8 @@ const Workspace = () => {
 
                                       handleModuleNavClick(child.id);
                                     }}
-                                    className="flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors"
+                                    className="relative flex w-full items-center gap-2 rounded-md px-3 py-2 pl-5 text-left text-xs font-medium transition-colors"
                                     style={{
-                                      borderColor: isActive
-                                        ? "#083344"
-                                        : "#e4e4e7",
                                       backgroundColor: isActive
                                         ? `${selectedModule.accent}0A`
                                         : "#ffffff",
@@ -554,6 +550,14 @@ const Workspace = () => {
                                         : "#111827",
                                     }}
                                   >
+                                    <div
+                                      className="absolute left-0 top-1/2 -translate-y-1/2 h-full w-1 rounded-r opacity-75"
+                                      style={{
+                                        backgroundColor: isActive
+                                          ? "#083344"
+                                          : "transparent",
+                                      }}
+                                    />
                                     <Circle size={12} className="shrink-0" />
                                     <span>{child.label}</span>
                                   </button>
@@ -571,7 +575,7 @@ const Workspace = () => {
 
             <div className={`space-y-5 transition-all duration-300 ${desktopContentOffsetClass}`}>
               {!isPretestCompleted ? (
-                <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-9">
+                <div className="rounded-3xl bg-white md:p-9">
                   <Pretest
                         isOpen
                         onClose={(hasAnswered?: boolean) => {
@@ -641,28 +645,30 @@ const Workspace = () => {
             />
 
             <aside
-              className={`absolute left-0 top-0 h-full w-[84%] max-w-sm border-r border-zinc-200 bg-[#f7f8fa] p-4 shadow-xl transition-transform duration-300 ${
+              className={`absolute left-0 top-0 h-full w-[90vw] sm:w-80 border-r border-zinc-200 bg-[#f7f8fa] shadow-xl transition-transform duration-300 overflow-y-auto overflow-x-hidden flex flex-col ${
                 isMobileNavOpen ? "translate-x-0" : "-translate-x-full"
               }`}
             >
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-zinc-900">
+              <div className="sticky top-0 mb-4 flex items-center justify-between bg-[#f7f8fa] px-4 pt-4 pb-2">
+                <h2 className="text-lg font-bold text-zinc-900 truncate">
                   {structureTitle}
                 </h2>
                 <button
                   type="button"
                   onClick={() => setIsMobileNavOpen(false)}
-                  className="rounded-md border border-zinc-300 bg-white p-1.5 text-zinc-700"
+                  className="shrink-0 rounded-md border border-zinc-300 bg-white p-1.5 text-zinc-700"
                   aria-label="Close navigation panel"
                 >
                   <X size={16} />
                 </button>
               </div>
-
-              <div className="space-y-2">
+              
+              {/* Mobile Structure */}
+              <div className="space-y-2 px-4 pb-4">
                 {visibleStructureItems.map((item) => {
                   const isModuleExpanded = expandedModules.has(item.id);
                   const hasChildren = item.children && item.children.length > 0;
+                  const moduleHasActiveChild = item.children?.some((c) => c.id === displayedNavId) ?? false;
                   return (
                     <div key={item.id}>
                       <button
@@ -679,32 +685,31 @@ const Workspace = () => {
                           }
                           setIsMobileNavOpen(false);
                         }}
-                        className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm font-semibold transition-colors"
+                        className="relative flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold transition-colors"
                         style={{
-                          borderColor: selectedModule.accent,
                           backgroundColor: item.isModule
-                            ? `${selectedModule.accent}0A`
+                            ? `#ffffff`
                             : item.isPretest
-                            ? `${selectedModule.accent}14`
+                            ? "#08334414"
                             : "#ffffff",
                           color: item.isModule || item.isPretest
-                            ? selectedModule.accent
+                            ? "#083344"
                             : "#111827",
                         }}
                       >
-                        <span>{item.label}</span>
                         {hasChildren && (
                           <ChevronRight
                             size={14}
-                            className={`transition-transform ${
+                            className={`shrink-0 transition-transform ${
                               isModuleExpanded ? "rotate-90" : ""
                             }`}
                           />
                         )}
+                        <span className="truncate">{item.label}</span>
                       </button>
                       {item.isModule && isModuleExpanded && hasChildren && (
                         <div className="ml-3 mt-1 space-y-1 border-l border-zinc-200 pl-2">
-                          {item.children?.map((child) => {
+                            {item.children?.map((child) => {
                             const isActive = child.id === displayedNavId;
                             return (
                               <button
@@ -724,21 +729,26 @@ const Workspace = () => {
                                   handleModuleNavClick(child.id);
                                   setIsMobileNavOpen(false);
                                 }}
-                                className="flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors"
+                                className="relative flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs font-medium transition-colors"
                                 style={{
-                                  borderColor: isActive
-                                    ? selectedModule.accent
-                                    : "#e4e4e7",
                                   backgroundColor: isActive
-                                    ? `${selectedModule.accent}1A`
+                                    ? "#0833441A"
                                     : "#ffffff",
                                   color: isActive
-                                    ? selectedModule.accent
+                                    ? "#083344"
                                     : "#111827",
                                 }}
                               >
+                                <div
+                                  className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r shrink-0"
+                                  style={{
+                                    backgroundColor: isActive
+                                      ? "#083344"
+                                      : "transparent",
+                                  }}
+                                />
                                 <Circle size={12} className="shrink-0" />
-                                <span>{child.label}</span>
+                                <span className="truncate">{child.label}</span>
                               </button>
                             );
                           })}
@@ -756,13 +766,13 @@ const Workspace = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f4f6] font-sans text-zinc-900">
+    <div className="min-h-screen bg-white font-sans text-zinc-900">
       <Header />
 
-      <main className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-12 rounded-[40px] border border-zinc-100 bg-white p-10 shadow-sm">
-          <div className="max-w-2xl">
-            <h1 className="mb-6 text-4xl font-black tracking-tight">
+      <main className="mx-auto max-w-7xl px-6 py-12">
+        <div className="mb-12 bg-white">
+          <div className="max-w-7xl">
+            <h1 className="mb-6 text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold tracking-tight">
               What will you learn today?
             </h1>
             <div className="relative">
@@ -779,8 +789,8 @@ const Workspace = () => {
           </div>
         </div>
 
-        <div className="mb-10 flex items-end justify-between">
-          <h2 className="text-3xl font-black tracking-tight">
+        <div className="mb-10 flex items-end justify-between pt-10">
+          <h2 className="text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold tracking-tight">
             Educational Programs
           </h2>
         </div>

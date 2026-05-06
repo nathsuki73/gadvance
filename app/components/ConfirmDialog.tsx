@@ -50,11 +50,11 @@ const ConfirmDialog = ({
         onClick={onCancel}
       />
 
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#111827] shadow-2xl shadow-slate-950/40">
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-teal-400 via-cyan-400 to-sky-500" />
+      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-white shadow-2xl shadow-slate-950/40">
+        <div className="absolute inset-x-0 top-0 h-1" />
 
         <div className="p-6 sm:p-7">
-          <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-500/10 text-teal-300 ring-1 ring-inset ring-teal-400/20">
+          <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#083344] text-white ring-1 ring-inset ring-[#083344]">
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -76,23 +76,23 @@ const ConfirmDialog = ({
             </svg>
           </div>
 
-          <h2 className="text-2xl font-semibold tracking-tight text-white">
+          <h2 className="text-2xl font-semibold tracking-tight text-[#083344]">
             {title}
           </h2>
-          <p className="mt-3 text-sm leading-6 text-slate-300">{description}</p>
+          <p className="mt-3 text-sm leading-6 text-[#083344]">{description}</p>
 
           <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onCancel}
-              className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/10 hover:text-white"
+              className="inline-flex items-center justify-center rounded-2xl border border-gray-700/25 bg-white/5 px-5 py-3 text-sm font-semibold text-[#083344] transition hover:bg-white/10 hover:text-white"
             >
               {cancelLabel}
             </button>
             <button
               type="button"
               onClick={onConfirm}
-              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-teal-400 to-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-500/20 transition hover:brightness-110"
+              className="inline-flex items-center justify-center rounded-2xl bg-[#083344] px-5 py-3 text-sm font-semibold text-white  transition"
             >
               {confirmLabel}
             </button>

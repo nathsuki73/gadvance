@@ -99,7 +99,7 @@ const Header = () => {
             aria-expanded={showMenu}
             aria-haspopup="menu"
             aria-label="Open menu"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-100"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-200"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -107,7 +107,7 @@ const Header = () => {
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
-              className={`h-5 w-5 transition-transform duration-300 ${showMenu ? "rotate-90" : ""}`}
+              className={`h-5 w-5 transition-transform duration-300 ${showMenu ? "rotate-180" : ""}`}
               aria-hidden="true"
             >
               <path
@@ -127,7 +127,7 @@ const Header = () => {
             >
               <Link
                 href="/workspace/about"
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-300"
                 role="menuitem"
                 onClick={() => setShowMenu(false)}
               >
@@ -135,7 +135,7 @@ const Header = () => {
               </Link>
               <Link
                 href="/workspace/courses"
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-300"
                 role="menuitem"
                 onClick={() => setShowMenu(false)}
               >
@@ -143,7 +143,7 @@ const Header = () => {
               </Link>
               <Link
                 href="/workspace/community"
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-300"
                 role="menuitem"
                 onClick={() => setShowMenu(false)}
               >
@@ -151,7 +151,7 @@ const Header = () => {
               </Link>
               <Link
                 href="/workspace/support"
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-300"
                 role="menuitem"
                 onClick={() => setShowMenu(false)}
               >
@@ -200,7 +200,7 @@ const Header = () => {
               aria-haspopup="menu"
               aria-label="Open profile options"
               title="Profile"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-100"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-200"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
