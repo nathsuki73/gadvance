@@ -101,7 +101,7 @@ const ProfilePage = () => {
                   <p className="text-xs font-medium text-zinc-500">Role</p>
                   <p className="mt-1 inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">
                     <Shield className="h-4 w-4 text-zinc-500" />
-                    Learner (placeholder)
+                    Learner
                   </p>
                 </div>
 
@@ -109,7 +109,7 @@ const ProfilePage = () => {
                   <p className="text-xs font-medium text-zinc-500">Location</p>
                   <p className="mt-1 inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">
                     <MapPin className="h-4 w-4 text-zinc-500" />
-                    City, Country (placeholder)
+                    City, Country
                   </p>
                 </div>
               </div>
@@ -127,7 +127,6 @@ const ProfilePage = () => {
                   </p>
                   <p className="mt-1 inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">
                     <BookOpen className="h-4 w-4 text-teal-600" />0 active
-                    (placeholder)
                   </p>
                 </div>
 
@@ -137,7 +136,7 @@ const ProfilePage = () => {
                   </p>
                   <p className="mt-1 inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">
                     <CalendarClock className="h-4 w-4 text-orange-500" />
-                    Complete first module (placeholder)
+                    Complete first module
                   </p>
                 </div>
 
@@ -147,7 +146,7 @@ const ProfilePage = () => {
                   </p>
                   <p className="mt-1 inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">
                     <Bell className="h-4 w-4 text-zinc-500" />
-                    Enabled (placeholder)
+                    Enabled
                   </p>
                 </div>
               </div>
@@ -156,7 +155,7 @@ const ProfilePage = () => {
 
           <section className="mt-6 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-900">
-              About Me (Placeholder)
+              About Me
             </h2>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-600">
               Add a short personal bio here. This area can later include profile
