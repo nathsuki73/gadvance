@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
@@ -14,18 +14,10 @@ import {
 } from "lucide-react";
 import Header from "@/app/components/Header";
 import Footer from "@/app/components/Footer";
-import { getStoredTheme, getSystemTheme, setTheme } from "@/app/lib/theme";
 
 const SettingsPage = () => {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [themePreference, setThemePreference] = useState(
-    () => getStoredTheme() ?? "system",
-  );
-  const isDarkMode =
-    themePreference === "system"
-      ? getSystemTheme() === "dark"
-      : themePreference === "dark";
 
   const statusLabel = session?.user?.status ?? "Active";
 
@@ -34,13 +26,6 @@ const SettingsPage = () => {
       router.replace("/auth/signin");
     }
   }, [status, router]);
-
-  const handleThemeChange = (value: string) => {
-    if (value === "light" || value === "dark" || value === "system") {
-      setThemePreference(value);
-      setTheme(value);
-    }
-  };
 
   if (status === "loading") {
     return (
@@ -93,39 +78,13 @@ const SettingsPage = () => {
               </h2>
               <div className="mt-5 space-y-3">
                 <div className="rounded-xl border border-zinc-100 bg-zinc-50/60 p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">
-                        <Palette className="h-4 w-4 text-zinc-500" />
-                        Theme preference
-                      </p>
-                      <p className="mt-1 text-xs text-zinc-500">
-                        {themePreference === "system"
-                          ? `System (${isDarkMode ? "Dark" : "Light"})`
-                          : themePreference === "dark"
-                            ? "Dark Mode"
-                            : "Light Mode"}
-                      </p>
-                    </div>
-
-                    <div className="relative w-full max-w-52">
-                      <select
-                        aria-label="Theme preference"
-                        value={themePreference}
-                        onChange={(event) =>
-                          handleThemeChange(event.target.value)
-                        }
-                        className="w-full appearance-none rounded-full border border-zinc-300 bg-white px-4 py-2 pr-10 text-sm font-medium text-zinc-900 shadow-sm outline-none transition focus:border-[#00a9d1] focus:ring-2 focus:ring-[#00a9d1]/20"
-                      >
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
-                        <option value="system">System (default)</option>
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-zinc-500">
-                        <Sparkles className="h-4 w-4 rotate-45" />
-                      </div>
-                    </div>
-                  </div>
+                  <p className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">
+                    <Palette className="h-4 w-4 text-zinc-500" />
+                    Appearance
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Light mode is enforced across the app.
+                  </p>
                 </div>
                 <div className="rounded-xl border border-zinc-100 bg-zinc-50/60 p-4">
                   <p className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">

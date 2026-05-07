@@ -99,7 +99,7 @@ const Header = () => {
             aria-expanded={showMenu}
             aria-haspopup="menu"
             aria-label="Open menu"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-200"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-zinc-700"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
