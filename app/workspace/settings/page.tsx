@@ -74,7 +74,7 @@ const SettingsPage = () => {
           <section className="mt-7 grid gap-6 md:grid-cols-2">
             <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-zinc-900">
-                Preferences (Placeholder)
+                Preferences
               </h2>
               <div className="mt-5 space-y-3">
                 <div className="rounded-xl border border-zinc-100 bg-zinc-50/60 p-4">
@@ -92,7 +92,7 @@ const SettingsPage = () => {
                     Language
                   </p>
                   <p className="mt-1 text-xs text-zinc-500">
-                    English (placeholder)
+                    English
                   </p>
                 </div>
                 <div className="rounded-xl border border-zinc-100 bg-zinc-50/60 p-4">
@@ -101,7 +101,7 @@ const SettingsPage = () => {
                     Notifications
                   </p>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Enabled (placeholder)
+                    Enabled
                   </p>
                 </div>
               </div>
@@ -109,7 +109,7 @@ const SettingsPage = () => {
 
             <div className="rounded-3xl border border-[#00a9d1]/20 bg-white p-6 shadow-[0_10px_60px_-35px_rgba(0,169,209,0.6)]">
               <h2 className="text-lg font-semibold text-zinc-900">
-                Security (Placeholder)
+                Security
               </h2>
               <div className="mt-5 space-y-3">
                 <div className="rounded-xl border border-zinc-100 bg-white p-4">
@@ -118,7 +118,7 @@ const SettingsPage = () => {
                     Password
                   </p>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Last updated: not set (placeholder)
+                    Last updated: not set
                   </p>
                 </div>
                 <div className="rounded-xl border border-zinc-100 bg-white p-4">
@@ -127,7 +127,7 @@ const SettingsPage = () => {
                     Two-factor authentication
                   </p>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Disabled (placeholder)
+                    Disabled
                   </p>
                 </div>
                 <div className="rounded-xl border border-zinc-100 bg-white p-4">
@@ -136,7 +136,7 @@ const SettingsPage = () => {
                     Privacy controls
                   </p>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Default visibility (placeholder)
+                    Default visibility
                   </p>
                 </div>
               </div>
