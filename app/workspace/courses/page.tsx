@@ -474,6 +474,18 @@ const Workspace = () => {
                   </button>
                 </div>
 
+                {!isStructureCollapsed && selectedModule && (
+                  <div className="mt-5 space-y-1">
+                    <div className="h-2 w-full rounded-full bg-zinc-200 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300"
+                        style={{ width: "0%" }}
+                      />
+                    </div>
+                    <p className="text-xs text-zinc-500">0% completed</p>
+                  </div>
+                )}
+
                 {!isStructureCollapsed && (
                   <div className="mt-5 space-y-2 overflow-y-auto pr-1">
                     {visibleStructureItems.map((item) => {
@@ -662,6 +674,18 @@ const Workspace = () => {
                   <X size={16} />
                 </button>
               </div>
+              
+              {selectedModule && (
+                <div className="px-4 py-3 space-y-1 border-b border-zinc-200">
+                  <div className="h-2 w-full rounded-full bg-zinc-200 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300"
+                      style={{ width: "0%" }}
+                    />
+                  </div>
+                  <p className="text-xs text-zinc-500">0% completed</p>
+                </div>
+              )}
               
               {/* Mobile Structure */}
               <div className="space-y-2 px-4 pb-4">
