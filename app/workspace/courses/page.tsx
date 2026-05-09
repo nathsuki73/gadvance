@@ -478,7 +478,7 @@ const Workspace = () => {
                   <div className="mt-5 space-y-1">
                     <div className="h-2 w-full rounded-full bg-zinc-200 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300"
+                        className="h-full rounded-full bg-cyan-950 transition-all duration-300"
                         style={{ width: "0%" }}
                       />
                     </div>
@@ -679,7 +679,7 @@ const Workspace = () => {
                 <div className="px-4 py-3 space-y-1 border-b border-zinc-200">
                   <div className="h-2 w-full rounded-full bg-zinc-200 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300"
+                      className="h-full rounded-full bg-cyan-950 transition-all duration-300"
                       style={{ width: "0%" }}
                     />
                   </div>
