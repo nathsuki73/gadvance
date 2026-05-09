@@ -138,7 +138,7 @@ const ModulePage = () => {
               </p>
               <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-cyan-950 transition-all duration-300"
+                  className="h-full bg-cyan-950 transition-all duration-300 rounded-full"
                   style={{ width: `${progressPercent}%`}}
                 />
               </div>
@@ -195,10 +195,28 @@ const ModulePage = () => {
                       </span>
                     )}
                     {index === 1 && (
-                      <div className="flex items-center mt-2">
-                        <div className="w-12 h-1 bg-cyan-950 rounded-full mr-2 ">
-                        </div>
-                        <span className="text-xs font-medium text-cyan-950">
+                      <div className="flex items-center gap-1">
+                        <svg className="h-6 w-6 transform -rotate-90" viewBox="0 0 48 48">
+                          <circle
+                            cx="24"
+                            cy="24"
+                            r="17"
+                            fill="none"
+                            stroke="#e2e8f0"
+                            strokeWidth="6"
+                          />
+                          <circle
+                            cx="24"
+                            cy="24"
+                            r="17"
+                            fill="none"
+                            stroke="#082f49"
+                            strokeWidth="6"
+                            strokeDasharray="50.265 125.66"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <span className="text-xs font-bold text-cyan-950">
                           42%
                         </span>
                       </div>
