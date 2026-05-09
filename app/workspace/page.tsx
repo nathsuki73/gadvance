@@ -124,12 +124,14 @@ export default function WorkspacePage() {
         </div>
 
         <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
-          <section className="mb-4 rounded-3xl border border-zinc-200 bg-white/90 px-5 py-4 shadow-[0_10px_60px_-30px_rgba(0,169,209,0.45)] backdrop-blur">
+          {/* <section className="mb-4 rounded-3xl border border-zinc-200 bg-white/90 px-5 py-4 shadow-[0_10px_60px_-30px_rgba(0,169,209,0.45)] backdrop-blur">
             <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-              Welcome back, <span className="text-teal-500">{displayName}</span>
-              !
+              Welcome back, <span className="text-teal-500">{displayName}.</span>
             </h1>
-          </section>
+          </section> */}
+            <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
+              Welcome back, <span className="text-teal-500">{displayName}.</span>
+            </h1>
 
           <section className="mt-10">
             <div className="mb-4 flex items-center justify-between">
