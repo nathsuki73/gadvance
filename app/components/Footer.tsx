@@ -1,8 +1,14 @@
 import React from "react";
 import Link from "next/link";
 import logoIcon from "@/app/assets/logo.ico";
+import { Twitter, Linkedin, Instagram, ArrowRight } from "lucide-react";
 
 const Footer = () => {
+  const socialLinks = [
+    { name: "Twitter", Icon: Twitter, href: "#" },
+    { name: "LinkedIn", Icon: Linkedin, href: "#" },
+    { name: "Instagram", Icon: Instagram, href: "#" },
+  ];
   return (
     <footer className="bg-white border-t border-gray-100 pt-16 pb-8">
       <div className="mx-auto max-w-7xl px-8 lg:px-12">
@@ -26,15 +32,15 @@ const Footer = () => {
               education needed to advance gender equality globally.
             </p>
             <div className="flex gap-4">
-              {/* Social Placeholders using the teal accent */}
-              {["Twitter", "LinkedIn", "Instagram"].map((social) => (
-                <div
-                  key={social}
-                  className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-teal-600 hover:bg-teal-50 transition-colors cursor-pointer"
+              {socialLinks.map(({ name, Icon, href }) => (
+                <Link
+                  key={name}
+                  href={href}
+                  className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-zinc-500 hover:text-teal-600 hover:bg-teal-50 transition-all duration-200 border border-transparent hover:border-teal-100"
+                  aria-label={name}
                 >
-                  <span className="sr-only">{social}</span>
-                  <div className="w-4 h-4 bg-current rounded-sm opacity-80" />
-                </div>
+                  <Icon className="w-5 h-5" />
+                </Link>
               ))}
             </div>
           </div>

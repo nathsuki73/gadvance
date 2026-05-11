@@ -129,9 +129,9 @@ export default function WorkspacePage() {
               Welcome back, <span className="text-teal-500">{displayName}.</span>
             </h1>
           </section> */}
-            <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-              Welcome back, <span className="text-teal-500">{displayName}.</span>
-            </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
+            Welcome back, <span className="text-teal-500">{displayName}.</span>
+          </h1>
 
           <section className="mt-10">
             <div className="mb-4 flex items-center justify-between">

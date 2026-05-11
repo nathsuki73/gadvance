@@ -80,7 +80,9 @@ const getBlockAnchorId = (block: ModuleBlock, index: number): string => {
 };
 
 const isModuleTitleBlock = (block: ModuleBlock): boolean =>
-  block.type === "title" && typeof (block as any).text === "string" && (block as any).text.includes("Module");
+  block.type === "title" &&
+  typeof (block as any).text === "string" &&
+  (block as any).text.includes("Module");
 
 const buildModuleArticles = (
   selectedModule: CourseModule | undefined,
@@ -130,7 +132,9 @@ const buildModuleArticles = (
   return articles;
 };
 
-const buildModuleNavItems = (selectedModule: CourseModule | undefined): ModuleNavItem[] => {
+const buildModuleNavItems = (
+  selectedModule: CourseModule | undefined,
+): ModuleNavItem[] => {
   return buildModuleArticles(selectedModule).map((article) => ({
     id: article.id,
     label: article.label,
@@ -201,11 +205,15 @@ const CourseCard = ({
       <div className="flex items-center gap-5 text-[1.05rem] text-zinc-500">
         <span className="inline-flex items-center gap-1.5">
           <Clock3 size={15} className="text-zinc-500" />
-          <p className="text-sm sm:text-md md:text-md lg:text-lg">{module.duration}</p>
+          <p className="text-sm sm:text-md md:text-md lg:text-lg">
+            {module.duration}
+          </p>
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Users size={15} className="text-zinc-500" />
-          <p className="text-sm sm:text-md md:text-md lg:text-lg">{module.enrolled} learners enrolled</p>
+          <p className="text-sm sm:text-md md:text-md lg:text-lg">
+            {module.enrolled} learners enrolled
+          </p>
         </span>
       </div>
 
@@ -239,12 +247,20 @@ const Workspace = () => {
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const [isPretestCompleted, setIsPretestCompleted] = useState(false);
   const [subsectionsLocked, setSubsectionsLocked] = useState(false);
-  const [pendingPretestNavId, setPendingPretestNavId] = useState<string | null>(null);
-  const [completedPretests, setCompletedPretests] = useState<Set<string>>(new Set());
+  const [pendingPretestNavId, setPendingPretestNavId] = useState<string | null>(
+    null,
+  );
+  const [completedPretests, setCompletedPretests] = useState<Set<string>>(
+    new Set(),
+  );
   const [activeNavId, setActiveNavId] = useState<string>("");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
-  const [pendingScrollTargetId, setPendingScrollTargetId] = useState<string | null>(null);
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(
+    new Set(),
+  );
+  const [pendingScrollTargetId, setPendingScrollTargetId] = useState<
+    string | null
+  >(null);
   const [isStructureCollapsed, setIsStructureCollapsed] = useState(false);
 
   const selectedModule = courseModules.find((m) => m.id === selectedModuleId);
@@ -264,16 +280,19 @@ const Workspace = () => {
       return null;
     }
 
-    return moduleArticles.find(
-      (article) => getModuleNumberFromLabel(article.label) === requestedModuleNumber,
-    ) || null;
+    return (
+      moduleArticles.find(
+        (article) =>
+          getModuleNumberFromLabel(article.label) === requestedModuleNumber,
+      ) || null
+    );
   }, [moduleArticles, requestedModuleNumber]);
-  
+
   const visibleModuleArticles = useMemo(
     () => (activeModuleArticle ? [activeModuleArticle] : moduleArticles),
     [activeModuleArticle, moduleArticles],
   );
-  
+
   const visibleModuleNavItems = useMemo(
     () =>
       activeModuleArticle
@@ -303,10 +322,14 @@ const Workspace = () => {
     [selectedModule, visibleModuleNavItems],
   );
 
-  const displayedNavId = activeNavId || (visibleModuleNavItems[0]?.children?.[0]?.id) || "";
+  const displayedNavId =
+    activeNavId || visibleModuleNavItems[0]?.children?.[0]?.id || "";
   //this is for the title of the structure sidebar, it will show the article title if an article is active, otherwise it will show the module title
-  const structureTitle = activeModuleArticle?.label || selectedModule?.title || "";
-  const desktopContentOffsetClass = isStructureCollapsed ? "lg:ml-16" : "lg:ml-80";
+  const structureTitle =
+    activeModuleArticle?.label || selectedModule?.title || "";
+  const desktopContentOffsetClass = isStructureCollapsed
+    ? "lg:ml-16"
+    : "lg:ml-80";
 
   // Auto-expand modules when they load
   useEffect(() => {
@@ -323,7 +346,11 @@ const Workspace = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    if (!selectedModule || !requestedModuleNumber || visibleModuleArticles.length === 0) {
+    if (
+      !selectedModule ||
+      !requestedModuleNumber ||
+      visibleModuleArticles.length === 0
+    ) {
       return;
     }
 
@@ -361,9 +388,9 @@ const Workspace = () => {
     //   }
     // }, 0);
     const scrollToSecond = () => {
-      const element = document.getElementById('mainPanel');
-      element?.scrollIntoView({ behavior: 'smooth' });
-    }; 
+      const element = document.getElementById("mainPanel");
+      element?.scrollIntoView({ behavior: "smooth" });
+    };
 
     setPendingScrollTargetId(null);
   }, [isPretestCompleted, pendingScrollTargetId]);
@@ -394,7 +421,8 @@ const Workspace = () => {
       setCompletedPretests((prev) => new Set(prev).add(pretestKey));
     }
 
-    const firstSubsectionId = visibleModuleNavItems[0]?.children?.[0]?.id ?? null;
+    const firstSubsectionId =
+      visibleModuleNavItems[0]?.children?.[0]?.id ?? null;
     setPendingPretestNavId(null);
     setPendingScrollTargetId(firstSubsectionId);
     setIsPretestCompleted(true);
@@ -431,13 +459,15 @@ const Workspace = () => {
           </button>
         </div>
 
-        <main id='panel-2' className="mx-auto max-w-380 px-6 pb-10 pt-4">
+        <main id="panel-2" className="mx-auto max-w-380 px-6 pb-10 pt-4">
           <div className="relative min-h-[70vh]">
             <button
               type="button"
               onClick={() => setIsMobileNavOpen(true)}
               className={`fixed left-0 top-1/2 z-30 -translate-y-1/2 rounded-r-lg border border-l-0 border-zinc-200 bg-[#f7f8fa] p-2.5 text-zinc-700 shadow-sm transition-colors hover:bg-zinc-100 lg:hidden ${
-                isMobileNavOpen ? "pointer-events-none opacity-0" : "opacity-100"
+                isMobileNavOpen
+                  ? "pointer-events-none opacity-0"
+                  : "opacity-100"
               }`}
               aria-label="Open module structure"
             >
@@ -463,7 +493,9 @@ const Workspace = () => {
                     onClick={() => setIsStructureCollapsed((prev) => !prev)}
                     className="ml-auto inline-flex items-center justify-center rounded-md border border-zinc-300 bg-white p-1.5 text-zinc-700 shadow-sm transition-colors hover:bg-zinc-200"
                     aria-label={
-                      isStructureCollapsed ? "Expand structure" : "Collapse structure"
+                      isStructureCollapsed
+                        ? "Expand structure"
+                        : "Collapse structure"
                     }
                   >
                     {isStructureCollapsed ? (
@@ -490,7 +522,8 @@ const Workspace = () => {
                   <div className="mt-5 space-y-2 overflow-y-auto pr-1">
                     {visibleStructureItems.map((item) => {
                       const isModuleExpanded = expandedModules.has(item.id);
-                      const hasChildren = item.children && item.children.length > 0;
+                      const hasChildren =
+                        item.children && item.children.length > 0;
                       return (
                         <div key={item.id}>
                           <button
@@ -512,13 +545,13 @@ const Workspace = () => {
                               backgroundColor: item.isPretest
                                 ? `#ffffff`
                                 : item.isModule
-                                ? `#ffffff`
-                                : "#ffffff",
+                                  ? `#ffffff`
+                                  : "#ffffff",
                               color: item.isPretest
                                 ? "#083344"
                                 : item.isModule
-                                ? "#083344"
-                                : "#111827",
+                                  ? "#083344"
+                                  : "#111827",
                             }}
                           >
                             {hasChildren && (
@@ -540,7 +573,10 @@ const Workspace = () => {
                                     key={child.id}
                                     type="button"
                                     onClick={() => {
-                                      if (subsectionsLocked && !child.isPretest) {
+                                      if (
+                                        subsectionsLocked &&
+                                        !child.isPretest
+                                      ) {
                                         // prevent navigating to subsections if locked
                                         return;
                                       }
@@ -557,9 +593,7 @@ const Workspace = () => {
                                       backgroundColor: isActive
                                         ? `${selectedModule.accent}0A`
                                         : "#ffffff",
-                                      color: isActive
-                                        ? "#083344"
-                                        : "#111827",
+                                      color: isActive ? "#083344" : "#111827",
                                     }}
                                   >
                                     <div
@@ -585,32 +619,34 @@ const Workspace = () => {
               </div>
             </aside>
 
-            <div className={`space-y-5 transition-all duration-300 ${desktopContentOffsetClass}`}>
+            <div
+              className={`space-y-5 transition-all duration-300 ${desktopContentOffsetClass}`}
+            >
               {!isPretestCompleted ? (
                 <div className="rounded-3xl bg-white md:p-9">
                   <Pretest
-                        isOpen
-                        onClose={(hasAnswered?: boolean) => {
-                          setPendingPretestNavId(null);
-                          // Determine if a pretest for this module was already completed
-                          const pretestKey =
-                            selectedModuleId !== null
-                              ? `${selectedModuleId}:${visibleModuleArticles[0]?.id}`
-                              : null;
-                          const alreadyCompleted = pretestKey
-                            ? completedPretests.has(pretestKey)
-                            : false;
+                    isOpen
+                    onClose={(hasAnswered?: boolean) => {
+                      setPendingPretestNavId(null);
+                      // Determine if a pretest for this module was already completed
+                      const pretestKey =
+                        selectedModuleId !== null
+                          ? `${selectedModuleId}:${visibleModuleArticles[0]?.id}`
+                          : null;
+                      const alreadyCompleted = pretestKey
+                        ? completedPretests.has(pretestKey)
+                        : false;
 
-                          // Unlock if user answered in this session or the pretest was already completed
-                          if (hasAnswered || alreadyCompleted) {
-                            setSubsectionsLocked(false);
-                          } else {
-                            setSubsectionsLocked(true);
-                          }
+                      // Unlock if user answered in this session or the pretest was already completed
+                      if (hasAnswered || alreadyCompleted) {
+                        setSubsectionsLocked(false);
+                      } else {
+                        setSubsectionsLocked(true);
+                      }
 
-                          setIsPretestCompleted(true);
-                          setIsMobileNavOpen(false);
-                        }}
+                      setIsPretestCompleted(true);
+                      setIsMobileNavOpen(false);
+                    }}
                     onComplete={handlePretestComplete}
                     moduleTitle={selectedModule.title}
                     accentColor={selectedModule.accent}
@@ -632,7 +668,11 @@ const Workspace = () => {
 
                     <div className="space-y-5">
                       {article.blocks.map(({ block, anchorId, key }) => (
-                        <section key={key} id={anchorId} className="scroll-mt-24">
+                        <section
+                          key={key}
+                          id={anchorId}
+                          className="scroll-mt-24"
+                        >
                           <BlockRenderer block={block} />
                         </section>
                       ))}
@@ -674,7 +714,7 @@ const Workspace = () => {
                   <X size={16} />
                 </button>
               </div>
-              
+
               {selectedModule && (
                 <div className="px-4 py-3 space-y-1 border-b border-zinc-200">
                   <div className="h-2 w-full rounded-full bg-zinc-200 overflow-hidden">
@@ -686,13 +726,15 @@ const Workspace = () => {
                   <p className="text-xs text-zinc-500">0% completed</p>
                 </div>
               )}
-              
+
               {/* Mobile Structure */}
               <div className="space-y-2 px-4 pb-4">
                 {visibleStructureItems.map((item) => {
                   const isModuleExpanded = expandedModules.has(item.id);
                   const hasChildren = item.children && item.children.length > 0;
-                  const moduleHasActiveChild = item.children?.some((c) => c.id === displayedNavId) ?? false;
+                  const moduleHasActiveChild =
+                    item.children?.some((c) => c.id === displayedNavId) ??
+                    false;
                   return (
                     <div key={item.id}>
                       <button
@@ -714,11 +756,12 @@ const Workspace = () => {
                           backgroundColor: item.isModule
                             ? `#ffffff`
                             : item.isPretest
-                            ? "#08334414"
-                            : "#ffffff",
-                          color: item.isModule || item.isPretest
-                            ? "#083344"
-                            : "#111827",
+                              ? "#08334414"
+                              : "#ffffff",
+                          color:
+                            item.isModule || item.isPretest
+                              ? "#083344"
+                              : "#111827",
                         }}
                       >
                         {hasChildren && (
@@ -733,7 +776,7 @@ const Workspace = () => {
                       </button>
                       {item.isModule && isModuleExpanded && hasChildren && (
                         <div className="ml-3 mt-1 space-y-1 border-l border-zinc-200 pl-2">
-                            {item.children?.map((child) => {
+                          {item.children?.map((child) => {
                             const isActive = child.id === displayedNavId;
                             return (
                               <button
@@ -758,9 +801,7 @@ const Workspace = () => {
                                   backgroundColor: isActive
                                     ? "#0833441A"
                                     : "#ffffff",
-                                  color: isActive
-                                    ? "#083344"
-                                    : "#111827",
+                                  color: isActive ? "#083344" : "#111827",
                                 }}
                               >
                                 <div
@@ -795,20 +836,42 @@ const Workspace = () => {
 
       <main className="mx-auto max-w-7xl px-6 py-12">
         <div className="mb-12 bg-white">
-          <div className="max-w-7xl">
-            <h1 className="mb-6 text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold tracking-tight">
-              What will you learn today?
-            </h1>
-            <div className="relative">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
-                size={20}
-              />
-              <input
-                type="text"
-                placeholder="Search learning"
-                className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-4 pl-12 pr-4 transition-all focus:outline-none focus:ring-2 focus:ring-zinc-200"
-              />
+          <div className="mb-12 bg-white">
+            <div className="max-w-7xl">
+              <h1 className="mb-6 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl">
+                What will you learn today?
+              </h1>
+
+              <div className="group relative">
+                {/* Search Icon with dynamic color on parent hover */}
+                <Search
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 transition-colors group-focus-within:text-teal-600"
+                  size={20}
+                />
+
+                <input
+                  type="text"
+                  placeholder="Search for courses, skills, or topics..."
+                  className="w-full rounded-2xl border border-zinc-200 bg-white py-4 pl-12 pr-24 
+                   text-base text-zinc-900 shadow-sm transition-all duration-200
+                   placeholder:text-zinc-400
+                   hover:border-zinc-300 hover:shadow-md
+                   focus:border-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-500/10
+                   md:py-5 md:text-lg"
+                />
+
+                {/* Modern Desktop Shortcut / Mobile Action */}
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:block">
+                  <kbd className="pointer-events-none inline-flex h-8 select-none items-center gap-1 rounded border border-zinc-200 bg-zinc-50 px-2 font-mono text-[10px] font-medium text-zinc-400 opacity-100">
+                    <span className="text-xs">⌘</span>K
+                  </kbd>
+                </div>
+
+                {/* Mobile-only "Go" indicator or button (Optional) */}
+                <button className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition-all active:scale-95 sm:hidden">
+                  Find
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -826,11 +889,11 @@ const Workspace = () => {
               module={module}
               onClick={() => {
                 setSelectedModuleId(module.id);
-                  setIsPretestCompleted(false);
+                setIsPretestCompleted(false);
                 setPendingPretestNavId(null);
                 setActiveNavId("");
                 setIsMobileNavOpen(false);
-                  setPendingScrollTargetId(null);
+                setPendingScrollTargetId(null);
                 setExpandedModules(new Set([`module-${module.id}`]));
               }}
             />
