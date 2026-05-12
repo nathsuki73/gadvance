@@ -11,7 +11,7 @@ import {
   HandHelping,
   MessageSquareHeart,
 } from "lucide-react";
-import Header from "@/app/components/Header";
+import Header from "@/app/(public)/_components/header/Header";
 import Footer from "@/app/components/Footer";
 
 type WorkspaceLink = {

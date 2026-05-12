@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Clock, CheckCircle2, ArrowLeft } from "lucide-react";
-import Header from "@/app/components/Header";
+import Header from "@/app/(public)/_components/header/Header";
 import { courseModules } from "@/app/lib/courseModules";
 
 interface Module {
@@ -63,7 +63,8 @@ const ModulePage = () => {
                 nextBlock.type === "paragraph" &&
                 typeof (nextBlock as any).text === "string"
               ) {
-                const lastModule = extractedModules[extractedModules.length - 1];
+                const lastModule =
+                  extractedModules[extractedModules.length - 1];
                 lastModule.description = (nextBlock as any).text;
               }
             }
@@ -104,8 +105,8 @@ const ModulePage = () => {
             </h1>
             <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-300">
               Build a comprehensive understanding of gender equality principles,
-              workplace dynamics, and inclusive practices. This course equips you
-              with practical tools to drive meaningful change in your
+              workplace dynamics, and inclusive practices. This course equips
+              you with practical tools to drive meaningful change in your
               organization.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-6">
@@ -115,7 +116,9 @@ const ModulePage = () => {
               </div>
               <div className="flex items-center gap-2 text-slate-300">
                 <CheckCircle2 className="h-5 w-5" />
-                <span className="font-medium">{modules.length} {modules.length === 1 ? "Module" : "Modules"}</span>
+                <span className="font-medium">
+                  {modules.length} {modules.length === 1 ? "Module" : "Modules"}
+                </span>
               </div>
             </div>
           </div>
@@ -134,12 +137,13 @@ const ModulePage = () => {
                 </span>
               </div>
               <p className="text-sm text-slate-600 mb-4">
-                1 of {modules.length} {modules.length === 1 ? "Module" : "Modules"} completed
+                1 of {modules.length}{" "}
+                {modules.length === 1 ? "Module" : "Modules"} completed
               </p>
               <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-cyan-950 transition-all duration-300 rounded-full"
-                  style={{ width: `${progressPercent}%`}}
+                  style={{ width: `${progressPercent}%` }}
                 />
               </div>
             </div>
@@ -153,8 +157,8 @@ const ModulePage = () => {
                       index === 0
                         ? "bg-cyan-950 text-white"
                         : index === 1
-                        ? "border-2 border-cyan-950 bg-cyan-950 text-white"
-                        : "bg-slate-100 text-slate-400"
+                          ? "border-2 border-cyan-950 bg-cyan-950 text-white"
+                          : "bg-slate-100 text-slate-400"
                     }`}
                   >
                     {index === 0 ? (
@@ -196,7 +200,10 @@ const ModulePage = () => {
                     )}
                     {index === 1 && (
                       <div className="flex items-center gap-1">
-                        <svg className="h-6 w-6 transform -rotate-90" viewBox="0 0 48 48">
+                        <svg
+                          className="h-6 w-6 transform -rotate-90"
+                          viewBox="0 0 48 48"
+                        >
                           <circle
                             cx="24"
                             cy="24"
@@ -220,7 +227,7 @@ const ModulePage = () => {
                           42%
                         </span>
                       </div>
-                    )} 
+                    )}
                   </div>
                 </div>
 
@@ -241,12 +248,16 @@ const ModulePage = () => {
                 <button
                   onClick={() =>
                     router.push(
-                      `/workspace/courses?moduleId=${parseInt(courseId)}&module=${module.number}`
+                      `/workspace/courses?moduleId=${parseInt(courseId)}&module=${module.number}`,
                     )
                   }
                   className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-lg bg-cyan-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-700"
                 >
-                  {index === 0 ? "Review Module" : index === 1 ? "Resume" : "Start Module"}
+                  {index === 0
+                    ? "Review Module"
+                    : index === 1
+                      ? "Resume"
+                      : "Start Module"}
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </article>
@@ -307,9 +318,7 @@ const ModulePage = () => {
 
               <button
                 onClick={() =>
-                  router.push(
-                    `/workspace/module?courseId=${module.id}`
-                  )
+                  router.push(`/workspace/module?courseId=${module.id}`)
                 }
                 className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg text-white px-4 py-2.5 text-sm font-semibold transition hover:opacity-90"
                 style={{ backgroundColor: module.accent }}

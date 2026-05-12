@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Footer from "@/app/components/Footer";
-import Header from "@/app/components/Header";
+import Header from "@/app/(public)/_components/header/Header";
 import Pretest from "@/app/components/pretest";
 import { BlockRenderer, type ModuleBlock } from "@/app/components/moduleViewer";
 import { useSession } from "next-auth/react";

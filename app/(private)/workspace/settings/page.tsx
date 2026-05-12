@@ -12,7 +12,7 @@ import {
   SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
-import Header from "@/app/components/Header";
+import Header from "@/app/(public)/_components/header/Header";
 import Footer from "@/app/components/Footer";
 
 const SettingsPage = () => {
@@ -91,26 +91,20 @@ const SettingsPage = () => {
                     <Globe className="h-4 w-4 text-zinc-500" />
                     Language
                   </p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    English
-                  </p>
+                  <p className="mt-1 text-xs text-zinc-500">English</p>
                 </div>
                 <div className="rounded-xl border border-zinc-100 bg-zinc-50/60 p-4">
                   <p className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">
                     <Bell className="h-4 w-4 text-zinc-500" />
                     Notifications
                   </p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Enabled
-                  </p>
+                  <p className="mt-1 text-xs text-zinc-500">Enabled</p>
                 </div>
               </div>
             </div>
 
             <div className="rounded-3xl border border-[#00a9d1]/20 bg-white p-6 shadow-[0_10px_60px_-35px_rgba(0,169,209,0.6)]">
-              <h2 className="text-lg font-semibold text-zinc-900">
-                Security
-              </h2>
+              <h2 className="text-lg font-semibold text-zinc-900">Security</h2>
               <div className="mt-5 space-y-3">
                 <div className="rounded-xl border border-zinc-100 bg-white p-4">
                   <p className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">
@@ -126,9 +120,7 @@ const SettingsPage = () => {
                     <Shield className="h-4 w-4 text-orange-500" />
                     Two-factor authentication
                   </p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Disabled
-                  </p>
+                  <p className="mt-1 text-xs text-zinc-500">Disabled</p>
                 </div>
                 <div className="rounded-xl border border-zinc-100 bg-white p-4">
                   <p className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900">

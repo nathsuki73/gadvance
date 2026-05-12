@@ -13,7 +13,7 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import Header from "@/app/components/Header";
+import Header from "@/app/(public)/_components/header/Header";
 import Footer from "@/app/components/Footer";
 
 const ProfilePage = () => {
@@ -154,9 +154,7 @@ const ProfilePage = () => {
           </section>
 
           <section className="mt-6 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-zinc-900">
-              About Me
-            </h2>
+            <h2 className="text-lg font-semibold text-zinc-900">About Me</h2>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-600">
               Add a short personal bio here. This area can later include profile
               editing, interests, badges, and contribution highlights.

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { getSession, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { finishOnBoarding } from "../actions/onboarding";
+import { finishOnBoarding } from "../(public)/actions/onboarding";
 
 const Onboarding = () => {
   const { data: session, update, status } = useSession();

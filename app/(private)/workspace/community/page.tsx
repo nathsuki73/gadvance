@@ -1,5 +1,5 @@
 import React from "react";
-import Header from "@/app/components/Header";
+import Header from "@/app/(public)/_components/header/Header";
 import Footer from "@/app/components/Footer";
 import { Users, MessageSquare, Share2 } from "lucide-react";
 
