@@ -11,12 +11,13 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-white border-t border-zinc-50 pt-24 pb-12">
-      <div className="mx-auto max-w-7xl px-8 lg:px-12">
-        <div className="grid grid-cols-1 gap-16 lg:grid-cols-4 md:grid-cols-2">
+    <footer className="bg-white border-t border-zinc-50 pt-16 sm:pt-24 pb-12">
+      <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
+        {/* Main Grid: 1 col on mobile, 2 on tablet, 4 on desktop */}
+        <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
           
-          {/* brand identity section */}
-          <div className="flex flex-col space-y-8">
+          {/* Brand Identity Section */}
+          <div className="flex flex-col space-y-6 sm:space-y-8">
             <div className="flex items-center gap-3">
               <div className="relative h-8 w-8 shrink-0 grayscale opacity-80">
                 <img
@@ -47,9 +48,9 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* programs links */}
-          <div>
-            <h4 className="text-xs font-bold text-zinc-900 mb-8 uppercase tracking-[0.2em]">programs</h4>
+          {/* Programs Links */}
+          <div className="sm:pl-4 lg:pl-0">
+            <h4 className="text-xs font-bold text-zinc-900 mb-6 sm:mb-8 uppercase tracking-[0.2em]">programs</h4>
             <ul className="space-y-4 text-sm text-zinc-500 font-light lowercase">
               <li><Link href="/courses" className="hover:text-[#00aeef] transition-colors">all courses</Link></li>
               <li><Link href="/leadership" className="hover:text-[#00aeef] transition-colors">women in leadership</Link></li>
@@ -58,9 +59,9 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* resources links */}
+          {/* Resources Links */}
           <div>
-            <h4 className="text-xs font-bold text-zinc-900 mb-8 uppercase tracking-[0.2em]">resources</h4>
+            <h4 className="text-xs font-bold text-zinc-900 mb-6 sm:mb-8 uppercase tracking-[0.2em]">resources</h4>
             <ul className="space-y-4 text-sm text-zinc-500 font-light lowercase">
               <li><Link href="/blog" className="hover:text-[#00aeef] transition-colors">articles & news</Link></li>
               <li><Link href="/community" className="hover:text-[#00aeef] transition-colors">community forum</Link></li>
@@ -69,8 +70,8 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* newsletter section */}
-          <div className="bg-zinc-50/50 rounded-[32px] p-8 border border-zinc-100/50">
+          {/* Newsletter Section: Spans full width on mobile, 1 col on desktop */}
+          <div className="bg-zinc-50/50 rounded-[32px] p-6 sm:p-8 border border-zinc-100/50 sm:col-span-2 lg:col-span-1">
             <h4 className="text-xs font-bold text-zinc-900 mb-2 uppercase tracking-[0.2em]">
               newsletter
             </h4>
@@ -90,12 +91,12 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* bottom bar */}
-        <div className="mt-24 pt-8 border-t border-zinc-50 flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-[10px] text-zinc-400 tracking-widest uppercase">
+        {/* Bottom Bar: Stacked on mobile, side-by-side on tablet/desktop */}
+        <div className="mt-16 sm:mt-24 pt-8 border-t border-zinc-50 flex flex-col items-center justify-between gap-6 md:flex-row">
+          <p className="text-[10px] text-zinc-400 tracking-widest uppercase text-center md:text-left">
             © {new Date().getFullYear()} gadvance leadership
           </p>
-          <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+          <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
             <Link href="/privacy" className="hover:text-zinc-900 transition-colors">privacy</Link>
             <Link href="/terms" className="hover:text-zinc-900 transition-colors">terms</Link>
             <Link href="/cookies" className="hover:text-zinc-900 transition-colors">cookies</Link>
