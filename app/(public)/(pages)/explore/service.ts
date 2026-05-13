@@ -4,7 +4,7 @@ const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
 export const searchContent = async (query: string = "") => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/modules`, {
+    const response = await axios.get(`${API_BASE_URL}/learning-plans`, {
       params: { search: query, limit: query ? null : 4 },
     });
 
