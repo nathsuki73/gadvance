@@ -1,126 +1,247 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
+import Image from "next/image";
+import {
+  CheckCircle2,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
+
 import ProtectedButton from "../../../components/ProtectedButton";
-import Statistics from "../../../components/statistics";
 
-const Programs = () => {
+import img1 from "@/app/(public)/assets/hero_image.png";
+
+const LandingPage = () => {
   return (
-    <section className="mx-auto max-w-7xl px-8 py-20 lg:px-12">
-      {/* Title Section */}
-      <div className="flex w-full flex-col items-center space-y-4 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-50">
-          <svg
-            className="h-7 w-7 text-orange-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-            />
-          </svg>
+    <main className="bg-white text-zinc-900 overflow-hidden">
+      {/* PROBLEM SECTION */}
+      <Section>
+        <SectionHeader
+          badge="The Challenge"
+          title="The Gender Gap in Leadership Still Exists."
+          description="Despite progress across industries, many women and marginalized genders continue to face barriers in leadership, workplace inclusion, and career advancement."
+        />
+
+        <div className="mt-14 grid md:grid-cols-2 gap-6">
+          <InfoCard
+            icon={<ShieldCheck className="text-[#00aeef]" size={22} />}
+            title="Unequal Opportunities"
+            desc="Systemic barriers still limit access to leadership roles, mentorship, and equitable workplace advancement."
+          />
+
+          <InfoCard
+            icon={<Sparkles className="text-[#00aeef]" size={22} />}
+            title="Workplace Culture Challenges"
+            desc="Organizations struggle to create environments where inclusion, representation, and belonging are fully embedded."
+          />
         </div>
-        <h2 className="text-4xl font-bold text-zinc-900">
-          Educational Programs
-        </h2>
-        <p className="max-w-2xl text-base text-zinc-600">
-          Comprehensive courses designed to empower and educate on gender
-          equality, professional development, and personal growth.
-        </p>
-      </div>
 
-      {/* Courses Grid */}
-      <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <CourseCard
-          title="Gender Equality Fundamentals"
-          desc="Understanding the principles and importance of gender equality in modern society."
-          duration="4 weeks"
-          enrolled="12,500"
-          progress={65}
-          theme="teal"
+        <div className="mt-8 rounded-2xl border border-zinc-100 bg-zinc-50 p-6 text-zinc-600 leading-7">
+          The impact goes beyond representation — it affects innovation,
+          employee wellbeing, retention, and long-term organizational growth.
+        </div>
+      </Section>
+
+      {/* TRANSFORMATION */}
+      <Section>
+        <SectionHeader
+          badge="The Vision"
+          title="Building Inclusive and Equitable Workplaces."
+          description="GADVance helps organizations and individuals move from awareness to action through practical education, leadership development, and workplace transformation."
         />
-        <CourseCard
-          title="Women in Leadership"
-          desc="Developing leadership skills and breaking barriers in professional environments."
-          duration="6 weeks"
-          enrolled="8,900"
-          progress={45}
-          theme="orange"
-        />
-        {/* ... Add more cards as needed */}
-      </div>
 
-      <div className="mt-12 flex justify-center">
-        <Link
-          href="/workspace"
-          className="rounded-lg border-2 border-gray-300 px-8 py-3 font-semibold text-gray-500 transition-all hover:text-orange-400 hover:border-orange-400"
-        >
-          View All Courses
-        </Link>
-      </div>
+        <div className="mt-14 grid md:grid-cols-2 gap-6">
+          <FeatureCard
+            title="For Organizations"
+            desc="Develop healthier workplace cultures, stronger collaboration, and more inclusive leadership systems."
+          />
 
-      <div className="mt-20">
-        <Statistics />
-      </div>
-    </section>
+          <FeatureCard
+            title="For Individuals"
+            desc="Build confidence, leadership readiness, and the skills needed to thrive in professional environments."
+          />
+        </div>
+      </Section>
+
+      {/* WHY IT MATTERS */}
+      <Section>
+        <div className="grid lg:grid-cols-2 gap-14 items-center">
+          <div className="relative overflow-hidden rounded-3xl border border-zinc-100 shadow-xl">
+            <Image
+              src={img1}
+              alt="Inclusive workplace"
+              className="w-full object-cover"
+            />
+          </div>
+
+          <div>
+            <div className="inline-flex rounded-full bg-sky-50 px-4 py-2 text-sm font-medium text-[#00aeef]">
+              Why It Matters
+            </div>
+
+            <h2 className="mt-5 text-4xl font-bold tracking-tight">
+              Equity creates stronger organizations.
+            </h2>
+
+            <p className="mt-6 text-zinc-600 leading-8">
+              Inclusive workplaces foster innovation, improve employee
+              satisfaction, and create sustainable long-term growth for both
+              organizations and communities.
+            </p>
+
+            <div className="mt-8 space-y-4">
+              <Benefit text="Encourages inclusive leadership and collaboration" />
+              <Benefit text="Creates safer and healthier workplace cultures" />
+              <Benefit text="Supports growth, confidence, and representation" />
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      {/* FREE GUIDE */}
+      <Section>
+        <div className="rounded-3xl border border-zinc-100 bg-gradient-to-br from-sky-50 to-white p-10 md:p-14">
+          <div className="max-w-3xl">
+            <div className="inline-flex rounded-full bg-white px-4 py-2 text-sm font-medium text-[#00aeef] shadow-sm">
+              Free Resource
+            </div>
+
+            <h2 className="mt-5 text-4xl font-bold tracking-tight">
+              Start Creating Change Today.
+            </h2>
+
+            <p className="mt-6 text-lg leading-8 text-zinc-600">
+              Download the “Gender Equity Checklist for Modern Workplaces” and
+              discover actionable steps to improve inclusion, leadership, and
+              workplace culture.
+            </p>
+
+            <div className="mt-10">
+              <ProtectedButton
+                onClick={() => (window.location.href = "/workspace")}
+                redirectUrl="/workspace"
+                className="rounded-xl bg-[#00aeef] px-8 py-3 font-medium text-white shadow-lg shadow-sky-100 transition hover:bg-[#0096cf]"
+              >
+                Download Free Guide
+              </ProtectedButton>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      {/* FINAL CTA */}
+      <section className="relative overflow-hidden border-t border-zinc-100">
+        <div className="mx-auto max-w-5xl px-6 py-24 text-center">
+          <div className="inline-flex rounded-full bg-sky-50 px-4 py-2 text-sm font-medium text-[#00aeef]">
+            Join the Movement
+          </div>
+
+          <h2 className="mt-6 text-4xl md:text-5xl font-bold tracking-tight">
+            Empower Inclusive Leadership.
+          </h2>
+
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-zinc-600">
+            Explore resources, programs, and tools designed to support gender
+            equity, leadership growth, and inclusive workplace transformation.
+          </p>
+
+          <div className="mt-10">
+            <ProtectedButton
+              onClick={() => (window.location.href = "/workspace")}
+              redirectUrl="/workspace"
+              className="rounded-xl bg-black px-8 py-3 font-medium text-white transition hover:bg-zinc-800"
+            >
+              Explore Platform
+            </ProtectedButton>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 };
 
-const CourseCard = ({
+export default LandingPage;
+
+/* ---------------------- */
+/* Reusable Components    */
+/* ---------------------- */
+
+const Section = ({ children }: { children: React.ReactNode }) => (
+  <section className="mx-auto max-w-7xl px-6 py-24">
+    {children}
+  </section>
+);
+
+const SectionHeader = ({
+  badge,
+  title,
+  description,
+}: {
+  badge: string;
+  title: string;
+  description: string;
+}) => (
+  <div className="max-w-3xl">
+    <div className="inline-flex rounded-full bg-sky-50 px-4 py-2 text-sm font-medium text-[#00aeef]">
+      {badge}
+    </div>
+
+    <h2 className="mt-5 text-4xl font-bold tracking-tight text-zinc-900">
+      {title}
+    </h2>
+
+    <p className="mt-5 text-lg leading-8 text-zinc-600">
+      {description}
+    </p>
+  </div>
+);
+
+const FeatureCard = ({
   title,
   desc,
-  duration,
-  enrolled,
-  progress,
-  theme,
-}: any) => {
-  const bgColor = theme === "orange" ? "bg-orange-500" : "bg-teal-500";
-  const btnColor =
-    theme === "orange"
-      ? "bg-orange-600 hover:bg-orange-700"
-      : "bg-teal-600 hover:bg-teal-700";
-
-  return (
-    <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-      <div className="mb-4 flex items-start justify-between">
-        <div
-          className={`flex h-12 w-12 items-center justify-center rounded-lg ${bgColor} text-white`}
-        >
-          <svg
-            className="h-6 w-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path d="M12 21a9 9 0 100-18 9 9 0 000 18z" strokeWidth={2} />
-          </svg>
-        </div>
-        <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">
-          Course
-        </span>
-      </div>
-      <h3 className="mb-2 text-xl font-bold text-zinc-900">{title}</h3>
-      <p className="mb-4 text-sm text-zinc-500">{desc}</p>
-      <div className="mb-6 h-2 w-full rounded-full bg-gray-100">
-        <div
-          className={`h-2 rounded-full ${bgColor}`}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-      <ProtectedButton
-        onClick={() => window.open("/course", "_blank")}
-        className={`block w-full rounded-lg ${btnColor} px-4 py-2.5 text-center font-semibold text-white transition`}
-        redirectUrl="/course"
-      >
-        Enroll →
-      </ProtectedButton>
+}: {
+  title: string;
+  desc: string;
+}) => (
+  <div className="group rounded-3xl border border-zinc-100 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-[#00aeef]">
+      ✦
     </div>
-  );
-};
 
-export default Programs;
+    <h3 className="mt-6 text-xl font-semibold">{title}</h3>
+
+    <p className="mt-3 leading-7 text-zinc-600">{desc}</p>
+  </div>
+);
+
+const InfoCard = ({
+  title,
+  desc,
+  icon,
+}: {
+  title: string;
+  desc: string;
+  icon: React.ReactNode;
+}) => (
+  <div className="rounded-3xl border border-zinc-100 bg-white p-8 shadow-sm">
+    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50">
+      {icon}
+    </div>
+
+    <h3 className="mt-6 text-xl font-semibold text-zinc-900">{title}</h3>
+
+    <p className="mt-3 leading-7 text-zinc-600">{desc}</p>
+  </div>
+);
+
+const Benefit = ({ text }: { text: string }) => (
+  <div className="flex items-start gap-3">
+    <CheckCircle2
+      size={20}
+      className="mt-1 min-w-[20px] text-[#00aeef]"
+    />
+
+    <p className="text-zinc-600 leading-7">{text}</p>
+  </div>
+);

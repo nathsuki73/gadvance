@@ -5,7 +5,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Header from "@/app/(public)/_components/header/Header";
 import Hero from "@/app/(public)/_components/Hero/Hero";
-import Footer from "@/app/components/Footer";
+import Programs from "./_components/sections/Programs";
+import TheChallengeSection from "./_components/sections/Challenge";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -24,6 +25,8 @@ export default function Home() {
   return (
       <main className="">
         <Hero />
+        {/* <Programs /> */}
+        <TheChallengeSection />
       </main>
   );
 }
