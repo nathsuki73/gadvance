@@ -15,10 +15,10 @@ import { Button } from "../Button/button";
 import { SearchBar } from "./SearchBar";
 
 const PUBLIC_NAVS = [
-  { href: "/workspace/about", label: "About" },
-  { href: "/workspace/courses", label: "Courses" },
-  { href: "/workspace/community", label: "Community" },
-  { href: "/workspace/support", label: "Support" },
+  { href: "/about", label: "About" },
+  { href: "/courses", label: "Courses" },
+  { href: "/community", label: "Community" },
+  { href: "/support", label: "Support" },
 ];
 
 export default function Header() {
