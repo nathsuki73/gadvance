@@ -22,15 +22,14 @@ const PUBLIC_NAVS = [
 ];
 
 export default function Header() {
-  const { data: session } = useSession();
-  const isAuthenticated = !!session?.user;
   
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   
   const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  const headerRef = useRef<HTMLElement>(null);
 
 
   const toggleSearch = () => {
@@ -52,24 +51,36 @@ export default function Header() {
     }
   };
   
+  
+
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
-        setShowProfileMenu(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+  const handleClickOutside = (e: PointerEvent) => {
+    if (
+      headerRef.current &&
+      !headerRef.current.contains(e.target as Node)
+    ) {
+      setShowSearch(false);
+      setShowMobileMenu(false);
+    }
+  };
+
+  document.addEventListener("pointerdown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("pointerdown", handleClickOutside);
+  };
+}, []);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-100 bg-white/80 px-4 py-3 backdrop-blur-md md:px-6">
+    <header 
+    ref={headerRef} 
+    className="sticky top-0 z-50 border-b border-zinc-100 bg-white/80 px-4 py-3 backdrop-blur-md md:px-6">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
         
         {/* LEFT: Logo (Icon only on mobile, text added on sm+) */}
         <Link href="/" className="flex shrink-0 items-center gap-2.5 transition-transform active:scale-95">
           <Image src={logoIcon} alt="Logo" width={32} height={32} />
-          <span className="hidden text-xl font-bold tracking-tight text-zinc-900 sm:block">
+          <span className=" text-xl font-bold tracking-tight text-zinc-900 block">
             GADvance
           </span>
         </Link>
@@ -95,50 +106,21 @@ export default function Header() {
 </button>
 
           {/* DESKTOP NAV (xl only) */}
-          {!isAuthenticated && (
+          
             <nav className="hidden items-center gap-6 xl:flex">
               {PUBLIC_NAVS.map((link) => (
                 <NavLink key={link.href} href={link.href}>{link.label}</NavLink>
               ))}
             </nav>
-          )}
+          
 
           {/* AUTH ACTIONS */}
           <div className="flex items-center gap-2">
-            {!isAuthenticated && (
+            
               <div className="hidden xl:flex items-center gap-2">
                 <Button href="/auth/signin" variant="ghost">Log In</Button>
                 <Button href="/auth/signup">Sign Up</Button>
               </div>
-            )}
-
-            {isAuthenticated && (
-              <div className="flex items-center gap-3">
-                <div className="hidden lg:block">
-                  <Button href="/workspace/dashboard">Workspace</Button>
-                </div>
-
-                {/* Profile Dropdown */}
-                <div className="relative" ref={profileMenuRef}>
-                  <button
-                    onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 hover:border-[#00aeef]"
-                  >
-                    <span className="text-xs font-bold text-zinc-600">
-                      {session.user?.name?.charAt(0).toUpperCase() || "U"}
-                    </span>
-                  </button>
-
-                  {showProfileMenu && (
-                    <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-zinc-100 bg-white p-2 shadow-xl">
-                      <div className="px-3 py-2 text-xs font-medium uppercase text-zinc-400">Account</div>
-                      <Link href="/workspace/profile" className="block rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50">Profile</Link>
-                      <button onClick={() => setShowLogoutDialog(true)} className="w-full text-left rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-50">Log out</button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* BURGER MENU (Visible up to xl) */}
             <button 
@@ -168,7 +150,7 @@ export default function Header() {
         ${showMobileMenu ? "max-h-[500px] opacity-100 mt-4" : "max-h-0 opacity-0"}
       `}>
         <nav className="flex flex-col gap-2 border-t border-zinc-100 pt-4">
-          {!isAuthenticated && (
+         
             <>
               {PUBLIC_NAVS.map((link) => (
                 <Link 
@@ -185,8 +167,8 @@ export default function Header() {
                 <Button href="/auth/signup">Sign Up</Button>
               </div>
             </>
-          )}
-          {isAuthenticated && (
+          
+          
             <Link 
               href="/workspace/dashboard" 
               className="rounded-lg px-3 py-2 text-base font-medium text-zinc-600 hover:bg-zinc-50 lg:hidden" 
@@ -194,7 +176,7 @@ export default function Header() {
             >
               Go to Workspace
             </Link>
-          )}
+          
         </nav>
       </div>
 
