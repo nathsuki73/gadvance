@@ -163,7 +163,7 @@ export default function Header() {
                 </Link>
               ))}
               <div className="flex flex-col gap-2 mt-2 pt-2">
-                <Button href="/auth/signin" variant="ghost" className="justify-start">Log In</Button>
+                <Button href="/auth/signin" variant="ghost" className="justify-center">Log In</Button>
                 <Button href="/auth/signup">Sign Up</Button>
               </div>
             </>
@@ -173,16 +173,6 @@ export default function Header() {
           
         </nav>
       </div>
-
-      <ConfirmDialog
-        open={showLogoutDialog}
-        title="Log out?"
-        description="Are you sure you want to end your session?"
-        confirmLabel="Log out"
-        cancelLabel="Cancel"
-        onCancel={() => setShowLogoutDialog(false)}
-        onConfirm={() => handleSignOut({ callbackUrl: "/" })}
-      />
     </header>
   );
 }

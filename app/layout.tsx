@@ -38,9 +38,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${googleSans.variable} antialiased`}>
         <AuthProvider>
-          <Header />
           {children}
-          <Footer />
         </AuthProvider>
       </body>
     </html>
