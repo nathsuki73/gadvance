@@ -169,13 +169,7 @@ export default function Header() {
             </>
           
           
-            <Link 
-              href="/workspace/dashboard" 
-              className="rounded-lg px-3 py-2 text-base font-medium text-zinc-600 hover:bg-zinc-50 lg:hidden" 
-              onClick={() => setShowMobileMenu(false)}
-            >
-              Go to Workspace
-            </Link>
+            
           
         </nav>
       </div>
