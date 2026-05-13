@@ -1,4 +1,3 @@
-"use client";
 import CourseGrid from "./_components/CourseGrid";
 
 const ExplorePage = () => {

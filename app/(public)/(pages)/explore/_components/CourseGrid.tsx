@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import CourseCard from "./CourseCard";
 import CourseSearchBar from "./CourseSearchBar";
@@ -11,22 +11,32 @@ import {
   courseModules,
   type CourseModule,
 } from "@/app/lib/courseModules";
+import { searchContent } from "../service";
 
 const CourseGrid = () => {
   const [query, setQuery] = useState("");
+  const [courses, setCourses] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredCourses = useMemo(() => {
-    if (!query.trim()) return courseModules;
+  useEffect(() => {
+    // 1. We define the logic directly inside useEffect
+    const delay = query ? 300 : 0;
 
-    return courseModules.filter((course: CourseModule) => {
-      const search = query.toLowerCase();
+    const timeoutId = setTimeout(async () => {
+      setIsLoading(true);
+      try {
+        const data = await searchContent(query);
+        setCourses(data);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }, delay);
 
-      return (
-        course.title.toLowerCase().includes(search) ||
-        course.description.toLowerCase().includes(search) ||
-        course.tag.toLowerCase().includes(search)
-      );
-    });
+    // 2. The return (cleanup) MUST be a direct child of useEffect
+    return () => clearTimeout(timeoutId);
+
   }, [query]);
 
   return (
@@ -50,7 +60,7 @@ const CourseGrid = () => {
       </div>
 
       <div className="mt-14 grid grid-cols-1 gap-8 md:grid-cols-2">
-        {filteredCourses.map((module) => (
+        {courses.map((module) => (
           <CourseCard
             key={module.id}
             module={module}
@@ -58,7 +68,7 @@ const CourseGrid = () => {
         ))}
       </div>
 
-      {filteredCourses.length === 0 && (
+      {courses.length === 0 && (
         <div className="mt-16 rounded-3xl border border-dashed border-zinc-200 bg-zinc-50 p-10 text-center">
           <h3 className="text-xl font-semibold text-zinc-900">
             No courses found
