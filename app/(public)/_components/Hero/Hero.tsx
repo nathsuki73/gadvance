@@ -6,7 +6,7 @@ import Slideshow from "../../../components/slideshow/page";
 
 const Hero = () => {
   return (
-    <section className="relative mx-auto flex min-h-[85vh] max-w-7xl flex-col justify-center px-8 py-12 lg:px-12 overflow-hidden">
+    <section className="relative mx-auto flex min-h-[85vh] max-w-7xl flex-col justify-center px-8  lg:px-12 overflow-hidden">
       {/* Background Decorative Shapes */}
       <div className="absolute inset-0 -z-10 bg-[#e0f7f4] [clip-path:polygon(0_0,_85%_0,_75%_100%,_0%_100%)] md:block hidden" />
       <div className="absolute inset-0 -z-10 bg-[#e0f7f4] md:hidden" />

@@ -8,8 +8,8 @@ interface NavLinkProps {
 
 export function NavLink({ href, children }: NavLinkProps) {
   return (
-    <Link
-      href={href}
+    <Link 
+      href={href} 
       className="group relative py-1 text-sm font-medium text-zinc-600 transition-colors hover:text-black"
     >
       {children}
