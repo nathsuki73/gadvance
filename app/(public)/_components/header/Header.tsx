@@ -78,14 +78,14 @@ export default function Header() {
         <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
           
          {/* DESKTOP SEARCH */}
-<div className="hidden md:block md:flex-1 md:max-w-md">
+<div className="hidden sm:block sm:flex-1 sm:max-w-md">
   <SearchBar />
 </div>
 
 {/* MOBILE SEARCH TOGGLE */}
 <button
   onClick={toggleSearch}
-  className="rounded-full p-2 text-zinc-600 hover:bg-zinc-100 md:hidden"
+  className="rounded-full p-2 text-zinc-600 hover:bg-zinc-100 sm:hidden"
 >
   {showSearch ? (
     <X className="h-5 w-5" />
@@ -150,6 +150,17 @@ export default function Header() {
           </div>
         </div>
       </div>
+
+<div
+  className={`
+     transition-all duration-300 ease-in-out md:hidden
+    ${showSearch ? "max-h-24 opacity-100 mt-3" : "max-h-0 opacity-0"}
+  `}
+>
+  <div className="border-t border-zinc-100 pt-3">
+    <SearchBar />
+  </div>
+</div>
 
       {/* EXPANDABLE MOBILE/TABLET MENU */}
       <div className={`
