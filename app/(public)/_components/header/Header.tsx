@@ -16,7 +16,7 @@ import { SearchBar } from "./SearchBar";
 
 const PUBLIC_NAVS = [
   { href: "/about", label: "About" },
-  { href: "/courses", label: "Courses" },
+  { href: "/explore", label: "Explore" },
   { href: "/community", label: "Community" },
   { href: "/support", label: "Support" },
 ];

@@ -832,7 +832,6 @@ const Workspace = () => {
 
   return (
     <div className="min-h-screen bg-white font-sans text-zinc-900">
-      <Header />
 
       <main className="mx-auto max-w-7xl px-6 py-12">
         <div className="mb-12 bg-white">
@@ -901,7 +900,6 @@ const Workspace = () => {
         </div>
       </main>
 
-      <Footer />
     </div>
   );
 };
