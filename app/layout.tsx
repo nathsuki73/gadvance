@@ -4,6 +4,7 @@ import "./globals.css";
 import AuthProvider from "./components/provider/SessionProvider";
 import logoIcon from "@/app/assets/logo.ico";
 import Header from "./(public)/_components/header/Header";
+import Footer from "@/app/components/Footer";
 
 // const geistSans = Google_Sans({
 //   variable: "--font-geist-sans",
@@ -39,6 +40,7 @@ export default function RootLayout({
         <AuthProvider>
           <Header />
           {children}
+          <Footer />
         </AuthProvider>
       </body>
     </html>
