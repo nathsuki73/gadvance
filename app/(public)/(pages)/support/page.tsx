@@ -1,88 +1,157 @@
+"use client";
+
 import React from "react";
-import Header from "@/app/(public)/_components/header/Header";
-import Footer from "@/app/components/Footer";
-import { HelpCircle, LifeBuoy, Mail, FileText } from "lucide-react";
+import { Mail, MessageCircle, FileText, HelpCircle, Code, ShieldCheck } from "lucide-react";
 
-const Support = () => {
+const SupportPage = () => {
   return (
-    <div className="min-h-screen bg-[#F9FAFB] font-sans text-zinc-900">
-      <Header />
-
-      <main className="max-w-7xl mx-auto px-6 py-10">
-        {/* Support Hero */}
-        <div className="mb-12 bg-white p-12 rounded-[40px] border border-zinc-100 shadow-sm text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-50 text-orange-600 rounded-2xl mb-6">
-            <LifeBuoy size={32} />
-          </div>
-          <h1 className="text-4xl font-black mb-4 tracking-tight">
-            How can we help?
-          </h1>
-          <p className="text-zinc-500 max-w-2xl mx-auto text-lg leading-relaxed">
-            Search our knowledge base or reach out to our team. We&apos;re here
-            to ensure your learning journey with Gadvance is smooth and
-            impactful.
-          </p>
-        </div>
-
-        {/* Support Options Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          {/* Help Center Card */}
-          <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm hover:shadow-md transition-all group">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <HelpCircle size={24} />
-            </div>
-            <h3 className="text-xl font-bold mb-3">Help Center</h3>
-            <p className="text-zinc-500 text-sm leading-relaxed mb-6">
-              Browse through our detailed guides and frequently asked questions.
+    <main className="min-h-screen bg-white font-sans text-zinc-900 selection:bg-sky-100 selection:text-[#00aeef]">
+      
+      {/* Section 1: Hero & Direct Assistance */}
+      <section className="relative py-32 sm:py-48 overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_rgba(0,174,239,0.03)_0%,_transparent_70%)]" />
+        <div className="container mx-auto px-8 lg:px-12 relative">
+          <div className="max-w-3xl">
+            <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-[#00aeef] mb-8">
+              support center
+            </h2>
+            <h1 className="text-4xl md:text-7xl font-light tracking-tight text-zinc-900 leading-[1.1]">
+              we are here to <br />
+              <span className="font-semibold italic font-serif text-[#00aeef]">facilitate your growth.</span>
+            </h1>
+            <p className="mt-12 text-xl text-zinc-500 font-light leading-relaxed lowercase">
+              whether you are navigating our modules or seeking institutional 
+              partnership details, our team is ready to provide the clarity you need.
             </p>
-            <button className="text-blue-600 font-bold text-sm hover:underline">
-              Browse Articles →
-            </button>
           </div>
 
-          {/* Documentation Card */}
-          <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm hover:shadow-md transition-all group">
-            <div className="w-12 h-12 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <FileText size={24} />
-            </div>
-            <h3 className="text-xl font-bold mb-3">Documentation</h3>
-            <p className="text-zinc-500 text-sm leading-relaxed mb-6">
-              Learn more about our platform&apos;s features and how to maximize
-              your learning.
-            </p>
-            <button className="text-teal-600 font-bold text-sm hover:underline">
-              Read Docs →
-            </button>
-          </div>
-
-          {/* Contact Us Card */}
-          <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm hover:shadow-md transition-all group">
-            <div className="w-12 h-12 bg-pink-50 text-pink-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <Mail size={24} />
-            </div>
-            <h3 className="text-xl font-bold mb-3">Contact Us</h3>
-            <p className="text-zinc-500 text-sm leading-relaxed mb-6">
-              Can&apos;t find what you&apos;re looking for? Talk to a member of
-              our support team.
-            </p>
-            <button className="text-pink-600 font-bold text-sm hover:underline">
-              Send Message →
-            </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-20">
+            <ContactCard 
+              icon={<Mail size={24} strokeWidth={1.5} />}
+              title="general inquiries"
+              detail="gadvanceproject@gmail.com"
+              desc="for students and individual learners seeking guidance on curriculum access."
+            />
+            <ContactCard 
+              icon={<MessageCircle size={24} strokeWidth={1.5} />}
+              title="partnership support"
+              detail="gadvanceproject@gmail.com"
+              desc="dedicated assistance for organizations and universities integrating our framework."
+            />
           </div>
         </div>
+      </section>
 
-        {/* Footer Note */}
-        <div className="text-center p-8 bg-zinc-50 rounded-3xl border border-dashed border-zinc-200">
-          <p className="text-sm font-medium text-zinc-400 uppercase tracking-widest">
-            Average response time: &lt; 24 hours
-          </p>
+      {/* Section 2: Resource Gateway (Self-Service) */}
+      <section className="py-32 bg-zinc-50/50 border-y border-zinc-100">
+        <div className="container mx-auto px-8 lg:px-12">
+          <div className="text-center max-w-2xl mx-auto mb-20">
+            <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-zinc-400 mb-6">self-service</h2>
+            <h3 className="text-3xl md:text-5xl font-light tracking-tight text-zinc-900 lowercase">
+              find answers <span className="italic font-serif text-[#00aeef]">instantly.</span>
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <ResourceItem 
+              icon={<HelpCircle size={20} />}
+              title="knowledge base"
+              desc="frequently asked questions about gender advancement and our learning methodology."
+            />
+            <ResourceItem 
+              icon={<FileText size={20} />}
+              title="curriculum guide"
+              desc="detailed breakdown of learning outcomes and certification requirements."
+            />
+            <ResourceItem 
+              icon={<ShieldCheck size={20} />}
+              title="privacy & ethics"
+              desc="understanding how we protect your data and maintain research integrity."
+            />
+          </div>
         </div>
-      </main>
+      </section>
 
-      {/* Footer added here */}
-      <Footer />
-    </div>
+      {/* Section 3: Technical & Academic Origins */}
+      <section className="py-32 sm:py-48 bg-white">
+        <div className="container mx-auto px-8 lg:px-12">
+          <div className="flex flex-col lg:flex-row items-center gap-24">
+            <div className="lg:w-1/2">
+              <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-[#00aeef] mb-8">technical help</h2>
+              <h3 className="text-3xl md:text-5xl font-light tracking-tight text-zinc-900 leading-tight">
+                engineered by the <br />
+                <span className="font-semibold italic font-serif text-[#00aeef]">lspu ccs team.</span>
+              </h3>
+              <p className="mt-8 text-lg text-zinc-500 font-light leading-8 lowercase">
+                for platform-related bugs, account access issues, or technical 
+                integration inquiries, our developer team at laguna state polytechnic 
+                university is available for direct troubleshooting.
+              </p>
+              <div className="mt-12 flex items-center gap-6">
+                <div className="flex -space-x-3">
+                  <div className="h-10 w-10 rounded-full bg-zinc-100 border-2 border-white flex items-center justify-center text-[10px] text-zinc-400 font-bold uppercase">lspu</div>
+                  <div className="h-10 w-10 rounded-full bg-zinc-100 border-2 border-white flex items-center justify-center text-[10px] text-zinc-400 font-bold uppercase">octa</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="lg:w-1/2 w-full grid grid-cols-1 gap-6">
+              <div className="p-8 rounded-[32px] border border-zinc-100 hover:border-[#00aeef]/30 transition-colors group">
+                <Code size={24} className="text-[#00aeef] mb-6" strokeWidth={1.5} />
+                <h4 className="text-lg font-semibold text-zinc-900 lowercase">developer desk</h4>
+                <p className="mt-2 text-sm text-zinc-500 font-light lowercase">report technical anomalies or suggest platform improvements.</p>
+                <p className="mt-6 text-[#00aeef] text-sm font-medium">gadvanceproject@gmail.com</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 };
 
-export default Support;
+/* --- Sub-components --- */
+
+const ContactCard = ({ icon, title, detail, desc }: { icon: React.ReactNode; title: string; detail: string; desc: string }) => (
+  <div className="p-6 sm:p-10 rounded-[32px] sm:rounded-[40px] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-xl hover:shadow-sky-100/20 group">
+    <div className="h-12 w-12 rounded-2xl bg-white border border-zinc-100 flex items-center justify-center text-[#00aeef] mb-8 shadow-sm">
+      {icon}
+    </div>
+    <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 mb-2">{title}</h4>
+    
+    {/* Fixed responsiveness for long text/emails */}
+    <p className="text-xl sm:text-2xl font-light text-zinc-900 lowercase mb-4 break-words overflow-hidden leading-tight">
+      {detail}
+    </p>
+    
+    <p className="text-sm text-zinc-500 font-light leading-relaxed lowercase">{desc}</p>
+  </div>
+);
+const ResourceItem = ({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) => (
+  <div className="flex flex-col space-y-6 p-2">
+    <div className="text-[#00aeef]">{icon}</div>
+    <h4 className="text-xl font-semibold text-zinc-900 lowercase">{title}</h4>
+    <p className="text-zinc-500 font-light leading-7 lowercase">{desc}</p>
+    <button className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#00aeef] hover:gap-4 transition-all">
+      view details <ArrowRight size={14} />
+    </button>
+  </div>
+);
+
+const ArrowRight = ({ size, className }: { size?: number; className?: string }) => (
+  <svg 
+    width={size || 24} 
+    height={size || 24} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M5 12h14M12 5l7 7-7 7" />
+  </svg>
+);
+
+export default SupportPage;
