@@ -7,6 +7,10 @@ import Header from "@/app/(public)/_components/header/Header";
 import Hero from "@/app/(public)/_components/Hero/Hero";
 import Programs from "./_components/sections/Programs";
 import TheChallengeSection from "./_components/sections/Challenge";
+import TheVisionSection from "./_components/sections/Vision";
+import WhyItMattersSection from "./_components/sections/Why";
+import CurriculumAccess from "./_components/sections/CurriculumnAccess";
+import FinalCTA from "./_components/sections/FinalCTA";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -27,6 +31,10 @@ export default function Home() {
         <Hero />
         {/* <Programs /> */}
         <TheChallengeSection />
+        <TheVisionSection />
+        <WhyItMattersSection />
+        <CurriculumAccess />
+        <FinalCTA />
       </main>
   );
 }
