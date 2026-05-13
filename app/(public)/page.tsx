@@ -22,14 +22,8 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans text-zinc-900">
-      {/* Header Navigation */}
-
-      <main className="relative pt-20">
-        {/* Hero Section Container */}
+      <main className="">
         <Hero />
       </main>
-      <Footer />
-    </div>
   );
 }
