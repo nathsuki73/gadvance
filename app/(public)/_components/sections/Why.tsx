@@ -67,7 +67,7 @@ const WhyItMattersSection = () => {
             </h4>
             <p className="mt-4 text-zinc-500 leading-7 font-light">
               The Philippines remains a regional leader in gender parity, yet cultural 
-              "double burdens" still hinder full economic participation.
+              &quot;double burdens&quot; still hinder full economic participation.
             </p>
           </div>
 
@@ -83,11 +83,11 @@ const WhyItMattersSection = () => {
     <div className="mx-auto mb-12 h-1.5 w-1.5 rounded-full bg-[#00aeef]" />
     
     <p className="text-3xl md:text-5xl font-light leading-[1.2] tracking-tight text-zinc-800 italic">
-      "when we advance gender equity, we don't just fix a workplace—we{" "}
+      &quot;when we advance gender equity, we don&apos;t just fix a workplace—we{" "}
       <span className="font-semibold text-[#00aeef] not-italic">
         modernize the philippine economy
       </span>{" "}
-      for the next generation of leaders."
+      for the next generation of leaders.&quot;
     </p>
     
     {/* lowercase minimal label */}

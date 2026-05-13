@@ -23,7 +23,7 @@ const Hero = () => {
 </h1>
 
             <p className="mx-4 max-w-5xl text-base text-zinc-600 sm:text-lg">
-              Join GADVance and turn learning into real change. Empower yourself with
+              Join GADvance and turn learning into real change. Empower yourself with
               knowledge, build awareness, and take action toward a more equal and
               inclusive future.
             </p>
