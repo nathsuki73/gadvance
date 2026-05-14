@@ -53,13 +53,13 @@ const CoursePage = ({
 
       {/* COURSE OVERVIEW */}
       <CourseOverviewHeader
-        module={selectedModule}
+        course={selectedModule}
       />
 
       {/* COURSE PREVIEW */}
       <section className="mx-auto max-w-7xl px-6 py-10">
         <CourseModulePreview
-          module={selectedModule}
+          course={selectedModule}
         />
       </section>
 

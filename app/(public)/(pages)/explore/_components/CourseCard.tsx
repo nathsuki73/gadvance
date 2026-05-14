@@ -74,7 +74,7 @@ const CourseCard = ({ module }: CourseCardProps) => {
       <button
         type="button"
         onClick={() => router.push(`/explore/course/${module.id}`)}
-        className="group/btn flex items-center justify-between w-full text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-[#00aeef]"
+        className="group/btn flex items-center justify-end w-full text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-[#00aeef] gap-1"
       >
         <span className="lowercase font-medium">view modules</span>
         <ArrowUpRight 
