@@ -451,24 +451,16 @@ const SignIn = () => {
         }}
       >
         {/* Main Content Container: Centered via Flexbox Parent */}
-        <div className="text-center px-12 relative z-10">
-          <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">
-            Empower. Educate.<br />
-            <span className="font-semibold italic font-serif">Advance Equity.</span>
-          </h2>
-          <p className="text-white/80 text-sm leading-relaxed max-w-sm mx-auto font-light">
-            Join our learning community. empower yourself with knowledge, 
-            build meaningful connections, and create an inclusive future.
-          </p>
-          
-          {/* Character Graphics Area (Optional/Hidden) */}
-          {/* <div className="mt-16 flex justify-center space-x-2 grayscale opacity-30 contrast-125">
-             <div className="h-12 w-6 bg-white/20 rounded-t-full"></div>
-             <div className="h-10 w-6 bg-white/20 rounded-t-full"></div>
-             <div className="h-14 w-6 bg-white/20 rounded-t-full"></div>
-             <div className="h-8 w-6 bg-white/20 rounded-t-full"></div>
-          </div> */}
-        </div>
+      <div className="text-center px-12 relative z-10">
+        <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">
+          Continue the <br />
+          <span className="font-semibold italic font-serif text-white">evolution of your journey.</span>
+        </h2>
+        <p className="text-white/80 text-sm leading-relaxed max-w-sm mx-auto font-light">
+          Welcome back to your dashboard. pick up exactly where you left off and 
+          keep driving the conversation toward a more equitable world.
+        </p>
+      </div>
 
         {/* Footer Text: Absolute positioned at the bottom so it doesn't interfere with vertical centering */}
         <div className="absolute bottom-12 left-0 right-0 text-center text-[10px] tracking-[0.4em] text-white/40 uppercase">

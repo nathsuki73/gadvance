@@ -439,12 +439,12 @@ const SignUp = () => {
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
-                      Confirm
+                      Confirm Password
                     </label>
                     <input
                       name="confirmPassword"
                       type="password"
-                      placeholder="Confirm"
+                      placeholder="Confirm Password"
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
                       className={`w-full px-4 py-3 rounded-xl border ${
@@ -501,19 +501,16 @@ const SignUp = () => {
           clipPath: "ellipse(100% 100% at 100% 50%)",
         }}
       >
-        <div className="text-center px-12 relative z-10">
-          <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">
-            Empower. Educate.
-            <br />
-            <span className="font-semibold italic font-serif">
-              Advance Equity.
-            </span>
-          </h2>
-          <p className="text-white/80 text-sm leading-relaxed max-w-sm mx-auto font-light">
-            Join our learning community. empower yourself with knowledge, build
-            meaningful connections, and create an inclusive future.
-          </p>
-        </div>
+      <div className="text-center px-12 relative z-10">
+        <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">
+          Become a part of the <br />
+          <span className="font-semibold italic font-serif text-white">equitable future.</span>
+        </h2>
+        <p className="text-white/80 text-sm leading-relaxed max-w-sm mx-auto font-light">
+          Your journey starts here. join our community of leaders and learners 
+          dedicated to reshaping the philippine workplace, one module at a time.
+        </p>
+      </div>
 
         <div className="absolute bottom-12 left-0 right-0 text-center text-[10px] tracking-[0.4em] text-white/40 uppercase">
           © 2026 gadvance. all rights reserved.
