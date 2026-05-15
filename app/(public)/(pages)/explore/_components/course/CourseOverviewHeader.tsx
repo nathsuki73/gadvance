@@ -18,7 +18,7 @@ type CourseOverviewHeaderProps = {
     icon?: keyof typeof iconByType;
     duration?: string;
     enrolled?: number;
-    modules?: any[];
+    modules?: Module[];
   };
 };
 

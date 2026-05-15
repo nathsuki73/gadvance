@@ -3,23 +3,23 @@
 import React, { useEffect, useState, use } from "react";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
-
-import ModuleViewer from "./module/module/ModuleViewer";
 import CourseModulePreview from "../../_components/course/CourseModulesPreview";
 import CourseOverviewHeader from "../../_components/course/CourseOverviewHeader";
 import { getLearningPlanDetails } from "../../service";
 
+import type {
+  LearningPlan,
+  CoursePageProps,
+} from "./types";
 
-type CoursePageProps = {
-  params: Promise<{ courseId: string }>;
-};
 
 const CoursePage = ({ params }: CoursePageProps) => {
   const resolvedParams = use(params);
   const courseId = resolvedParams.courseId;
 
-  const [learningPlan, setLearningPlan] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+const [learningPlan, setLearningPlan] =
+  useState<LearningPlan | null>(null);
+    const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
