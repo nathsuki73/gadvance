@@ -23,7 +23,7 @@ const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
 
 function getRequiredApiBaseUrl() {
   if (!apiBaseUrl) {
-    throw new Error("Missing API URL. Set API_URL.");
+    throw new Error("Missing API URL. Set NEXT_PUBLIC_API_URL.");
   }
 
   return apiBaseUrl;
