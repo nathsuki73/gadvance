@@ -1,5 +1,3 @@
-// components/explore/course/CourseOverviewHeader.tsx
-
 "use client";
 
 import React from "react";
@@ -10,9 +8,8 @@ import {
   Target,
   Clock3,
   Users,
+  BookOpen,
 } from "lucide-react";
-
-import type { CourseModule } from "@/app/lib/courseModules";
 
 const iconByType = {
   globe: Globe,
@@ -21,14 +18,42 @@ const iconByType = {
   wellness: Heart,
 } as const;
 
+type Module = {
+  id: string;
+  title: string;
+  about?: string;
+  image?: string | null;
+};
+
+type Course = {
+  id: string;
+  title: string;
+  about?: string;
+  image?: string | null;
+  modules?: Module[];
+
+  // optional frontend-only fields
+  icon?: keyof typeof iconByType;
+  accent?: string;
+  tag?: string;
+  duration?: string;
+  enrolled?: number;
+};
+
 type CourseOverviewHeaderProps = {
-  course: CourseModule;
+  course: Course;
 };
 
 const CourseOverviewHeader = ({
   course,
 }: CourseOverviewHeaderProps) => {
-  const Icon = iconByType[course.icon];
+  const Icon =
+    iconByType[course.icon as keyof typeof iconByType] || BookOpen;
+
+  const accent = course.accent || "#0ea5e9";
+  const tag = course.tag || "Learning Plan";
+  const duration = course.duration || "Self-paced";
+  const enrolled = course.enrolled || 0;
 
   return (
     <section className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-gradient-to-br from-white via-sky-50 to-sky-100 p-8 md:p-12">
@@ -38,7 +63,7 @@ const CourseOverviewHeader = ({
         <div className="flex flex-wrap items-center gap-3">
           <div
             className="flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-sm"
-            style={{ backgroundColor: course.accent }}
+            style={{ backgroundColor: accent }}
           >
             <Icon size={24} strokeWidth={2.2} />
           </div>
@@ -50,7 +75,7 @@ const CourseOverviewHeader = ({
               color: "#056f64",
             }}
           >
-            {course.tag}
+            {tag}
           </span>
         </div>
 
@@ -60,19 +85,24 @@ const CourseOverviewHeader = ({
           </h1>
 
           <p className="mt-6 text-lg leading-8 text-zinc-600">
-            {course.description}
+            {course.about || "No course description available."}
           </p>
         </div>
 
         <div className="mt-8 flex flex-wrap gap-6 text-sm text-zinc-600">
           <div className="inline-flex items-center gap-2">
             <Clock3 size={16} />
-            {course.duration}
+            {duration}
           </div>
 
           <div className="inline-flex items-center gap-2">
             <Users size={16} />
-            {course.enrolled} learners enrolled
+            {enrolled} learners enrolled
+          </div>
+
+          <div className="inline-flex items-center gap-2">
+            <BookOpen size={16} />
+            {course.modules?.length || 0} modules
           </div>
         </div>
       </div>

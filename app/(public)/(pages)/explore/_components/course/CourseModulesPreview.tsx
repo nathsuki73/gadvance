@@ -1,5 +1,3 @@
-// components/explore/course/CourseModulePreview.tsx
-
 "use client";
 
 import React from "react";
@@ -10,10 +8,24 @@ import {
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
-import type { CourseModule } from "@/app/lib/courseModules";
+
+type Module = {
+  id: string;
+  title: string;
+  about?: string;
+  image?: string | null;
+};
+
+type Course = {
+  id: string;
+  title: string;
+  about?: string;
+  accent?: string;
+  modules?: Module[];
+};
 
 type CourseModulePreviewProps = {
-  course: CourseModule;
+  course: Course;
 };
 
 const CourseModulePreview = ({
@@ -21,11 +33,7 @@ const CourseModulePreview = ({
 }: CourseModulePreviewProps) => {
   const router = useRouter();
 
-  const sectionBlocks = course.blocks.filter(
-    (block) =>
-      block.type === "title" ||
-      block.type === "section"
-  );
+  const modules = course.modules || [];
 
   return (
     <section className="mt-16">
@@ -46,49 +54,40 @@ const CourseModulePreview = ({
       </div>
 
       <div className="mt-10 space-y-4">
-        {sectionBlocks.map((block, index) => {
-          const label =
-            "text" in block
-              ? block.text
-              : "title" in block
-                ? block.title
-                : `Module ${index + 1}`;
-
-          return (
-            <div
-              key={index}
-              className="group flex items-start justify-between rounded-2xl border border-zinc-200 bg-white p-5 transition-all hover:border-zinc-300 hover:shadow-md"
-            >
-              <div className="flex gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-[#00aeef]">
-                  {block.type === "title" ? (
-                    <BookOpen size={20} />
-                  ) : (
-                    <PlayCircle size={20} />
-                  )}
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-zinc-900">
-                    {label}
-                  </h3>
-
-                  <p className="mt-1 text-sm text-zinc-500">
-                    Interactive learning content and guided
-                    educational materials.
-                  </p>
-                </div>
+        {modules.map((module, index) => (
+          <div
+            key={module.id}
+            className="group flex items-start justify-between rounded-2xl border border-zinc-200 bg-white p-5 transition-all hover:border-zinc-300 hover:shadow-md"
+          >
+            <div className="flex gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-[#00aeef]">
+                {index === 0 ? (
+                  <BookOpen size={20} />
+                ) : (
+                  <PlayCircle size={20} />
+                )}
               </div>
 
-              <div className="hidden md:flex">
-                <ArrowRight
-                  size={18}
-                  className="text-zinc-400 transition-transform group-hover:translate-x-1"
-                />
+              <div>
+                <h3 className="font-semibold text-zinc-900">
+                  {module.title}
+                </h3>
+
+                <p className="mt-1 text-sm text-zinc-500">
+                  {module.about ||
+                    "Interactive learning content and guided educational materials."}
+                </p>
               </div>
             </div>
-          );
-        })}
+
+            <div className="hidden md:flex">
+              <ArrowRight
+                size={18}
+                className="text-zinc-400 transition-transform group-hover:translate-x-1"
+              />
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="mt-10">
@@ -101,7 +100,7 @@ const CourseModulePreview = ({
           }
           className="rounded-2xl px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           style={{
-            backgroundColor: course.accent,
+            backgroundColor: course.accent || "#00aeef",
           }}
         >
           Start Learning
