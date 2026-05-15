@@ -9,6 +9,7 @@ import type {
 
 type CourseModulePreviewProps = {
   course: LearningPlan;
+  isLoggedIn: boolean;
 };
 
 const CourseModulePreview = ({ course }: CourseModulePreviewProps) => {
