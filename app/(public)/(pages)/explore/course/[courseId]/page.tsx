@@ -1,73 +1,102 @@
-// app/(public)/explore/course/[courseId]/page.tsx
-
 "use client";
 
-import React from "react";
+import React, { useEffect, useState, use } from "react";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import CourseModulePreview from "./_components/CourseModulesPreview";
+import CourseOverviewHeader from "./_components/CourseOverviewHeader";
+import { getLearningPlanDetails } from "../../service";
 
-import {
-  courseModules,
-} from "@/app/lib/courseModules";
-import ModuleViewer from "../../_components/module/ModuleViewer";
-import CourseModulePreview from "../../_components/course/CourseModulesPreview";
-import CourseOverviewHeader from "../../_components/course/CourseOverviewHeader";
+import type {
+  LearningPlan,
+  CoursePageProps,
+} from "./types";
+import { useSession } from "next-auth/react";
 
 
-type CoursePageProps = {
-  params: {
-    courseId: string;
-  };
-};
+const CoursePage = ({ params }: CoursePageProps) => {
+  const { data: session } = useSession();
+const isLoggedIn = !!session;
 
-const CoursePage = ({
-  params,
-}: CoursePageProps) => {
-  const courseId = Number(params.courseId);
+  const resolvedParams = use(params);
+  const courseId = resolvedParams.courseId;
 
-  const selectedModule =
-    courseModules.find(
-      (module) => module.id === courseId,
+const [learningPlan, setLearningPlan] =
+  useState<LearningPlan | null>(null);
+    const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const fetchLearningPlan = async () => {
+      try {
+        setLoading(true);
+        const data = await getLearningPlanDetails(courseId);
+        setLearningPlan(data);
+      } catch (err) {
+        console.error("Fetch error:", err);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (courseId) {
+      fetchLearningPlan();
+    }
+  }, [courseId]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <Loader2 className="animate-spin text-[#00aeef]/30" size={32} strokeWidth={1.5} />
+      </div>
     );
+  }
 
-  if (!selectedModule) {
+  if (error || !learningPlan) {
     notFound();
   }
 
   return (
-    <main className="min-h-screen bg-white text-zinc-900">
-      {/* TOP BAR */}
-      <div className="border-b border-zinc-100 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+    <main className="min-h-screen bg-white text-zinc-900 selection:bg-sky-100 selection:text-[#00aeef]">
+      {/* Navigation Header */}
+      <nav className="sticky top-0 z-50 border-b border-zinc-50 bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
           <button
-            onClick={() =>
-              window.history.back()
-            }
-            className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+            onClick={() => window.history.back()}
+            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-[#00aeef]"
           >
-            <ArrowLeft size={16} />
-            Back
+            <ArrowLeft 
+              size={16} 
+              strokeWidth={1.5} 
+              className="transition-transform duration-300 group-hover:-translate-x-1" 
+            />
+            <span className="lowercase font-medium">back to modules</span>
           </button>
         </div>
-      </div>
+      </nav>
 
-      {/* COURSE OVERVIEW */}
-      <CourseOverviewHeader
-        course={selectedModule}
-      />
+      {/* Hero Header Section */}
+      <CourseOverviewHeader 
+  course={learningPlan}
+  isLoggedIn={isLoggedIn}
+/>
 
-      {/* COURSE PREVIEW */}
-      <section className="mx-auto max-w-7xl px-6 py-10">
+      {/* Content Section */}
+      <section className="mx-auto max-w-7xl px-6 py-16 md:px-12">
+        <div className="mb-12">
+          <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-[#00aeef] mb-4">
+            curriculum overview
+          </h2>
+          <p className="text-zinc-500 font-light lowercase">
+            explore the structured learning path for {learningPlan.title}.
+          </p>
+        </div>
+        
         <CourseModulePreview
-          course={selectedModule}
-        />
-      </section>
-
-      {/* MODULE VIEWER */}
-      <section className="mx-auto max-w-[1600px] px-6 pb-20">
-        <ModuleViewer
-          module={selectedModule}
-        />
+  course={learningPlan}
+  isLoggedIn={isLoggedIn}
+/>
       </section>
     </main>
   );

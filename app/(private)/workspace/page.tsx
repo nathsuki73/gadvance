@@ -11,8 +11,6 @@ import {
   HandHelping,
   MessageSquareHeart,
 } from "lucide-react";
-import Header from "@/app/(public)/_components/header/Header";
-import Footer from "@/app/components/Footer";
 
 type WorkspaceLink = {
   title: string;
@@ -50,7 +48,7 @@ const workspaceLinks: WorkspaceLink[] = [
     title: "Current Course",
     description:
       "Jump straight into your active module and keep your streak alive.",
-    href: "/workspace/module",
+    href: "/workspace",
     icon: Flame,
     accent: "from-rose-500 to-orange-500",
   },
@@ -115,7 +113,6 @@ export default function WorkspacePage() {
 
   return (
     <div className="min-h-screen bg-[#fffdf8] text-zinc-900">
-      <Header />
 
       <main className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
@@ -170,8 +167,6 @@ export default function WorkspacePage() {
           </section>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

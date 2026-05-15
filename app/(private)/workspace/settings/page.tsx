@@ -12,7 +12,7 @@ import {
   SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
-import Header from "@/app/(public)/_components/header/Header";
+import Header from "@/app/(public)/_components/header/PublicHeader";
 import Footer from "@/app/components/Footer";
 
 const SettingsPage = () => {

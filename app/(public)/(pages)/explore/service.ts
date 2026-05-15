@@ -8,12 +8,24 @@ export const searchContent = async (query: string = "") => {
       params: { search: query, limit: query ? null : 4 },
     });
 
-
     return Array.isArray(response.data)
       ? response.data
       : response.data.data || [];
   } catch (error) {
-    console.error("Error fetching modules:", error);
-    return []; 
+    console.error("Error fetching Learning Plans:", error);
+    return [];
+  }
+};
+
+export const getLearningPlanDetails = async (courseId: string) => {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/learning-plans/${courseId}/details`,
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching Learning Plan Details:", error);
+    throw error;
   }
 };

@@ -8,12 +8,12 @@ const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET!;
 const nextAuthSecret = process.env.NEXTAUTH_SECRET!;
 const laravelAuthExchangeUrl =
   process.env.LARAVEL_AUTH_EXCHANGE_URL ??
-  (process.env.API_URL
-    ? `${process.env.API_URL.replace(/\/$/, "")}/api/auth/google/exchange`
+  (process.env.NEXT_PUBLIC_API_URL
+    ? `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")}/api/auth/google/exchange`
     : undefined);
 const laravelAuthRefreshUrl = process.env.LARAVEL_AUTH_REFRESH_URL;
 const jwtSharedSecret = process.env.LARAVEL_SSO_SECRET?.trim();
-const laravelApiBaseUrl = process.env.API_URL;
+const laravelApiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
 
 type SupportedStatus = "onboarding" | "active" | "suspended";
 
@@ -176,7 +176,7 @@ async function completePasswordSignin(params: {
   password: string;
 }): Promise<LaravelIdentity | null> {
   if (!laravelApiBaseUrl) {
-    console.warn("Missing API URL. Set API_URL.");
+    console.warn("Missing API URL. Set NEXT_PUBLIC_API_URL.");
     return null;
   }
 
@@ -321,7 +321,7 @@ async function refreshLaravelIdentity(laravelToken: string) {
 
 async function completeSignupOtp(params: { email: string; otp: string }) {
   if (!laravelApiBaseUrl) {
-    console.warn("Missing API URL. Set API_URL.");
+    console.warn("Missing API URL. Set NEXT_PUBLIC_API_URL.");
     return null;
   }
 

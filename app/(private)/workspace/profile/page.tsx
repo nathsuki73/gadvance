@@ -13,7 +13,7 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import Header from "@/app/(public)/_components/header/Header";
+import Header from "@/app/(public)/_components/header/PublicHeader";
 import Footer from "@/app/components/Footer";
 
 const ProfilePage = () => {

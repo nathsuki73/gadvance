@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Header from "@/app/(public)/_components/header/Header";
+import Header from "@/app/(public)/_components/header/PublicHeader";
 import Hero from "@/app/(public)/_components/Hero/Hero";
 import Programs from "./_components/sections/Programs";
 import TheChallengeSection from "./_components/sections/Challenge";

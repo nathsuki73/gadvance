@@ -1,14 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { Menu, Search, X } from "lucide-react"; 
 
 import logoIcon from "@/app/assets/logo.ico";
-import { handleSignOut } from "@/app/lib/auth";
-import ConfirmDialog from "../../../components/ConfirmDialog";
 
 import { NavLink } from "./NavLink";
 import { Button } from "../Button/button";
@@ -21,13 +18,11 @@ const PUBLIC_NAVS = [
   { href: "/support", label: "Support" },
 ];
 
-export default function Header() {
+export default function PublicHeader() {
   
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   
-  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const headerRef = useRef<HTMLElement>(null);
 

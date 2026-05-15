@@ -31,7 +31,7 @@ export async function finishOnBoarding(data: onboardingParams) {
     return { success: false, error: "Unauthorized" };
   }
 
-  const res = await fetch(`${process.env.API_URL}/api/onboarding`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/onboarding`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

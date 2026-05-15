@@ -4,11 +4,14 @@ import React, { useEffect, useState } from "react";
 import CourseCard from "./CourseCard";
 import CourseSearchBar from "./CourseSearchBar";
 import { searchContent } from "../service";
+import type {
+  LearningPlan,
+} from "../types";
 
 const CourseGrid = () => {
   const [query, setQuery] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState<LearningPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // This effect runs on page load (activeSearch = "") 
@@ -53,7 +56,7 @@ const CourseGrid = () => {
             <div key={i} className="h-64 animate-pulse rounded-3xl bg-zinc-100" />
           ))
         ) : (
-          courses.map((module: any) => (
+          courses.map((module: LearningPlan) => (
             <CourseCard key={module.id} module={module} />
           ))
         )}
@@ -61,7 +64,9 @@ const CourseGrid = () => {
 
       {!isLoading && courses.length === 0 && (
         <div className="mt-16 text-center py-20 bg-zinc-50 rounded-3xl border border-dashed border-zinc-200">
-          <h3 className="text-xl font-semibold text-zinc-900">No results for "{activeSearch}"</h3>
+          <h3 className="text-xl font-semibold text-zinc-900">
+  No results for &quot;{activeSearch}&quot;
+</h3>
           <p className="mt-2 text-zinc-500">Try checking your spelling or use different keywords.</p>
         </div>
       )}
