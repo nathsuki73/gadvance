@@ -33,36 +33,12 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-white font-sans">
-      {/* Left Side - Decorative Branding Panel */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-teal-400 via-[#00A8CC] to-blue-600 relative overflow-hidden items-center justify-center">
-        <div className="absolute inset-0 bg-[radial-gradient(at_40%_30%,rgba(255,255,255,0.2)_0%,transparent_60%)]"></div>
-
-        {/* Decorative circles */}
-        <div className="absolute top-10 right-10 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
-
-        <div className="relative z-10 text-white text-center px-8 max-w-md">
-          <div className="w-28 h-28 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center mx-auto mb-10 shadow-2xl">
-            <KeyRound size={64} className="text-white" />
-          </div>
-
-          <h2 className="text-5xl font-bold leading-tight mb-6">
-            Secure your account.
-          </h2>
-          <p className="text-xl opacity-90 leading-relaxed">
-            Multi-factor authentication ensures that only you can access and
-            reset your password.
-          </p>
-        </div>
-      </div>
-
-      {/* Right Side - Form */}
-      <div className="flex-1 flex flex-col lg:items-center justify-center p-8 md:p-12 lg:p-16 relative">
-        {/* Logo - Top Right + Clickable */}
+    <div className="min-h-screen bg-white font-sans flex items-center justify-center p-6">
+      <div className="w-full max-w-md">
+        {/* Logo - Top Left */}
         <Link
           href="/auth/signin"
-          className="absolute top-8 right-8 lg:top-10 lg:right-12 flex items-center gap-2 z-20 hover:opacity-80 transition-opacity group"
+          className="flex items-center gap-2 mb-10 hover:opacity-80 transition-opacity group"
         >
           <div className="relative h-9 w-9 shrink-0">
             <img
@@ -76,14 +52,15 @@ const ForgotPassword = () => {
           </span>
         </Link>
 
-        <div className="w-full max-w-lg mt-16 lg:mt-0">
-          {/* Updated Title Style */}
-          <h1 className="mb-2">
-            <span className="text-4xl font-bold text-gray-900">Forgot</span>
-            <span className="text-4xl font-bold text-teal-500"> Password?</span>
+        {/* Form Content */}
+        <div>
+          {/* Title with blue/teal accent */}
+          <h1 className="text-[42px] leading-none font-bold tracking-tighter mb-3">
+            <span className="text-gray-900">Forgot</span>
+            <span className="text-[#00B4D8]"> Password?</span>
           </h1>
 
-          <p className="text-gray-500 mb-10 text-lg">
+          <p className="text-gray-500 mb-10 text-[17px] leading-relaxed">
             No worries! Enter your email and we will send a 6-digit security
             code to reset your password.
           </p>
@@ -96,7 +73,7 @@ const ForgotPassword = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-widest mb-2">
                 EMAIL ADDRESS
               </label>
               <input
@@ -105,14 +82,15 @@ const ForgotPassword = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full px-5 py-4 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-all text-gray-700 placeholder-gray-400"
+                className="w-full px-5 py-4 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00B4D8]/30 focus:border-[#00B4D8] transition-all text-gray-700 placeholder-gray-400"
               />
             </div>
 
+            {/* Button with design's blue-teal color */}
             <button
               type="submit"
               disabled={loading || !email}
-              className="w-full bg-teal-500 hover:bg-teal-600 text-white py-4 rounded-2xl text-sm font-bold uppercase tracking-widest transition-all shadow-md active:scale-[0.985] disabled:opacity-60"
+              className="w-full bg-[#00B4D8] hover:bg-[#00A8CC] text-white py-4 rounded-2xl text-sm font-bold uppercase tracking-widest transition-all shadow-md active:scale-[0.985] disabled:opacity-60"
             >
               {loading ? "Sending Code..." : "SEND VERIFICATION CODE"}
             </button>
@@ -121,7 +99,7 @@ const ForgotPassword = () => {
           <div className="mt-10">
             <Link
               href="/auth/signin"
-              className="group inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 hover:text-teal-600 transition-colors"
+              className="group inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 hover:text-[#00B4D8] transition-colors"
             >
               <ArrowLeft
                 size={18}
