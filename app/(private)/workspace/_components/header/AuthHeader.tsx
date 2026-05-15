@@ -1,5 +1,7 @@
 "use client";
 
+import { signOut } from "next-auth/react";
+
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,6 +11,7 @@ import logoIcon from "@/app/assets/logo.ico";
 
 import { NavLink } from "./NavLink";
 import SearchBar from "./SearchBar";
+import LogoutConfirmationDialog from "./LogoutConfirmation";
 
 // Mock user object - replace this with your actual auth state context/hook
 const mockUser = {
@@ -30,6 +33,7 @@ export default function AuthHeader() {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 const [searchQuery, setSearchQuery] = useState("");
   const headerRef = useRef<HTMLElement>(null);
+const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const toggleSearch = () => {
     const willBeShown = !showSearch;
@@ -142,12 +146,18 @@ const [searchQuery, setSearchQuery] = useState("");
                   </div>
                   <DropdownLink href="/dashboard" icon={<BookOpen size={14} />} label="my learning" />
                   <DropdownLink href="/settings" icon={<Settings size={14} />} label="settings" />
-                  <button className="w-full flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-red-500 font-medium hover:bg-red-50 transition-colors lowercase">
+                  <button
+                  onClick={() => setShowLogoutDialog(true)}
+                  className="w-full flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-red-500 font-medium hover:bg-red-50 transition-colors lowercase">
                     <LogOut size={14} />
                     sign out
                   </button>
                 </div>
               )}
+              <LogoutConfirmationDialog
+      open={showLogoutDialog}
+      onClose={() => setShowLogoutDialog(false)}
+    />
             </div>
 
             {/* BURGER MENU (Visible up to xl) */}
