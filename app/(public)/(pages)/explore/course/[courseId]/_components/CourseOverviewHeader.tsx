@@ -25,10 +25,12 @@ const iconByType = {
 
 type CourseOverviewHeaderProps = {
   course: LearningPlan;
+  isLoggedIn?: boolean;
 };
 
 const CourseOverviewHeader = ({
   course,
+  isLoggedIn,
 }: CourseOverviewHeaderProps) => {
   const Icon =
     iconByType[
@@ -95,7 +97,7 @@ const CourseOverviewHeader = ({
   onClick={handleEnrollClick}
   className="w-full lg:w-auto bg-white text-[#00aeef] px-10 py-5 text-xs font-bold uppercase tracking-[0.2em] transition-all hover:bg-sky-50 hover:-translate-y-1 active:scale-[0.98] rounded-md">
     <div className="flex items-center justify-center gap-3">
-      Enroll Now
+      {isLoggedIn ? "Enroll" : "Learn"}
       <ChevronRight size={16} />
     </div>
   </button>

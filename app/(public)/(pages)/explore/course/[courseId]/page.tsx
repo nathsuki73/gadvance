@@ -11,9 +11,13 @@ import type {
   LearningPlan,
   CoursePageProps,
 } from "./types";
+import { useSession } from "next-auth/react";
 
 
 const CoursePage = ({ params }: CoursePageProps) => {
+  const { data: session } = useSession();
+const isLoggedIn = !!session;
+
   const resolvedParams = use(params);
   const courseId = resolvedParams.courseId;
 
@@ -73,7 +77,10 @@ const [learningPlan, setLearningPlan] =
       </nav>
 
       {/* Hero Header Section */}
-      <CourseOverviewHeader course={learningPlan} />
+      <CourseOverviewHeader 
+  course={learningPlan}
+  isLoggedIn={isLoggedIn}
+/>
 
       {/* Content Section */}
       <section className="mx-auto max-w-7xl px-6 py-16 md:px-12">
@@ -86,7 +93,10 @@ const [learningPlan, setLearningPlan] =
           </p>
         </div>
         
-        <CourseModulePreview course={learningPlan} />
+        <CourseModulePreview
+  course={learningPlan}
+  isLoggedIn={isLoggedIn}
+/>
       </section>
     </main>
   );
