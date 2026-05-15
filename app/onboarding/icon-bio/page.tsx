@@ -113,7 +113,7 @@ const IconBio = () => {
       localStorage.removeItem("onboarding_p2");
       localStorage.removeItem("onboarding_p3");
 
-      router.replace("/workspace/module");
+      router.replace("/workspace");
     } catch (error) {
       console.error("Onboarding Finalize Error:", error);
       alert("Something went wrong. Please try again.");
