@@ -144,7 +144,6 @@ const [showLogoutDialog, setShowLogoutDialog] = useState(false);
                     <p className="text-xs font-bold text-zinc-800 lowercase">{mockUser.name}</p>
                     <p className="text-[10px] text-zinc-400 font-light truncate mt-0.5">{mockUser.email}</p>
                   </div>
-                  <DropdownLink href="/dashboard" icon={<BookOpen size={14} />} label="my learning" />
                   <DropdownLink href="/settings" icon={<Settings size={14} />} label="settings" />
                   <button
                   onClick={() => setShowLogoutDialog(true)}
