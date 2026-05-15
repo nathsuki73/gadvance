@@ -29,3 +29,29 @@ export type CoursePageProps = {
     courseId: string;
   }>;
 };
+
+export type Enrollment = {
+  id: string;
+  user_id: string;
+  learning_plan_id: string;
+
+  status: "inactive" | "in_progress" | "completed";
+
+  progress_percentage: number;
+
+  started_at: string | null;
+  completed_at: string | null;
+
+  created_at: string;
+  updated_at: string;
+};
+
+export type ApiOptions = {
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  body?: unknown;
+};
+
+export type EnrollmentResponse = {
+  message?: string;
+  data?: Enrollment | null;
+};
