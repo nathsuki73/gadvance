@@ -318,7 +318,7 @@ const ModulePage = () => {
 
               <button
                 onClick={() =>
-                  router.push(`/workspace/module?courseId=${module.id}`)
+                  router.push(`/workspace?courseId=${module.id}`)
                 }
                 className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg text-white px-4 py-2.5 text-sm font-semibold transition hover:opacity-90"
                 style={{ backgroundColor: module.accent }}

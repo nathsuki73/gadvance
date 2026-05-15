@@ -32,7 +32,7 @@ const Onboarding = () => {
   // 1. TOP LEVEL HOOK: This watches for session updates globally
   useEffect(() => {
     if (status === "authenticated" && normalizedStatus === "active") {
-      router.replace("/workspace/module");
+      router.replace("/workspace");
     }
   }, [status, normalizedStatus, router]);
 
@@ -106,7 +106,7 @@ const Onboarding = () => {
 
       setIsRedirecting(true);
       console.log("User", result);
-      router.replace("/workspace/module");
+      router.replace("/workspace");
     } catch (error) {
       console.error("Failed to complete onboarding:", error);
       alert("Unable to finish onboarding right now. Please try again.");

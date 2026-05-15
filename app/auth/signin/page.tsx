@@ -70,7 +70,7 @@
 //         email,
 //         password,
 //         redirect: false,
-//         callbackUrl: "/workspace/module",
+//         callbackUrl: "/workspace",
 //       });
 
 //       if (!result || result.error) {
@@ -78,7 +78,7 @@
 //         return;
 //       }
 
-//       router.push("/workspace/module");
+//       router.push("/workspace");
 //     } catch (submissionError) {
 //       console.error("Sign-in error:", submissionError);
 //       setError("Unable to sign in right now. Please try again.");
@@ -320,7 +320,7 @@ const SignIn = () => {
         email,
         password,
         redirect: false,
-        callbackUrl: "/workspace/module",
+        callbackUrl: "/workspace",
       });
 
       if (!result || result.error) {
@@ -328,7 +328,7 @@ const SignIn = () => {
         return;
       }
 
-      router.push("/workspace/module");
+      router.push("/workspace");
     } catch (submissionError) {
       console.error("Sign-in error:", submissionError);
       setError("Unable to sign in right now. Please try again.");

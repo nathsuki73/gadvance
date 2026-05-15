@@ -48,7 +48,7 @@ const workspaceLinks: WorkspaceLink[] = [
     title: "Current Course",
     description:
       "Jump straight into your active module and keep your streak alive.",
-    href: "/workspace/module",
+    href: "/workspace",
     icon: Flame,
     accent: "from-rose-500 to-orange-500",
   },
