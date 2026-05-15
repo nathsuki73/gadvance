@@ -12,7 +12,11 @@ import {
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
-import type { CourseModule } from "@/app/lib/courseModules";
+import type { LearningPlan } from "../types";
+
+type CourseCardProps = {
+  module: LearningPlan;
+};
 
 const iconByType = {
   globe: Globe,
@@ -20,10 +24,6 @@ const iconByType = {
   target: Target,
   wellness: Heart,
 } as const;
-
-type CourseCardProps = {
-  module: CourseModule;
-};
 
 const CourseCard = ({ module }: CourseCardProps) => {
   const router = useRouter();
@@ -38,9 +38,6 @@ const CourseCard = ({ module }: CourseCardProps) => {
           <Icon size={18} strokeWidth={1.5} />
         </div>
 
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">
-          {module.tag}
-        </span>
       </div>
 
       {/* Content: Lowercase & Airy */}
@@ -50,7 +47,7 @@ const CourseCard = ({ module }: CourseCardProps) => {
         </h3>
 
         <p className="mt-3 text-sm leading-relaxed text-zinc-500 font-light lowercase">
-          {module.description}
+          {module.about}
         </p>
       </div>
 

@@ -1,7 +1,18 @@
 "use client";
 
 import React from "react";
-import { Globe, Briefcase, Heart, Target, Clock3, Users, BookOpen, ChevronRight } from "lucide-react";
+import {
+  Globe,
+  Briefcase,
+  Heart,
+  Target,
+  Clock3,
+  Users,
+  BookOpen,
+  ChevronRight,
+} from "lucide-react";
+
+import type { LearningPlan } from "../../../types";
 
 const iconByType = {
   globe: Globe,
@@ -11,20 +22,17 @@ const iconByType = {
 } as const;
 
 type CourseOverviewHeaderProps = {
-  course: {
-    id: string;
-    title: string;
-    about?: string;
-    icon?: keyof typeof iconByType;
-    duration?: string;
-    enrolled?: number;
-    modules?: Module[];
-  };
+  course: LearningPlan;
 };
 
-const CourseOverviewHeader = ({ course }: CourseOverviewHeaderProps) => {
-  const Icon = iconByType[course.icon as keyof typeof iconByType] || BookOpen;
-
+const CourseOverviewHeader = ({
+  course,
+}: CourseOverviewHeaderProps) => {
+  const Icon =
+    iconByType[
+      course.icon as keyof typeof iconByType
+    ] || BookOpen;
+    
   return (
     <section className="bg-[#00aeef] text-white">
       <div className="mx-auto max-w-7xl px-6 py-16 md:px-12 md:py-24">

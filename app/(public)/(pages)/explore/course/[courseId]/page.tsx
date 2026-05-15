@@ -3,8 +3,8 @@
 import React, { useEffect, useState, use } from "react";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import CourseModulePreview from "../../_components/course/CourseModulesPreview";
-import CourseOverviewHeader from "../../_components/course/CourseOverviewHeader";
+import CourseModulePreview from "./_components/CourseModulesPreview";
+import CourseOverviewHeader from "./_components/CourseOverviewHeader";
 import { getLearningPlanDetails } from "../../service";
 
 import type {

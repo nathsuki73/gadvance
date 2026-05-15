@@ -2,11 +2,13 @@
 
 import React from "react";
 import { BookOpen, PlayCircle, Lock } from "lucide-react";
+import type {
+  LearningPlan,
+  LearningModule,
+} from "../../../types";
 
 type CourseModulePreviewProps = {
-  course: {
-    modules?: any[];
-  };
+  course: LearningPlan;
 };
 
 const CourseModulePreview = ({ course }: CourseModulePreviewProps) => {
