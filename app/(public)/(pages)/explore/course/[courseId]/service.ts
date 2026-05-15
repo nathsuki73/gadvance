@@ -6,8 +6,6 @@ import { ApiOptions, EnrollmentResponse } from "./types";
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
-
-
 async function request<T>(endpoint: string, options: ApiOptions = {}) {
   const session = await getServerSession(authOptions);
 
@@ -100,10 +98,14 @@ export async function deleteEnrollment(id: string) {
  * Get current user's enrollment
  * for a specific learning plan
  */
-export async function getMyEnrollment(
-  learningPlanId: string,
-) {
+export async function getMyEnrollment(learningPlanId: string) {
   return request<EnrollmentResponse>(
     `/learning-plans/${learningPlanId}/enrollment`,
   );
+}
+
+export async function unenrollLearningPlan(enrollmentId: string) {
+  return request<EnrollmentResponse>(`/enrollments/${enrollmentId}`, {
+    method: "DELETE",
+  });
 }
