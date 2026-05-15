@@ -8,7 +8,7 @@ import { Menu, Search, X, Bell, User, LogOut, BookOpen, Settings } from "lucide-
 import logoIcon from "@/app/assets/logo.ico";
 
 import { NavLink } from "./NavLink";
-import { SearchBar } from "./SearchBar";
+import SearchBar from "./SearchBar";
 
 // Mock user object - replace this with your actual auth state context/hook
 const mockUser = {
@@ -28,7 +28,7 @@ export default function AuthHeader() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-
+const [searchQuery, setSearchQuery] = useState("");
   const headerRef = useRef<HTMLElement>(null);
 
   const toggleSearch = () => {
@@ -64,6 +64,13 @@ export default function AuthHeader() {
     };
   }, []);
 
+  const handleSearch = () => {
+  console.log(searchQuery);
+
+  // example:
+  // router.push(`/explore?search=${searchQuery}`)
+};
+
   return (
     <header 
       ref={headerRef} 
@@ -84,7 +91,11 @@ export default function AuthHeader() {
           
           {/* DESKTOP SEARCH */}
           <div className="hidden sm:block sm:flex-1 sm:max-w-md">
-            <SearchBar />
+            <SearchBar
+  value={searchQuery}
+  onChange={setSearchQuery}
+  onSearch={handleSearch}
+/>
           </div>
 
           {/* MOBILE SEARCH TOGGLE */}
@@ -153,7 +164,11 @@ export default function AuthHeader() {
       {/* MOBILE SEARCH DRAWER */}
       <div className={`transition-all duration-300 ease-in-out md:hidden ${showSearch ? "max-h-24 opacity-100 mt-3" : "max-h-0 opacity-0 overflow-hidden"}`}>
         <div className="border-t border-zinc-100 pt-3">
-          <SearchBar />
+          <SearchBar
+  value={searchQuery}
+  onChange={setSearchQuery}
+  onSearch={handleSearch}
+/>
         </div>
       </div>
 

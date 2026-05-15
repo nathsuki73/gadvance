@@ -1,23 +1,52 @@
 "use client";
 
+import React from "react";
 import { Search } from "lucide-react";
 
-export function SearchBar() {
+type SearchBarProps = {
+  value: string;
+  onChange: (value: string) => void;
+  onSearch: () => void | Promise<void>;
+};
+
+const SearchBar = ({
+  value,
+  onChange,
+  onSearch,
+}: SearchBarProps) => {
   return (
-    <div className="relative group w-full max-w-[400px] ">
+    <div className="relative group w-full max-w-[400px]">
+      {/* Left Icon */}
       <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-        <Search className="h-4 w-4 text-zinc-400 group-focus-within:text-[#00aeef] transition-colors" />
+        <Search className="h-4 w-4 text-zinc-400 transition-colors group-focus-within:text-[#00aeef]" />
       </div>
+
+      {/* Input */}
       <input
         type="text"
+        value={value}
         placeholder="Search for courses..."
-        className="w-full bg-zinc-100/50 border border-transparent rounded-full py-2 pl-10 pr-4 text-sm outline-none transition-all focus:bg-white focus:border-[#00aeef]/30 focus:ring-4 focus:ring-[#00aeef]/10 placeholder:text-zinc-500"
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            onSearch();
+          }
+        }}
+        className="w-full rounded-full border border-transparent bg-zinc-100/50 py-2 pl-10 pr-16 text-sm outline-none transition-all placeholder:text-zinc-500 focus:border-[#00aeef]/30 focus:bg-white focus:ring-4 focus:ring-[#00aeef]/10"
       />
-      <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-        <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-medium text-zinc-400 bg-white border border-zinc-200 rounded-md">
+
+      {/* Right Shortcut / Action */}
+      <div className="absolute inset-y-0 right-3 flex items-center">
+        <button
+          type="button"
+          onClick={onSearch}
+          className="hidden rounded-md border border-zinc-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-zinc-400 transition-colors hover:text-[#00aeef] sm:inline-block"
+        >
           ⌘K
-        </kbd>
+        </button>
       </div>
     </div>
   );
-}
+};
+
+export default SearchBar;

@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SearchBar } from "../../_components/header/SearchBar";
 import OtherCourses from "./OtherCourses";
 import RecentCourses from "./RecentCourses";
 import { Course } from "../type";
-import { getRecentCourses } from "../service";
+import { getRecentCourses, searchCourses } from "../service";
 
 const CoursesPageContent = () => {
   const [query, setQuery] = useState("");
@@ -54,11 +53,7 @@ const CoursesPageContent = () => {
           </p>
         </div>
 
-        <SearchBar
-          value={query}
-          onChange={setQuery}
-          onSearch={handleSearch}
-        />
+       
 
         {searchedCourses.length > 0 ? (
           <OtherCourses
