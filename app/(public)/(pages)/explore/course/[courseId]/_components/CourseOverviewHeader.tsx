@@ -78,7 +78,7 @@ const CourseOverviewHeader = ({
           {/* Header Action: Enroll Button */}
           {/* Updated to match the rounded style of your other buttons */}
 <div className="lg:pb-2">
-  <button className="w-full lg:w-auto bg-white text-[#00aeef] px-10 py-5 text-xs font-bold uppercase tracking-[0.2em] shadow-xl transition-all hover:bg-sky-50 hover:-translate-y-1 active:scale-[0.98] rounded-md">
+  <button className="w-full lg:w-auto bg-white text-[#00aeef] px-10 py-5 text-xs font-bold uppercase tracking-[0.2em] transition-all hover:bg-sky-50 hover:-translate-y-1 active:scale-[0.98] rounded-md">
     <div className="flex items-center justify-center gap-3">
       Enroll Now
       <ChevronRight size={16} />

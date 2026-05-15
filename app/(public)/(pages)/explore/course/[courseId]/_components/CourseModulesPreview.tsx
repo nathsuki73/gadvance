@@ -16,7 +16,7 @@ const CourseModulePreview = ({ course }: CourseModulePreviewProps) => {
 
   return (
     <section className="py-16 md:py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
+      <div className="max-w-7xl mx-auto md:px-12">
         <div className="mb-16 border-l-4 border-[#00aeef] pl-6">
           <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400 mb-2">
             Syllabus
@@ -30,9 +30,10 @@ const CourseModulePreview = ({ course }: CourseModulePreviewProps) => {
           {modules.map((module, index) => (
             <div
               key={module.id}
-              className="group grid grid-cols-1 md:grid-cols-[80px_1fr_auto] items-center gap-8 py-8 px-4 transition-colors hover:bg-zinc-50 border-b border-zinc-100"
+              className="group flex justify-between md:grid-cols-[80px_1fr_auto] items-center gap-8 py-8 px-4 transition-colors hover:bg-zinc-50 border-b border-zinc-100"
             >
-              {/* Module Sequence */}
+              <div className="flex items-center justify-center gap-4 sm:gap-10">
+{/* Module Sequence */}
               <span className="text-xs font-mono font-bold text-zinc-300">
                 {(index + 1).toString().padStart(2, '0')}
               </span>
@@ -53,6 +54,9 @@ const CourseModulePreview = ({ course }: CourseModulePreviewProps) => {
                   {module.about || "standard module overview and learning objectives."}
                 </p>
               </div>
+              </div>
+              
+
 
               {/* Status Indicator */}
               <div className="flex items-center text-[#00aeef]/40">
