@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 
 import type { LearningPlan } from "../../../types";
+import { getSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const iconByType = {
   globe: Globe,
@@ -33,6 +35,17 @@ const CourseOverviewHeader = ({
       course.icon as keyof typeof iconByType
     ] || BookOpen;
     
+    const router = useRouter();
+
+    const handleEnrollClick = async () => {
+  const session = await getSession();
+
+  if (!session) {
+    router.push("/auth/signin");
+    return;
+  }
+
+};
   return (
     <section className="bg-[#00aeef] text-white">
       <div className="mx-auto max-w-7xl px-6 py-16 md:px-12 md:py-24">
@@ -78,7 +91,9 @@ const CourseOverviewHeader = ({
           {/* Header Action: Enroll Button */}
           {/* Updated to match the rounded style of your other buttons */}
 <div className="lg:pb-2">
-  <button className="w-full lg:w-auto bg-white text-[#00aeef] px-10 py-5 text-xs font-bold uppercase tracking-[0.2em] transition-all hover:bg-sky-50 hover:-translate-y-1 active:scale-[0.98] rounded-md">
+  <button 
+  onClick={handleEnrollClick}
+  className="w-full lg:w-auto bg-white text-[#00aeef] px-10 py-5 text-xs font-bold uppercase tracking-[0.2em] transition-all hover:bg-sky-50 hover:-translate-y-1 active:scale-[0.98] rounded-md">
     <div className="flex items-center justify-center gap-3">
       Enroll Now
       <ChevronRight size={16} />
