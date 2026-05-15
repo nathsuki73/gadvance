@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Header from "@/app/(public)/_components/header/Header";
+import Header from "@/app/(public)/_components/header/PublicHeader";
 import Footer from "@/app/components/Footer";
 import { ArrowRight, Target, Users, Globe, Code, School } from "lucide-react";
 

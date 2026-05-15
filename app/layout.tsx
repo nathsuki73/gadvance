@@ -3,7 +3,7 @@ import { Google_Sans_Flex } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "./components/provider/SessionProvider";
 import logoIcon from "@/app/assets/logo.ico";
-import Header from "./(public)/_components/header/Header";
+import Header from "./(public)/_components/header/PublicHeader";
 import Footer from "@/app/components/Footer";
 
 // const geistSans = Google_Sans({

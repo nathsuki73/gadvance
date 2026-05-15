@@ -1,11 +1,22 @@
+'use client'
+import { useSession } from "next-auth/react";
+import AuthHeader from "./_components/header/AuthHeader";
+import PublicHeader from "@/app/(public)/_components/header/PublicHeader";
+
+
 export default function WorkspaceLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+      const { data: session } = useSession();
+
+
   return (
-    <div className="flex min-h-screen bg-[#fffdf8] text-zinc-900">
+    <>
+            {session ? <AuthHeader /> : <PublicHeader />}
+
       {children}
-    </div>
+    </>
   );
 }

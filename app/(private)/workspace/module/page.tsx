@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Clock, CheckCircle2, ArrowLeft } from "lucide-react";
-import Header from "@/app/(public)/_components/header/Header";
+import Header from "@/app/(public)/_components/header/PublicHeader";
 import { courseModules } from "@/app/lib/courseModules";
 
 interface Module {
