@@ -31,7 +31,18 @@ export async function finishOnBoarding(data: onboardingParams) {
     return { success: false, error: "Unauthorized" };
   }
 
-  const res = await fetch(`${process.env.API_URL}/api/onboarding`, {
+  const apiBaseUrl =
+    // process.env.API_URL?.replace(/\/$/, "") ||
+    process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+
+  if (!apiBaseUrl) {
+    return {
+      success: false,
+      error: "Missing API URL. Set API_URL or NEXT_PUBLIC_API_URL.",
+    };
+  }
+
+  const res = await fetch(`${apiBaseUrl}/api/onboarding`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

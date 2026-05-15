@@ -2,26 +2,38 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, getSession } from "next-auth/react";
+import { finishOnBoarding } from "../../(public)/actions/onboarding"; // Ensure path is correct
 import logoIcon from "@/app/assets/logo.ico";
 
 const IconBio = () => {
+  const { data: session, update, status } = useSession();
   const router = useRouter();
+  
+  const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
   const [bio, setBio] = useState<string>("");
+
+  // Logic from original code to wait for session sync
+  const waitForActiveSession = async () => {
+    for (let i = 0; i < 8; i += 1) {
+      const latest = await getSession();
+      if (latest?.user?.status?.trim().toLowerCase() === "active") return true;
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+    return false;
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem("onboarding_p3");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // prefer base64 preview if available so preview persists across reloads
         setAvatarPreview(parsed.avatarBase64 || parsed.avatarPreview || null);
         setAvatarBase64(parsed.avatarBase64 || null);
         setBio(parsed.bio || "");
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) { /* ignore */ }
     }
   }, []);
 
@@ -32,10 +44,8 @@ const IconBio = () => {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // use data URL for both preview and persistence
       setAvatarBase64(result);
       setAvatarPreview(result);
-      // persist immediately
       const existing = localStorage.getItem("onboarding_p3");
       const parsed = existing ? JSON.parse(existing) : {};
       localStorage.setItem("onboarding_p3", JSON.stringify({ ...parsed, avatarBase64: result, avatarPreview: result }));
@@ -47,21 +57,69 @@ const IconBio = () => {
     router.back();
   };
 
-  const handleNext = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleFinalSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const bioValue = String(formData.get("bio") || "");
+    setLoading(true);
 
-    const payload = {
-      avatarPreview,
-      avatarBase64,
-      bio: bioValue,
-    };
+    try {
+      // 1. GATHER DATA FROM ALL PAGES
+      const p1 = JSON.parse(localStorage.getItem("onboarding_p1") || "{}");
+      const p2 = JSON.parse(localStorage.getItem("onboarding_p2") || "{}");
+      
+      // 2. CONSTRUCT COMPLETE PAYLOAD
+      const finalPayload = {
+        firstName: String(p1.firstName || ""),
+        middleName: String(p1.middleName || ""),
+        lastName: String(p1.lastName || ""),
+        age: String(p1.age || ""),
+        gender: String(p1.gender || ""),
+        dob: String(p1.dob || ""),
+        phone: String(p2.phone || ""),
+        addressLine: String(p2.addressLine || ""),
+        city: String(p2.city || ""),
+        state: String(p2.state || ""),
+        country: String(p2.country || ""),
+        postalCode: String(p2.postalCode || ""),
+        bio: bio,
+        avatar: avatarBase64, // Sending the base64 string to your backend
+      };
 
-    localStorage.setItem("onboarding_p3", JSON.stringify(payload));
+      // 3. CALL SERVER ACTION (Original Logic)
+      const result = await finishOnBoarding(finalPayload);
 
-    // Finalize onboarding — navigate to workspace module (adjust as needed)
-    router.push("/workspace/module");
+      if (!result.success) {
+        alert(result.error || "Failed to save profile");
+        setLoading(false);
+        return;
+      }
+
+      // 4. UPDATE SESSION (Original Logic)
+      const nextStatus = result.user?.status ?? "active";
+      const updatedSession = await update({
+        ...session,
+        user: {
+          ...session?.user,
+          status: nextStatus,
+        },
+      });
+
+      // 5. WAIT AND REDIRECT
+      if (updatedSession?.user?.status?.toLowerCase() !== "active") {
+        await waitForActiveSession();
+      }
+
+      // Clear local storage after success
+      localStorage.removeItem("onboarding_p1");
+      localStorage.removeItem("onboarding_p2");
+      localStorage.removeItem("onboarding_p3");
+
+      router.replace("/workspace/module");
+    } catch (error) {
+      console.error("Onboarding Finalize Error:", error);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -78,24 +136,28 @@ const IconBio = () => {
           <div className="mb-10">
             <span className="text-[10px] font-bold text-[#00A8CC] uppercase tracking-[0.4em]">step 03 / 03</span>
             <h1 className="text-3xl font-bold text-zinc-900 mt-2 tracking-tight">Avatar & Bio</h1>
-            <p className="text-zinc-400 text-sm font-light mt-2">Add a profile picture and a short bio so others can know you.</p>
+            <p className="text-zinc-400 text-sm font-light mt-2">Finalize your profile setup.</p>
           </div>
 
-          <form className="space-y-6" onSubmit={handleNext}>
+          <form className="space-y-6" onSubmit={handleFinalSubmit}>
             <div>
               <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">Profile Photo</label>
               <div className="flex items-center gap-4">
-                <div className="h-20 w-20 rounded-full bg-zinc-50 border border-zinc-100 overflow-hidden flex items-center justify-center">
+                <div className="h-20 w-20 rounded-full bg-zinc-50 border border-zinc-100 overflow-hidden flex items-center justify-center relative">
                   {avatarPreview ? (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={avatarPreview} alt="avatar" className="h-full w-full object-cover" />
                   ) : (
-                    <span className="text-zinc-300">No photo</span>
+                    <span className="text-zinc-300 text-[10px] uppercase font-bold tracking-tighter">No photo</span>
                   )}
                 </div>
                 <div className="flex-grow">
-                  <input type="file" accept="image/*" onChange={handleAvatarChange} />
-                  <p className="text-[11px] text-zinc-400 mt-2">Max 2MB. JPG, PNG accepted.</p>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleAvatarChange}
+                    className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-[#00A8CC] hover:file:bg-sky-100 cursor-pointer"
+                  />
+                  <p className="text-[11px] text-zinc-400 mt-2">JPG or PNG accepted.</p>
                 </div>
               </div>
             </div>
@@ -105,14 +167,9 @@ const IconBio = () => {
               <textarea
                 name="bio"
                 value={bio}
-                onChange={(e) => {
-                  setBio(e.target.value);
-                  const existing = localStorage.getItem("onboarding_p3");
-                  const parsed = existing ? JSON.parse(existing) : {};
-                  localStorage.setItem("onboarding_p3", JSON.stringify({ ...parsed, bio: e.target.value }));
-                }}
+                onChange={(e) => setBio(e.target.value)}
                 required
-                placeholder="Tell us a bit about yourself (2-3 sentences)"
+                placeholder="Tell us a bit about yourself..."
                 className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50 text-sm h-28 resize-none"
               />
             </div>
@@ -121,34 +178,36 @@ const IconBio = () => {
               <button
                 type="button"
                 onClick={handleBack}
-                className="w-1/3 border border-zinc-100 text-zinc-400 px-6 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-zinc-50 transition-all"
+                disabled={loading}
+                className="w-1/3 border border-zinc-100 text-zinc-400 px-6 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-zinc-50 transition-all disabled:opacity-50"
               >
                 Back
               </button>
               <button
                 type="submit"
-                className="w-2/3 bg-[#00A8CC] hover:bg-[#0096b6] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-sky-100 active:scale-[0.98]"
+                disabled={loading}
+                className="w-2/3 bg-[#00A8CC] hover:bg-[#0096b6] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-sky-100 active:scale-[0.98] disabled:opacity-70"
               >
-                Finish Profile Setup
+                {loading ? "Saving..." : "Finish Profile Setup"}
               </button>
             </div>
           </form>
         </div>
       </div>
 
+      {/* Decorative Right Panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-[#00A8CC] flex-col items-center justify-center p-12 text-white relative" style={{ clipPath: 'ellipse(100% 100% at 100% 50%)' }}>
         <div className="text-center px-12 relative z-10">
           <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">
-            Let others see <br />
-            <span className="font-semibold italic font-serif">who you are.</span>
+            Ready to <br />
+            <span className="font-semibold italic font-serif">get started?</span>
           </h2>
-          <p className="text-white/80 text-sm leading-relaxed max-w-sm mx-auto font-light">
-            A friendly avatar and a good bio helps other learners and mentors connect with you.
+          <p className="text-white/80 text-sm leading-relaxed max-w-sm mx-auto font-light lowercase">
+            Once you finish, you will have full access to our workspace and learning modules.
           </p>
         </div>
-
         <div className="absolute bottom-12 text-center text-[10px] tracking-[0.4em] text-white/40 uppercase">
-          © 2026 gadvance. All Rights Reserved.
+          © 2026 gadvance
         </div>
       </div>
     </div>
