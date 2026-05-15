@@ -1,110 +1,64 @@
 "use client";
 
 import React from "react";
-import {
-  ArrowRight,
-  BookOpen,
-  PlayCircle,
-} from "lucide-react";
-
-import { useRouter } from "next/navigation";
-
-type Module = {
-  id: string;
-  title: string;
-  about?: string;
-  image?: string | null;
-};
-
-type Course = {
-  id: string;
-  title: string;
-  about?: string;
-  accent?: string;
-  modules?: Module[];
-};
+import { BookOpen, PlayCircle, Lock } from "lucide-react";
 
 type CourseModulePreviewProps = {
-  course: Course;
+  course: {
+    modules?: any[];
+  };
 };
 
-const CourseModulePreview = ({
-  course,
-}: CourseModulePreviewProps) => {
-  const router = useRouter();
-
+const CourseModulePreview = ({ course }: CourseModulePreviewProps) => {
   const modules = course.modules || [];
 
   return (
-    <section className="mt-16">
-      <div className="max-w-3xl">
-        <div className="inline-flex rounded-full bg-sky-50 px-4 py-2 text-sm font-medium text-[#00aeef]">
-          Course Structure
+    <section className="py-16 md:py-24 bg-white">
+      <div className="max-w-7xl mx-auto px-6 md:px-12">
+        <div className="mb-16 border-l-4 border-[#00aeef] pl-6">
+          <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400 mb-2">
+            Syllabus
+          </h2>
+          <h3 className="text-2xl font-semibold text-zinc-900 tracking-tight">
+            Instructional Roadmap
+          </h3>
         </div>
 
-        <h2 className="mt-5 text-3xl font-bold tracking-tight text-zinc-900">
-          What You’ll Learn
-        </h2>
+        <div className="grid grid-cols-1 gap-1">
+          {modules.map((module, index) => (
+            <div
+              key={module.id}
+              className="group grid grid-cols-1 md:grid-cols-[80px_1fr_auto] items-center gap-8 py-8 px-4 transition-colors hover:bg-zinc-50 border-b border-zinc-100"
+            >
+              {/* Module Sequence */}
+              <span className="text-xs font-mono font-bold text-zinc-300">
+                {(index + 1).toString().padStart(2, '0')}
+              </span>
 
-        <p className="mt-4 text-lg leading-8 text-zinc-600">
-          Explore guided lessons, practical activities,
-          and interactive learning experiences designed
-          to build knowledge progressively.
-        </p>
-      </div>
-
-      <div className="mt-10 space-y-4">
-        {modules.map((module, index) => (
-          <div
-            key={module.id}
-            className="group flex items-start justify-between rounded-2xl border border-zinc-200 bg-white p-5 transition-all hover:border-zinc-300 hover:shadow-md"
-          >
-            <div className="flex gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-[#00aeef]">
-                {index === 0 ? (
-                  <BookOpen size={20} />
-                ) : (
-                  <PlayCircle size={20} />
-                )}
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-zinc-900">
-                  {module.title}
-                </h3>
-
-                <p className="mt-1 text-sm text-zinc-500">
-                  {module.about ||
-                    "Interactive learning content and guided educational materials."}
+              {/* Title and Detail */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-3">
+                  {index === 0 ? (
+                    <BookOpen size={16} className="text-[#00aeef]" />
+                  ) : (
+                    <PlayCircle size={16} className="text-[#00aeef]" />
+                  )}
+                  <h4 className="text-lg font-medium text-zinc-800">
+                    {module.title}
+                  </h4>
+                </div>
+                <p className="text-sm text-zinc-500 font-light leading-relaxed max-w-3xl pl-7">
+                  {module.about || "standard module overview and learning objectives."}
                 </p>
               </div>
-            </div>
 
-            <div className="hidden md:flex">
-              <ArrowRight
-                size={18}
-                className="text-zinc-400 transition-transform group-hover:translate-x-1"
-              />
+              {/* Status Indicator */}
+              <div className="flex items-center text-[#00aeef]/40">
+                <Lock size={16} strokeWidth={1.5} />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-10">
-        <button
-          type="button"
-          onClick={() =>
-            router.push(
-              `/explore/course/${course.id}/module`
-            )
-          }
-          className="rounded-2xl px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-          style={{
-            backgroundColor: course.accent || "#00aeef",
-          }}
-        >
-          Start Learning
-        </button>
+          ))}
+        </div>
       </div>
     </section>
   );
