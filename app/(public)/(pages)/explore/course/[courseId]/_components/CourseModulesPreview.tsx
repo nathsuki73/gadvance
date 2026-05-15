@@ -1,67 +1,61 @@
 "use client";
 
 import React from "react";
-import { BookOpen, PlayCircle, Lock } from "lucide-react";
-import type {
-  LearningPlan,
-  LearningModule,
-} from "../../../types";
+import { BookOpen, PlayCircle, CheckCircle2, Lock } from "lucide-react";
+import type { LearningPlan } from "../../../types";
 
 type CourseModulePreviewProps = {
   course: LearningPlan;
   isLoggedIn: boolean;
+  isEnrolled: boolean; // Recieved from parent wrapper state
 };
 
-const CourseModulePreview = ({ course }: CourseModulePreviewProps) => {
+const CourseModulePreview = ({ course, isEnrolled }: CourseModulePreviewProps) => {
   const modules = course.modules || [];
 
   return (
     <section className="py-16 md:py-24 bg-white">
-      <div className="max-w-7xl mx-auto md:px-12">
-        <div className="mb-16 border-l-4 border-[#00aeef] pl-6">
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400 mb-2">
-            Syllabus
-          </h2>
-          <h3 className="text-2xl font-semibold text-zinc-900 tracking-tight">
-            Instructional Roadmap
-          </h3>
+      <div className="max-w-7xl mx-auto md:px-12 px-6">
+        <div className="mb-12 border-l-4 border-[#00aeef] pl-6">
+          <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400 mb-1">Syllabus</h2>
+          <h3 className="text-2xl font-semibold text-zinc-900 tracking-tight">Instructional Roadmap</h3>
         </div>
 
-        <div className="grid grid-cols-1 gap-1">
+        <div className="flex flex-col">
           {modules.map((module, index) => (
             <div
               key={module.id}
-              className="group flex justify-between md:grid-cols-[80px_1fr_auto] items-center gap-8 py-8 px-4 transition-colors hover:bg-zinc-50 border-b border-zinc-100"
+              className="group flex justify-between items-center gap-8 py-6 border-b border-zinc-100 transition-colors hover:bg-zinc-50/50 px-2"
             >
-              <div className="flex items-center justify-center gap-4 sm:gap-10">
-{/* Module Sequence */}
-              <span className="text-xs font-mono font-bold text-zinc-300">
-                {(index + 1).toString().padStart(2, '0')}
-              </span>
+              <div className="flex items-start gap-4 sm:gap-8">
+                <span className="text-xs font-mono font-bold text-zinc-300 pt-1">
+                  {(index + 1).toString().padStart(2, "0")}
+                </span>
 
-              {/* Title and Detail */}
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-3">
-                  {index === 0 ? (
-                    <BookOpen size={16} className="text-[#00aeef]" />
-                  ) : (
-                    <PlayCircle size={16} className="text-[#00aeef]" />
-                  )}
-                  <h4 className="text-lg font-medium text-zinc-800">
-                    {module.title}
-                  </h4>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-3">
+                    {index === 0 ? (
+                      <BookOpen size={16} className="text-[#00aeef] shrink-0" />
+                    ) : (
+                      <PlayCircle size={16} className="text-[#00aeef] shrink-0" />
+                    )}
+                    <h4 className="text-base font-medium text-zinc-800 group-hover:text-[#00aeef] transition-colors">
+                      {module.title}
+                    </h4>
+                  </div>
+                  <p className="text-sm text-zinc-500 font-light leading-relaxed max-w-3xl">
+                    {module.about || "Standard module overview and learning objectives."}
+                  </p>
                 </div>
-                <p className="text-sm text-zinc-500 font-light leading-relaxed max-w-3xl pl-7">
-                  {module.about || "standard module overview and learning objectives."}
-                </p>
               </div>
-              </div>
-              
 
-
-              {/* Status Indicator */}
-              <div className="flex items-center text-[#00aeef]/40">
-                <Lock size={16} strokeWidth={1.5} />
+              {/* Dynamic Status Icon Changer based on Enrollment */}
+              <div className="flex items-center shrink-0">
+                {isEnrolled ? (
+                  <CheckCircle2 size={18} className="text-emerald-500" strokeWidth={2} />
+                ) : (
+                  <Lock size={16} className="text-zinc-300 group-hover:text-zinc-400 transition-colors" strokeWidth={2} />
+                )}
               </div>
             </div>
           ))}

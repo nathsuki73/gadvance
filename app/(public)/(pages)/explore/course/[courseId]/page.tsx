@@ -12,26 +12,38 @@ import type {
   CoursePageProps,
 } from "./types";
 import { useSession } from "next-auth/react";
-
+import { getMyEnrollment } from "./service";
 
 const CoursePage = ({ params }: CoursePageProps) => {
   const { data: session } = useSession();
-const isLoggedIn = !!session;
+  const isLoggedIn = !!session;
 
   const resolvedParams = use(params);
   const courseId = resolvedParams.courseId;
 
-const [learningPlan, setLearningPlan] =
-  useState<LearningPlan | null>(null);
-    const [loading, setLoading] = useState(true);
+  const [learningPlan, setLearningPlan] = useState<LearningPlan | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  
+  // Shared state tracking enrollment to sync sibling previews immediately
+  const [isEnrolled, setIsEnrolled] = useState<boolean>(false);
 
   useEffect(() => {
-    const fetchLearningPlan = async () => {
+    const fetchCourseAndEnrollment = async () => {
       try {
         setLoading(true);
+        
+        // Fetch course details
         const data = await getLearningPlanDetails(courseId);
         setLearningPlan(data);
+
+        // Fetch enrollment status if user is logged in
+        if (isLoggedIn) {
+          const enrollmentResult = await getMyEnrollment(courseId);
+          if (enrollmentResult.success && enrollmentResult.data) {
+            setIsEnrolled(true);
+          }
+        }
       } catch (err) {
         console.error("Fetch error:", err);
         setError(true);
@@ -41,9 +53,9 @@ const [learningPlan, setLearningPlan] =
     };
 
     if (courseId) {
-      fetchLearningPlan();
+      fetchCourseAndEnrollment();
     }
-  }, [courseId]);
+  }, [courseId, isLoggedIn]);
 
   if (loading) {
     return (
@@ -78,9 +90,10 @@ const [learningPlan, setLearningPlan] =
 
       {/* Hero Header Section */}
       <CourseOverviewHeader 
-  course={learningPlan}
-  isLoggedIn={isLoggedIn}
-/>
+        course={learningPlan}
+        isLoggedIn={isLoggedIn}
+        onEnrollSuccess={() => setIsEnrolled(true)}
+      />
 
       {/* Content Section */}
       <section className="mx-auto max-w-7xl px-6 py-16 md:px-12">
@@ -94,9 +107,10 @@ const [learningPlan, setLearningPlan] =
         </div>
         
         <CourseModulePreview
-  course={learningPlan}
-  isLoggedIn={isLoggedIn}
-/>
+          course={learningPlan}
+          isLoggedIn={isLoggedIn}
+          isEnrolled={isEnrolled}
+        />
       </section>
     </main>
   );
