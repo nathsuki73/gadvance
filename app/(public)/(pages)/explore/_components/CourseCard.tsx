@@ -73,7 +73,7 @@ const CourseCard = ({ module }: CourseCardProps) => {
         onClick={() => router.push(`/explore/course/${module.id}`)}
         className="group/btn flex items-center justify-end w-full text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-[#00aeef] gap-1"
       >
-        <span className="lowercase font-medium">view modules</span>
+        <span className="lowercase font-medium">view course</span>
         <ArrowUpRight 
           size={16} 
           className="transition-transform duration-300 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" 
