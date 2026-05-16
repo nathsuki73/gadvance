@@ -1,9 +1,7 @@
 "use client";
 
 import React from "react";
-
 import ReactMarkdown from "react-markdown";
-
 import remarkGfm from "remark-gfm";
 
 type TextBlockProps = {
@@ -13,86 +11,115 @@ type TextBlockProps = {
 const TextBlock = ({ content }: TextBlockProps) => {
   /*
   |--------------------------------------------------------------------------
-  | EMPTY
+  | EMPTY STATE
   |--------------------------------------------------------------------------
   */
-
   if (!content || content.trim() === "") {
     return (
-      <div
-        className="
-          border border-dashed border-zinc-300
-          bg-white
-
-          px-5 py-6
-          sm:px-6
-          lg:px-10
-        "
-      >
-        <span className="text-sm text-zinc-400">Empty text block</span>
+      <div className="rounded-[32px] border border-dashed border-zinc-100 bg-white p-12 text-center">
+        <p className="text-xs font-medium uppercase tracking-widest text-zinc-300">
+          Empty Instructional Block
+        </p>
       </div>
     );
   }
 
   /*
   |--------------------------------------------------------------------------
-  | MARKDOWN CONTENT
+  | MINIMALIST EDITORIAL MARKDOWN CONFIGURATION
   |--------------------------------------------------------------------------
   */
-
   return (
     <div
       className="
-        prose prose-zinc
-        max-w-none
+        prose prose-zinc max-w-none overflow-x-auto bg-white
+        
+        
+        py-12 px-4 sm:px-8 lg:px-20 xl:px-32 tracking-wide
+        
+        /* Font and color structure matching your brand setup */
+        text-base text-zinc-900 font-light leading-relaxed
+        
+        /* Headings: Light and elegant (Casing preserved natively) */
+        prose-headings:font-light 
+        prose-headings:text-zinc-900 
+        prose-headings:tracking-tight
 
-        overflow-x-auto
-
-        bg-white
-
-        px-5 py-6
-        sm:px-6 sm:py-7
-        lg:px-40 lg:py-8
-
-        text-[15px]
-        leading-7
-
-        prose-headings:font-semibold
-        prose-headings:text-zinc-800
-
-        prose-h1:text-3xl
-        prose-h2:text-2xl
+        prose-h1:text-3xl prose-h1:sm:text-4xl prose-h1:font-normal
+        prose-h2:text-2xl prose-h2:mt-16 prose-h2:pb-4 prose-h2:border-b prose-h2:border-zinc-50
         prose-h3:text-xl
 
-        prose-p:text-zinc-700
+        /* Inline Text Elements */
         prose-p:leading-8
+        
+        /* Highlighted Strong / Bold Text with specific capsule styling */
+        prose-strong:font-semibold 
+        prose-strong:text-zinc-900 
+        prose-strong:bg-sky-50/50 
+        prose-strong:px-1.5 
+        prose-strong:py-0.5 
+        prose-strong:rounded-md
+        
+        /* Beautiful Serif Italics using your signature brand blue */
+        prose-em:font-serif 
+        prose-em:italic 
+        prose-em:text-[#00aeef]
 
-        prose-strong:text-zinc-800
+        prose-li:text-zinc-500
 
-        prose-li:text-zinc-700
+        /* Brand Blue Actions & Hyperlinks */
+        prose-a:text-[#00aeef] 
+        prose-a:font-medium
+        prose-a:no-underline 
+        prose-a:transition-colors
+        hover:prose-a:text-[#0096ce]
 
-        prose-a:text-sky-600
-        prose-a:no-underline
-        hover:prose-a:underline
-
-        prose-code:text-sky-700
-        prose-code:before:content-none
+        /* Minimal Technical Code Styling */
+        prose-code:text-[#00aeef] 
+        prose-code:bg-sky-50/40 
+        prose-code:px-2 
+        prose-code:py-0.5 
+        prose-code:rounded-md 
+        prose-code:font-mono 
+        prose-code:text-xs
+        prose-code:before:content-none 
         prose-code:after:content-none
 
-        prose-pre:overflow-x-auto
-        prose-pre:rounded-xl
-        prose-pre:bg-zinc-900
-        prose-pre:p-4
+        /* Code Blocks */
+        prose-pre:overflow-x-auto 
+        prose-pre:rounded-[24px] 
+        prose-pre:bg-zinc-50 
+        prose-pre:border 
+        prose-pre:border-zinc-100 
+        prose-pre:p-6
+        prose-pre:text-zinc-700
 
-        prose-blockquote:border-sky-500
-        prose-blockquote:text-zinc-600
+        /* Academic Blockquotes */
+        prose-blockquote:border-l-2 
+        prose-blockquote:border-[#00aeef] 
+        prose-blockquote:pl-6 
+        prose-blockquote:font-serif 
+        prose-blockquote:italic 
+        prose-blockquote:text-zinc-600 
+        prose-blockquote:bg-zinc-50/30 
+        prose-blockquote:py-2 
+        prose-blockquote:pr-4 
+        prose-blockquote:rounded-r-xl
 
-        prose-img:w-full
-        prose-img:max-w-full
-        prose-img:rounded-xl
+        /* Images and Media Layouts */
+        prose-img:w-full 
+        prose-img:max-w-full 
+        prose-img:rounded-[32px] 
+        prose-img:border 
+        prose-img:border-zinc-100
+        prose-img:shadow-xl 
+        prose-img:shadow-zinc-100/50
 
-        prose-table:block
+        /* Tables */
+        prose-table:block 
         prose-table:overflow-x-auto
+        prose-th:text-xs prose-th:font-bold prose-th:uppercase prose-th:tracking-wider prose-th:text-zinc-400
+        prose-td:text-sm prose-td:text-zinc-500
       "
     >
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>

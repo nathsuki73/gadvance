@@ -123,9 +123,10 @@ const ImageTextBlock = ({ content, metadata }: ImageTextBlockProps) => {
           {title && (
             <h3
               className="
-                text-2xl font-bold
+                text-2xl font-semibold
                 tracking-tight
                 text-zinc-800
+                
               "
             >
               {title}
@@ -135,8 +136,7 @@ const ImageTextBlock = ({ content, metadata }: ImageTextBlockProps) => {
           <p
             className={`
               leading-8
-              text-zinc-600
-
+font-light tracking-wide text-zinc-900
               ${title ? "mt-4" : ""}
             `}
           >
