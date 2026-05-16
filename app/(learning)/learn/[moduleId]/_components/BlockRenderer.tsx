@@ -10,6 +10,7 @@ import ImageBlock from "../_blocks/ImageBlock";
 import TitleDisplay from "../_blocks/TitleDisplayBlock";
 import ImageTextBlock from "../_blocks/ImageTextBlock";
 import QuizBlock from "../_blocks/QuizBlock";
+import VideoDisplayBlock from "../_blocks/VideoDisplayBlock";
 
 type BlockRendererProps = {
   block: ModuleBlock;
@@ -29,6 +30,10 @@ const BlockRenderer = ({ block }: BlockRendererProps) => {
     case "image_text":
       return (
         <ImageTextBlock content={block.content} metadata={block.metadata} />
+      );
+    case "video":
+      return (
+        <VideoDisplayBlock content={block.content} metadata={block.metadata} />
       );
     case "quiz":
       return <QuizBlock content={block.content} metadata={block.metadata} />;
