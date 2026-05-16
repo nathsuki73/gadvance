@@ -2,8 +2,7 @@
 
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServerSession } from "next-auth";
-
-import type { ModuleResponse, ModuleProgressResponse } from "./types";
+import { ModuleProgressResponse, ModuleResponse } from "./types";
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 

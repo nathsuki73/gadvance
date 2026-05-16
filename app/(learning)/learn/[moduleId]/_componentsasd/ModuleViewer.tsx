@@ -2,7 +2,7 @@
 
 import React from "react";
 
-import type { ModuleResponse } from "../../types";
+import type { ModuleResponse } from "../../../../(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 
 import ModuleSidebar from "./ModuleSidebar";
 import ModuleContent from "./ModuleContent";

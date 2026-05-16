@@ -1,4 +1,4 @@
-import type { ModuleResponse, Block } from "../../types";
+import type { ModuleResponse, Block } from "../../../../(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 
 export type ModuleNavItem = {
   id: string;

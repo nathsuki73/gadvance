@@ -15,10 +15,10 @@ import {
 
 import ModuleOverviewHeader from "./_components/ModuleOverviewHeader";
 
-import { getLearningModule } from "./service";
 
 import ModuleSectionGroupPreview from "./_components/ModuleSectionGroupPreview";
-import { ModuleProgressResponse, ModuleResponse } from "./types";
+import { getLearningModule } from "./service";
+import { ModuleResponse } from "./types";
 
 const ModulePage = ({
   params,
