@@ -11,8 +11,6 @@ import {
 } from "lucide-react";
 import { ModuleNavItem } from "./moduleUtils";
 
-
-
 type ModuleSidebarProps = {
   structureTitle: string;
   items: ModuleNavItem[];
@@ -38,39 +36,37 @@ const ModuleSidebar = ({
   onToggleModule,
   onNavigate,
 }: ModuleSidebarProps) => {
-
   return (
     <>
-      {/* MOBILE OVERLAY */}
+      {/* Mobile Overlay */}
       {mobileOpen && (
         <button
           onClick={onCloseMobile}
-          className="fixed inset-0 z-40 bg-zinc-950/40 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-zinc-950/30 backdrop-blur-sm lg:hidden transition-opacity duration-300"
           aria-label="Close menu overlay"
         />
       )}
 
-      {/* SIDEBAR CONTAINER */}
+      {/* Sidebar Container */}
       <aside
         className={`
-          fixed left-0 top-0 z-50 h-dvh border-r border-zinc-200 bg-zinc-50
-          transition-all duration-300 ease-in-out flex flex-col
+          fixed left-0 top-0 z-50 h-dvh border-r border-zinc-200 bg-zinc-50/70 backdrop-blur-md
+          transition-all duration-300 ease-in-out flex flex-col select-none
 
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0
 
-          w-[280px] sm:w-[320px] 
-          ${isCollapsed ? "lg:w-[72px]" : "lg:w-80"}
+          w-[290px] sm:w-[320px] 
+          ${isCollapsed ? "lg:w-[76px]" : "lg:w-80"}
         `}
       >
-        {/* SIDEBAR HEADER */}
-        <div className="flex h-16 items-center justify-between border-b border-zinc-200/80 px-4 bg-white shrink-0">
-          
-          {/* MOBILE HEADER VIEW */}
+        {/* Sidebar Header */}
+        <div className="flex h-16 items-center justify-between border-b border-zinc-200/80 px-4 bg-white/80 shrink-0">
+          {/* Mobile Header Layout */}
           <div className="flex items-center gap-2 lg:hidden w-full justify-between">
             <button
               onClick={() => window.history.back()}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 active:scale-95 transition-transform"
             >
               <ArrowLeft size={16} />
             </button>
@@ -79,20 +75,20 @@ const ModuleSidebar = ({
             </span>
             <button
               onClick={onCloseMobile}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 active:scale-95 transition-transform"
             >
               <X size={16} />
             </button>
           </div>
 
-          {/* DESKTOP HEADER VIEW */}
+          {/* Desktop Header Layout */}
           <div className="hidden lg:flex items-center justify-between w-full min-w-0">
             {!isCollapsed && (
-              <div className="min-w-0 pr-2">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">
+              <div className="min-w-0 pr-2 animate-in fade-in duration-200">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600/90">
                   Navigation
                 </p>
-                <h2 className="truncate text-sm font-semibold text-zinc-900" title={structureTitle}>
+                <h2 className="truncate text-sm font-semibold text-zinc-800" title={structureTitle}>
                   {structureTitle}
                 </h2>
               </div>
@@ -102,56 +98,57 @@ const ModuleSidebar = ({
               {!isCollapsed && (
                 <button
                   onClick={() => window.history.back()}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-800"
+                  className="flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-800"
+                  title="Go Back"
                 >
-                  <ArrowLeft size={15} />
+                  <ArrowLeft size={14} />
                 </button>
               )}
               <button
                 onClick={onToggleCollapse}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-800"
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-800"
+                title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
               >
-                {isCollapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+                {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
               </button>
             </div>
           </div>
         </div>
 
-        {/* NAVIGATION LINKS LIST */}
-        <div className="flex-1 overflow-y-auto p-3">
-          <nav className="space-y-1.5">
+        {/* Navigation Content Area */}
+        <div className="flex-1 overflow-y-auto px-3 py-4 custom-scrollbar">
+          <nav className="space-y-1">
             {items.map((item) => {
               const isExpanded = expandedModules.has(item.id);
               const hasChildren = !!item.children?.length;
               const isParentActive = item.id === displayedNavId || item.children?.some(c => c.id === displayedNavId);
 
-              /* 
-                UX BUG FIX: 
-                Only return the collapsed icon block if we are on desktop AND collapsed.
-                If mobileOpen is true, we must skip this and render the full list view.
-              */
+              // Render Optimized Collapsed View Block (Desktop Only)
               if (isCollapsed && !mobileOpen) {
                 return (
                   <button
                     key={item.id}
                     onClick={() => onNavigate(item.id)}
                     className={`
-                      hidden lg:flex h-11 w-11 mx-auto items-center justify-center rounded-xl transition-all duration-200
+                      hidden lg:flex h-11 w-11 mx-auto items-center justify-center rounded-xl transition-all duration-200 group relative
                       ${isParentActive 
-                        ? "bg-sky-50 text-sky-600 border border-sky-200/60" 
-                        : "text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-900"
+                        ? "bg-sky-50 text-sky-600 border border-sky-100" 
+                        : "text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-900"
                       }
                     `}
                     title={item.label}
                   >
-                    <Layers size={18} className={isParentActive ? "stroke-[2.5]" : "stroke-[1.8]"} />
+                    <Layers size={18} className={isParentActive ? "stroke-[2.2]" : "stroke-[1.5] group-hover:scale-105 transition-transform"} />
+                    {isParentActive && (
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-sky-500 rounded-r-full" />
+                    )}
                   </button>
                 );
               }
 
-              /* EXPANDED ACCORDION VIEW / MOBILE VIEW */
+              // Standard Accordion & Interactive Mobile Row View
               return (
-                <div key={item.id} className="space-y-1">
+                <div key={item.id} className="space-y-0.5">
                   <button
                     onClick={() => {
                       if (hasChildren) {
@@ -164,8 +161,8 @@ const ModuleSidebar = ({
                     className={`
                       flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition-all duration-200 group
                       ${isParentActive && !hasChildren
-                        ? "bg-sky-50 text-sky-600 font-medium"
-                        : "text-zinc-700 hover:bg-zinc-200/50"
+                        ? "bg-sky-50 text-sky-600 font-medium border border-sky-100/50"
+                        : "text-zinc-700 hover:bg-zinc-200/50 border border-transparent"
                       }
                     `}
                   >
@@ -174,7 +171,7 @@ const ModuleSidebar = ({
                         {item.label}
                       </p>
                       {hasChildren && (
-                        <p className="text-[11px] text-zinc-400 mt-0.5 font-normal">
+                        <p className="text-[11px] text-zinc-400 font-normal mt-0.5">
                           {item.children?.length} sub-sections
                         </p>
                       )}
@@ -183,16 +180,16 @@ const ModuleSidebar = ({
                     {hasChildren && (
                       <ChevronRight
                         size={14}
-                        className={`text-zinc-400 transition-transform duration-200 group-hover:text-zinc-600
+                        className={`text-zinc-400 transition-transform duration-200 group-hover:text-zinc-600 shrink-0
                           ${isExpanded ? "rotate-90 text-zinc-600" : ""}
                         `}
                       />
                     )}
                   </button>
 
-                  {/* CHILD LINKS LOOP */}
+                  {/* Child Links Nested Stack */}
                   {isExpanded && hasChildren && (
-                    <div className="ml-3 border-l border-zinc-200 pl-2 mt-0.5 space-y-0.5">
+                    <div className="ml-3.5 border-l border-zinc-200 pl-2.5 py-1 space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
                       {item.children?.map((child) => {
                         const isChildActive = child.id === displayedNavId;
 
@@ -204,17 +201,20 @@ const ModuleSidebar = ({
                               if (mobileOpen) onCloseMobile(); 
                             }}
                             className={`
-                              flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-all duration-150
+                              flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-all duration-150 group/item
                               ${isChildActive
-                                ? "bg-sky-50 text-sky-600 font-medium"
+                                ? "bg-sky-50/80 text-sky-600 font-medium"
                                 : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"
                               }
                             `}
                           >
                             <Circle
-                              size={6}
-                              className={`transition-all duration-150 shrink-0
-                                ${isChildActive ? "fill-sky-600 text-sky-600 scale-110" : "text-zinc-300 fill-zinc-300"}
+                              size={5}
+                              className={`transition-all duration-200 shrink-0
+                                ${isChildActive 
+                                  ? "fill-sky-600 text-sky-600 scale-125" 
+                                  : "text-zinc-300 fill-zinc-300 group-hover/item:text-zinc-400 group-hover/item:fill-zinc-400"
+                                }
                               `}
                             />
                             <span className="text-sm truncate">
