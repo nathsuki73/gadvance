@@ -71,7 +71,7 @@ const ImageBlock = ({ imageUrl, alt = "Module image" }: ImageBlockProps) => {
   */
 
   return (
-    <div className="flex w-full justify-center py-6">
+    <div className="flex w-full justify-center py-6 bg-white">
       <div
         className="
           relative

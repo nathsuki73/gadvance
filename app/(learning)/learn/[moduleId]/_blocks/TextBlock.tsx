@@ -52,7 +52,7 @@ const TextBlock = ({ content }: TextBlockProps) => {
 
         px-5 py-6
         sm:px-6 sm:py-7
-        lg:px-76 lg:py-8
+        lg:px-40 lg:py-8
 
         text-[15px]
         leading-7

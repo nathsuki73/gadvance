@@ -8,6 +8,7 @@ import type { ModuleBlock } from "../types";
 import TextBlock from "../_blocks/TextBlock";
 import ImageBlock from "../_blocks/ImageBlock";
 import TitleDisplay from "../_blocks/TitleDisplayBlock";
+import ImageTextBlock from "../_blocks/ImageTextBlock";
 
 type BlockRendererProps = {
   block: ModuleBlock;
@@ -24,6 +25,10 @@ const BlockRenderer = ({ block }: BlockRendererProps) => {
       return <ImageBlock imageUrl={block.content} />;
     case "title":
       return <TitleDisplay content={block.content} metadata={block.metadata} />;
+    case "image_text":
+      return (
+        <ImageTextBlock content={block.content} metadata={block.metadata} />
+      );
     // case "video":
     // case "code":
 

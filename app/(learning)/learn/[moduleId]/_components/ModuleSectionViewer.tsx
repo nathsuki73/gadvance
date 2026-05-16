@@ -20,7 +20,7 @@ const ModuleSectionViewer = ({
     <div className="min-h-screen">
       <div className="">
         {/* BLOCK CONTENT */}
-        <div className="space-y-6">
+        <div className="">
           {section.blocks
             ?.sort((a, b) => a.order_index - b.order_index)
             .map((block) => (
