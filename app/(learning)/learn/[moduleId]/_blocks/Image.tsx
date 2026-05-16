@@ -2,13 +2,13 @@
 
 import Image from "next/image";
 
-type BannerBlockProps = {
+type ImageBlockProps = {
   imageUrl?: string | null;
 
   alt?: string;
 };
 
-const BannerBlock = ({ imageUrl, alt = "Banner" }: BannerBlockProps) => {
+const ImageBlock = ({ imageUrl, alt = "Module image" }: ImageBlockProps) => {
   /*
   |--------------------------------------------------------------------------
   | VALIDATORS
@@ -35,7 +35,7 @@ const BannerBlock = ({ imageUrl, alt = "Banner" }: BannerBlockProps) => {
 
   /*
   |--------------------------------------------------------------------------
-  | VALID IMAGE SOURCE
+  | VALID IMAGE
   |--------------------------------------------------------------------------
   */
 
@@ -46,7 +46,7 @@ const BannerBlock = ({ imageUrl, alt = "Banner" }: BannerBlockProps) => {
 
   /*
   |--------------------------------------------------------------------------
-  | FALLBACK EMPTY BANNER
+  | EMPTY STATE
   |--------------------------------------------------------------------------
   */
 
@@ -54,12 +54,12 @@ const BannerBlock = ({ imageUrl, alt = "Banner" }: BannerBlockProps) => {
     return (
       <div
         className="
-          flex h-[260px] w-full items-center justify-center
+          flex min-h-[240px] w-full items-center justify-center
           rounded-2xl border border-dashed border-zinc-300
           bg-zinc-100
         "
       >
-        <span className="text-sm text-zinc-400">No banner image</span>
+        <span className="text-sm text-zinc-400">No image available</span>
       </div>
     );
   }
@@ -71,16 +71,32 @@ const BannerBlock = ({ imageUrl, alt = "Banner" }: BannerBlockProps) => {
   */
 
   return (
-    <div className="relative h-[260px] w-full overflow-hidden rounded-2xl bg-zinc-100">
-      <Image
-        src={imageUrl}
-        alt={alt}
-        fill
-        unoptimized={isBase64Image(imageUrl)}
-        className="object-cover"
-      />
+    <div className="flex w-full justify-center">
+      <div
+        className="
+          relative
+          w-full
+          max-w-3xl
+          overflow-hidden
+          rounded-2xl
+          bg-zinc-100
+        "
+      >
+        <Image
+          src={imageUrl}
+          alt={alt}
+          width={1400}
+          height={900}
+          unoptimized={isBase64Image(imageUrl)}
+          className="
+            h-auto
+            w-full
+            object-contain
+          "
+        />
+      </div>
     </div>
   );
 };
 
-export default BannerBlock;
+export default ImageBlock;

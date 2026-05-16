@@ -2,9 +2,10 @@
 
 import React from "react";
 
-import BannerBlock from "../_blocks/BannerBlocks";
+import BannerBlock from "../_blocks/BannerBlock";
 
 import type { ModuleBlock } from "../types";
+import TextBlock from "../_blocks/TextBlock";
 
 type BlockRendererProps = {
   block: ModuleBlock;
@@ -15,7 +16,8 @@ const BlockRenderer = ({ block }: BlockRendererProps) => {
     case "banner":
       return <BannerBlock imageUrl={block.content} />;
 
-    // case "text":
+    case "text":
+      return <TextBlock content={block.content} />;
     // case "image":
     // case "video":
     // case "code":
