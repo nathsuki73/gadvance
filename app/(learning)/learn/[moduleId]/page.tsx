@@ -36,7 +36,11 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
         if (!result.success || !result.data) throw new Error();
 
-        setModule(result.data);
+        console.log(JSON.stringify(result.data, null, 2));
+
+        // result.data may include additional progress info from the service response
+        // cast to ModuleResponse to satisfy local state type
+        setModule(result.data as unknown as ModuleResponse);
 
         const firstSection = result.data.section_groups?.[0]?.sections?.[0];
         if (firstSection) {
@@ -135,7 +139,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
       <div
         className={`
           transition-all duration-300 ease-in-out
-          ${isSidebarCollapsed ? "lg:pl-19" : "lg:pl-80"}
+          ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}
         `}
       >
         <ModuleSectionViewer

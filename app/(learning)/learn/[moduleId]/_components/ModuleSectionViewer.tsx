@@ -18,24 +18,7 @@ const ModuleSectionViewer = ({
 }: ModuleSectionViewerProps) => {
   return (
     <div className="min-h-screen">
-      <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* SECTION HEADER */}
-        <div className="mb-8">
-          {section.groupTitle && (
-            <p className="mb-2 text-sm font-medium text-sky-600">
-              {section.groupTitle}
-            </p>
-          )}
-
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
-            {section.title}
-          </h1>
-
-          <p className="mt-2 text-sm text-zinc-500">
-            Section {currentIndex + 1} of {totalSections}
-          </p>
-        </div>
-
+      <div className="">
         {/* BLOCK CONTENT */}
         <div className="space-y-6">
           {section.blocks
