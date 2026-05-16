@@ -1,41 +1,47 @@
 "use client";
 
-import React, { use, useEffect, useState } from "react";
+import React, { use, useEffect, useMemo, useState } from "react";
 import { notFound } from "next/navigation";
-import { Loader2, Menu } from "lucide-react"; // Imported Menu icon for the trigger
+import { Loader2, Menu } from "lucide-react";
 
 import { getLearningModule } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/service";
-import type { ModuleResponse } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 
 import ModuleSidebar from "./_components/ModuleSidebar";
-import { useModuleNavigation } from "./_components/useModuleNavigation";
+import ModuleSectionViewer from "./_components/ModuleSectionViewer";
+import { FlattenedSection, ModuleResponse } from "./types";
 
 type LearnPageProps = {
-  params: Promise<{
-    moduleId: string;
-  }>;
+  params: Promise<{ moduleId: string }>;
 };
 
 const LearnPage = ({ params }: LearnPageProps) => {
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const resolvedParams = use(params);
-  const moduleId = resolvedParams.moduleId;
+  const { moduleId } = use(params);
 
+  // Layout & UI State
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [activeSectionId, setActiveSectionId] = useState("");
+
+  // Data Fetching State
   const [module, setModule] = useState<ModuleResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     const fetchModule = async () => {
+      if (!moduleId) return;
       try {
         setLoading(true);
         const result = await getLearningModule(moduleId);
 
-        if (!result.success || !result.data) {
-          throw new Error();
-        }
+        if (!result.success || !result.data) throw new Error();
 
         setModule(result.data);
+
+        const firstSection = result.data.section_groups?.[0]?.sections?.[0];
+        if (firstSection) {
+          setActiveSectionId(firstSection.id);
+        }
       } catch (err) {
         console.error(err);
         setError(true);
@@ -44,29 +50,47 @@ const LearnPage = ({ params }: LearnPageProps) => {
       }
     };
 
-    if (moduleId) {
-      fetchModule();
-    }
+    fetchModule();
   }, [moduleId]);
 
-  const {
-    moduleArticles,
-    moduleNavItems,
-    displayedNavId,
-    expandedGroups,
-    toggleGroupExpanded,
-    navigateTo,
-    isStructureCollapsed,
-    setIsStructureCollapsed,
-  } = useModuleNavigation(
-    module ??
-      ({
-        id: "",
-        title: "",
-        about: "",
-        section_groups: [],
-      } as ModuleResponse)
-  );
+  const sections = useMemo<FlattenedSection[]>(() => {
+    if (!module) return [];
+
+    return module.section_groups
+      .slice()
+      .sort((a, b) => a.order_index - b.order_index)
+      .flatMap((group) =>
+        group.sections
+          .slice()
+          .sort((a, b) => a.order_index - b.order_index)
+          .map((section) => ({
+            ...section,
+            groupTitle: group.title,
+          })),
+      );
+  }, [module]);
+
+  const currentIndex = useMemo(() => {
+    return sections.findIndex((s) => s.id === activeSectionId);
+  }, [sections, activeSectionId]);
+
+  const activeSection = sections[currentIndex];
+
+  // Navigation Event Actions
+  const handleSectionChange = (id: string) => {
+    setActiveSectionId(id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleNext = () => {
+    const next = sections[currentIndex + 1];
+    if (next) handleSectionChange(next.id);
+  };
+
+  const handlePrevious = () => {
+    const previous = sections[currentIndex - 1];
+    if (previous) handleSectionChange(previous.id);
+  };
 
   if (loading) {
     return (
@@ -76,53 +100,53 @@ const LearnPage = ({ params }: LearnPageProps) => {
     );
   }
 
-  if (error || !module) {
+  if (error || !module || !activeSection) {
     notFound();
   }
 
   return (
     <main className="min-h-screen bg-[#f5f7fb]">
-      {/* 1. SIDEBAR COMPONENT */}
       <ModuleSidebar
         structureTitle={module.title}
-        items={moduleNavItems}
-        displayedNavId={displayedNavId}
-        expandedModules={expandedGroups}
-        isCollapsed={isStructureCollapsed}
-        onToggleCollapse={() => setIsStructureCollapsed((prev) => !prev)}
-        onToggleModule={toggleGroupExpanded}
-        onNavigate={navigateTo}
+        sectionGroups={module.section_groups}
+        activeSectionId={activeSectionId}
+        onNavigate={handleSectionChange}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
-      {/* 2. MOBILE HEADER BAR (Hidden on Desktop) */}
-      <div className="flex h-14 items-center border-b border-zinc-200 bg-white px-4 lg:hidden sticky top-0 z-30">
+      {/* Mobile Top Navigation Sticky Bar */}
+      <div className="sticky top-0 z-30 flex h-14 items-center border-b border-zinc-200 bg-white px-4 lg:hidden">
         <button
           onClick={() => setMobileSidebarOpen(true)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
-          aria-label="Open navigation menu"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition"
+          aria-label="Open sidebar layout"
         >
           <Menu size={20} />
         </button>
-        <span className="ml-3 text-sm font-semibold text-zinc-900 truncate">
+        <span className="ml-3 truncate text-sm font-semibold text-zinc-900">
           {module.title}
         </span>
       </div>
 
-      {/* 3. MAIN WORKSPACE CONTENT CONTAINER */}
-      {/* Dynamic left padding keeps your workspace responsive and layout-aligned when desktop sidebar states change */}
+      {/* Main Workspace Layout Canvas */}
       <div
         className={`
-          transition-all duration-300 ease-in-out p-4 sm:p-6 lg:p-8
-          ${isStructureCollapsed ? "lg:pl-[92px]" : "lg:pl-[344px]"}
+          transition-all duration-300 ease-in-out
+          ${isSidebarCollapsed ? "lg:pl-19" : "lg:pl-80"}
         `}
       >
-        <div className="max-w-4xl mx-auto">
-          {/* Your active learning workspace/articles render here */}
-          <h1 className="text-2xl font-bold text-zinc-900 mb-4">{module.title}</h1>
-          <p className="text-zinc-600">{module.about}</p>
-        </div>
+        <ModuleSectionViewer
+          section={activeSection}
+          currentIndex={currentIndex}
+          totalSections={sections.length}
+          onNext={handleNext}
+          onPrevious={handlePrevious}
+          isFirst={currentIndex === 0}
+          isLast={currentIndex === sections.length - 1}
+        />
       </div>
     </main>
   );
