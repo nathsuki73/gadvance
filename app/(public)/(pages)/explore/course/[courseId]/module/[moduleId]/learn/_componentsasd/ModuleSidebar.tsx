@@ -83,7 +83,7 @@ const ModuleSidebar = ({
                   <button
                     type="button"
                     onClick={() => {
-                      if (item.isModule) {
+                      if (item.isGroup) {
                         onToggleModule(item.id);
                       }
 
@@ -105,7 +105,7 @@ const ModuleSidebar = ({
                     )}
                   </button>
 
-                  {item.isModule &&
+                  {item.isGroup &&
                     isExpanded &&
                     hasChildren && (
                       <div className="ml-3 mt-1 space-y-1 border-l border-zinc-200 pl-2">

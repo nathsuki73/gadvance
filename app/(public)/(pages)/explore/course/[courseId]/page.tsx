@@ -83,7 +83,7 @@ const CoursePage = ({ params }: CoursePageProps) => {
               strokeWidth={1.5} 
               className="transition-transform duration-300 group-hover:-translate-x-1" 
             />
-            <span className="lowercase font-medium">back to modules</span>
+            <span className="lowercase font-medium">back to courses</span>
           </button>
         </div>
       </nav>

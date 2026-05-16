@@ -1,10 +1,8 @@
-// components/explore/module/ModuleViewer.tsx
-
 "use client";
 
 import React from "react";
 
-import type { CourseModule } from "@/app/lib/courseModules";
+import type { ModuleResponse } from "../../types";
 
 import ModuleSidebar from "./ModuleSidebar";
 import ModuleContent from "./ModuleContent";
@@ -13,26 +11,26 @@ import PretestGate from "./PretestGate";
 import { useModuleNavigation } from "./useModuleNavigation";
 
 type ModuleViewerProps = {
-  module: CourseModule;
+  module: ModuleResponse;
 };
 
 const ModuleViewer = ({
   module,
 }: ModuleViewerProps) => {
   const {
-    moduleArticles,
-    moduleNavItems,
+  moduleArticles,
+  moduleNavItems,
 
-    displayedNavId,
+  displayedNavId,
 
-    expandedModules,
-    toggleModuleExpanded,
+  expandedGroups,
+  toggleGroupExpanded,
 
-    navigateTo,
+  navigateTo,
 
-    isStructureCollapsed,
-    setIsStructureCollapsed,
-  } = useModuleNavigation(module);
+  isStructureCollapsed,
+  setIsStructureCollapsed,
+} = useModuleNavigation(module);
 
   const desktopContentOffsetClass =
     isStructureCollapsed
@@ -41,11 +39,12 @@ const ModuleViewer = ({
 
   return (
     <div className="relative min-h-[70vh]">
+
       <ModuleSidebar
         structureTitle={module.title}
         items={moduleNavItems}
         displayedNavId={displayedNavId}
-        expandedModules={expandedModules}
+        expandedModules={expandedGroups}
         isCollapsed={isStructureCollapsed}
         onToggleCollapse={() =>
           setIsStructureCollapsed(
@@ -53,7 +52,7 @@ const ModuleViewer = ({
           )
         }
         onToggleModule={
-          toggleModuleExpanded
+          toggleGroupExpanded
         }
         onNavigate={navigateTo}
       />
@@ -61,14 +60,18 @@ const ModuleViewer = ({
       <div
         className={`transition-all duration-300 ${desktopContentOffsetClass}`}
       >
+
         <PretestGate
           moduleTitle={module.title}
-          accentColor={module.accent}
+          accentColor="#00aeef"
         >
+
           <ModuleContent
             articles={moduleArticles}
           />
+
         </PretestGate>
+
       </div>
     </div>
   );
