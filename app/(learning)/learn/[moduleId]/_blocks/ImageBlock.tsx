@@ -71,7 +71,7 @@ const ImageBlock = ({ imageUrl, alt = "Module image" }: ImageBlockProps) => {
   */
 
   return (
-    <div className="flex w-full justify-center">
+    <div className="flex w-full justify-center py-6">
       <div
         className="
           relative
@@ -92,6 +92,7 @@ const ImageBlock = ({ imageUrl, alt = "Module image" }: ImageBlockProps) => {
             h-auto
             w-full
             object-contain
+            
           "
         />
       </div>
