@@ -8,8 +8,9 @@
 
 export type BlockType =
   | "banner"
-  | "text"
   | "image"
+  | "text"
+  | "title"
   | "video"
   | "code"
   | "quiz"
@@ -52,10 +53,15 @@ export type GameBlock = BaseBlock & {
   type: "game";
 };
 
+export type TitleBlock = BaseBlock & {
+  type: "title";
+};
+
 export type ModuleBlock =
   | BannerBlock
   | TextBlock
   | ImageBlock
+  | TitleBlock
   | VideoBlock
   | CodeBlock
   | QuizBlock

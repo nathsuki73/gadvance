@@ -7,6 +7,7 @@ import BannerBlock from "../_blocks/BannerBlock";
 import type { ModuleBlock } from "../types";
 import TextBlock from "../_blocks/TextBlock";
 import ImageBlock from "../_blocks/ImageBlock";
+import TitleDisplay from "../_blocks/TitleDisplayBlock";
 
 type BlockRendererProps = {
   block: ModuleBlock;
@@ -21,6 +22,8 @@ const BlockRenderer = ({ block }: BlockRendererProps) => {
       return <TextBlock content={block.content} />;
     case "image":
       return <ImageBlock imageUrl={block.content} />;
+    case "title":
+      return <TitleDisplay content={block.content} metadata={block.metadata} />;
     // case "video":
     // case "code":
 
