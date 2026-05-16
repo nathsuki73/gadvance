@@ -35,7 +35,7 @@ const TextBlock = ({ content }: TextBlockProps) => {
         prose prose-zinc max-w-none overflow-x-auto bg-white
         
         
-        py-12 px-4 sm:px-8 lg:px-20 xl:px-32 tracking-wide
+        py-12 px-4 sm:px-8 lg:px-46 xl:px-78 tracking-wide
         
         /* Font and color structure matching your brand setup */
         text-base text-zinc-900 font-light leading-relaxed

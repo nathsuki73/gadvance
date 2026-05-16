@@ -60,7 +60,7 @@ const ImageTextBlock = ({ content, metadata }: ImageTextBlockProps) => {
       className="
         overflow-hidden rounded-2xl
         border border-zinc-200
-        bg-white
+        bg-white sm:px-36
       "
     >
       <div
