@@ -97,7 +97,7 @@ const VideoDisplayBlock = ({ content, metadata }: VideoDisplayBlockProps) => {
     <article
       className="
         overflow-hidden
-        border border-zinc-200
+        
         bg-white py-12 px-4 sm:px-8 lg:px-20 xl:px-32
       "
     >
