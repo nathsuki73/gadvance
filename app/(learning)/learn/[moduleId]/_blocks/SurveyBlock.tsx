@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  HelpCircle,
+  Loader2,
+} from "lucide-react";
 import { fetchSurveyAction, submitSurveyAction } from "../actions";
 
 type SurveyOption = {
@@ -26,54 +33,42 @@ type SurveyBlockProps = {
 };
 
 const SurveyBlock = ({ content }: SurveyBlockProps) => {
-  /*
-  |--------------------------------------------------------------------------
-  | SURVEY ID
-  |--------------------------------------------------------------------------
-  */
-
   const surveyId = content;
 
   /*
   |--------------------------------------------------------------------------
-  | STATE
+  | STATES
   |--------------------------------------------------------------------------
   */
-
   const [survey, setSurvey] = useState<SurveyData | null>(null);
-
   const [answers, setAnswers] = useState<Record<string, string>>({});
-
+  const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(true);
-
   const [submitted, setSubmitted] = useState(false);
-
   const [submitting, setSubmitting] = useState(false);
-
   const [error, setError] = useState<string | null>(null);
 
   /*
   |--------------------------------------------------------------------------
-  | FETCH SURVEY
+  | DATA INITIALIZATION
   |--------------------------------------------------------------------------
   */
-
   useEffect(() => {
     const fetchSurvey = async () => {
       try {
         setLoading(true);
         setError(null);
-
         const result = await fetchSurveyAction(surveyId);
+        setSubmitted(result.hasSubmitted);
 
         if (result.success && result.data) {
           setSurvey(result.data);
         } else {
-          setError(result.error || "Unable to load survey.");
+          setError(result.error || "Unable to load survey query.");
         }
       } catch (err) {
         console.error(err);
-        setError("Unable to load survey.");
+        setError("Unable to initialize assessment framework.");
       } finally {
         setLoading(false);
       }
@@ -82,11 +77,7 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
     fetchSurvey();
   }, [surveyId]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | SELECT ANSWER
-  |--------------------------------------------------------------------------
-  */
+  const currentQuestion = survey?.questions[currentStep];
 
   const handleSelect = (questionId: string, optionId: string) => {
     setAnswers((prev) => ({
@@ -95,23 +86,10 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
     }));
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | VALIDATION
-  |--------------------------------------------------------------------------
-  */
-
   const isComplete = useMemo(() => {
     if (!survey) return false;
-
     return survey.questions.every((question) => answers[question.id]);
   }, [survey, answers]);
-
-  /*
-  |--------------------------------------------------------------------------
-  | SUBMIT
-  |--------------------------------------------------------------------------
-  */
 
   const handleSubmit = async () => {
     if (!survey || !isComplete || submitting) return;
@@ -128,15 +106,14 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
 
     try {
       const result = await submitSurveyAction(survey.id, formattedAnswers);
-
       if (result.success) {
         setSubmitted(true);
       } else {
-        setError(result.error || "Failed to submit survey.");
+        setError(result.error || "Failed to transmit survey metrics.");
       }
     } catch (err) {
       console.error(err);
-      setError("Failed to submit survey.");
+      setError("Transmission error. Please verify session status.");
     } finally {
       setSubmitting(false);
     }
@@ -144,63 +121,70 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
 
   /*
   |--------------------------------------------------------------------------
-  | LOADING
+  | NAVIGATION CONTROLS
   |--------------------------------------------------------------------------
   */
+  const handleNext = () => {
+    if (!survey || currentStep >= survey.questions.length - 1) return;
+    setCurrentStep((prev) => prev + 1);
+  };
 
-  if (loading) {
-    return (
-      <div className="rounded-3xl border border-zinc-200 bg-white p-6">
-        <p className="text-sm text-zinc-500">Loading survey...</p>
-      </div>
-    );
-  }
+  const handlePrev = () => {
+    if (currentStep === 0) return;
+    setCurrentStep((prev) => prev - 1);
+  };
 
   /*
   |--------------------------------------------------------------------------
-  | ERROR
+  | AUXILIARY STATES (LOADING, ERROR, SUCCESS)
   |--------------------------------------------------------------------------
   */
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-3xl py-24 text-center">
+        <Loader2
+          className="mx-auto animate-spin text-[#00aeef]/40"
+          size={32}
+          strokeWidth={1.5}
+        />
+        <p className="mt-4 text-xs font-bold uppercase tracking-widest text-zinc-400">
+          Syncing survey payload...
+        </p>
+      </div>
+    );
+  }
 
   if (error && !survey) {
     return (
-      <div className="rounded-3xl border border-red-200 bg-red-50 p-6">
-        <p className="text-sm text-red-600">{error}</p>
+      <div className="mx-auto max-w-2xl rounded-[32px] border border-red-100 bg-red-50/30 p-8 text-center animate-fade-in">
+        <p className="text-sm font-medium text-red-600">{error}</p>
       </div>
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | EMPTY
-  |--------------------------------------------------------------------------
-  */
-
-  if (!survey) {
+  if (!survey || !currentQuestion) {
     return (
-      <div className="rounded-3xl border border-red-200 bg-red-50 p-6">
-        <p className="text-sm text-red-600">Survey not found.</p>
+      <div className="mx-auto max-w-2xl rounded-[32px] border border-zinc-100 bg-white p-12 text-center">
+        <p className="text-xs font-bold uppercase tracking-widest text-zinc-300">
+          No active parameters found
+        </p>
       </div>
     );
   }
-
-  /*
-  |--------------------------------------------------------------------------
-  | SUCCESS
-  |--------------------------------------------------------------------------
-  */
 
   if (submitted) {
     return (
-      <div className="rounded-3xl border border-zinc-200 bg-white p-8">
-        <div className="flex items-center gap-3">
-          <div className="h-3 w-3 rounded-full bg-emerald-500" />
-
-          <h2 className="text-xl font-bold text-zinc-900">Survey Submitted</h2>
+      <div className="mx-auto max-w-2xl py-16 px-6 text-center animate-fade-in">
+        <div className="h-12 w-12 rounded-full bg-sky-50 text-[#00aeef] flex items-center justify-center mx-auto mb-8">
+          <Check size={20} strokeWidth={2} />
         </div>
-
-        <p className="mt-3 text-sm leading-relaxed text-zinc-600">
-          Thank you for answering the survey. Your response has been recorded.
+        <h2 className="text-3xl font-light tracking-tight text-zinc-900">
+          Survey Response{" "}
+          <span className="italic font-serif text-[#00aeef]">Recorded.</span>
+        </h2>
+        <p className="mt-4 text-lg text-zinc-500 font-light leading-relaxed max-w-md mx-auto">
+          Thank you for providing institutional metrics. Your responses have
+          been processed securely into our dataset.
         </p>
       </div>
     );
@@ -208,98 +192,127 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
 
   /*
   |--------------------------------------------------------------------------
-  | RENDER
+  | CORE STEPPERS RENDERING LAYOUT
   |--------------------------------------------------------------------------
   */
-
   return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-6 sm:p-8">
-      <div className="max-w-2xl">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-zinc-400">
-          Survey
-        </p>
+    <div className="mx-auto max-w-3xl py-12 px-4 md:px-8 animate-fade-in">
+      {/* Structural Metric Header */}
+      <div className="flex items-center justify-between pb-6 border-b border-zinc-100">
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#00aeef]">
+            {survey.title}
+          </span>
+          <span className="text-xs text-zinc-400 font-light">
+            Question {(currentStep + 1).toString().padStart(2, "0")} of{" "}
+            {survey.questions.length.toString().padStart(2, "0")}
+          </span>
+        </div>
 
-        <h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950">
-          {survey.title}
-        </h2>
-      </div>
-
-      <div className="mt-10 space-y-8">
-        {survey.questions.map((question, index) => (
+        {/* Progress Tracker Pill */}
+        <div className="h-1.5 w-24 bg-zinc-100 rounded-full overflow-hidden">
           <div
-            key={question.id}
-            className="rounded-2xl border border-zinc-200 p-5"
-          >
-            <p className="text-base font-semibold text-zinc-900">
-              {index + 1}. {question.question}
-            </p>
-
-            <div className="mt-5 space-y-3">
-              {question.options.map((option) => {
-                const active = answers[question.id] === option.id;
-
-                return (
-                  <label
-                    key={option.id}
-                    className={`
-                      flex cursor-pointer items-center gap-3
-                      rounded-2xl border px-4 py-3
-                      transition-all duration-200
-                      ${
-                        active
-                          ? "border-zinc-950 bg-zinc-950 text-white"
-                          : "border-zinc-200 bg-white hover:bg-zinc-50"
-                      }
-                    `}
-                  >
-                    <input
-                      type="radio"
-                      name={question.id}
-                      checked={active}
-                      onChange={() => handleSelect(question.id, option.id)}
-                      className="hidden"
-                    />
-
-                    <div
-                      className={`
-                        h-4 w-4 rounded-full border
-                        ${active ? "border-white bg-white" : "border-zinc-400"}
-                      `}
-                    />
-
-                    <span
-                      className={`text-sm ${
-                        active ? "text-white" : "text-zinc-700"
-                      }`}
-                    >
-                      {option.label}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+            className="h-full bg-[#00aeef] transition-all duration-500 ease-out"
+            style={{
+              width: `${((currentStep + 1) / survey.questions.length) * 100}%`,
+            }}
+          />
+        </div>
       </div>
 
-      {error ? <p className="mt-5 text-sm text-red-500">{error}</p> : null}
+      {/* Main Survey Card Container */}
+      <div className="mt-12 min-h-[280px]">
+        <h3 className="text-2xl font-light tracking-tight text-zinc-900 leading-snug">
+          {currentQuestion.question}
+        </h3>
 
-      <button
-        type="button"
-        disabled={!isComplete || submitting}
-        onClick={handleSubmit}
-        className="
-          mt-10 rounded-2xl
-          bg-zinc-950 px-6 py-3
-          text-sm font-medium text-white
-          transition-all duration-200
-          hover:bg-zinc-800
-          disabled:cursor-not-allowed
-          disabled:opacity-40
-        "
-      >
-        {submitting ? "Submitting..." : "Submit Survey"}
-      </button>
+        {/* Dynamic Options Stack */}
+        <div className="mt-10 flex flex-col gap-3">
+          {currentQuestion.options.map((option) => {
+            const active = answers[currentQuestion.id] === option.id;
+
+            return (
+              <button
+                key={option.id}
+                onClick={() => handleSelect(currentQuestion.id, option.id)}
+                className={`group flex w-full items-center justify-between rounded-2xl border p-5 text-left transition-all duration-300
+                  ${
+                    active
+                      ? "border-[#00aeef] bg-sky-50/20 text-zinc-900"
+                      : "border-zinc-100 bg-white text-zinc-500 hover:border-zinc-300 hover:text-zinc-800"
+                  }
+                `}
+              >
+                <span className="text-sm font-light">{option.label}</span>
+
+                {/* Custom radio layout configuration */}
+                <div
+                  className={`h-4 w-4 rounded-full border flex items-center justify-center transition-all duration-300
+                  ${active ? "border-[#00aeef] bg-[#00aeef]" : "border-zinc-200 bg-transparent group-hover:border-zinc-400"}
+                `}
+                >
+                  {active && (
+                    <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Conditional Platform Feedback Banner */}
+      {error && (
+        <p className="mt-6 text-xs font-semibold text-red-500 tracking-wide uppercase">
+          {error}
+        </p>
+      )}
+
+      {/* 
+        FOOTER SLIDER PANEL CONTROL MECHANICS
+      */}
+      <div className="mt-16 pt-6 border-t border-zinc-100 flex items-center justify-between">
+        {/* Left Arrow Toggle Option */}
+        <button
+          type="button"
+          disabled={currentStep === 0}
+          onClick={handlePrev}
+          className="group flex h-11 w-11 items-center justify-center rounded-full border border-zinc-100 text-zinc-400 bg-white transition-all hover:text-zinc-800 hover:border-zinc-300 disabled:opacity-20 disabled:cursor-not-allowed active:scale-95"
+        >
+          <ArrowLeft
+            size={16}
+            strokeWidth={1.5}
+            className="transition-transform group-hover:-translate-x-0.5"
+          />
+        </button>
+
+        {/* Segment Submission Framework Switch */}
+        {currentStep === survey.questions.length - 1 ? (
+          <button
+            type="button"
+            disabled={!isComplete || submitting}
+            onClick={handleSubmit}
+            className="group flex items-center gap-3 rounded-full bg-zinc-900 px-8 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all hover:bg-zinc-800 disabled:opacity-20 disabled:cursor-not-allowed"
+          >
+            <span>{submitting ? "Processing..." : "Submit Verification"}</span>
+            <Check size={14} strokeWidth={2.5} />
+          </button>
+        ) : (
+          /* Right Arrow Toggle Option */
+          <button
+            type="button"
+            disabled={!answers[currentQuestion.id]}
+            onClick={handleNext}
+            className="group flex h-11 w-11 items-center justify-center rounded-full border border-zinc-100 text-zinc-400 bg-white transition-all hover:text-zinc-800 hover:border-zinc-300 disabled:opacity-20 disabled:cursor-not-allowed active:scale-95"
+          >
+            <ArrowRight
+              size={16}
+              strokeWidth={1.5}
+              className="transition-transform group-hover:translate-x-0.5"
+            />
+          </button>
+        )}
+      </div>
     </div>
   );
 };

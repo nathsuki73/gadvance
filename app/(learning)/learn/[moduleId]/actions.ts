@@ -7,7 +7,11 @@ export async function fetchSurveyAction(surveyId: string) {
   try {
     const api = await getApi();
     const res = await api.get(`/surveys/${surveyId}`);
-    return { success: true, data: res.data.data };
+    return {
+      success: true,
+      data: res.data.data,
+      hasSubmitted: res.data.has_submitted,
+    };
   } catch (error: any) {
     console.error("Fetch Survey Action Error:", error);
     return {
