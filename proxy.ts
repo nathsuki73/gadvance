@@ -44,7 +44,7 @@ export async function proxy(request: NextRequest) {
 
   if (isOnboardingRoute && isActiveStatus(token?.status)) {
     const workspaceUrl = request.nextUrl.clone();
-    workspaceUrl.pathname = "/workspace/module";
+    workspaceUrl.pathname = "/workspace";
     workspaceUrl.search = "";
     return NextResponse.redirect(workspaceUrl);
   }

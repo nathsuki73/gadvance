@@ -1,4 +1,5 @@
 export { default as BlockRenderer } from "./BlockRenderer";
+export { default as DropDownDisplay } from "./DropDownDisplay";
 export { default as GameDisplay } from "./GameDisplay";
 export { default as ModuleContentViewer } from "./ModuleContentViewer";
 export { default as ParagraphDisplay } from "./ParagraphDisplay";

@@ -29,11 +29,11 @@ type ChangePasswordResult =
       debug?: string;
     };
 
-const apiBaseUrl = process.env.API_URL?.replace(/\/$/, "");
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
 
 function getRequiredApiBaseUrl() {
   if (!apiBaseUrl) {
-    throw new Error("Missing API URL. Set API_URL.");
+    throw new Error("Missing API URL. Set NEXT_PUBLIC_API_URL.");
   }
 
   return apiBaseUrl;
