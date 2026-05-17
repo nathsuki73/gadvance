@@ -109,7 +109,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f7fb]">
+    <main className="min-h-screen bg-[#ffffff]">
       <ModuleSidebar
         structureTitle={module.title}
         sectionGroups={module.section_groups}

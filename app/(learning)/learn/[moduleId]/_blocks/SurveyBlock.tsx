@@ -7,8 +7,14 @@ import {
   Check,
   HelpCircle,
   Loader2,
+  BarChart3,
 } from "lucide-react";
-import { fetchSurveyAction, submitSurveyAction } from "../actions";
+import {
+  fetchSurveyAction,
+  submitSurveyAction,
+  fetchSurveyResultsAction,
+} from "../actions";
+import SurveyResultsViewer from "./helper_blocks/SurveyResultsViewer";
 
 type SurveyOption = {
   id: string;
@@ -41,12 +47,16 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
   |--------------------------------------------------------------------------
   */
   const [survey, setSurvey] = useState<SurveyData | null>(null);
+  const [resultsData, setResultsData] = useState<any | null>(null); // Stores actual database statistics
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentStep, setCurrentStep] = useState(0);
+
   const [loading, setLoading] = useState(true);
+  const [loadingResults, setLoadingResults] = useState(false); // Separated analytics loading tracker
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewResults, setViewResults] = useState(false);
 
   /*
   |--------------------------------------------------------------------------
@@ -108,6 +118,8 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
       const result = await submitSurveyAction(survey.id, formattedAnswers);
       if (result.success) {
         setSubmitted(true);
+        // Automatically fetch live analytics once form is submitted successfully
+        handleLoadResults();
       } else {
         setError(result.error || "Failed to transmit survey metrics.");
       }
@@ -116,6 +128,35 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
       setError("Transmission error. Please verify session status.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | LIVE ANALYTICS HANDLER
+  |--------------------------------------------------------------------------
+  */
+  const handleLoadResults = async () => {
+    setViewResults(true);
+
+    // Only call database action if we haven't loaded the values yet during this window instance
+    if (!resultsData) {
+      try {
+        setLoadingResults(true);
+        setError(null);
+        const result = await fetchSurveyResultsAction(surveyId);
+
+        if (result.success && result.data) {
+          setResultsData(result.data);
+        } else {
+          setError(result.error || "Failed to retrieve live responses.");
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Could not establish link to survey database metrics.");
+      } finally {
+        setLoadingResults(false);
+      }
     }
   };
 
@@ -136,7 +177,7 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
 
   /*
   |--------------------------------------------------------------------------
-  | AUXILIARY STATES (LOADING, ERROR, SUCCESS)
+  | LOADING ENGINE VIEWPORTS
   |--------------------------------------------------------------------------
   */
   if (loading) {
@@ -154,7 +195,7 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
     );
   }
 
-  if (error && !survey) {
+  if (error && !survey && !viewResults) {
     return (
       <div className="mx-auto max-w-2xl rounded-[32px] border border-red-100 bg-red-50/30 p-8 text-center animate-fade-in">
         <p className="text-sm font-medium text-red-600">{error}</p>
@@ -172,9 +213,61 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | VIEWPORT 1: INLINE ANALYTICS DISCOVERY PANEL (LIVE DATA)
+  |--------------------------------------------------------------------------
+  */
+  if (submitted && viewResults) {
+    return (
+      <div className="animate-fade-in">
+        {loadingResults ? (
+          <div className="mx-auto max-w-3xl py-32 text-center">
+            <Loader2
+              className="mx-auto animate-spin text-[#00aeef]/40"
+              size={32}
+              strokeWidth={1.5}
+            />
+            <p className="mt-4 text-xs font-bold uppercase tracking-widest text-zinc-400">
+              Aggregating live responses...
+            </p>
+          </div>
+        ) : resultsData ? (
+          /* Render the exact Recharts component powered by backend response data structure */
+          <SurveyResultsViewer
+            title={resultsData.title || survey.title}
+            results={resultsData.results}
+          />
+        ) : (
+          <div className="mx-auto max-w-2xl rounded-[32px] border border-zinc-100 bg-white p-12 text-center">
+            <p className="text-sm text-red-500 font-medium lowercase">
+              {error ||
+                "failed to compute real-time structural survey matrices."}
+            </p>
+          </div>
+        )}
+
+        {/* Navigation fallback layout button toggle */}
+        <div className="max-w-3xl mx-auto px-4 md:px-8 pb-12 -mt-4 flex justify-start">
+          <button
+            onClick={() => setViewResults(false)}
+            className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-600 transition-colors"
+          >
+            ← return to status confirmation
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | VIEWPORT 2: SUCCESS BROWSER LANDING PAGE
+  |--------------------------------------------------------------------------
+  */
   if (submitted) {
     return (
-      <div className="mx-auto max-w-2xl py-16 px-6 text-center animate-fade-in">
+      <div className="mx-auto max-w-2xl py-24 px-6 text-center animate-fade-in">
         <div className="h-12 w-12 rounded-full bg-sky-50 text-[#00aeef] flex items-center justify-center mx-auto mb-8">
           <Check size={20} strokeWidth={2} />
         </div>
@@ -182,17 +275,29 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
           Survey Response{" "}
           <span className="italic font-serif text-[#00aeef]">Recorded.</span>
         </h2>
-        <p className="mt-4 text-lg text-zinc-500 font-light leading-relaxed max-w-md mx-auto">
+        <p className="mt-4 text-base text-zinc-500 font-light leading-relaxed max-w-md mx-auto">
           Thank you for providing institutional metrics. Your responses have
           been processed securely into our dataset.
         </p>
+
+        {/* Live results connection trigger execution mapping */}
+        <div className="mt-12 flex justify-center">
+          <button
+            type="button"
+            onClick={handleLoadResults}
+            className="group flex items-center gap-3 rounded-full bg-zinc-900 px-8 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all hover:bg-zinc-800 active:scale-[0.98]"
+          >
+            <BarChart3 size={14} strokeWidth={2} />
+            view aggregate analytics
+          </button>
+        </div>
       </div>
     );
   }
 
   /*
   |--------------------------------------------------------------------------
-  | CORE STEPPERS RENDERING LAYOUT
+  | VIEWPORT 3: CORE STEPPERS FORM QUESTIONS INTERFACE
   |--------------------------------------------------------------------------
   */
   return (
@@ -245,7 +350,6 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
               >
                 <span className="text-sm font-light">{option.label}</span>
 
-                {/* Custom radio layout configuration */}
                 <div
                   className={`h-4 w-4 rounded-full border flex items-center justify-center transition-all duration-300
                   ${active ? "border-[#00aeef] bg-[#00aeef]" : "border-zinc-200 bg-transparent group-hover:border-zinc-400"}
@@ -261,18 +365,14 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
         </div>
       </div>
 
-      {/* Conditional Platform Feedback Banner */}
       {error && (
         <p className="mt-6 text-xs font-semibold text-red-500 tracking-wide uppercase">
           {error}
         </p>
       )}
 
-      {/* 
-        FOOTER SLIDER PANEL CONTROL MECHANICS
-      */}
+      {/* FOOTER SLIDER PANEL CONTROL MECHANICS */}
       <div className="mt-16 pt-6 border-t border-zinc-100 flex items-center justify-between">
-        {/* Left Arrow Toggle Option */}
         <button
           type="button"
           disabled={currentStep === 0}
@@ -286,7 +386,6 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
           />
         </button>
 
-        {/* Segment Submission Framework Switch */}
         {currentStep === survey.questions.length - 1 ? (
           <button
             type="button"
@@ -298,7 +397,6 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
             <Check size={14} strokeWidth={2.5} />
           </button>
         ) : (
-          /* Right Arrow Toggle Option */
           <button
             type="button"
             disabled={!answers[currentQuestion.id]}

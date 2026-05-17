@@ -37,3 +37,24 @@ export async function submitSurveyAction(
     };
   }
 }
+
+export async function fetchSurveyResultsAction(surveyId: string) {
+  try {
+    const api = await getApi();
+
+    const res = await api.get(`/surveys/${surveyId}/results`);
+
+    return {
+      success: true,
+      data: res.data,
+    };
+  } catch (error: any) {
+    console.error("Fetch Survey Results Error:", error);
+
+    return {
+      success: false,
+      error:
+        error?.response?.data?.message || "Failed to fetch survey results.",
+    };
+  }
+}
