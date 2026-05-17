@@ -3,6 +3,29 @@
 
 import { getApi } from "./service"; // path to your api helper
 
+/* ---------------------------------------------
+ * COMPLETE BLOCK
+ * -------------------------------------------*/
+
+export async function completeBlockAction(blockId: string) {
+  try {
+    const api = await getApi();
+
+    await api.post(`/learn/blocks/${blockId}/complete`);
+
+    return {
+      success: true,
+    };
+  } catch (error: any) {
+    console.error("Complete Block Error:", error);
+
+    return {
+      success: false,
+      error: error?.response?.data?.message || "Failed to complete block.",
+    };
+  }
+}
+
 export async function fetchSurveyAction(surveyId: string) {
   try {
     const api = await getApi();

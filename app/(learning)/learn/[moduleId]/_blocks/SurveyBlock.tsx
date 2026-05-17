@@ -13,7 +13,7 @@ import {
   submitSurveyAction,
   fetchSurveyResultsAction,
 } from "../actions";
-import SurveyResultsViewer from "./helper_blocks/SurveyResultsViewer";
+import SurveyResultsViewer from "./not_blocks/SurveyResultsViewer";
 
 type SurveyOption = {
   id: string;

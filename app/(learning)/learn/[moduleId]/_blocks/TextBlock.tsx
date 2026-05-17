@@ -1,14 +1,20 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { completeBlockAction } from "../actions";
+import { useBlockCompletion } from "../_hook.ts/useBlockCompletion";
 
 type TextBlockProps = {
+  blockId: string;
   content?: string | null;
 };
 
-const TextBlock = ({ content }: TextBlockProps) => {
+const TextBlock = ({ blockId, content }: TextBlockProps) => {
+  const containerRef = useBlockCompletion({
+    blockId,
+  });
   /*
   |--------------------------------------------------------------------------
   | EMPTY STATE
@@ -16,7 +22,10 @@ const TextBlock = ({ content }: TextBlockProps) => {
   */
   if (!content || content.trim() === "") {
     return (
-      <div className="rounded-[32px] border border-dashed border-zinc-100 bg-white p-12 text-center">
+      <div
+        ref={containerRef}
+        className="rounded-[32px] border border-dashed border-zinc-100 bg-white p-12 text-center"
+      >
         <p className="text-xs font-medium uppercase tracking-widest text-zinc-300">
           Empty Instructional Block
         </p>
@@ -31,6 +40,7 @@ const TextBlock = ({ content }: TextBlockProps) => {
   */
   return (
     <div
+      ref={containerRef}
       className="
         prose prose-zinc max-w-none overflow-x-auto bg-white
         

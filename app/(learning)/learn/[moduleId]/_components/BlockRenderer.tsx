@@ -23,7 +23,7 @@ const BlockRenderer = ({ block }: BlockRendererProps) => {
       return <BannerBlock imageUrl={block.content} />;
 
     case "text":
-      return <TextBlock content={block.content} />;
+      return <TextBlock blockId={block.id} content={block.content} />;
     case "image":
       return <ImageBlock imageUrl={block.content} />;
     case "title":
