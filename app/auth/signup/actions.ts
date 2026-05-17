@@ -19,12 +19,11 @@ type RegistrationResult =
   | { success: true; message?: string }
   | { success: false; error: string; statusCode?: number; debug?: string };
 
-const apiBaseUrl =
-  process.env.API_URL?.replace(/\/$/, "");
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
 
 function getRequiredApiBaseUrl() {
   if (!apiBaseUrl) {
-    throw new Error("Missing API URL. Set API_URL.");
+    throw new Error("Missing API URL. Set NEXT_PUBLIC_API_URL.");
   }
 
   return apiBaseUrl;
@@ -88,11 +87,14 @@ export async function handleRegistration(
 
     return { success: true, message: payload.message };
   } catch (error) {
-    console.error("Registration Error:", error);
+    console.error("FULL Registration Error:", error);
+
     return {
       success: false,
-      error: "Failed to process registration. Please try again.",
-      debug: error instanceof Error ? error.message : String(error),
+      error:
+        error instanceof Error
+          ? error.stack || error.message
+          : JSON.stringify(error),
     };
   }
 }

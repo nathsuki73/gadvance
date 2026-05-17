@@ -1,166 +1,105 @@
 import React from "react";
 import Link from "next/link";
 import logoIcon from "@/app/assets/logo.ico";
-import { Twitter, Linkedin, Instagram, ArrowRight } from "lucide-react";
+import { Twitter, Linkedin, Instagram } from "lucide-react";
 
 const Footer = () => {
   const socialLinks = [
-    { name: "Twitter", Icon: Twitter, href: "#" },
-    { name: "LinkedIn", Icon: Linkedin, href: "#" },
-    { name: "Instagram", Icon: Instagram, href: "#" },
+    { name: "twitter", Icon: Twitter, href: "#" },
+    { name: "linkedin", Icon: Linkedin, href: "#" },
+    { name: "instagram", Icon: Instagram, href: "#" },
   ];
+
   return (
-    <footer className="bg-white border-t border-gray-100 pt-16 pb-8">
-      <div className="mx-auto max-w-7xl px-8 lg:px-12">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-4 md:grid-cols-2">
+    <footer className="bg-white border-t border-zinc-50 pt-16 sm:pt-24 pb-12">
+      <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
+        {/* Main Grid: 1 col on mobile, 2 on tablet, 4 on desktop */}
+        <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+          
           {/* Brand Identity Section */}
-          <div className="flex flex-col space-y-6">
-            <div className="flex items-center gap-2">
-              <div className="relative h-9 w-9 shrink-0">
+          <div className="flex flex-col space-y-6 sm:space-y-8">
+            <div className="flex items-center gap-3">
+              <div className="relative h-8 w-8 shrink-0 grayscale opacity-80">
                 <img
                   src={logoIcon.src}
-                  alt="GADVance logo"
+                  alt="gadvance logo"
                   className="h-full w-full object-contain"
                 />
               </div>
-              <span className="text-xl font-semibold tracking-tight text-gray-800">
-                GADVance
+              <span className="text-lg font-semibold tracking-tight text-zinc-800 lowercase">
+                gadvance
               </span>
             </div>
-            <p className="text-zinc-500 text-sm leading-relaxed max-w-xs">
-              Turning learning into real change. We provide the tools and
-              education needed to advance gender equality globally.
+            <p className="text-zinc-400 text-sm leading-relaxed max-w-xs font-light lowercase">
+              providing the tools and education needed to advance gender equality 
+              within the philippine workplace and beyond.
             </p>
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               {socialLinks.map(({ name, Icon, href }) => (
                 <Link
                   key={name}
                   href={href}
-                  className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-zinc-500 hover:text-teal-600 hover:bg-teal-50 transition-all duration-200 border border-transparent hover:border-teal-100"
+                  className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-400 hover:text-[#00aeef] hover:bg-sky-50 transition-all duration-300"
                   aria-label={name}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-4 h-4" />
                 </Link>
               ))}
             </div>
           </div>
 
           {/* Programs Links */}
-          <div>
-            <h4 className="font-bold text-zinc-900 mb-6">Programs</h4>
-            <ul className="space-y-4 text-sm text-zinc-500">
-              <li>
-                <Link
-                  href="/courses"
-                  className="hover:text-teal-600 transition-colors"
-                >
-                  All Courses
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/leadership"
-                  className="hover:text-teal-600 transition-colors"
-                >
-                  Women in Leadership
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/advocacy"
-                  className="hover:text-teal-600 transition-colors"
-                >
-                  Workplace Advocacy
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/wellness"
-                  className="hover:text-teal-600 transition-colors"
-                >
-                  Mental Health
-                </Link>
-              </li>
+          <div className="sm:pl-4 lg:pl-0">
+            <h4 className="text-xs font-bold text-zinc-900 mb-6 sm:mb-8 uppercase tracking-[0.2em]">programs</h4>
+            <ul className="space-y-4 text-sm text-zinc-500 font-light lowercase">
+              <li><Link href="/courses" className="hover:text-[#00aeef] transition-colors">all courses</Link></li>
+              <li><Link href="/leadership" className="hover:text-[#00aeef] transition-colors">women in leadership</Link></li>
+              <li><Link href="/advocacy" className="hover:text-[#00aeef] transition-colors">workplace advocacy</Link></li>
+              <li><Link href="/wellness" className="hover:text-[#00aeef] transition-colors">mental health</Link></li>
             </ul>
           </div>
 
           {/* Resources Links */}
           <div>
-            <h4 className="font-bold text-zinc-900 mb-6">Resources</h4>
-            <ul className="space-y-4 text-sm text-zinc-500">
-              <li>
-                <Link
-                  href="/blog"
-                  className="hover:text-teal-600 transition-colors"
-                >
-                  Articles & News
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/community"
-                  className="hover:text-teal-600 transition-colors"
-                >
-                  Community Forum
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/faq"
-                  className="hover:text-teal-600 transition-colors"
-                >
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/partners"
-                  className="hover:text-teal-600 transition-colors"
-                >
-                  Our Partners
-                </Link>
-              </li>
+            <h4 className="text-xs font-bold text-zinc-900 mb-6 sm:mb-8 uppercase tracking-[0.2em]">resources</h4>
+            <ul className="space-y-4 text-sm text-zinc-500 font-light lowercase">
+              <li><Link href="/blog" className="hover:text-[#00aeef] transition-colors">articles & news</Link></li>
+              <li><Link href="/community" className="hover:text-[#00aeef] transition-colors">community forum</Link></li>
+              <li><Link href="/faq" className="hover:text-[#00aeef] transition-colors">help center</Link></li>
+              <li><Link href="/partners" className="hover:text-[#00aeef] transition-colors">our partners</Link></li>
             </ul>
           </div>
 
-          {/* Newsletter/CTA Section */}
-          <div className="bg-gray-50 rounded-2xl p-6 flex flex-col justify-between">
-            <div>
-              <h4 className="font-bold text-zinc-900 mb-2">
-                Join the movement
-              </h4>
-              <p className="text-xs text-zinc-500 mb-4">
-                Weekly insights on equality and growth.
-              </p>
-              <div className="relative">
-                <input
-                  type="email"
-                  placeholder="Email address"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
-                />
-                <button className="absolute right-2 top-2 bottom-2 bg-teal-600 text-white px-3 rounded-lg text-xs font-bold hover:bg-teal-700 transition-colors">
-                  Go
-                </button>
-              </div>
+          {/* Newsletter Section: Spans full width on mobile, 1 col on desktop */}
+          <div className="bg-zinc-50/50 rounded-[32px] p-6 sm:p-8 border border-zinc-100/50 sm:col-span-2 lg:col-span-1">
+            <h4 className="text-xs font-bold text-zinc-900 mb-2 uppercase tracking-[0.2em]">
+              newsletter
+            </h4>
+            <p className="text-xs text-zinc-400 mb-6 font-light lowercase">
+              weekly insights on equality and leadership growth.
+            </p>
+            <div className="relative">
+              <input
+                type="email"
+                placeholder="email address"
+                className="w-full bg-white px-4 py-3 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-sky-100 text-sm placeholder:text-zinc-300 lowercase"
+              />
+              <button className="absolute right-1.5 top-1.5 bottom-1.5 bg-[#00aeef] text-white px-4 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-[#0096ce] transition-colors">
+                join
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-16 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-zinc-400">
-            © {new Date().getFullYear()} Gadvance. All rights reserved.
+        {/* Bottom Bar: Stacked on mobile, side-by-side on tablet/desktop */}
+        <div className="mt-16 sm:mt-24 pt-8 border-t border-zinc-50 flex flex-col items-center justify-between gap-6 md:flex-row">
+          <p className="text-[10px] text-zinc-400 tracking-widest uppercase text-center md:text-left">
+            © {new Date().getFullYear()} gadvance leadership
           </p>
-          <div className="flex gap-8 text-xs font-medium text-zinc-400">
-            <Link href="/privacy" className="hover:text-zinc-900">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="hover:text-zinc-900">
-              Terms of Service
-            </Link>
-            <Link href="/cookies" className="hover:text-zinc-900">
-              Cookie Policy
-            </Link>
+          <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+            <Link href="/privacy" className="hover:text-zinc-900 transition-colors">privacy</Link>
+            <Link href="/terms" className="hover:text-zinc-900 transition-colors">terms</Link>
+            <Link href="/cookies" className="hover:text-zinc-900 transition-colors">cookies</Link>
           </div>
         </div>
       </div>
