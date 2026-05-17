@@ -15,6 +15,7 @@ export type BlockType =
   | "video"
   | "code"
   | "quiz"
+  | "survey"
   | "game";
 
 export type BaseBlock = {
@@ -60,6 +61,9 @@ export type TitleBlock = BaseBlock & {
 export type ImageTextBlock = BaseBlock & {
   type: "image_text";
 };
+export type SurveyBlock = BaseBlock & {
+  type: "survey";
+};
 
 export type ModuleBlock =
   | BannerBlock
@@ -70,6 +74,7 @@ export type ModuleBlock =
   | VideoBlock
   | CodeBlock
   | QuizBlock
+  | SurveyBlock
   | GameBlock;
 
 /*

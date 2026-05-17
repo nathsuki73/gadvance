@@ -11,6 +11,7 @@ import TitleDisplay from "../_blocks/TitleDisplayBlock";
 import ImageTextBlock from "../_blocks/ImageTextBlock";
 import QuizBlock from "../_blocks/QuizBlock";
 import VideoDisplayBlock from "../_blocks/VideoDisplayBlock";
+import SurveyBlock from "../_blocks/SurveyBlock";
 
 type BlockRendererProps = {
   block: ModuleBlock;
@@ -37,6 +38,8 @@ const BlockRenderer = ({ block }: BlockRendererProps) => {
       );
     case "quiz":
       return <QuizBlock content={block.content} metadata={block.metadata} />;
+    case "survey":
+      return <SurveyBlock content={block.content} />;
 
     default:
       return null;
