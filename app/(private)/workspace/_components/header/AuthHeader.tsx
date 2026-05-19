@@ -17,6 +17,8 @@ import {
   User2Icon,
 } from "lucide-react";
 
+import Notification from "../Notification";
+
 import logoIcon from "@/app/assets/logo.ico";
 
 import { NavLink } from "./NavLink";
@@ -41,6 +43,7 @@ export default function AuthHeader() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const headerRef = useRef<HTMLElement>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -69,6 +72,7 @@ export default function AuthHeader() {
         setShowSearch(false);
         setShowMobileMenu(false);
         setShowProfileDropdown(false);
+        setShowNotifications(false);
       }
     };
 
@@ -137,10 +141,26 @@ export default function AuthHeader() {
           {/* AUTHENTICATED USER ACTIONS */}
           <div className="flex items-center gap-2 border-l border-zinc-100 pl-2 md:pl-4">
             {/* Notifications Bell */}
-            <button className="relative rounded-full p-2 text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 transition-colors">
-              <Bell className="h-5 w-5" strokeWidth={1.8} />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#00aeef]" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => {
+                  const next = !showNotifications;
+                  setShowNotifications(next);
+                  if (next) {
+                    setShowProfileDropdown(false);
+                    setShowMobileMenu(false);
+                    setShowSearch(false);
+                  }
+                }}
+                aria-expanded={showNotifications}
+                className="relative rounded-full p-2 text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
+              >
+                <Bell className="h-5 w-5" strokeWidth={1.8} />
+                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#00aeef]" />
+              </button>
+
+              <Notification open={showNotifications} onClose={() => setShowNotifications(false)} />
+            </div>
 
             {/* User Dropdown Trigger (Desktop xl) */}
             <div className="relative hidden xl:block">
