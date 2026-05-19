@@ -54,10 +54,6 @@ const ProfilePage = () => {
           <section className="rounded-3xl border border-zinc-200 bg-white/90 p-6 shadow-[0_10px_60px_-30px_rgba(0,169,209,0.45)] backdrop-blur">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="inline-flex items-center gap-2 rounded-full bg-[#00a9d1]/10 px-3 py-1 text-xs font-semibold tracking-wider text-[#007a97] uppercase">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Profile Overview
-                </p>
                 <h1 className="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
                   My Profile
                 </h1>
