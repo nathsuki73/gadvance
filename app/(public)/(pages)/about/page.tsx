@@ -7,19 +7,19 @@ import { ArrowRight, Target, Users, Globe, Code, School } from "lucide-react";
 
 const AboutPage = () => {
   return (
-    <div className="min-h-screen bg-white font-sans text-zinc-900 selection:bg-sky-100 selection:text-[#00aeef]">
+    <div className="min-h-screen bg-white font-sans text-zinc-900 selection:bg-violet-50 selection:text-[#8b5cf6]">
       <main>
         {/* Section 1: Hero / The Mission */}
         <section className="relative py-32 sm:py-48 overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_rgba(0,174,239,0.03)_0%,_transparent_70%)]" />
           <div className="container mx-auto px-8 lg:px-12 relative">
             <div className="max-w-3xl">
-              <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-[#00aeef] mb-8">
+              <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-[#8b5cf6] mb-8">
                 the gadvance narrative
               </h2>
               <h1 className="text-4xl md:text-7xl font-light tracking-tight text-zinc-900 leading-[1.1]">
                 bridging the gap <br />
-                <span className="font-semibold italic font-serif text-[#00aeef]">in gender leadership.</span>
+                <span className="font-semibold italic font-serif text-[#8b5cf6]">in gender leadership.</span>
               </h1>
               <p className="mt-12 text-xl md:text-2xl text-zinc-500 font-light leading-relaxed lowercase">
                 gadvance emerged from an urgent need to address the structural disparities 
@@ -79,11 +79,11 @@ const AboutPage = () => {
         <section className="py-32 sm:py-48 bg-zinc-50/30">
           <div className="container mx-auto px-8 lg:px-12">
             <div className="max-w-2xl mb-24">
-              <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-[#00aeef] mb-8">
+              <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-[#8b5cf6] mb-8">
                 advancement framework
               </h2>
-              <h3 className="text-4xl md:text-5xl font-light tracking-tight text-zinc-900 leading-tight">
-                a methodology for <span className="italic font-serif text-[#00aeef]">equitable progress.</span>
+                <h3 className="text-4xl md:text-5xl font-light tracking-tight text-zinc-900 leading-tight">
+                a methodology for <span className="italic font-serif text-[#8b5cf6]">equitable progress.</span>
               </h3>
             </div>
 
@@ -100,18 +100,18 @@ const AboutPage = () => {
         <section className="py-32 bg-white border-t border-zinc-100">
           <div className="container mx-auto px-8 lg:px-12 text-center">
             <div className="inline-flex items-center gap-4 mb-12">
-               <div className="h-px w-12 bg-zinc-200" />
-               <School size={20} className="text-[#00aeef]" />
-               <div className="h-px w-12 bg-zinc-200" />
+              <div className="h-px w-12 bg-zinc-200" />
+              <School size={20} className="text-[#8b5cf6]" />
+              <div className="h-px w-12 bg-zinc-200" />
             </div>
             <h2 className="text-2xl md:text-4xl font-light tracking-tight text-zinc-900 lowercase mb-8">
-              engineered at <span className="text-[#00aeef] font-medium">lspu san pablo ccs</span>
+              engineered at <span className="text-[#8b5cf6] font-medium">lspu san pablo ccs</span>
             </h2>
             <p className="max-w-2xl mx-auto text-zinc-500 font-light lowercase leading-relaxed mb-12">
               gadvance stands as a testament to academic social responsibility. engineered by the college of computer studies, this project redefines how technology can be used to champion gender equity and social justice in the professional sphere.
             </p>
             <div className="flex justify-center gap-8">
-               <div className="group border-b border-zinc-100 pb-2 transition-colors hover:border-[#00aeef]">
+               <div className="group border-b border-zinc-100 pb-2 transition-colors hover:border-[#8b5cf6]">
                  <p className="text-[10px] font-bold tracking-[0.4em] text-zinc-400 uppercase mb-2">connect with the team</p>
                  <p className="text-sm font-medium lowercase">gadvanceproject@gmail.com</p>
                </div>
@@ -126,8 +126,8 @@ const AboutPage = () => {
 /* --- Sub-components --- */
 
 const ValueItem = ({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) => (
-  <div className="flex flex-col space-y-6">
-    <div className="h-12 w-12 rounded-2xl bg-white border border-zinc-100 shadow-sm flex items-center justify-center text-[#00aeef]">
+    <div className="flex flex-col space-y-6">
+    <div className="h-12 w-12 rounded-2xl bg-white border border-zinc-100 shadow-sm flex items-center justify-center text-[#8b5cf6]">
       {icon}
     </div>
     <h4 className="text-xl font-semibold text-zinc-900 lowercase">{title}</h4>

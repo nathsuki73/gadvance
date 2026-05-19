@@ -156,7 +156,7 @@ export default function AuthHeader() {
                 className="relative rounded-full p-2 text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
               >
                 <Bell className="h-5 w-5" strokeWidth={1.8} />
-                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#00aeef]" />
+                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#a78bfa]" />
               </button>
 
               <Notification
@@ -169,9 +169,9 @@ export default function AuthHeader() {
             <div className="relative hidden xl:block">
               <button
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                className="flex items-center gap-2 rounded-full p-1 border border-zinc-100 hover:border-[#00aeef]/30 bg-zinc-50 transition-all"
+                className="flex items-center gap-2 rounded-full p-1 border border-zinc-100 hover:border-[#a78bfa]/30 bg-zinc-50 transition-all"
               >
-                <div className="h-7 w-7 rounded-full bg-[#00aeef] flex items-center justify-center text-white text-xs font-bold">
+                <div className="h-7 w-7 rounded-full bg-[#c4b5fd] flex items-center justify-center text-white text-xs font-bold">
                   {mockUser.name.charAt(0).toUpperCase()}
                 </div>
               </button>
@@ -243,7 +243,7 @@ export default function AuthHeader() {
         <nav className="flex flex-col gap-1 border-t border-zinc-100 pt-4">
           {/* User Mobile Info Card */}
           <div className="flex items-center gap-3 px-3 py-3 bg-zinc-50 rounded-2xl mb-3">
-            <div className="h-9 w-9 rounded-xl bg-[#00aeef] flex items-center justify-center text-white text-sm font-bold">
+            <div className="h-9 w-9 rounded-xl bg-[#c4b5fd] flex items-center justify-center text-white text-sm font-bold">
               {mockUser.name.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -275,7 +275,7 @@ export default function AuthHeader() {
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50  font-medium"
               onClick={() => setShowMobileMenu(false)}
             >
-              <BookOpen size={16} className="text-[#00aeef]" />
+              <BookOpen size={16} className="text-[#a78bfa]" />
               My learning dashboard
             </Link>
             <Link

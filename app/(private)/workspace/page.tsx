@@ -70,7 +70,7 @@ export default function WorkspacePage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white font-sans overflow-hidden">
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-2 border-[#00A8CC] border-t-transparent mx-auto mb-4" />
+          <div className="h-12 w-12 animate-spin rounded-full border-2 border-[#8b5cf6] border-t-transparent mx-auto mb-4" />
           <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.3em]">loading your environment</p>
         </div>
       </div>
@@ -101,12 +101,12 @@ export default function WorkspacePage() {
           
           {/* Welcome Header Container */}
           <header className="max-w-2xl">
-            <span className="text-[10px] font-bold text-[#00A8CC] uppercase tracking-[0.4em] block mb-3">
+            <span className="text-[10px] font-bold text-[#8b5cf6] uppercase tracking-[0.4em] block mb-3">
               philippine advocacy terminal
             </span>
             <h1 className="text-4xl font-light tracking-tight text-zinc-900 sm:text-5xl leading-tight">
               Welcome back,
-              <span className="font-semibold italic font-serif text-[#00A8CC]"> {displayName}.</span>
+              <span className="font-semibold italic font-serif text-[#8b5cf6]"> {displayName}.</span>
             </h1>
           </header>
 
@@ -118,7 +118,7 @@ export default function WorkspacePage() {
               <div className="flex-1 border border-zinc-100 bg-zinc-50/20 rounded-xl p-3.5 transition-all duration-300 hover:border-zinc-200">
                 <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">In Progress</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-light tracking-tight text-[#00A8CC]">{activeModulesData.length}</span>
+                  <span className="text-2xl font-light tracking-tight text-[#8b5cf6]">{activeModulesData.length}</span>
                   <span className="text-[10px] text-zinc-400 font-light lowercase">{activeModulesData.length == 1 ? 'module' : 'modules'}</span>
                 </div>
               </div>
@@ -127,7 +127,7 @@ export default function WorkspacePage() {
               <div className="flex-1 border border-zinc-100 bg-zinc-50/20 rounded-xl p-3.5 transition-all duration-300 hover:border-zinc-200">
                 <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">completed</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-light tracking-tight text-[#00A8CC]">02</span>
+                  <span className="text-2xl font-light tracking-tight text-[#8b5cf6]">02</span>
                   <span className="text-[10px] text-zinc-400 font-light lowercase">tracks</span>
                 </div>
               </div>
@@ -151,7 +151,7 @@ export default function WorkspacePage() {
                 <div className="flex items-center gap-2">
                   <button 
                     onClick={handlePrevModule}
-                    className="p-1.5 rounded-lg border border-zinc-100 bg-zinc-50/50 text-zinc-400 hover:text-[#00A8CC] hover:bg-white transition-all active:scale-95"
+                    className="p-1.5 rounded-lg border border-zinc-100 bg-zinc-50/50 text-zinc-400 hover:text-[#8b5cf6] hover:bg-white transition-all active:scale-95"
                   >
                     <ArrowLeft size={14} />
                   </button>
@@ -160,7 +160,7 @@ export default function WorkspacePage() {
                   </span>
                   <button 
                     onClick={handleNextModule}
-                    className="p-1.5 rounded-lg border border-zinc-100 bg-zinc-50/50 text-zinc-400 hover:text-[#00A8CC] hover:bg-white transition-all active:scale-95"
+                    className="p-1.5 rounded-lg border border-zinc-100 bg-zinc-50/50 text-zinc-400 hover:text-[#8b5cf6] hover:bg-white transition-all active:scale-95"
                   >
                     <ArrowRight size={14} />
                   </button>
@@ -178,11 +178,11 @@ export default function WorkspacePage() {
                 {/* Progress Track Section */}
                 <div className="py-1 max-w-md space-y-2">
                   <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#00A8CC] rounded-full transition-all duration-500" style={{ width: `${currentModule.progress}%` }} />
+                    <div className="h-full bg-[#8b5cf6] rounded-full transition-all duration-500" style={{ width: `${currentModule.progress}%` }} />
                   </div>
                   <div className="flex items-center text-[11px] font-medium text-zinc-400">
                     <span>Course Progress:&nbsp;</span>
-                    <span className="font-bold text-[#00A8CC] ">{currentModule.progress}% Completed</span>
+                    <span className="font-bold text-[#8b5cf6] ">{currentModule.progress}% Completed</span>
                   </div>
                 </div>
 
@@ -196,7 +196,7 @@ export default function WorkspacePage() {
               <div className="pt-6 mt-auto">
                 <button 
                   onClick={() => router.push(currentModule.href)}
-                  className="inline-flex items-center justify-center gap-1.5 bg-[#00A8CC] hover:bg-[#0096b6] text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all active:scale-[0.98] shadow-sm shadow-sky-100"
+                  className="inline-flex items-center justify-center gap-1.5 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all active:scale-[0.98] shadow-sm shadow-violet-100"
                 >
                   <PlayCircle size={12} />
                   resume
@@ -226,7 +226,7 @@ export default function WorkspacePage() {
                 </div>
                 <button 
                   onClick={() => router.push("/workspace/modules/ra11313")}
-                  className="text-zinc-300 group-hover:text-[#00A8CC] transition-colors shrink-0"
+                  className="text-zinc-300 group-hover:text-[#8b5cf6] transition-colors shrink-0"
                 >
                   <ArrowRight size={18} />
                 </button>
@@ -245,7 +245,7 @@ export default function WorkspacePage() {
                 </div>
                 <button 
                   onClick={() => router.push("/workspace/modules/foundations")}
-                  className="text-zinc-300 group-hover:text-[#00A8CC] transition-colors shrink-0"
+                  className="text-zinc-300 group-hover:text-[#8b5cf6] transition-colors shrink-0"
                 >
                   <ArrowRight size={18} />
                 </button>

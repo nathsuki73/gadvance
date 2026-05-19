@@ -134,7 +134,7 @@ const IconBio = () => {
 
         <div className="w-full max-w-md mx-auto lg:mx-0">
           <div className="mb-10">
-            <span className="text-[10px] font-bold text-[#00A8CC] uppercase tracking-[0.4em]">step 03 / 03</span>
+            <span className="text-[10px] font-bold text-[#8b5cf6] uppercase tracking-[0.4em]">step 03 / 03</span>
             <h1 className="text-3xl font-bold text-zinc-900 mt-2 tracking-tight">Avatar & Bio</h1>
             <p className="text-zinc-400 text-sm font-light mt-2">Finalize your profile setup.</p>
           </div>
@@ -155,7 +155,7 @@ const IconBio = () => {
                     type="file" 
                     accept="image/*" 
                     onChange={handleAvatarChange}
-                    className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-[#00A8CC] hover:file:bg-sky-100 cursor-pointer"
+                    className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-violet-50 file:text-[#8b5cf6] hover:file:bg-violet-100 cursor-pointer"
                   />
                   <p className="text-[11px] text-zinc-400 mt-2">JPG or PNG accepted.</p>
                 </div>
@@ -170,7 +170,7 @@ const IconBio = () => {
                 onChange={(e) => setBio(e.target.value)}
                 required
                 placeholder="Tell us a bit about yourself..."
-                className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50 text-sm h-28 resize-none"
+                className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50 text-sm h-28 resize-none"
               />
             </div>
 
@@ -186,7 +186,7 @@ const IconBio = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-2/3 bg-[#00A8CC] hover:bg-[#0096b6] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-sky-100 active:scale-[0.98] disabled:opacity-70"
+                className="w-2/3 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70"
               >
                 {loading ? "Saving..." : "Finish Profile Setup"}
               </button>
@@ -196,7 +196,7 @@ const IconBio = () => {
       </div>
 
       {/* Decorative Right Panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#00A8CC] flex-col items-center justify-center p-12 text-white relative" style={{ clipPath: 'ellipse(100% 100% at 100% 50%)' }}>
+      <div className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative" style={{ clipPath: 'ellipse(100% 100% at 100% 50%)' }}>
         <div className="text-center px-12 relative z-10">
           <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">
             Ready to <br />

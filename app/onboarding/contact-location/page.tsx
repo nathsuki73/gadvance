@@ -74,7 +74,7 @@ const ContactLocation = () => {
 
         <div className="w-full max-w-md mx-auto lg:mx-0">
           <div className="mb-10">
-            <span className="text-[10px] font-bold text-[#00A8CC] uppercase tracking-[0.4em]">step 02 / 03</span>
+            <span className="text-[10px] font-bold text-[#8b5cf6] uppercase tracking-[0.4em]">step 02 / 03</span>
             <h1 className="text-3xl font-bold text-zinc-900 mt-2 tracking-tight">Contact & Location</h1>
             <p className="text-zinc-400 text-sm font-light mt-2">Where can we reach you?</p>
           </div>
@@ -121,7 +121,7 @@ const ContactLocation = () => {
               </button>
               <button
                 type="submit"
-                className="w-2/3 bg-[#00A8CC] hover:bg-[#0096b6] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-sky-100 active:scale-[0.98]"
+                className="w-2/3 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98]"
               >
                 Continue to Bio
               </button>
@@ -132,7 +132,7 @@ const ContactLocation = () => {
 
       {/* RIGHT SIDE: DECORATIVE PANEL */}
       <div 
-        className="hidden lg:flex lg:w-1/2 bg-[#00A8CC] flex-col items-center justify-center p-12 text-white relative"
+        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
         style={{
           clipPath: 'ellipse(100% 100% at 100% 50%)'
         }}
@@ -166,7 +166,7 @@ const InputField = ({ label, name, type = "text", placeholder, defaultValue, req
       required={required}
       defaultValue={defaultValue}
       placeholder={placeholder}
-      className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50 text-sm"
+      className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50 text-sm"
     />
   </div>
 );

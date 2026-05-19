@@ -44,8 +44,6 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-[#fffdf8] text-zinc-900">
-      <Header />
-
       <main className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-28 -left-24 h-72 w-72 rounded-full bg-[#00a9d1]/15 blur-3xl" />

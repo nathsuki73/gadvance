@@ -60,7 +60,7 @@ const CoursePage = ({ params }: CoursePageProps) => {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
-        <Loader2 className="animate-spin text-[#00aeef]/30" size={32} strokeWidth={1.5} />
+        <Loader2 className="animate-spin text-[#8b5cf6]/30" size={32} strokeWidth={1.5} />
       </div>
     );
   }
@@ -70,7 +70,7 @@ const CoursePage = ({ params }: CoursePageProps) => {
   }
 
   return (
-    <main className="min-h-screen bg-white text-zinc-900 selection:bg-sky-100 selection:text-[#00aeef]">
+    <main className="min-h-screen bg-white text-zinc-900 selection:bg-sky-100 selection:text-[#8b5cf6]">
       {/* Navigation Header */}
       <nav className="sticky top-0 z-50 border-b border-zinc-50 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
@@ -98,7 +98,7 @@ const CoursePage = ({ params }: CoursePageProps) => {
       {/* Content Section */}
       <section className="mx-auto max-w-7xl px-6 py-16 md:px-12">
         <div className="mb-12">
-          <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-[#00aeef] mb-4">
+          <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-[#8b5cf6] mb-4">
             curriculum overview
           </h2>
           <p className="text-zinc-500 font-light lowercase">

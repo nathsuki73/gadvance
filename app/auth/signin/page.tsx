@@ -351,13 +351,13 @@ const SignIn = () => {
         <div className="w-full max-w-md mx-auto lg:mx-0">
           {status === "loading" ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-[#00A8CC] border-t-transparent rounded-full animate-spin mb-4"></div>
+              <div className="w-6 h-6 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin mb-4"></div>
               <p className="text-sm text-zinc-400 font-medium tracking-tight">Verifying session...</p>
             </div>
           ) : session ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-3xl font-bold text-zinc-900 mb-2 tracking-tight">
-                Welcome back{displayName ? <>, <span className="text-[#00A8CC] font-serif italic">{displayName}</span></> : "!"}
+                Welcome back{displayName ? <>, <span className="text-[#8b5cf6] font-serif italic">{displayName}</span></> : "!"}
               </h1>
               <p className="text-zinc-400 mb-10 text-sm lowercase font-light">Redirecting to your workspace...</p>
               <button
@@ -388,7 +388,7 @@ const SignIn = () => {
                     placeholder="you@example.com"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
+                    className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
                   />
                 </div>
 
@@ -403,11 +403,11 @@ const SignIn = () => {
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
+                    className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
                   />
                   <Link
                       href="/auth/forgot-password"
-                      className="text-[10px] font-bold text-[#00A8CC] hover:text-sky-400 uppercase tracking-widest transition-colors mt-3 block text-right"
+                      className="text-[10px] font-bold text-[#8b5cf6] hover:text-[#7c3aed] uppercase tracking-widest transition-colors mt-3 block text-right"
                     >
                       forgot password?
                   </Link>
@@ -416,7 +416,7 @@ const SignIn = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#00A8CC] hover:bg-[#0096b6] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-sky-100 active:scale-[0.98] disabled:opacity-70"
+                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70"
                 >
                   {loading ? "Signing In..." : "Sign In"}
                 </button>
@@ -433,9 +433,9 @@ const SignIn = () => {
           )}
 
           {!session && status !== "loading" && (
-            <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mt-10 text-center">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mt-10 text-center">
               No account?{" "}
-              <Link href="/auth/signup" className="text-[#00A8CC] hover:underline transition-colors">
+              <Link href="/auth/signup" className="text-[#8b5cf6] hover:underline transition-colors">
                 create account
               </Link>
             </p>
@@ -445,7 +445,7 @@ const SignIn = () => {
 
       {/* Right Side: Decorative Panel with Half-Circle / Curved Edge */}
       <div 
-        className="hidden lg:flex lg:w-1/2 bg-[#00A8CC] flex-col items-center justify-center p-12 text-white relative"
+        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
         style={{
           clipPath: 'ellipse(100% 100% at 100% 50%)'
         }}

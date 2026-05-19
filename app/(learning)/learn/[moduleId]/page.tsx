@@ -99,7 +99,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb]">
-        <Loader2 size={32} className="animate-spin text-[#00aeef]" />
+        <Loader2 size={32} className="animate-spin text-[#8b5cf6]" />
       </div>
     );
   }

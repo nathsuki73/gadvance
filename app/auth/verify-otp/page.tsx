@@ -158,7 +158,7 @@ const OTPContent = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans text-zinc-900">
       <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-sm p-8 md:p-12 border border-zinc-100 text-center">
         {/* Dynamic Header Icon */}
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-teal-50 text-teal-500 rounded-2xl mb-6">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-violet-50 text-[#8b5cf6] rounded-2xl mb-6">
           {isInstitutional ? (
             <GraduationCap size={32} />
           ) : (
@@ -176,9 +176,9 @@ const OTPContent = () => {
         {/* Institutional Badge / Email Display */}
         <div className="flex flex-col items-center gap-3 mb-8">
           {isInstitutional && (
-            <div className="py-1 px-3 bg-teal-50 border border-teal-100 rounded-full inline-flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-pulse" />
-              <span className="text-[9px] font-bold text-teal-700 uppercase tracking-widest">
+            <div className="py-1 px-3 bg-violet-50 border border-violet-100 rounded-full inline-flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-[#8b5cf6] rounded-full animate-pulse" />
+              <span className="text-[9px] font-bold text-[#6d28d9] uppercase tracking-widest">
                 LSPU Verified Domain
               </span>
             </div>
@@ -207,7 +207,7 @@ const OTPContent = () => {
               value={data}
               onChange={(e) => handleChange(e.target.value, index)}
               onKeyDown={(e) => handleKeyDown(e, index)}
-              className="w-12 h-14 text-center text-xl font-bold border border-zinc-200 rounded-xl bg-zinc-50/50 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 transition-all outline-none"
+              className="w-12 h-14 text-center text-xl font-bold border border-zinc-200 rounded-xl bg-zinc-50/50 focus:border-[#8b5cf6] focus:ring-4 focus:ring-[#8b5cf6]/10 transition-all outline-none"
             />
           ))}
         </div>
@@ -215,7 +215,7 @@ const OTPContent = () => {
         <button
           onClick={handleVerify}
           disabled={loading || isBlocked || otp.join("").length < 6}
-          className="w-full bg-[#00A8CC] hover:bg-[#0096b6] text-white py-4 rounded-xl font-bold transition-all mb-6 shadow-lg shadow-teal-100 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none disabled:active:scale-100"
+          className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-4 rounded-xl font-bold transition-all mb-6 shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none disabled:active:scale-100"
         >
           {loading ? "Verifying..." : currentUI.button}
         </button>
@@ -241,7 +241,7 @@ const OTPContent = () => {
         {/* Resend Logic */}
         <div className="flex flex-col items-center gap-4">
           {canResend ? (
-            <button
+              <button
               onClick={async () => {
                 if (context === "reset") {
                   setResending(true);
@@ -271,7 +271,7 @@ const OTPContent = () => {
                 setAttemptsLeft(null);
               }}
               disabled={isBlocked || resending}
-              className="text-teal-600 font-black text-sm hover:underline disabled:opacity-50 disabled:no-underline"
+              className="text-[#8b5cf6] font-black text-sm hover:underline disabled:opacity-50 disabled:no-underline"
             >
               {resending ? "Resending..." : "Resend Code"}
             </button>

@@ -42,7 +42,7 @@ const ActionConfirmationDialog = ({
             {isEnroll ? (
               <>
                 begin your{" "}
-                <span className="italic font-serif text-[#00aeef]">
+                <span className="italic font-serif text-[#8b5cf6]">
                   learning journey?
                 </span>
               </>
@@ -83,7 +83,7 @@ const ActionConfirmationDialog = ({
               w-full flex items-center justify-center rounded-md px-6 py-4 text-white transition-all font-medium lowercase disabled:opacity-50
               ${
                 isEnroll
-                  ? "bg-[#00aeef] hover:bg-[#0098d1] hover:shadow-lg hover:shadow-sky-100"
+                  ? "bg-[#8b5cf6] hover:bg-[#7a4bd1] hover:shadow-lg hover:shadow-purple-100"
                   : "bg-[#e05353] hover:bg-[#cc4646] hover:shadow-lg hover:shadow-red-100"
               }
             `}

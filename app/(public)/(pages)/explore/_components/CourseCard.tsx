@@ -30,11 +30,11 @@ const CourseCard = ({ module }: CourseCardProps) => {
   const Icon = iconByType[module.icon as keyof typeof iconByType] || Target;
 
   return (
-    <article className="group flex flex-col gap-6 rounded-[32px] border border-zinc-100 bg-white p-8 text-left transition-all duration-500 hover:border-[#00aeef]/30 hover:shadow-xl hover:shadow-sky-100/20">
+    <article className="group flex flex-col gap-6 rounded-[32px] border border-zinc-100 bg-white p-8 text-left transition-all duration-500 hover:border-[#8b5cf6]/50 hover:shadow-xl hover:shadow-sky-100/20">
       
       {/* Header: Minimal Tag & Icon */}
       <div className="flex items-start justify-between">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-50 text-[#00aeef] transition-colors group-hover:bg-sky-50">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-50 text-[#8b5cf6] transition-colors group-hover:bg-purple-50">
           <Icon size={18} strokeWidth={1.5} />
         </div>
 
@@ -71,7 +71,7 @@ const CourseCard = ({ module }: CourseCardProps) => {
       <button
         type="button"
         onClick={() => router.push(`/explore/course/${module.id}`)}
-        className="group/btn flex items-center justify-end w-full text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-[#00aeef] gap-1"
+        className="group/btn flex items-center justify-end w-full text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-[#8b5cf6] gap-1"
       >
         <span className="lowercase font-medium">view course</span>
         <ArrowUpRight 
