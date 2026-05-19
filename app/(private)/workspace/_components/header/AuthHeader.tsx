@@ -159,7 +159,10 @@ export default function AuthHeader() {
                 <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#00aeef]" />
               </button>
 
-              <Notification open={showNotifications} onClose={() => setShowNotifications(false)} />
+              <Notification
+                open={showNotifications}
+                onCloseAction={() => setShowNotifications(false)}
+              />
             </div>
 
             {/* User Dropdown Trigger (Desktop xl) */}
@@ -235,7 +238,7 @@ export default function AuthHeader() {
 
       {/* EXPANDABLE MOBILE MENU WITH LOGGED IN METRICS */}
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out xl:hidden ${showMobileMenu ? "max-h-[600px] opacity-100 mt-4" : "max-h-0 opacity-0"}`}
+        className={`overflow-hidden transition-all duration-300 ease-in-out xl:hidden ${showMobileMenu ? "max-h-150 opacity-100 mt-4" : "max-h-0 opacity-0"}`}
       >
         <nav className="flex flex-col gap-1 border-t border-zinc-100 pt-4">
           {/* User Mobile Info Card */}
