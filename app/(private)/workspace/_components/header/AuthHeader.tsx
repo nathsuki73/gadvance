@@ -279,16 +279,22 @@ export default function AuthHeader() {
               My learning dashboard
             </Link>
             <Link
-              href="/profile"
+              href="/workspace/profile"
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50  font-medium"
               onClick={() => setShowMobileMenu(false)}
             >
               <Settings size={16} className="text-zinc-400" />
               Profile Settings
             </Link>
-            <button className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-500 font-medium hover:bg-red-50/50 text-left lowercase mt-1">
+            <button
+              onClick={() => {
+                setShowLogoutDialog(true);
+                setShowMobileMenu(false);
+              }}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-500 font-medium hover:bg-red-50/50 text-left lowercase mt-1"
+            >
               <LogOut size={16} />
-              disconnect session
+              Sign out
             </button>
           </div>
         </nav>

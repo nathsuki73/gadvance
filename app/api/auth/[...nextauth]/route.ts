@@ -21,6 +21,9 @@ type UserProfilePayload = {
   first_name?: string | null;
   middle_name?: string | null;
   last_name?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
 };
 
 type LaravelAuthPayload = {
@@ -112,6 +115,9 @@ function mapUserProfile(
         : null,
     last_name:
       typeof userProfile.last_name === "string" ? userProfile.last_name : null,
+    city: typeof userProfile.city === "string" ? userProfile.city : null,
+    state: typeof userProfile.state === "string" ? userProfile.state : null,
+    country: typeof userProfile.country === "string" ? userProfile.country : null,
   };
 }
 
