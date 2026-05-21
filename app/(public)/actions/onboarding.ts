@@ -7,6 +7,8 @@ type onboardingParams = {
   firstName: string;
   middleName?: string;
   lastName: string;
+  avatar?: string | null;
+  icon?: string | null;
 };
 
 type OnboardingResponse = {

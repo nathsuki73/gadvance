@@ -24,6 +24,7 @@ type UserProfilePayload = {
   city?: string | null;
   state?: string | null;
   country?: string | null;
+  avatar?: string | null;
 };
 
 type LaravelAuthPayload = {
@@ -118,6 +119,8 @@ function mapUserProfile(
     city: typeof userProfile.city === "string" ? userProfile.city : null,
     state: typeof userProfile.state === "string" ? userProfile.state : null,
     country: typeof userProfile.country === "string" ? userProfile.country : null,
+    avatar:
+      typeof userProfile.avatar === "string" ? userProfile.avatar : null,
   };
 }
 
@@ -524,6 +527,7 @@ export const authOptions: NextAuthOptions = {
           token.middleName =
             profileUser.user_profile.middle_name ?? token.middleName;
           token.lastName = profileUser.user_profile.last_name || token.lastName;
+          token.avatar = profileUser.user_profile.avatar || token.avatar;
         }
 
         if (profileUser.firstName) {
@@ -557,6 +561,7 @@ export const authOptions: NextAuthOptions = {
           token.middleName = latestIdentity.middleName ?? token.middleName;
           token.lastName = latestIdentity.lastName || token.lastName;
           token.userProfile = latestIdentity.userProfile || token.userProfile;
+          token.avatar = latestIdentity.userProfile?.avatar || token.avatar;
           token.name =
             composeNameParts([
               token.firstName,
@@ -596,6 +601,7 @@ export const authOptions: NextAuthOptions = {
           token.firstName = sessionUserProfile.first_name || token.firstName;
           token.middleName = sessionUserProfile.middle_name ?? token.middleName;
           token.lastName = sessionUserProfile.last_name || token.lastName;
+          token.avatar = sessionUserProfile.avatar || token.avatar;
         }
 
         token.name =
@@ -615,6 +621,7 @@ export const authOptions: NextAuthOptions = {
         session.user.firstName = token.firstName;
         session.user.middleName = token.middleName;
         session.user.lastName = token.lastName;
+        session.user.avatar = token.avatar;
       }
 
       session.user_profile = token.userProfile;
