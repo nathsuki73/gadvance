@@ -31,11 +31,12 @@ const IconBio = () => {
     return `/storage/uploads/avatars/avatar_${emailKey}_${timestamp}.${extension}`;
   };
 
-  // Logic from original code to wait for session sync
-  const waitForActiveSession = async () => {
+  const waitForSessionStatus = async (targetStatus: string) => {
     for (let i = 0; i < 8; i += 1) {
       const latest = await getSession();
-      if (latest?.user?.status?.trim().toLowerCase() === "active") return true;
+      if (latest?.user?.status?.trim().toLowerCase() === targetStatus) {
+        return true;
+      }
       await new Promise((resolve) => setTimeout(resolve, 150));
     }
     return false;
@@ -148,7 +149,7 @@ const IconBio = () => {
       }
 
       // 4. UPDATE SESSION (Original Logic)
-      const nextStatus = result.user?.status ?? "active";
+      const nextStatus = (result.user?.status ?? "active").trim().toLowerCase();
       await update({
         user: {
           id: session?.user?.id,
@@ -158,10 +159,8 @@ const IconBio = () => {
         },
       });
 
-      // 5. WAIT AND REDIRECT
-      if (nextStatus.toLowerCase() !== "active") {
-        await waitForActiveSession();
-      }
+      // 5. WAIT FOR THE UPDATED SESSION TO BE WRITTEN BEFORE REDIRECTING
+      await waitForSessionStatus(nextStatus);
 
       // Clear local storage after success
       localStorage.removeItem("onboarding_p1");
