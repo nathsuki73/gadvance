@@ -21,7 +21,7 @@ const CourseGrid = () => {
       setIsLoading(true);
       try {
         const data = await searchContent(activeSearch);
-        setCourses(Array.isArray(data) ? data : data?.data || []);
+        setCourses(data);
       } catch (error) {
         console.error("Error fetching courses:", error);
       } finally {

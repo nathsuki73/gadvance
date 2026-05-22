@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   BookOpen,
@@ -10,6 +10,14 @@ import {
 } from "lucide-react";
 
 import type { LearningPlan } from "../../../types";
+
+type LessonItem = {
+  id: string;
+  module_id: string;
+  title: string;
+  description: string;
+  order_index: number;
+};
 
 type CourseModulePreviewProps = {
   course: LearningPlan;
@@ -21,7 +29,33 @@ const CourseModulePreview = ({
   course,
   isEnrolled,
 }: CourseModulePreviewProps) => {
-  const modules = course.modules || [];
+  const [lessonsList, setLessonsList] = useState<LessonItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch directly from your working standalone lessons endpoint
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/lessons`)
+      .then((res) => res.json())
+      .then((payload) => {
+        // Handle both standard data wrapper and direct assignment formats
+        if (payload.success && Array.isArray(payload.data)) {
+          setLessonsList(payload.data);
+        } else if (Array.isArray(payload.lessons)) {
+          setLessonsList(payload.lessons);
+        } else if (Array.isArray(payload)) {
+          setLessonsList(payload);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load database lessons:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return <div className="text-center py-12 text-zinc-400 font-light">Loading syllabus entries...</div>;
+  }
 
   return (
     <section className="py-16 md:py-24 bg-white">
@@ -37,10 +71,10 @@ const CourseModulePreview = ({
         </div>
 
         <div className="flex flex-col">
-          {modules.map((module, index) => (
+          {lessonsList.map((lesson, index) => (
             <Link
-              key={module.id}
-              href={`${course.id}/module/${module.id}`}
+              key={lesson.id}
+              href={`/explore/course/${course.id}/module/${lesson.id}`}
               className="group flex justify-between items-center gap-8 py-6 border-b border-zinc-100 transition-colors hover:bg-zinc-50/50 px-2"
             >
               <div className="flex items-start gap-4 sm:gap-8">
@@ -63,12 +97,12 @@ const CourseModulePreview = ({
                     )}
 
                     <h4 className="text-base font-medium text-zinc-800 group-hover:text-primary transition-colors">
-                      {module.title}
+                      {lesson.title}
                     </h4>
                   </div>
 
                   <p className="text-sm text-zinc-500 font-light leading-relaxed max-w-3xl">
-                    {module.about ||
+                    {lesson.description ||
                       "Standard module overview and learning objectives."}
                   </p>
                 </div>
