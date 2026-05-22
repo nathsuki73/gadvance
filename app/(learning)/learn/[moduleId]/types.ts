@@ -148,7 +148,7 @@ export type LearningPlan = {
 export type ModuleResponse = {
   id: string;
   title: string;
-  about?: string;
+  description?: string;
   image?: string | null;
   learning_plans?: LearningPlan[];
   section_groups: SectionGroup[];

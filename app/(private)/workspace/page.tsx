@@ -101,12 +101,12 @@ export default function WorkspacePage() {
           
           {/* Welcome Header Container */}
           <header className="max-w-2xl">
-            <span className="text-[10px] font-bold text-[#8b5cf6] uppercase tracking-[0.4em] block mb-3">
+            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.4em] block mb-3">
               philippine advocacy terminal
             </span>
             <h1 className="text-4xl font-light tracking-tight text-zinc-900 sm:text-5xl leading-tight">
               Welcome back,
-              <span className="font-semibold italic font-serif text-[#8b5cf6]"> {displayName}.</span>
+              <span className="font-semibold italic font-serif text-primary"> {displayName}.</span>
             </h1>
           </header>
 
@@ -118,7 +118,7 @@ export default function WorkspacePage() {
               <div className="flex-1 border border-zinc-100 bg-zinc-50/20 rounded-xl p-3.5 transition-all duration-300 hover:border-zinc-200">
                 <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">In Progress</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-light tracking-tight text-[#8b5cf6]">{activeModulesData.length}</span>
+                  <span className="text-2xl font-light tracking-tight text-primary">{activeModulesData.length}</span>
                   <span className="text-[10px] text-zinc-400 font-light lowercase">{activeModulesData.length == 1 ? 'module' : 'modules'}</span>
                 </div>
               </div>
