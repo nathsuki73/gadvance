@@ -45,9 +45,8 @@ const OnboardingPageOne = () => {
     );
   }
 
-  const googleFirst =
-    persistedData?.firstName || session?.user?.firstName || "";
-  const googleLast = persistedData?.lastName || session?.user?.lastName || "";
+  const googleFirst = persistedData?.firstName || session?.user?.name || "";
+  const googleLast = persistedData?.lastName || session?.user?.name || "";
 
   const handleNext = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

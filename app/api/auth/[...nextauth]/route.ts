@@ -150,7 +150,8 @@ function mapUserProfile(
       typeof userProfile.last_name === "string" ? userProfile.last_name : null,
     city: typeof userProfile.city === "string" ? userProfile.city : null,
     state: typeof userProfile.state === "string" ? userProfile.state : null,
-    country: typeof userProfile.country === "string" ? userProfile.country : null,
+    country:
+      typeof userProfile.country === "string" ? userProfile.country : null,
     avatar: resolvedAvatar || null,
   };
 }
@@ -651,13 +652,7 @@ export const authOptions: NextAuthOptions = {
       if (session?.user) {
         session.user.status = token.status;
         session.user.name = token.name;
-        session.user.firstName = token.firstName;
-        session.user.middleName = token.middleName;
-        session.user.lastName = token.lastName;
-        session.user.avatar = token.avatar;
       }
-
-      session.user_profile = token.userProfile;
 
       session.laravelJwt = token.laravelJwt;
       session.sessionToken = token.sessionToken;
