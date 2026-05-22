@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { useSession, getSession } from "next-auth/react";
 import { finishOnBoarding } from "../../(public)/actions/onboarding"; // Ensure path is correct
 import logoIcon from "@/app/assets/logo.ico";
+import imageCompression from "browser-image-compression";
+import Image from "next/image";
 
 const IconBio = () => {
-  const { data: session, update, status } = useSession();
+  const { data: session, update } = useSession();
   const router = useRouter();
-  
+
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
@@ -18,8 +20,10 @@ const IconBio = () => {
 
   const buildAvatarPath = (file: File) => {
     const emailKey =
-      session?.user?.email?.split("@")[0]?.toLowerCase().replace(/[^a-z0-9]+/g, "_") ||
-      "user";
+      session?.user?.email
+        ?.split("@")[0]
+        ?.toLowerCase()
+        .replace(/[^a-z0-9]+/g, "_") || "user";
     const extension =
       file.name.split(".").pop()?.toLowerCase() ||
       (file.type === "image/png" ? "png" : "jpg");
@@ -47,7 +51,9 @@ const IconBio = () => {
         setAvatarBase64(parsed.avatarBase64 || null);
         setAvatarPath(parsed.avatarPath || null);
         setBio(parsed.bio || "");
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        /* ignore */
+      }
     }
   }, []);
 
@@ -57,25 +63,51 @@ const IconBio = () => {
 
     const nextAvatarPath = buildAvatarPath(file);
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setAvatarBase64(result);
-      setAvatarPreview(result);
+    const options = {
+      maxSizeMB: 0.4, // Downsize the raw file footprint first
+      maxWidthOrHeight: 800, // Resizes dimensions to a clean avatar size
+      useWebWorker: true,
+    };
+
+    try {
+      // 1. Run the initial layout compression
+      const compressedFile = await imageCompression(file, options);
+
+      // 2. Convert the compressed file into an HTML Image Element
+      const bitmap = await createImageBitmap(compressedFile);
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(bitmap, 0, 0);
+      }
+
+      // 3. Export directly to WebP format with 75% quality compression
+      // This turns a huge image into a tiny fraction of its original size
+      const webpBase64 = canvas.toDataURL("image/webp", 0.75);
+
+      // 4. Update state and localStorage
+      setAvatarBase64(webpBase64);
+      setAvatarPreview(webpBase64);
       setAvatarPath(nextAvatarPath);
+
       const existing = localStorage.getItem("onboarding_p3");
       const parsed = existing ? JSON.parse(existing) : {};
       localStorage.setItem(
         "onboarding_p3",
         JSON.stringify({
           ...parsed,
-          avatarBase64: result,
-          avatarPreview: result,
+          avatarBase64: webpBase64,
+          avatarPreview: webpBase64,
           avatarPath: nextAvatarPath,
         }),
       );
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("WebP conversion failed:", error);
+      alert("Could not process the image. Please try a different photo.");
+    }
   };
 
   const handleBack = () => {
@@ -90,7 +122,7 @@ const IconBio = () => {
       // 1. GATHER DATA FROM ALL PAGES
       const p1 = JSON.parse(localStorage.getItem("onboarding_p1") || "{}");
       const p2 = JSON.parse(localStorage.getItem("onboarding_p2") || "{}");
-      
+
       // 2. CONSTRUCT COMPLETE PAYLOAD
       const finalPayload = {
         firstName: String(p1.firstName || ""),
@@ -106,8 +138,8 @@ const IconBio = () => {
         country: String(p2.country || ""),
         postalCode: String(p2.postalCode || ""),
         bio: bio,
-        avatar: avatarPath,
-        icon: avatarPath,
+        avatar: avatarBase64,
+        icon: avatarBase64,
       };
 
       // 3. CALL SERVER ACTION (Original Logic)
@@ -126,11 +158,12 @@ const IconBio = () => {
         user: {
           ...session?.user,
           status: nextStatus,
-          avatar: avatarPath || session?.user?.avatar || null,
+          avatar: avatarBase64 || session?.user?.avatar || null,
+          image: avatarBase64 || session?.user?.image || null,
         },
         user_profile: {
           ...session?.user_profile,
-          avatar: avatarPath || session?.user_profile?.avatar || null,
+          avatar: avatarBase64 || session?.user_profile?.avatar || null,
         },
       });
 
@@ -158,43 +191,69 @@ const IconBio = () => {
       <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 md:px-24 lg:px-32 py-12 relative z-10 bg-white">
         <div className="absolute top-8 left-8 flex items-center gap-3">
           <div className="relative h-7 w-7">
-            <img src={logoIcon.src} alt="GADvance" className="object-contain" />
+            <Image
+              width={100}
+              height={100}
+              src={logoIcon.src}
+              alt="GADvance"
+              className="object-contain"
+            />
           </div>
           <span className="text-lg font-semibold tracking-tight">GADvance</span>
         </div>
 
         <div className="w-full max-w-md mx-auto lg:mx-0">
           <div className="mb-10">
-            <span className="text-[10px] font-bold text-[#8b5cf6] uppercase tracking-[0.4em]">step 03 / 03</span>
-            <h1 className="text-3xl font-bold text-zinc-900 mt-2 tracking-tight">Avatar & Bio</h1>
-            <p className="text-zinc-400 text-sm font-light mt-2">Finalize your profile setup.</p>
+            <span className="text-[10px] font-bold text-[#8b5cf6] uppercase tracking-[0.4em]">
+              step 03 / 03
+            </span>
+            <h1 className="text-3xl font-bold text-zinc-900 mt-2 tracking-tight">
+              Avatar & Bio
+            </h1>
+            <p className="text-zinc-400 text-sm font-light mt-2">
+              Finalize your profile setup.
+            </p>
           </div>
 
           <form className="space-y-6" onSubmit={handleFinalSubmit}>
             <div>
-              <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">Profile Photo</label>
+              <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+                Profile Photo
+              </label>
               <div className="flex items-center gap-4">
                 <div className="h-20 w-20 rounded-full bg-zinc-50 border border-zinc-100 overflow-hidden flex items-center justify-center relative">
                   {avatarPreview ? (
-                    <img src={avatarPreview} alt="avatar" className="h-full w-full object-cover" />
+                    <Image
+                      width={100}
+                      height={100}
+                      src={avatarPreview}
+                      alt="avatar"
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
-                    <span className="text-zinc-300 text-[10px] uppercase font-bold tracking-tighter">No photo</span>
+                    <span className="text-zinc-300 text-[10px] uppercase font-bold tracking-tighter">
+                      No photo
+                    </span>
                   )}
                 </div>
                 <div className="grow">
-                  <input 
-                    type="file" 
-                    accept="image/*" 
+                  <input
+                    type="file"
+                    accept="image/*"
                     onChange={handleAvatarChange}
                     className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-violet-50 file:text-[#8b5cf6] hover:file:bg-violet-100 cursor-pointer"
                   />
-                  <p className="text-[11px] text-zinc-400 mt-2">JPG or PNG accepted.</p>
+                  <p className="text-[11px] text-zinc-400 mt-2">
+                    JPG or PNG accepted.
+                  </p>
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">Short Bio</label>
+              <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+                Short Bio
+              </label>
               <textarea
                 name="bio"
                 value={bio}
@@ -227,14 +286,20 @@ const IconBio = () => {
       </div>
 
       {/* Decorative Right Panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative" style={{ clipPath: 'ellipse(100% 100% at 100% 50%)' }}>
+      <div
+        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
+        style={{ clipPath: "ellipse(100% 100% at 100% 50%)" }}
+      >
         <div className="text-center px-12 relative z-10">
           <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">
             Ready to <br />
-            <span className="font-semibold italic font-serif">get started?</span>
+            <span className="font-semibold italic font-serif">
+              get started?
+            </span>
           </h2>
           <p className="text-white/80 text-sm leading-relaxed max-w-sm mx-auto font-light lowercase">
-            Once you finish, you will have full access to our workspace and learning modules.
+            Once you finish, you will have full access to our workspace and
+            learning modules.
           </p>
         </div>
         <div className="absolute bottom-12 text-center text-[10px] tracking-[0.4em] text-white/40 uppercase">
