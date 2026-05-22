@@ -78,7 +78,7 @@ const CourseOverviewHeader = ({
                   {course.title}
                 </h1>
                 <p className="mt-6 text-lg text-sky-50 font-light leading-relaxed">
-                  {course.about ||
+                  {course.description ||
                     "A formal learning pathway designed for systemic gender advancement and institutional leadership."}
                 </p>
               </div>

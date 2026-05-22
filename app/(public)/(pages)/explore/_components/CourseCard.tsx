@@ -42,12 +42,12 @@ const CourseCard = ({ module }: CourseCardProps) => {
 
       {/* Content: Lowercase & Airy */}
       <div className="flex-1">
-        <h3 className="text-xl font-semibold tracking-tight text-zinc-900 lowercase">
+        <h3 className="text-xl font-semibold tracking-tight text-zinc-900">
           {module.title}
         </h3>
 
-        <p className="mt-3 text-sm leading-relaxed text-zinc-500 font-light lowercase">
-          {module.about}
+        <p className="mt-3 text-sm leading-relaxed text-zinc-500 font-light">
+          {module.description || "Structured learning modules and guided activities."}
         </p>
       </div>
 

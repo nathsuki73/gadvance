@@ -104,7 +104,7 @@ export default function WorkspacePage() {
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 border-b border-zinc-100 pb-12">
           {/* Welcome Header Container */}
           <header className="max-w-2xl">
-            <span className="text-[10px] font-bold text-[#8b5cf6] uppercase tracking-[0.4em] block mb-3">
+            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.4em] block mb-3">
               philippine advocacy terminal
             </span>
             <h1 className="text-4xl font-light tracking-tight text-zinc-900 sm:text-5xl leading-tight">

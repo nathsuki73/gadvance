@@ -10,10 +10,11 @@ export type LearningModule = {
 export type LearningPlan = {
   id: string;
   title: string;
-  about?: string;
+  description?: string;
   image?: string | null;
 
   modules?: LearningModule[];
+  lessons?: LearningModule[];
 
   // optional frontend presentation fields
   accent?: string;
