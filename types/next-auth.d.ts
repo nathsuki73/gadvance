@@ -10,6 +10,7 @@ declare module "next-auth" {
       email: string;
       role: string;
       status: "onboarding" | "active" | "suspended";
+      googleImage?: string | null;
     } & DefaultSession["user"];
 
     laravelJwt?: string;

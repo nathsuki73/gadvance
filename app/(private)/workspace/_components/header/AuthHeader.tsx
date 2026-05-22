@@ -1,8 +1,6 @@
 "use client";
 
-import { signOut } from "next-auth/react";
-
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -11,7 +9,6 @@ import {
   Search,
   X,
   Bell,
-  User,
   LogOut,
   BookOpen,
   Settings,
@@ -54,6 +51,16 @@ function resolveAvatarSrc(avatar?: string | null) {
   return storagePath;
 }
 
+function getInitials(name?: string | null) {
+  const trimmedName = name?.trim();
+
+  if (!trimmedName) {
+    return "U";
+  }
+
+  return trimmedName.charAt(0).toUpperCase();
+}
+
 // Mock user object - replace this with your actual auth state context/hook
 const mockUser = {
   name: "Learner",
@@ -76,13 +83,26 @@ export default function AuthHeader() {
   const [searchQuery, setSearchQuery] = useState("");
   const headerRef = useRef<HTMLElement>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [avatarFallbackIndex, setAvatarFallbackIndex] = useState(0);
   const { data: session } = useSession();
 
   const currentUser = {
     name: session?.user?.name || mockUser.name,
     email: session?.user?.email || mockUser.email,
-    avatar: resolveAvatarSrc(session?.user?.image || mockUser.avatar),
+    avatarSources: [
+      resolveAvatarSrc(session?.user?.image),
+      resolveAvatarSrc(session?.user?.googleImage),
+      null,
+    ],
   };
+
+  const activeAvatarSource = useMemo(() => {
+    return currentUser.avatarSources[avatarFallbackIndex] || null;
+  }, [avatarFallbackIndex, currentUser.avatarSources]);
+
+  useEffect(() => {
+    setAvatarFallbackIndex(0);
+  }, [session?.user?.image, session?.user?.googleImage, session?.user?.name]);
 
   const toggleSearch = () => {
     const willBeShown = !showSearch;
@@ -123,6 +143,29 @@ export default function AuthHeader() {
 
     // example:
     // router.push(`/explore?search=${searchQuery}`)
+  };
+
+  const renderAvatar = (sizeClassName: string, textClassName: string) => {
+    if (activeAvatarSource) {
+      return (
+        <Image
+          src={activeAvatarSource}
+          alt={`${currentUser.name} avatar`}
+          width={40}
+          height={40}
+          className={sizeClassName}
+          onError={() =>
+            setAvatarFallbackIndex((currentIndex) =>
+              Math.min(currentIndex + 1, currentUser.avatarSources.length - 1),
+            )
+          }
+        />
+      );
+    }
+
+    return (
+      <span className={textClassName}>{getInitials(currentUser.name)}</span>
+    );
   };
 
   return (
@@ -205,18 +248,11 @@ export default function AuthHeader() {
             <div className="relative hidden xl:block">
               <button
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                className="flex items-center gap-2 rounded-full p-1 border border-zinc-100 hover:border-[#a78bfa]/30 bg-zinc-50 transition-all"
+                className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-100 bg-zinc-50 p-0 hover:border-[#a78bfa]/30 transition-all"
               >
-                {currentUser.avatar ? (
-                  <img
-                    src={currentUser.avatar}
-                    alt="avatar"
-                    className="h-7 w-7 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="h-7 w-7 rounded-full bg-[#c4b5fd] flex items-center justify-center text-white text-xs font-bold">
-                    {currentUser.name.charAt(0).toUpperCase()}
-                  </div>
+                {renderAvatar(
+                  "h-full w-full rounded-full object-cover",
+                  "flex h-full w-full items-center justify-center rounded-full bg-[#c4b5fd] text-white text-xs font-bold",
                 )}
               </button>
 
@@ -287,17 +323,12 @@ export default function AuthHeader() {
         <nav className="flex flex-col gap-1 border-t border-zinc-100 pt-4">
           {/* User Mobile Info Card */}
           <div className="flex items-center gap-3 px-3 py-3 bg-zinc-50 rounded-2xl mb-3">
-            {currentUser.avatar ? (
-              <img
-                src={currentUser.avatar}
-                alt="avatar"
-                className="h-9 w-9 rounded-xl object-cover"
-              />
-            ) : (
-              <div className="h-9 w-9 rounded-xl bg-[#c4b5fd] flex items-center justify-center text-white text-sm font-bold">
-                {currentUser.name.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <div className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-xl bg-[#c4b5fd]">
+              {renderAvatar(
+                "h-full w-full rounded-xl object-cover",
+                "flex h-full w-full items-center justify-center rounded-xl bg-[#c4b5fd] text-white text-sm font-bold",
+              )}
+            </div>
             <div>
               <p className="text-sm font-semibold text-zinc-800 lowercase">
                 {currentUser.name}
