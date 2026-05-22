@@ -28,6 +28,7 @@ export const getUserProfile = async (): Promise<ApiResponse<UserProfile>> => {
     });
 
     const result = await response.json();
+    const profileData = result?.data ?? result;
 
     if (!response.ok) {
       return {
@@ -36,9 +37,16 @@ export const getUserProfile = async (): Promise<ApiResponse<UserProfile>> => {
       };
     }
 
+    if (!profileData || typeof profileData !== "object") {
+      return {
+        success: false,
+        error: "Profile data missing",
+      };
+    }
+
     return {
       success: true,
-      data: result.data as UserProfile,
+      data: profileData as UserProfile,
     };
   } catch (error) {
     console.error("Profile fetch error:", error);

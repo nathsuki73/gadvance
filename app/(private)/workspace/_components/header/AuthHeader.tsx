@@ -287,7 +287,7 @@ export default function AuthHeader() {
 
               {/* Profile Dropdown Menu */}
               {showProfileDropdown && (
-                <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-zinc-100 bg-white p-2 shadow-xl shadow-zinc-100/50 flex flex-col gap-0.5">
+                <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-primary-hover/20 bg-white p-2  flex flex-col gap-0.5">
                   <div className="px-3 py-2.5 border-b border-zinc-50 mb-1">
                     <p className="text-xs font-bold text-zinc-800 lowercase">
                       {currentUser.name}
