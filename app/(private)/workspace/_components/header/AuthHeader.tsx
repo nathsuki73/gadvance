@@ -22,6 +22,7 @@ import logoIcon from "@/app/assets/logo.ico";
 import { NavLink } from "./NavLink";
 import SearchBar from "./SearchBar";
 import LogoutConfirmationDialog from "./LogoutConfirmation";
+import { getUserProfile } from "../../service";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
 
@@ -84,13 +85,14 @@ export default function AuthHeader() {
   const headerRef = useRef<HTMLElement>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [avatarFallbackIndex, setAvatarFallbackIndex] = useState(0);
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
   const { data: session } = useSession();
 
   const currentUser = {
     name: session?.user?.name || mockUser.name,
     email: session?.user?.email || mockUser.email,
     avatarSources: [
-      resolveAvatarSrc(session?.user?.image),
+      resolveAvatarSrc(profileAvatar || session?.user?.image),
       resolveAvatarSrc(session?.user?.googleImage),
       null,
     ],
@@ -100,9 +102,33 @@ export default function AuthHeader() {
     return currentUser.avatarSources[avatarFallbackIndex] || null;
   }, [avatarFallbackIndex, currentUser.avatarSources]);
 
+  // FIX: Removed the problematic useEffect that was manually resetting avatarFallbackIndex(0)
+
   useEffect(() => {
-    setAvatarFallbackIndex(0);
-  }, [session?.user?.image, session?.user?.googleImage, session?.user?.name]);
+    let isMounted = true;
+
+    const loadProfileAvatar = async () => {
+      if (profileAvatar || !session?.user) {
+        return;
+      }
+
+      const response = await getUserProfile();
+      if (!isMounted || !response.success) {
+        return;
+      }
+
+      const resolvedAvatar = resolveAvatarSrc(response.data.avatar ?? null);
+      if (resolvedAvatar) {
+        setProfileAvatar(resolvedAvatar);
+      }
+    };
+
+    loadProfileAvatar();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profileAvatar, session?.user]);
 
   const toggleSearch = () => {
     const willBeShown = !showSearch;
@@ -140,19 +166,22 @@ export default function AuthHeader() {
 
   const handleSearch = () => {
     console.log(searchQuery);
-
-    // example:
-    // router.push(`/explore?search=${searchQuery}`)
   };
+
+  // Unique key created from user dependencies to auto-reset error counts cleanly
+  const userAvatarKey = `${session?.user?.image || ""}-${session?.user?.googleImage || ""}-${session?.user?.name || ""}`;
 
   const renderAvatar = (sizeClassName: string, textClassName: string) => {
     if (activeAvatarSource) {
       return (
         <Image
+          key={userAvatarKey} // FIX: Forces the image element to reset fallback states safely when user data changes
           src={activeAvatarSource}
           alt={`${currentUser.name} avatar`}
           width={40}
           height={40}
+          sizes="40px"
+          unoptimized={activeAvatarSource.startsWith("data:")}
           className={sizeClassName}
           onError={() =>
             setAvatarFallbackIndex((currentIndex) =>
@@ -355,7 +384,7 @@ export default function AuthHeader() {
           <div className="border-t border-zinc-50 mt-2 pt-3 flex flex-col gap-1">
             <Link
               href="/workspace"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50  font-medium"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 font-medium"
               onClick={() => setShowMobileMenu(false)}
             >
               <BookOpen size={16} className="text-[#a78bfa]" />
@@ -363,7 +392,7 @@ export default function AuthHeader() {
             </Link>
             <Link
               href="/workspace/profile"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50  font-medium"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 font-medium"
               onClick={() => setShowMobileMenu(false)}
             >
               <Settings size={16} className="text-zinc-400" />
