@@ -283,15 +283,7 @@ const SignIn = () => {
     }
   }, [status, session, router]);
 
-  const profileDisplayName = [
-    session?.user_profile?.first_name,
-    session?.user_profile?.middle_name,
-    session?.user_profile?.last_name,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const displayName = profileDisplayName;
+  const displayName = session?.user?.name?.trim() || "";
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -343,7 +335,11 @@ const SignIn = () => {
       <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 md:px-24 lg:px-32 py-12 relative z-10 bg-white">
         <div className="absolute top-8 left-8 flex items-center gap-3">
           <div className="relative h-7 w-7">
-            <img src={logoIcon.src} alt="GADVance logo" className="object-contain" />
+            <img
+              src={logoIcon.src}
+              alt="GADVance logo"
+              className="object-contain"
+            />
           </div>
           <span className="text-lg font-semibold tracking-tight">GADvance</span>
         </div>
@@ -352,14 +348,28 @@ const SignIn = () => {
           {status === "loading" ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="w-6 h-6 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p className="text-sm text-zinc-400 font-medium tracking-tight">Verifying session...</p>
+              <p className="text-sm text-zinc-400 font-medium tracking-tight">
+                Verifying session...
+              </p>
             </div>
           ) : session ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-3xl font-bold text-zinc-900 mb-2 tracking-tight">
-                Welcome back{displayName ? <>, <span className="text-[#8b5cf6] font-serif italic">{displayName}</span></> : "!"}
+                Welcome back
+                {displayName ? (
+                  <>
+                    ,{" "}
+                    <span className="text-[#8b5cf6] font-serif italic">
+                      {displayName}
+                    </span>
+                  </>
+                ) : (
+                  "!"
+                )}
               </h1>
-              <p className="text-zinc-400 mb-10 text-sm lowercase font-light">Redirecting to your workspace...</p>
+              <p className="text-zinc-400 mb-10 text-sm lowercase font-light">
+                Redirecting to your workspace...
+              </p>
               <button
                 onClick={() => setShowSwitchAccountDialog(true)}
                 className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest hover:text-red-500 transition-all border-b border-transparent hover:border-red-500"
@@ -369,8 +379,12 @@ const SignIn = () => {
             </div>
           ) : (
             <>
-              <h1 className="text-3xl font-bold text-zinc-900 mb-2 mt-20 tracking-tight">Welcome Back!</h1>
-              <p className="text-zinc-400 mb-10 text-sm font-light">Sign in to access your dashboard</p>
+              <h1 className="text-3xl font-bold text-zinc-900 mb-2 mt-20 tracking-tight">
+                Welcome Back!
+              </h1>
+              <p className="text-zinc-400 mb-10 text-sm font-light">
+                Sign in to access your dashboard
+              </p>
 
               {error && (
                 <div className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-red-600">
@@ -380,7 +394,9 @@ const SignIn = () => {
 
               <form className="space-y-5" onSubmit={handleSubmit}>
                 <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">Email Address</label>
+                  <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+                    Email Address
+                  </label>
                   <input
                     name="email"
                     type="email"
@@ -394,7 +410,9 @@ const SignIn = () => {
 
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Password</label>
+                    <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                      Password
+                    </label>
                   </div>
                   <input
                     name="password"
@@ -406,10 +424,10 @@ const SignIn = () => {
                     className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
                   />
                   <Link
-                      href="/auth/forgot-password"
-                      className="text-[10px] font-bold text-[#8b5cf6] hover:text-[#7c3aed] uppercase tracking-widest transition-colors mt-3 block text-right"
-                    >
-                      forgot password?
+                    href="/auth/forgot-password"
+                    className="text-[10px] font-bold text-[#8b5cf6] hover:text-[#7c3aed] uppercase tracking-widest transition-colors mt-3 block text-right"
+                  >
+                    forgot password?
                   </Link>
                 </div>
 
@@ -423,7 +441,9 @@ const SignIn = () => {
 
                 <div className="relative flex items-center py-4">
                   <div className="grow border-t border-zinc-100"></div>
-                  <span className="shrink mx-4 text-zinc-300 text-[12px] uppercase tracking-[0.2em] font-bold">Or</span>
+                  <span className="shrink mx-4 text-zinc-300 text-[12px] uppercase tracking-[0.2em] font-bold">
+                    Or
+                  </span>
                   <div className="grow border-t border-zinc-100"></div>
                 </div>
 
@@ -433,9 +453,12 @@ const SignIn = () => {
           )}
 
           {!session && status !== "loading" && (
-              <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mt-10 text-center">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mt-10 text-center">
               No account?{" "}
-              <Link href="/auth/signup" className="text-[#8b5cf6] hover:underline transition-colors">
+              <Link
+                href="/auth/signup"
+                className="text-[#8b5cf6] hover:underline transition-colors"
+              >
                 create account
               </Link>
             </p>
@@ -444,23 +467,25 @@ const SignIn = () => {
       </div>
 
       {/* Right Side: Decorative Panel with Half-Circle / Curved Edge */}
-      <div 
+      <div
         className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
         style={{
-          clipPath: 'ellipse(100% 100% at 100% 50%)'
+          clipPath: "ellipse(100% 100% at 100% 50%)",
         }}
       >
         {/* Main Content Container: Centered via Flexbox Parent */}
-      <div className="text-center px-12 relative z-10">
-        <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">
-          Continue the <br />
-          <span className="font-semibold italic font-serif text-white">evolution of your journey.</span>
-        </h2>
-        <p className="text-white/80 text-sm leading-relaxed max-w-sm mx-auto font-light">
-          Welcome back to your dashboard. pick up exactly where you left off and 
-          keep driving the conversation toward a more equitable world.
-        </p>
-      </div>
+        <div className="text-center px-12 relative z-10">
+          <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">
+            Continue the <br />
+            <span className="font-semibold italic font-serif text-white">
+              evolution of your journey.
+            </span>
+          </h2>
+          <p className="text-white/80 text-sm leading-relaxed max-w-sm mx-auto font-light">
+            Welcome back to your dashboard. pick up exactly where you left off
+            and keep driving the conversation toward a more equitable world.
+          </p>
+        </div>
 
         {/* Footer Text: Absolute positioned at the bottom so it doesn't interfere with vertical centering */}
         <div className="absolute bottom-12 left-0 right-0 text-center text-[10px] tracking-[0.4em] text-white/40 uppercase">

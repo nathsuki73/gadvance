@@ -23,10 +23,7 @@ const ProfilePage = () => {
   const fullName = session?.user?.name?.trim() || "Your Name";
   const email = session?.user?.email?.trim() || "your-email@example.com";
   const statusLabel = session?.user?.status ?? "Active";
-  const city = session?.user?.city ?? session?.user_profile?.city ?? undefined;
-  const state = session?.user?.state ?? session?.user_profile?.state ?? undefined;
-  const country = session?.user?.country ?? session?.user_profile?.country ?? undefined;
-  const location = [city?.trim(), state?.trim(), country?.trim()].filter(Boolean).join(", ") || "City, Country";
+  const location = "Location from profile settings";
 
   useEffect(() => {
     if (status === "unauthenticated") {
