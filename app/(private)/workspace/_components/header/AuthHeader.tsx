@@ -81,7 +81,12 @@ export default function AuthHeader() {
   const currentUser = {
     name: session?.user?.name || mockUser.name,
     email: session?.user?.email || mockUser.email,
-    avatar: resolveAvatarSrc(session?.user?.avatar || mockUser.avatar),
+    avatar: resolveAvatarSrc(
+      session?.user?.avatar ||
+        session?.user_profile?.avatar ||
+        session?.user?.image ||
+        mockUser.avatar,
+    ),
   };
 
   const toggleSearch = () => {

@@ -126,6 +126,11 @@ const IconBio = () => {
         user: {
           ...session?.user,
           status: nextStatus,
+          avatar: avatarPath || session?.user?.avatar || null,
+        },
+        user_profile: {
+          ...session?.user_profile,
+          avatar: avatarPath || session?.user_profile?.avatar || null,
         },
       });
 

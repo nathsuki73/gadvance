@@ -51,6 +51,27 @@ type LaravelIdentity = {
   userProfile?: UserProfilePayload;
 };
 
+function pickFirstString(
+  source: Record<string, unknown> | undefined,
+  keys: string[],
+) {
+  if (!source) {
+    return undefined;
+  }
+
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed.length > 0) {
+        return trimmed;
+      }
+    }
+  }
+
+  return undefined;
+}
+
 function normalizeStatus(value: unknown): SupportedStatus | undefined {
   if (typeof value !== "string") {
     return undefined;
@@ -105,6 +126,17 @@ function mapUserProfile(
     return undefined;
   }
 
+  const resolvedAvatar = pickFirstString(userProfile, [
+    "avatar",
+    "icon",
+    "avatar_path",
+    "avatarPath",
+    "profile_picture",
+    "profilePicture",
+    "image",
+    "photo",
+  ]);
+
   return {
     first_name:
       typeof userProfile.first_name === "string"
@@ -119,8 +151,7 @@ function mapUserProfile(
     city: typeof userProfile.city === "string" ? userProfile.city : null,
     state: typeof userProfile.state === "string" ? userProfile.state : null,
     country: typeof userProfile.country === "string" ? userProfile.country : null,
-    avatar:
-      typeof userProfile.avatar === "string" ? userProfile.avatar : null,
+    avatar: resolvedAvatar || null,
   };
 }
 
@@ -135,6 +166,7 @@ function mapLaravelIdentityResponse(
   const payload = data as LaravelAuthPayload;
   const user = payload.user;
   const userProfile = payload.user_profile;
+  const mappedUserProfile = mapUserProfile(userProfile) || mapUserProfile(user);
   const normalizedStatus =
     normalizeStatus(payload.status) ||
     normalizeStatus(payload.user_status) ||
@@ -165,18 +197,19 @@ function mapLaravelIdentityResponse(
           ? payload.session_token
           : undefined,
     firstName:
-      typeof userProfile?.first_name === "string"
-        ? userProfile.first_name
-        : undefined,
+      mappedUserProfile?.first_name ||
+      pickFirstString(userProfile, ["firstName"]) ||
+      pickFirstString(user, ["first_name", "firstName"]),
     middleName:
-      typeof userProfile?.middle_name === "string"
-        ? userProfile.middle_name
-        : null,
+      mappedUserProfile?.middle_name ||
+      pickFirstString(userProfile, ["middleName"]) ||
+      pickFirstString(user, ["middle_name", "middleName"]) ||
+      null,
     lastName:
-      typeof userProfile?.last_name === "string"
-        ? userProfile.last_name
-        : undefined,
-    userProfile: mapUserProfile(userProfile),
+      mappedUserProfile?.last_name ||
+      pickFirstString(userProfile, ["lastName"]) ||
+      pickFirstString(user, ["last_name", "lastName"]),
+    userProfile: mappedUserProfile,
   };
 }
 
