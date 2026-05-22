@@ -36,9 +36,9 @@ const LogoutConfirmationDialog = ({
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
           <button
             onClick={onClose}
-            className="w-full rounded-md border border-zinc-200 bg-white px-6 py-4 text-zinc-500 transition-all hover:bg-zinc-50 hover:text-zinc-700 font-medium lowercase"
+            className="w-full rounded-md border border-zinc-200 bg-white px-6 py-4 text-zinc-500 transition-all hover:bg-zinc-50 hover:text-zinc-700 font-medium"
           >
-            cancel
+            Cancel
           </button>
 
           <button
@@ -47,9 +47,9 @@ const LogoutConfirmationDialog = ({
                 callbackUrl: "/",
               })
             }
-            className="w-full flex items-center justify-center rounded-md bg-[#e05353] px-6 py-4 text-white transition-all hover:bg-[#cc4646] hover:shadow-lg hover:shadow-red-50 font-medium lowercase"
+            className="w-full flex items-center justify-center rounded-md bg-[#e05353] px-6 py-4 text-white transition-all hover:bg-[#cc4646] hover:shadow-lg hover:shadow-red-50 font-medium"
           >
-            sign out
+            Sign out
           </button>
         </div>
 

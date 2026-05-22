@@ -370,7 +370,7 @@ const SignUp = () => {
         <div className="w-full max-w-md mx-auto lg:mx-0">
           {status === "loading" ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-[#00A8CC] border-t-transparent rounded-full animate-spin mb-4"></div>
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
               <p className="text-sm text-zinc-400 font-medium tracking-tight">
                 Verifying session...
               </p>
@@ -462,7 +462,7 @@ const SignUp = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#00A8CC] hover:bg-[#0096b6] text-white px-8 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-sky-100 active:scale-[0.98] disabled:opacity-70 mt-2"
+                  className="w-full bg-primary hover:bg-primary-hover text-white px-8 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-sky-100 active:scale-[0.98] disabled:opacity-70 mt-2"
                 >
                   {loading ? "Creating Account..." : "Create account"}
                 </button>
@@ -485,7 +485,7 @@ const SignUp = () => {
               Already have an account?{" "}
               <Link
                 href="/auth/signin"
-                className="text-[#00A8CC] hover:underline transition-colors"
+                className="text-primary hover:underline transition-colors"
               >
                 sign in
               </Link>
@@ -496,7 +496,7 @@ const SignUp = () => {
 
       {/* Right Side: Decorative Panel */}
       <div
-        className="hidden lg:flex lg:w-1/2 bg-[#00A8CC] flex-col items-center justify-center p-12 text-white relative"
+        className="hidden lg:flex lg:w-1/2 bg-primary flex-col items-center justify-center p-12 text-white relative"
         style={{
           clipPath: "ellipse(100% 100% at 100% 50%)",
         }}

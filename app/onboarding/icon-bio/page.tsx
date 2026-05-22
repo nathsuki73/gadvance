@@ -13,7 +13,20 @@ const IconBio = () => {
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
+  const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [bio, setBio] = useState<string>("");
+
+  const buildAvatarPath = (file: File) => {
+    const emailKey =
+      session?.user?.email?.split("@")[0]?.toLowerCase().replace(/[^a-z0-9]+/g, "_") ||
+      "user";
+    const extension =
+      file.name.split(".").pop()?.toLowerCase() ||
+      (file.type === "image/png" ? "png" : "jpg");
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    return `/storage/uploads/avatars/avatar_${emailKey}_${timestamp}.${extension}`;
+  };
 
   // Logic from original code to wait for session sync
   const waitForActiveSession = async () => {
@@ -32,6 +45,7 @@ const IconBio = () => {
         const parsed = JSON.parse(saved);
         setAvatarPreview(parsed.avatarBase64 || parsed.avatarPreview || null);
         setAvatarBase64(parsed.avatarBase64 || null);
+        setAvatarPath(parsed.avatarPath || null);
         setBio(parsed.bio || "");
       } catch (e) { /* ignore */ }
     }
@@ -41,14 +55,25 @@ const IconBio = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const nextAvatarPath = buildAvatarPath(file);
+
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
       setAvatarBase64(result);
       setAvatarPreview(result);
+      setAvatarPath(nextAvatarPath);
       const existing = localStorage.getItem("onboarding_p3");
       const parsed = existing ? JSON.parse(existing) : {};
-      localStorage.setItem("onboarding_p3", JSON.stringify({ ...parsed, avatarBase64: result, avatarPreview: result }));
+      localStorage.setItem(
+        "onboarding_p3",
+        JSON.stringify({
+          ...parsed,
+          avatarBase64: result,
+          avatarPreview: result,
+          avatarPath: nextAvatarPath,
+        }),
+      );
     };
     reader.readAsDataURL(file);
   };
@@ -81,7 +106,8 @@ const IconBio = () => {
         country: String(p2.country || ""),
         postalCode: String(p2.postalCode || ""),
         bio: bio,
-        avatar: avatarBase64, // Sending the base64 string to your backend
+        avatar: avatarPath,
+        icon: avatarPath,
       };
 
       // 3. CALL SERVER ACTION (Original Logic)
@@ -100,6 +126,11 @@ const IconBio = () => {
         user: {
           ...session?.user,
           status: nextStatus,
+          avatar: avatarPath || session?.user?.avatar || null,
+        },
+        user_profile: {
+          ...session?.user_profile,
+          avatar: avatarPath || session?.user_profile?.avatar || null,
         },
       });
 
@@ -150,7 +181,7 @@ const IconBio = () => {
                     <span className="text-zinc-300 text-[10px] uppercase font-bold tracking-tighter">No photo</span>
                   )}
                 </div>
-                <div className="flex-grow">
+                <div className="grow">
                   <input 
                     type="file" 
                     accept="image/*" 

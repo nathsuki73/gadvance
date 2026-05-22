@@ -26,7 +26,7 @@ const CourseModulePreview = ({
   return (
     <section className="py-16 md:py-24 bg-white">
       <div className="max-w-7xl mx-auto md:px-12 px-6">
-        <div className="mb-12 border-l-4 border-[#8b5cf6] pl-6">
+        <div className="mb-12 border-l-4 border-primary pl-6">
           <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400 mb-1">
             Syllabus
           </h2>
@@ -53,16 +53,16 @@ const CourseModulePreview = ({
                     {index === 0 ? (
                       <BookOpen
                         size={16}
-                        className="text-[#8b5cf6] shrink-0"
+                        className="text-primary shrink-0"
                       />
                     ) : (
                       <PlayCircle
                         size={16}
-                        className="text-[#00aeef] shrink-0"
+                        className="text-primary shrink-0"
                       />
                     )}
 
-                    <h4 className="text-base font-medium text-zinc-800 group-hover:text-[#00aeef] transition-colors">
+                    <h4 className="text-base font-medium text-zinc-800 group-hover:text-primary transition-colors">
                       {module.title}
                     </h4>
                   </div>

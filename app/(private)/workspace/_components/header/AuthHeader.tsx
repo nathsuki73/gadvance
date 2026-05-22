@@ -5,6 +5,7 @@ import { signOut } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import {
   Menu,
   Search,
@@ -24,6 +25,34 @@ import logoIcon from "@/app/assets/logo.ico";
 import { NavLink } from "./NavLink";
 import SearchBar from "./SearchBar";
 import LogoutConfirmationDialog from "./LogoutConfirmation";
+
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+
+function resolveAvatarSrc(avatar?: string | null) {
+  if (!avatar) {
+    return null;
+  }
+
+  const trimmedAvatar = avatar.trim();
+
+  if (
+    trimmedAvatar.startsWith("http://") ||
+    trimmedAvatar.startsWith("https://") ||
+    trimmedAvatar.startsWith("data:")
+  ) {
+    return trimmedAvatar;
+  }
+
+  const storagePath = trimmedAvatar.startsWith("/")
+    ? trimmedAvatar
+    : `/${trimmedAvatar}`;
+
+  if (apiBaseUrl) {
+    return `${apiBaseUrl}${storagePath}`;
+  }
+
+  return storagePath;
+}
 
 // Mock user object - replace this with your actual auth state context/hook
 const mockUser = {
@@ -47,6 +76,18 @@ export default function AuthHeader() {
   const [searchQuery, setSearchQuery] = useState("");
   const headerRef = useRef<HTMLElement>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const { data: session } = useSession();
+
+  const currentUser = {
+    name: session?.user?.name || mockUser.name,
+    email: session?.user?.email || mockUser.email,
+    avatar: resolveAvatarSrc(
+      session?.user?.avatar ||
+        session?.user_profile?.avatar ||
+        session?.user?.image ||
+        mockUser.avatar,
+    ),
+  };
 
   const toggleSearch = () => {
     const willBeShown = !showSearch;
@@ -171,9 +212,17 @@ export default function AuthHeader() {
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                 className="flex items-center gap-2 rounded-full p-1 border border-zinc-100 hover:border-[#a78bfa]/30 bg-zinc-50 transition-all"
               >
-                <div className="h-7 w-7 rounded-full bg-[#c4b5fd] flex items-center justify-center text-white text-xs font-bold">
-                  {mockUser.name.charAt(0).toUpperCase()}
-                </div>
+                {currentUser.avatar ? (
+                  <img
+                    src={currentUser.avatar}
+                    alt="avatar"
+                    className="h-7 w-7 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-7 w-7 rounded-full bg-[#c4b5fd] flex items-center justify-center text-white text-xs font-bold">
+                    {currentUser.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
               </button>
 
               {/* Profile Dropdown Menu */}
@@ -181,10 +230,10 @@ export default function AuthHeader() {
                 <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-zinc-100 bg-white p-2 shadow-xl shadow-zinc-100/50 flex flex-col gap-0.5">
                   <div className="px-3 py-2.5 border-b border-zinc-50 mb-1">
                     <p className="text-xs font-bold text-zinc-800 lowercase">
-                      {mockUser.name}
+                      {currentUser.name}
                     </p>
                     <p className="text-[10px] text-zinc-400 font-light truncate mt-0.5">
-                      {mockUser.email}
+                      {currentUser.email}
                     </p>
                   </div>
 
@@ -243,15 +292,23 @@ export default function AuthHeader() {
         <nav className="flex flex-col gap-1 border-t border-zinc-100 pt-4">
           {/* User Mobile Info Card */}
           <div className="flex items-center gap-3 px-3 py-3 bg-zinc-50 rounded-2xl mb-3">
-            <div className="h-9 w-9 rounded-xl bg-[#c4b5fd] flex items-center justify-center text-white text-sm font-bold">
-              {mockUser.name.charAt(0).toUpperCase()}
-            </div>
+            {currentUser.avatar ? (
+              <img
+                src={currentUser.avatar}
+                alt="avatar"
+                className="h-9 w-9 rounded-xl object-cover"
+              />
+            ) : (
+              <div className="h-9 w-9 rounded-xl bg-[#c4b5fd] flex items-center justify-center text-white text-sm font-bold">
+                {currentUser.name.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div>
               <p className="text-sm font-semibold text-zinc-800 lowercase">
-                {mockUser.name}
+                {currentUser.name}
               </p>
               <p className="text-xs text-zinc-400 font-light truncate">
-                {mockUser.email}
+                {currentUser.email}
               </p>
             </div>
           </div>
@@ -279,16 +336,22 @@ export default function AuthHeader() {
               My learning dashboard
             </Link>
             <Link
-              href="/profile"
+              href="/workspace/profile"
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50  font-medium"
               onClick={() => setShowMobileMenu(false)}
             >
               <Settings size={16} className="text-zinc-400" />
               Profile Settings
             </Link>
-            <button className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-500 font-medium hover:bg-red-50/50 text-left lowercase mt-1">
+            <button
+              onClick={() => {
+                setShowLogoutDialog(true);
+                setShowMobileMenu(false);
+              }}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-500 font-medium hover:bg-red-50/50 text-left lowercase mt-1"
+            >
               <LogOut size={16} />
-              disconnect session
+              Sign out
             </button>
           </div>
         </nav>

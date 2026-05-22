@@ -5,6 +5,10 @@ declare module "next-auth" {
     first_name?: string | null;
     middle_name?: string | null;
     last_name?: string | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
+    avatar?: string | null;
   };
 
   /**
@@ -17,6 +21,10 @@ declare module "next-auth" {
       firstName?: string;
       middleName?: string | null;
       lastName?: string;
+      city?: string | null;
+      state?: string | null;
+      country?: string | null;
+      avatar?: string | null;
     } & DefaultSession["user"];
     user_profile?: UserProfile;
     laravelJwt?: string;
@@ -28,7 +36,11 @@ declare module "next-auth" {
     firstName?: string;
     middleName?: string | null;
     lastName?: string;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
     user_profile?: UserProfile;
+    avatar?: string | null;
     laravelAuth?: {
       token: string;
       status?: string;
@@ -46,10 +58,16 @@ declare module "next-auth/jwt" {
     firstName?: string;
     middleName?: string | null;
     lastName?: string;
+    avatar?: string | null;
+    //location?: string;
     userProfile?: {
       first_name?: string | null;
       middle_name?: string | null;
       last_name?: string | null;
+      city?: string | null;
+      state?: string | null;
+      country?: string | null;
+      avatar?: string | null;
     };
     laravelJwt?: string;
     sessionToken?: string;
