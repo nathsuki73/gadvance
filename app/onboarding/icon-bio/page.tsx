@@ -15,7 +15,6 @@ const IconBio = () => {
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
-  const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [bio, setBio] = useState<string>("");
 
   const buildAvatarPath = (file: File) => {
@@ -49,7 +48,6 @@ const IconBio = () => {
         const parsed = JSON.parse(saved);
         setAvatarPreview(parsed.avatarBase64 || parsed.avatarPreview || null);
         setAvatarBase64(parsed.avatarBase64 || null);
-        setAvatarPath(parsed.avatarPath || null);
         setBio(parsed.bio || "");
       } catch (e) {
         /* ignore */
@@ -91,7 +89,6 @@ const IconBio = () => {
       // 4. Update state and localStorage
       setAvatarBase64(webpBase64);
       setAvatarPreview(webpBase64);
-      setAvatarPath(nextAvatarPath);
 
       const existing = localStorage.getItem("onboarding_p3");
       const parsed = existing ? JSON.parse(existing) : {};
@@ -139,7 +136,6 @@ const IconBio = () => {
         postalCode: String(p2.postalCode || ""),
         bio: bio,
         avatar: avatarBase64,
-        icon: avatarBase64,
       };
 
       // 3. CALL SERVER ACTION (Original Logic)
@@ -153,22 +149,17 @@ const IconBio = () => {
 
       // 4. UPDATE SESSION (Original Logic)
       const nextStatus = result.user?.status ?? "active";
-      const updatedSession = await update({
-        ...session,
+      await update({
         user: {
-          ...session?.user,
+          id: session?.user?.id,
+          email: session?.user?.email,
+          role: session?.user?.role,
           status: nextStatus,
-          avatar: avatarBase64 || session?.user?.avatar || null,
-          image: avatarBase64 || session?.user?.image || null,
-        },
-        user_profile: {
-          ...session?.user_profile,
-          avatar: avatarBase64 || session?.user_profile?.avatar || null,
         },
       });
 
       // 5. WAIT AND REDIRECT
-      if (updatedSession?.user?.status?.toLowerCase() !== "active") {
+      if (nextStatus.toLowerCase() !== "active") {
         await waitForActiveSession();
       }
 

@@ -16,18 +16,14 @@ declare module "next-auth" {
    */
   interface Session {
     user: {
-      /** The user's custom database status. */
+      id: string;
+      email: string;
+      role: string;
       status: "onboarding" | "active" | "suspended";
-      firstName?: string;
-      middleName?: string | null;
-      lastName?: string;
-      city?: string | null;
-      state?: string | null;
-      country?: string | null;
-      avatar?: string | null;
     } & DefaultSession["user"];
-    user_profile?: UserProfile;
+
     laravelJwt?: string;
+
     sessionToken?: string;
   }
 
