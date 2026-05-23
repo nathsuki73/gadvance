@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { ArrowRight, CheckCircle } from "lucide-react";
-import BlockRenderer from "./BlockRenderer"; // Ensure path matches your block parser location
+import BlockRenderer from "./BlockRenderer";
 import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 
 type LessonQuizBlock = Lesson["quiz_blocks"][number] & {
@@ -33,10 +33,67 @@ const ModuleSectionViewer = ({
   onQuizBlockCompleted,
   onBlockCompletedLive,
 }: ModuleSectionViewerProps) => {
-  // Check if this specific lesson is a pure quiz, pretest, or posttest milestone
   const hasContentBlocks = (lesson.blocks?.length || 0) > 0;
   const hasQuizBlocks = (lesson.quiz_blocks?.length || 0) > 0;
+
+  // 🎯 FIX: If a lesson contains quiz blocks, ensure it runs the assessment presentation layer
   const isAssessmentMode = hasQuizBlocks && !hasContentBlocks;
+
+  /*
+  |--------------------------------------------------------------------------
+  | QUIZ COMPILER HELPER METHOD
+  |--------------------------------------------------------------------------
+  */
+  const renderCompiledQuiz = () => {
+    if (!lesson.quiz_blocks || lesson.quiz_blocks.length === 0) return null;
+
+    const combinedQuestions = lesson.quiz_blocks
+      .map((qb: LessonQuizBlock) => {
+        try {
+          const parsed =
+            typeof qb.content === "string"
+              ? JSON.parse(qb.content)
+              : qb.content;
+          const targetQuestion = Array.isArray(parsed.questions)
+            ? parsed.questions[0]
+            : parsed;
+
+          if (!targetQuestion) return null;
+
+          return {
+            question: targetQuestion.question,
+            options: targetQuestion.options,
+            correctAnswer: targetQuestion.correctAnswer,
+            explanation: targetQuestion.explanation || "",
+            backendBlockId: qb.id,
+          };
+        } catch (e) {
+          console.error("Error formatting quiz block item:", e);
+          return null;
+        }
+      })
+      .filter(Boolean);
+
+    const unifiedQuizContent = JSON.stringify({
+      questions: combinedQuestions,
+    });
+
+    return (
+      <BlockRenderer
+        block={{
+          id: lesson.id,
+          type: "pretest",
+          content: unifiedQuizContent,
+          metadata: {
+            title: lesson.title,
+            description: `This assessment tests your understanding of all ${combinedQuestions.length} elements.`,
+          },
+        }}
+        onQuizBlockCompleted={onQuizBlockCompleted}
+        lessonId={lesson.id}
+      />
+    );
+  };
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-white px-6 py-10 sm:px-12 lg:px-16">
@@ -61,73 +118,11 @@ const ModuleSectionViewer = ({
         {/* CONTENT SWITCH LAYER */}
         {isAssessmentMode ? (
           <div className="space-y-6">
-            {/* Welcome Card banner */}
-
-            {/* ACTUALLY COMBINE ALL INDIVIDUAL DB ROWS INTO ONE SINGLE QUIZ */}
-            {(() => {
-              if (!lesson.quiz_blocks || lesson.quiz_blocks.length === 0)
-                return null;
-
-              // Extract each question out of the backend virtual content fields
-              const combinedQuestions = (lesson.quiz_blocks || [])
-                .map((qb: LessonQuizBlock) => {
-                  try {
-                    // 1. Cleanly parse the text content JSON string from the database row
-                    const parsed =
-                      typeof qb.content === "string"
-                        ? JSON.parse(qb.content)
-                        : qb.content;
-
-                    // 2. Safely find the primary question object inside the parsed data structure
-                    const targetQuestion = Array.isArray(parsed.questions)
-                      ? parsed.questions[0]
-                      : parsed;
-
-                    if (!targetQuestion) return null;
-
-                    // 3. Return a clean, unified object ensuring backendBlockId is assigned directly
-                    return {
-                      question: targetQuestion.question,
-                      options: targetQuestion.options,
-                      correctAnswer: targetQuestion.correctAnswer,
-                      explanation: targetQuestion.explanation || "",
-                      backendBlockId: qb.id, // Use the UUID directly from the parent quiz block row
-                    };
-                  } catch (e) {
-                    console.error("Error formatting quiz block item:", e);
-                    return null;
-                  }
-                })
-                .filter(Boolean);
-
-              // Wrap the complete compiled array back into the format QuizBlock expects
-              const unifiedQuizContent = JSON.stringify({
-                questions: combinedQuestions,
-              });
-
-              return (
-                <div className="space-y-2">
-                  <BlockRenderer
-                    block={{
-                      // 🎯 CRITICAL BUG FIX: Change from 'module_id' or general container context tags
-                      id: lesson.id, // This MUST map directly to the row UUID (e.g., '9744c769-7795-4328-91a6-5ab97000acc1')
-                      type: "pretest",
-                      content: unifiedQuizContent,
-                      metadata: {
-                        title: lesson.title,
-                        description: `This assessment tests your understanding of all ${combinedQuestions.length} elements.`,
-                      },
-                    }}
-                    onQuizBlockCompleted={onQuizBlockCompleted}
-                    // 🎯 FORCE TRUE SEPARATION: Passing the direct unique record primary key
-                    lessonId={lesson.id}
-                  />
-                </div>
-              );
-            })()}
+            {/* 🎯 Call our clean helper method right here */}
+            {renderCompiledQuiz()}
           </div>
         ) : (
-          /* STANDARD CONTENT BLOCK LAYER */
+          /* STANDARD CONTENT BLOCK LAYER WITH OPTIONAL QUIZZES APPENDED */
           <div className="space-y-2">
             {(lesson.blocks || [])
               .slice()
@@ -140,6 +135,16 @@ const ModuleSectionViewer = ({
                   onBlockCompletedLive={onBlockCompletedLive}
                 />
               ))}
+
+            {/* 🎯 FIX: If a lesson has BOTH content blocks AND quiz blocks, append the quizzes safely at the bottom */}
+            {!isAssessmentMode && hasQuizBlocks && (
+              <div className="mt-12 pt-10 border-t border-dashed border-zinc-200">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-400 mb-6">
+                  Lesson Knowledge Check
+                </h2>
+                {renderCompiledQuiz()}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -161,7 +166,6 @@ const ModuleSectionViewer = ({
               />
             </button>
           ) : (
-            /* TERMINAL MILESTONE REACHED FOOTER TAG */
             <div className="inline-flex items-center gap-2.5 rounded-full bg-purple-50 border border-purple-100/60 px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-[#8b5cf6]">
               <CheckCircle
                 size={12}

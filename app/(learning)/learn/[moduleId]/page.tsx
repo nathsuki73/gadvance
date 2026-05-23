@@ -76,12 +76,26 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
         const result = await getLearningModule(moduleId);
 
+        // 📡 STEP 1: Inspect the raw payload coming across the wire from Laravel
+        console.log(
+          "📡 [LearnPage Hydration] Raw result from getLearningModule:",
+          result,
+        );
+
         if (!result.success || !result.data) throw new Error();
 
         setModule(result.data as unknown as ModuleResponse);
 
-        // 🎯 3. UPGRADED SYNC: Map the extended relational telemetry fields down securely
+        // 📡 STEP 2: Inspect the precise relational telemetry metrics mapped into frontend state
         if (result.progress) {
+          console.log("📊 [LearnPage Hydration] Progress payload detected:", {
+            completedBlocksCount: result.progress.completed_blocks,
+            totalBlocksCount: result.progress.total_blocks,
+            completionPercentage: result.progress.percentage,
+            completedBlockIdsArray: result.progress.completed_block_ids,
+            completedQuizLessonsArray: result.progress.completed_quiz_lessons,
+          });
+
           setProgressData({
             completed_blocks: result.progress.completed_blocks ?? 0,
             total_blocks: result.progress.total_blocks ?? 0,
@@ -94,17 +108,27 @@ const LearnPage = ({ params }: LearnPageProps) => {
             active_quiz_attempt_id:
               result.progress.active_quiz_attempt_id ?? null,
           });
+        } else {
+          console.warn(
+            "⚠️ [LearnPage Hydration] No user progress tracking object accompanied this module payload.",
+          );
         }
 
         const moduleLessons = result.data.lessons || [];
         const fallbackLesson = moduleLessons[0];
 
-        // 🎯 4. BULLPROOF AUTO-FOCUS ROUTER ENGINE:
-        // Case A: If they left off in the middle of a test, restore that exact lesson container right away!
+        // 📡 STEP 3: Trace the auto-focus router layout engine decisions
+        console.log(
+          "🔀 [LearnPage Hydration] Running Auto-Focus Router Engine over total lessons:",
+          moduleLessons.length,
+        );
+
         if (result.progress?.active_quiz_lesson_id) {
+          console.log(
+            `🎯 [Router Engine] Pointing view to ongoing active quiz session: [${result.progress.active_quiz_lesson_id}]`,
+          );
           setActiveLessonId(result.progress.active_quiz_lesson_id);
         } else {
-          // Case B: Find the first uncompleted checkpoint in their progress lists to jump forward to
           const firstIncompleteLesson = moduleLessons.find((lesson: any) => {
             const hasUnviewedBlocks = lesson.blocks?.some(
               (b: any) => !result.progress?.completed_block_ids?.includes(b.id),
@@ -116,12 +140,18 @@ const LearnPage = ({ params }: LearnPageProps) => {
             return hasUnviewedBlocks || hasUnfinishedQuiz;
           });
 
+          console.log("🎯 [Router Engine] Focus assignment choice:", {
+            incompleteLessonIdFound:
+              firstIncompleteLesson?.id || "None (All done!)",
+            fallbackLessonIdUsed: fallbackLesson?.id || "None",
+          });
+
           setActiveLessonId(
             firstIncompleteLesson?.id || fallbackLesson?.id || "",
           );
         }
       } catch (err) {
-        console.error("LearnPage Hydration Error:", err);
+        console.error("❌ LearnPage Hydration Error:", err);
         setError(true);
       } finally {
         setLoading(false);
