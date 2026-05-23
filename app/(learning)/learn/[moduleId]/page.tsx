@@ -59,7 +59,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
   // Safely extract our sequential list of lessons
   const lessons = useMemo<Lesson[]>(() => {
     if (!module || !module.lessons) return [];
-    return module.lessons;
+    return Array.isArray(module.lessons) ? module.lessons : [module.lessons];
   }, [module]);
 
   const currentIndex = useMemo(() => {

@@ -1,22 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   ChevronLeft,
   ChevronRight,
   Circle,
   X,
   ArrowLeft,
-  Layers,
+  BookOpen,
 } from "lucide-react";
 
-import type { SectionGroup } from "../types";
-import { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
+import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 
 type ModuleSidebarProps = {
   structureTitle: string;
-  sectionGroups: Lesson[];
-  activeSectionId: string;
+  lessons: Lesson[];
+  activeLessonId: string;
   onNavigate: (id: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
@@ -26,49 +25,17 @@ type ModuleSidebarProps = {
 
 const ModuleSidebar = ({
   structureTitle,
-  sectionGroups,
-  activeSectionId,
+  lessons,
+  activeLessonId,
   onNavigate,
   isCollapsed,
   onToggleCollapse,
   mobileOpen,
   onCloseMobile,
 }: ModuleSidebarProps) => {
-  /*
-  |--------------------------------------------------------------------------
-  | EXPANDED GROUPS
-  |--------------------------------------------------------------------------
-  */
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    new Set(sectionGroups.map((group) => group.id)),
-  );
-
-  const toggleGroup = (id: string) => {
-    setExpandedGroups((prev) => {
-      const updated = new Set(prev);
-      if (updated.has(id)) {
-        updated.delete(id);
-      } else {
-        updated.add(id);
-      }
-      return updated;
-    });
-  };
-
-  const handleCollapsedGroupClick = (id: string) => {
-    // Open the sidebar first so the user can see what they just expanded
-    onToggleCollapse();
-    // Ensure the group clicked is expanded
-    setExpandedGroups((prev) => {
-      const updated = new Set(prev);
-      updated.add(id);
-      return updated;
-    });
-  };
-
   return (
     <>
-      {/* MOBILE OVERLAY */}
+      {/* MOBILE CANVAS OVERLAY */}
       {mobileOpen && (
         <button
           onClick={onCloseMobile}
@@ -77,7 +44,7 @@ const ModuleSidebar = ({
         />
       )}
 
-      {/* SIDEBAR */}
+      {/* SIDEBAR WRAPPER HOUSING CANVAS */}
       <aside
         className={`
           fixed left-0 top-0 z-50 h-dvh
@@ -91,9 +58,9 @@ const ModuleSidebar = ({
           ${isCollapsed ? "lg:w-16" : "lg:w-80"}
         `}
       >
-        {/* HEADER */}
+        {/* SIDEBAR ACCENT TOPPING HEADER */}
         <div className="flex h-16 items-center justify-between border-b border-zinc-200 bg-white/80 px-4 shrink-0">
-          {/* MOBILE HEADER */}
+          {/* MOBILE PORTVIEW BRANDING HEADER */}
           <div className="flex w-full items-center justify-between gap-2 lg:hidden">
             <button
               onClick={() => window.history.back()}
@@ -103,7 +70,7 @@ const ModuleSidebar = ({
               <ArrowLeft size={16} />
             </button>
 
-            <span className="max-w-[180px] truncate text-sm font-semibold text-zinc-900">
+            <span className="max-w-[180px] truncate text-sm font-semibold text-zinc-900 lowercase">
               {structureTitle}
             </span>
 
@@ -116,14 +83,14 @@ const ModuleSidebar = ({
             </button>
           </div>
 
-          {/* DESKTOP HEADER */}
+          {/* DESKTOP DESK INTEGRATED HEADER */}
           <div className="hidden w-full items-center justify-between lg:flex">
             {!isCollapsed && (
               <div className="min-w-0 pr-2">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">
-                  Navigation
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8b5cf6]">
+                  curriculum
                 </p>
-                <h2 className="truncate text-sm font-semibold text-zinc-800">
+                <h2 className="truncate text-sm font-semibold text-zinc-800 leading-snug">
                   {structureTitle}
                 </h2>
               </div>
@@ -157,124 +124,99 @@ const ModuleSidebar = ({
           </div>
         </div>
 
-        {/* CONTENT */}
+        {/* WORKSPACE ITEMS SCROLLBAR LIST */}
         <div className="custom-scrollbar flex-1 overflow-y-auto px-3 py-4">
-          <nav className="space-y-2">
-            {sectionGroups.map((group) => {
-              const isExpanded = expandedGroups.has(group.id);
+          <nav className="space-y-1">
+            {lessons.map((lesson, index) => {
+              const isActive = activeLessonId === lesson.id;
+              const stepCount =
+                (lesson.blocks?.length || 0) +
+                (lesson.quiz_blocks?.length || 0);
 
               /*
               |--------------------------------------------------------------------------
-              | COLLAPSED DESKTOP VIEW
+              | COMPRESSED HERO ICON SLOTS (SIDEBAR COLLAPSED DETACHED MODE)
               |--------------------------------------------------------------------------
               */
               if (isCollapsed && !mobileOpen) {
                 return (
                   <button
-                    key={group.id}
-                    onClick={() => handleCollapsedGroupClick(group.id)}
-                    className="
+                    key={lesson.id}
+                    onClick={() => {
+                      onNavigate(lesson.id);
+                      onToggleCollapse(); // Auto-expand layout when focused via minimalist docks
+                    }}
+                    className={`
                       hidden lg:flex
                       h-11 w-11 mx-auto
                       items-center justify-center
-                      rounded-xl
-                      text-zinc-500
-                      hover:bg-zinc-200/60
-                    "
-                    title={group.title}
+                      rounded-xl transition-all duration-150
+                      ${
+                        isActive
+                          ? "bg-purple-50 text-[#8b5cf6]"
+                          : "text-zinc-400 hover:bg-zinc-200/50 hover:text-zinc-700"
+                      }
+                    `}
+                    title={lesson.title}
                   >
-                    <Layers size={18} />
+                    <BookOpen size={18} />
                   </button>
                 );
               }
 
               /*
               |--------------------------------------------------------------------------
-              | FULL VIEW (EXPANDED DESKTOP / MOBILE)
+              | INTEGRATED FLAT ROW ENTRIES LIST (SIDEBAR FULL EXPANDED VIEW)
               |--------------------------------------------------------------------------
               */
               return (
-                <div key={group.id} className="space-y-1">
-                  {/* GROUP BUTTON */}
-                  <button
-                    onClick={() => toggleGroup(group.id)}
-                    className="
-                      flex w-full items-center justify-between
-                      rounded-xl
-                      border border-transparent
-                      px-3 py-2.5
-                      text-left
-                      transition
-                      hover:bg-zinc-200/50
-                    "
+                <button
+                  key={lesson.id}
+                  onClick={() => {
+                    onNavigate(lesson.id);
+                    if (mobileOpen) onCloseMobile();
+                  }}
+                  className={`
+                    flex w-full items-start gap-3
+                    rounded-xl border border-transparent
+                    px-3 py-3 text-left
+                    transition-all duration-150
+                    ${
+                      isActive
+                        ? "bg-purple-50/70 border-purple-100/50 text-[#8b5cf6]"
+                        : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"
+                    }
+                  `}
+                >
+                  {/* STEP SEQUENCE DIGIT TAG */}
+                  <span
+                    className={`text-[10px] font-mono font-bold pt-0.5 shrink-0 ${isActive ? "text-[#8b5cf6]" : "text-zinc-300"}`}
                   >
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-800">
-                        {group.title}
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-zinc-400">
-                        {group.sections.length} sections
-                      </p>
-                    </div>
+                    {(index + 1).toString().padStart(2, "0")}
+                  </span>
 
-                    <ChevronRight
-                      size={14}
-                      className={`
-                        text-zinc-400
-                        transition-transform duration-200
-                        ${isExpanded ? "rotate-90" : ""}
-                      `}
+                  {/* LESSON DETAILS COMPILATION TEXTS */}
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <p
+                      className={`text-xs font-medium leading-tight break-words ${isActive ? "font-semibold text-zinc-900" : "text-zinc-700"}`}
+                    >
+                      {lesson.title}
+                    </p>
+                    <p
+                      className={`text-[11px] font-light lowercase ${isActive ? "text-[#8b5cf6]/80" : "text-zinc-400"}`}
+                    >
+                      {stepCount} learning {stepCount === 1 ? "step" : "steps"}
+                    </p>
+                  </div>
+
+                  {/* ACTIVE INDICATOR BLOTS */}
+                  {isActive && (
+                    <Circle
+                      size={6}
+                      className="fill-[#8b5cf6] text-[#8b5cf6] shrink-0 mt-1.5 animate-pulse"
                     />
-                  </button>
-
-                  {/* SECTIONS */}
-                  {isExpanded && (
-                    <div className="ml-3.5 space-y-0.5 border-l border-zinc-200 pl-2.5 py-1">
-                      {group.sections.map((section) => {
-                        const isActive = activeSectionId === section.id;
-
-                        return (
-                          <button
-                            key={section.id}
-                            onClick={() => {
-                              onNavigate(section.id);
-                              if (mobileOpen) {
-                                onCloseMobile();
-                              }
-                            }}
-                            className={`
-                              flex w-full items-center gap-2.5
-                              rounded-lg
-                              px-2.5 py-2
-                              text-left
-                              transition-all duration-150
-                              ${
-                                isActive
-                                  ? "bg-sky-50 text-sky-600 font-medium"
-                                  : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"
-                              }
-                            `}
-                          >
-                            <Circle
-                              size={5}
-                              className={`
-                                shrink-0
-                                ${
-                                  isActive
-                                    ? "fill-sky-600 text-sky-600"
-                                    : "fill-zinc-300 text-zinc-300"
-                                }
-                              `}
-                            />
-                            <span className="truncate text-sm">
-                              {section.title}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
                   )}
-                </div>
+                </button>
               );
             })}
           </nav>

@@ -1,55 +1,113 @@
 "use client";
 
 import React from "react";
-import { ArrowDown, ArrowLeft, ArrowRight } from "lucide-react";
-import BlockRenderer from "./BlockRenderer";
-import { ModuleSectionViewerProps } from "../types";
+import { ArrowRight, CheckCircle } from "lucide-react";
+import BlockRenderer from "./BlockRenderer"; // Ensure path matches your block parser location
+import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
+
+type ModuleSectionViewerProps = {
+  lesson: Lesson;
+  currentIndex: number;
+  totalSections: number;
+  onNext: () => void;
+  onPrevious: () => void;
+  isFirst: boolean;
+  isLast: boolean;
+};
 
 const ModuleSectionViewer = ({
-  section,
+  lesson,
   currentIndex,
   totalSections,
   onNext,
-  onPrevious,
-  isFirst,
   isLast,
 }: ModuleSectionViewerProps) => {
+  // Check if this specific lesson is a pure quiz, pretest, or posttest milestone
+  const hasContentBlocks = (lesson.blocks?.length || 0) > 0;
+  const hasQuizBlocks = (lesson.quiz_blocks?.length || 0) > 0;
+  const isAssessmentMode = hasQuizBlocks && !hasContentBlocks;
+
   return (
-    <div className="min-h-screen">
-      {/* Block Render Engine Content Wrapper */}
-      <div className="w-full">
-        {section.blocks
-          ?.sort((a, b) => a.order_index - b.order_index)
-          .map((block) => (
-            <BlockRenderer key={block.id} block={block} />
-          ))}
+    <div className="min-h-screen flex flex-col justify-between bg-white px-6 py-10 sm:px-12 lg:px-16">
+      {/* MAIN WORKSPACE CANVAS AREA */}
+      <div className="w-full max-w-4xl mx-auto flex-1">
+        {/* DYNAMIC HEADER ANCHOR */}
+        <div className="mb-10 border-b border-zinc-100 pb-6">
+          <p className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[#8b5cf6] mb-1">
+            Step {(currentIndex + 1).toString().padStart(2, "0")} of{" "}
+            {totalSections.toString().padStart(2, "0")}
+          </p>
+          <h1 className="text-2xl font-semibold text-zinc-900 tracking-tight">
+            {lesson.title}
+          </h1>
+          {lesson.description && (
+            <p className="mt-2 text-sm font-light text-zinc-400 leading-relaxed lowercase">
+              {lesson.description}
+            </p>
+          )}
+        </div>
+
+        {/* CONTENT SWITCH LAYER */}
+        {isAssessmentMode ? (
+          <div className="rounded-2xl border border-purple-100 bg-purple-50/20 p-8 sm:p-12 text-center my-8">
+            <h3 className="text-xl font-light text-zinc-800 lowercase">
+              welcome to the{" "}
+              <span className="font-serif italic text-[#8b5cf6] font-normal">
+                {lesson.title}
+              </span>
+            </h3>
+            <p className="mt-3 text-sm font-light text-zinc-400 max-w-md mx-auto lowercase leading-relaxed">
+              this milestone features {lesson.quiz_blocks.length} evaluation
+              check questions to assess your core framework mastery.
+            </p>
+
+            {/* 
+              PRO TIPPLACEHOLDER: 
+              Swap this box out with your custom quiz view container component:
+              <ModuleQuizEngine questions={lesson.quiz_blocks} />
+            */}
+            <div className="mt-8 p-4 rounded-xl border border-dashed border-purple-200 bg-white inline-block text-xs font-mono text-zinc-400">
+              [ quiz workspace engine slot ]
+            </div>
+          </div>
+        ) : (
+          /* STANDARD CONTENT BLOCK LAYER */
+          <div className="space-y-2">
+            {(lesson.blocks || [])
+              .slice()
+              .sort((a, b) => a.order_index - b.order_index)
+              .map((block) => (
+                <BlockRenderer key={block.id} block={block} />
+              ))}
+          </div>
+        )}
       </div>
 
-      {/* 
-        Minimalist Footer Navigation System:
-        Re-engineered to isolate operations perfectly in the layout center
-      */}
-      <div className="mt-20 py-8  border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-6 bg-zinc-100">
-        {/* Center Side: High-Priority Linear Forward Progress Action */}
-        <div className="w-full flex justify-center">
+      {/* MINIMALIST WORKSPACE LINEAR FOOTER NAVIGATION */}
+      <div className="mt-20 border-t border-zinc-100 pt-8 w-full max-w-4xl mx-auto shrink-0">
+        <div className="flex justify-center">
           {!isLast ? (
             <button
               type="button"
               onClick={onNext}
-              className="group flex items-center justify-center gap-3 rounded-full bg-[#00aeef] px-10 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all hover:bg-[#00aeef] active:scale-[0.98] w-full sm:w-auto"
+              className="group flex items-center justify-center gap-3 rounded-full bg-[#8b5cf6] px-12 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all hover:bg-[#7c3aed] active:scale-[0.98] w-full sm:w-auto hover:shadow-lg hover:shadow-purple-100"
             >
-              <span>Continue</span>
-              <ArrowDown
+              <span>{isAssessmentMode ? "start assessment" : "continue"}</span>
+              <ArrowRight
                 size={14}
-                strokeWidth={2}
-                className="transition-transform group-hover:translate-x-0.5"
+                strokeWidth={2.5}
+                className="transition-transform duration-200 group-hover:translate-x-0.5"
               />
             </button>
           ) : (
-            /* Complete instructional branch readout indicator (Hidden forward triggers) */
-            <div className="inline-flex items-center gap-2 rounded-full bg-sky-50/50 border border-sky-100/60 px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider text-[#00aeef]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#00aeef] animate-pulse" />
-              final instructional milestone reached
+            /* TERMINAL MILESTONE REACHED FOOTER TAG */
+            <div className="inline-flex items-center gap-2.5 rounded-full bg-purple-50 border border-purple-100/60 px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-[#8b5cf6]">
+              <CheckCircle
+                size={12}
+                className="text-[#8b5cf6]"
+                strokeWidth={2.5}
+              />
+              final curriculum milestone completed
             </div>
           )}
         </div>
