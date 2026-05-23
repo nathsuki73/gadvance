@@ -36,7 +36,7 @@ const ModuleSectionViewer = ({
   const hasContentBlocks = (lesson.blocks?.length || 0) > 0;
   const hasQuizBlocks = (lesson.quiz_blocks?.length || 0) > 0;
 
-  // 🎯 FIX: If a lesson contains quiz blocks, ensure it runs the assessment presentation layer
+  // If a lesson contains ONLY quiz blocks, it runs the assessment presentation layer
   const isAssessmentMode = hasQuizBlocks && !hasContentBlocks;
 
   /*
@@ -78,19 +78,29 @@ const ModuleSectionViewer = ({
       questions: combinedQuestions,
     });
 
+    // 🎯 CHOOSE THE CORRECT TYPE FOR ACCURATE TELEMETRY TRACKING
+    const dynamicQuizType = isAssessmentMode ? "pretest" : "quiz";
+
     return (
       <BlockRenderer
+        // 🎯 THE CRITICAL STATE RESET FIX:
+        // This key tells React to throw away the old quiz state completely
+        // when changing lessons, preventing score bleeding.
+        key={`compiled-quiz-context-${lesson.id}`}
         block={{
           id: lesson.id,
-          type: "pretest",
+          type: dynamicQuizType,
           content: unifiedQuizContent,
           metadata: {
             title: lesson.title,
-            description: `This assessment tests your understanding of all ${combinedQuestions.length} elements.`,
+            description: isAssessmentMode
+              ? `Baseline diagnostic evaluation testing your understanding of all ${combinedQuestions.length} elements.`
+              : `Check your understanding of this lesson's concepts with these ${combinedQuestions.length} questions.`,
           },
         }}
         onQuizBlockCompleted={onQuizBlockCompleted}
         lessonId={lesson.id}
+        onBlockCompletedLive={onBlockCompletedLive}
       />
     );
   };
@@ -117,10 +127,7 @@ const ModuleSectionViewer = ({
 
         {/* CONTENT SWITCH LAYER */}
         {isAssessmentMode ? (
-          <div className="space-y-6">
-            {/* 🎯 Call our clean helper method right here */}
-            {renderCompiledQuiz()}
-          </div>
+          <div className="space-y-6">{renderCompiledQuiz()}</div>
         ) : (
           /* STANDARD CONTENT BLOCK LAYER WITH OPTIONAL QUIZZES APPENDED */
           <div className="space-y-2">
@@ -129,14 +136,14 @@ const ModuleSectionViewer = ({
               .sort((a, b) => a.order_index - b.order_index)
               .map((block) => (
                 <BlockRenderer
-                  key={block.id}
+                  key={`${lesson.id}-${block.id}`}
                   block={block}
                   lessonId={lesson.id}
                   onBlockCompletedLive={onBlockCompletedLive}
                 />
               ))}
 
-            {/* 🎯 FIX: If a lesson has BOTH content blocks AND quiz blocks, append the quizzes safely at the bottom */}
+            {/* If a lesson has BOTH content blocks AND quiz blocks, append the quizzes safely at the bottom */}
             {!isAssessmentMode && hasQuizBlocks && (
               <div className="mt-12 pt-10 border-t border-dashed border-zinc-200">
                 <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-400 mb-6">

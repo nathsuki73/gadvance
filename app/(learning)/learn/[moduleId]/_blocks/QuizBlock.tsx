@@ -26,6 +26,10 @@ type QuizBlockProps = {
   metadata?: QuizBlockMetadata;
   onQuestionCompleted?: (blockId: string) => void;
   lessonId?: string;
+  onBlockCompletedLive?: (
+    blockId: string,
+    interactionType: "reading" | "quiz" | "text" | "video",
+  ) => void;
 };
 
 const QuizBlock = ({
@@ -33,10 +37,11 @@ const QuizBlock = ({
   metadata,
   onQuestionCompleted,
   lessonId,
+  onBlockCompletedLive,
 }: QuizBlockProps) => {
   /*
   |--------------------------------------------------------------------------
-  | 1. DATA PARSING (ALWAYS RUNS FIRST)
+  | 1. DATA PARSING
   |--------------------------------------------------------------------------
   |*/
   const questions: QuizQuestion[] = useMemo(() => {
@@ -51,7 +56,7 @@ const QuizBlock = ({
 
   /*
   |--------------------------------------------------------------------------
-  | 2. ALL STATE HOOKS (UNCONDITIONAL ORDER)
+  | 2. ALL STATE HOOKS
   |--------------------------------------------------------------------------
   |*/
   const [started, setStarted] = useState(false);
@@ -60,17 +65,14 @@ const QuizBlock = ({
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [animatedScore, setAnimatedScore] = useState(0);
-  // Track backend score independently to survive clean cache reloads
   const [serverScore, setServerScore] = useState<number | null>(null);
 
   const [activeAttemptId, setActiveAttemptId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
-  // Read item out of questions safely via active state index positions
   const currentQuestion = questions[currentQuestionIndex];
 
-  // 🛡️ FALLBACK RESOLUTION TRACKER
   const resolvedLessonId = useMemo(() => {
     if (lessonId) return lessonId;
     return "";
@@ -99,7 +101,7 @@ const QuizBlock = ({
         if (result.success && result.attempt) {
           setActiveAttemptId(result.attempt.id);
 
-          // CASE A: User has an active ongoing attempt in progress
+          // CASE A: Active ongoing attempt in progress
           if (
             result.attempt.current_question_index > 0 &&
             !result.attempt.completed
@@ -113,16 +115,16 @@ const QuizBlock = ({
               if (savedAns) {
                 databaseAnswersMap[idx] = savedAns.selected_option;
                 onQuestionCompleted?.(q.backendBlockId);
+                // 🎯 Hydrate live donuts for previously saved items on refresh
+                onBlockCompletedLive?.(q.backendBlockId, "quiz");
               }
             });
             setAnswers(databaseAnswersMap);
           }
 
-          // 🎯 CASE B: User has completely finished this assessment
+          // CASE B: User completely finished this assessment
           if (result.attempt.completed) {
             const calculatedPercentage = Math.round(result.attempt.score);
-
-            // Calculate actual absolute points scored from percent baseline
             const completedAbsoluteScore = Math.round(
               (calculatedPercentage / 100) * questions.length,
             );
@@ -132,9 +134,10 @@ const QuizBlock = ({
             setStarted(true);
             setSubmitted(true);
 
-            // Mark all individual question blocks complete in the sidebar on reload
+            // Mark all individual question blocks complete across both hooks on load
             questions.forEach((q) => {
               onQuestionCompleted?.(q.backendBlockId);
+              onBlockCompletedLive?.(q.backendBlockId, "quiz");
             });
           }
         }
@@ -161,7 +164,6 @@ const QuizBlock = ({
     return answers[index] === question.correctAnswer ? total + 1 : total;
   }, 0);
 
-  // Fallback cleanly to verified server points if local state is unhydrated
   const displayScore = serverScore !== null ? serverScore : runtimeScore;
 
   const percentage =
@@ -184,26 +186,60 @@ const QuizBlock = ({
     if (!selectedAnswer || !activeAttemptId || isSyncing || !currentQuestion)
       return;
 
+    // 🎯 FIX 1: Safely resolve whichever ID field was packed by your compiler loop
+    const targetQuizBlockId =
+      currentQuestion.backendBlockId || (currentQuestion as any).id;
+
+    if (!targetQuizBlockId) {
+      console.error(
+        "❌ [QuizBlock Sync Error] Could not find a valid block UUID tracking identifier for:",
+        currentQuestion,
+      );
+      return;
+    }
+
     try {
       setIsSyncing(true);
       const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
       const nextIndex = currentQuestionIndex + 1;
 
+      // 🎯 FIX 2: Log payload values right before passing them down over the wire
+      console.log(
+        "✈️ [QuizBlock Sync] Submitting action to database tracker:",
+        {
+          activeAttemptId,
+          quiz_block_id: targetQuizBlockId,
+          selected_option: selectedAnswer,
+          is_correct: isCorrect,
+          next_index: nextIndex,
+        },
+      );
+
       const syncResult = await saveQuizAnswerAction(activeAttemptId, {
-        quiz_block_id: currentQuestion.backendBlockId,
+        quiz_block_id: targetQuizBlockId,
         selected_option: selectedAnswer,
         is_correct: isCorrect,
         next_index: nextIndex,
       });
 
-      if (!syncResult.success) throw new Error("Sync anomaly");
+      // 🎯 FIX 3: Trace full response details before running the boolean gate rule assertion
+      if (!syncResult || !syncResult.success) {
+        console.error(
+          "❌ [QuizBlock Sync Anomaly Detected] Server action failed. Returned value payload:",
+          syncResult,
+        );
+        throw new Error("Sync anomaly");
+      }
 
       setAnswers((prev) => ({
         ...prev,
         [currentQuestionIndex]: selectedAnswer,
       }));
       setSelectedAnswer("");
-      onQuestionCompleted?.(currentQuestion.backendBlockId);
+
+      // Notify parent canvas state engines to fill progress rings
+      onBlockCompletedLive?.(targetQuizBlockId, "quiz");
+      onQuestionCompleted?.(targetQuizBlockId);
 
       if (currentQuestionIndex === questions.length - 1) {
         const evaluation = await submitQuizAttemptAction(activeAttemptId);
@@ -215,7 +251,8 @@ const QuizBlock = ({
 
       setCurrentQuestionIndex(nextIndex);
     } catch (err) {
-      console.error("Mutation Sync Error:", err);
+      console.error("Mutation Sync Error Execution Block caught error:", err);
+      // Optional fallback warning toast or alert feedback context layout goes here
     } finally {
       setIsSyncing(false);
     }
@@ -267,7 +304,6 @@ const QuizBlock = ({
     );
   }
 
-  // STATE A: EVALUATION INTERFACE CARD
   if (submitted) {
     return (
       <div className="mx-auto max-w-2xl py-16 px-4 text-center animate-fade-in">
@@ -317,7 +353,6 @@ const QuizBlock = ({
     );
   }
 
-  // STATE B: INTRO WELCOME CARD
   if (!started) {
     return (
       <div className="mx-auto max-w-3xl py-12 px-4 animate-fade-in">
@@ -355,7 +390,6 @@ const QuizBlock = ({
     );
   }
 
-  // STATE C: ACTIVE LESSON QUIZ QUESTIONS CARDS
   return (
     <div className="mx-auto max-w-3xl py-12 px-4 animate-fade-in">
       <div className="flex items-center justify-between pb-6 border-b border-zinc-100">

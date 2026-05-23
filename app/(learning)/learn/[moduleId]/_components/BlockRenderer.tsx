@@ -61,6 +61,7 @@ const BlockRenderer = ({
         />
       );
     case "pretest":
+    case "quiz":
       return (
         <QuizBlock
           content={block.content}
@@ -68,6 +69,7 @@ const BlockRenderer = ({
           onQuestionCompleted={onQuizBlockCompleted}
           // 🎯 FORWARD THE CLEAN LESSON ID UUID DOWN TO THE LOGIC ENGINE:
           lessonId={lessonId}
+          onBlockCompletedLive={onBlockCompletedLive}
         />
       );
     case "survey":
@@ -80,16 +82,6 @@ const BlockRenderer = ({
           metadata={block.metadata}
           lessonId={lessonId}
           onCompleted={() => onBlockCompletedLive?.(block.id, "reading")}
-        />
-      );
-    case "lesson":
-      return (
-        <QuizBlock
-          content={block.content}
-          metadata={block.metadata}
-          onQuestionCompleted={onQuizBlockCompleted}
-          // 🎯 FORWARD THE CLEAN LESSON ID UUID DOWN TO THE LOGIC ENGINE:
-          lessonId={lessonId}
         />
       );
 
