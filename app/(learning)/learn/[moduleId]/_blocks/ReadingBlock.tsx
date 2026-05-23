@@ -2,6 +2,8 @@
 
 import React, { useMemo } from "react";
 import { BookOpen } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type ReadingBlockMetadata = {
   title?: string;
@@ -37,20 +39,76 @@ const ReadingBlock = ({ content, metadata }: ReadingBlockProps) => {
         {/* Optional Header Anchor Layout */}
         {showHeader && (
           <div className="mb-6 flex items-center gap-3 border-b border-zinc-50 pb-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 text-[#8b5cf6]">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-[#8b5cf6]">
               <BookOpen size={16} strokeWidth={2.5} />
             </div>
-            <h3 className="text-lg font-semibold text-zinc-900 tracking-tight">
-              {parsedMetadata.title}
+            <h3 className="text-lg font-semibold text-zinc-900 tracking-tight prose prose-zinc max-w-none">
+              {/* RENDER THE TITLE THROUGH THE MARKDOWN PARSER ENGINE AS WELL */}
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  p: ({ children }) => (
+                    <span className="inline">{children}</span>
+                  ),
+                  strong: ({ children }) => (
+                    <strong className="font-bold text-zinc-950">
+                      {children}
+                    </strong>
+                  ),
+                  em: ({ children }) => (
+                    <em className="italic text-purple-600 font-medium">
+                      {children}
+                    </em>
+                  ),
+                }}
+              >
+                {parsedMetadata.title}
+              </ReactMarkdown>
             </h3>
           </div>
         )}
 
-        {/* Core Paragraph Content Block */}
-        <div className="prose prose-zinc max-w-none">
-          <p className="text-base font-light leading-relaxed text-zinc-600 whitespace-pre-wrap">
+        {/* Core Markdown Content Block */}
+        <div className="prose prose-zinc max-w-none dark:prose-invert">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              // Map raw Markdown elements to beautiful, minimalist styled Tailwind components
+              p: ({ children }) => (
+                <p className="text-base font-light leading-relaxed text-zinc-600 mb-4 last:mb-0">
+                  {children}
+                </p>
+              ),
+              strong: ({ children }) => (
+                <strong className="font-semibold text-zinc-900">
+                  {children}
+                </strong>
+              ),
+              em: ({ children }) => (
+                <em className="italic text-zinc-800">{children}</em>
+              ),
+              blockquote: ({ children }) => (
+                <blockquote className="border-l-4 border-purple-200 bg-purple-50/30 px-4 py-2 my-4 rounded-r-lg font-light italic text-zinc-700">
+                  {children}
+                </blockquote>
+              ),
+              ul: ({ children }) => (
+                <ul className="list-disc list-inside space-y-1.5 my-4 text-zinc-600 font-light pl-2">
+                  {children}
+                </ul>
+              ),
+              ol: ({ children }) => (
+                <ol className="list-decimal list-inside space-y-1.5 my-4 text-zinc-600 font-light pl-2">
+                  {children}
+                </ol>
+              ),
+              li: ({ children }) => (
+                <li className="text-base leading-relaxed">{children}</li>
+              ),
+            }}
+          >
             {content}
-          </p>
+          </ReactMarkdown>
         </div>
 
         {/* Optional Illustration Handling Context */}
