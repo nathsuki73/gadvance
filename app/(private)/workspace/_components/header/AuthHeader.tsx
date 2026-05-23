@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation"; // 🎯 Added for programmatic navigation on item select
 import {
   Menu,
   Search,
@@ -62,11 +63,10 @@ function getInitials(name?: string | null) {
   return trimmedName.charAt(0).toUpperCase();
 }
 
-// Mock user object - replace this with your actual auth state context/hook
 const mockUser = {
   name: "Learner",
   email: "gadvanceproject@gmail.com",
-  avatar: null, // base64 or url if available
+  avatar: null,
 };
 
 const AUTH_NAVS = [
@@ -77,6 +77,7 @@ const AUTH_NAVS = [
 ];
 
 export default function AuthHeader() {
+  const router = useRouter();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -87,6 +88,10 @@ export default function AuthHeader() {
   const [avatarFallbackIndex, setAvatarFallbackIndex] = useState(0);
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
   const { data: session } = useSession();
+
+  // 🎯 Search State Sub-Hook Management Arrays
+  const [searchResults, setSearchResults] = useState<{ title: string; type: string; url: string; description?: string }[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const currentUser = {
     name: session?.user?.name || mockUser.name,
@@ -102,7 +107,37 @@ export default function AuthHeader() {
     return currentUser.avatarSources[avatarFallbackIndex] || null;
   }, [avatarFallbackIndex, currentUser.avatarSources]);
 
-  // FIX: Removed the problematic useEffect that was manually resetting avatarFallbackIndex(0)
+  // 🎯 Instant Search Auto-fetching Pipeline with 250ms Debounce Protection
+  useEffect(() => {
+    if (searchQuery.trim().length === 0) {
+      setSearchResults([]);
+      setIsSearchOpen(false);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      if (!apiBaseUrl) return;
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/global-search?q=${encodeURIComponent(searchQuery)}`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${session?.laravelJwt}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setSearchResults(data);
+          setIsSearchOpen(true);
+        }
+      } catch (error) {
+        console.error("Global search fetch execution failed:", error);
+      }
+    }, 250);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, session, apiBaseUrl]);
 
   useEffect(() => {
     let isMounted = true;
@@ -133,6 +168,10 @@ export default function AuthHeader() {
   const toggleSearch = () => {
     const willBeShown = !showSearch;
     setShowSearch(willBeShown);
+    if (!willBeShown) {
+      setSearchQuery("");
+      setIsSearchOpen(false);
+    }
     if (willBeShown) {
       setShowMobileMenu(false);
       setShowProfileDropdown(false);
@@ -155,6 +194,7 @@ export default function AuthHeader() {
         setShowMobileMenu(false);
         setShowProfileDropdown(false);
         setShowNotifications(false);
+        setIsSearchOpen(false); // Closes spotlight wrapper when clicking canvas body
       }
     };
 
@@ -164,18 +204,21 @@ export default function AuthHeader() {
     };
   }, []);
 
-  const handleSearch = () => {
-    console.log(searchQuery);
+  // Shared result click handler to perform seamless route redirect cleanups
+  const handleResultClick = (url: string) => {
+    setIsSearchOpen(false);
+    setShowSearch(false);
+    setSearchQuery("");
+    router.push(url);
   };
 
-  // Unique key created from user dependencies to auto-reset error counts cleanly
   const userAvatarKey = `${session?.user?.image || ""}-${session?.user?.googleImage || ""}-${session?.user?.name || ""}`;
 
   const renderAvatar = (sizeClassName: string, textClassName: string) => {
     if (activeAvatarSource) {
       return (
         <Image
-          key={userAvatarKey} // FIX: Forces the image element to reset fallback states safely when user data changes
+          key={userAvatarKey}
           src={activeAvatarSource}
           alt={`${currentUser.name} avatar`}
           width={40}
@@ -194,6 +237,32 @@ export default function AuthHeader() {
 
     return (
       <span className={textClassName}>{getInitials(currentUser.name)}</span>
+    );
+  };
+
+  // Shared Sub-component template for Search Dropdown Layouts
+  const renderSearchDropdown = () => {
+    if (!isSearchOpen || searchResults.length === 0) return null;
+    return (
+      <div className="absolute top-full left-0 mt-2 w-full max-w-[400px] rounded-2xl border border-zinc-100 bg-white p-2 shadow-2xl z-50 max-h-[350px] overflow-y-auto">
+        {searchResults.map((item, index) => (
+          <button
+            key={index}
+            type="button"
+            onClick={() => handleResultClick(item.url)}
+            className="flex w-full flex-col gap-0.5 rounded-xl px-4 py-2 text-left text-sm hover:bg-zinc-50 transition-all group"
+          >
+            <div className="flex justify-between items-center w-full">
+              <span className="font-semibold text-zinc-800 group-hover:text-primary transition-colors">
+                {item.title}
+              </span>
+            </div>
+            {item.description && (
+              <p className="text-xs text-zinc-400 truncate w-full">{item.description}</p>
+            )}
+          </button>
+        ))}
+      </div>
     );
   };
 
@@ -216,28 +285,25 @@ export default function AuthHeader() {
 
         {/* CENTER/RIGHT: Search & Navigation */}
         <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
-          {/* DESKTOP SEARCH */}
-          <div className="hidden sm:block sm:flex-1 sm:max-w-md">
+          {/* DESKTOP SEARCH COMPONENT WITH DROPDOWN */}
+          <div className="hidden sm:block sm:flex-1 sm:max-w-md relative">
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              onSearch={handleSearch}
             />
+            {renderSearchDropdown()}
           </div>
 
           {/* MOBILE SEARCH TOGGLE */}
           <button
+            type="button"
             onClick={toggleSearch}
             className="rounded-full p-2 text-zinc-600 hover:bg-zinc-100 sm:hidden"
           >
-            {showSearch ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Search className="h-5 w-5" />
-            )}
+            {showSearch ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
           </button>
 
-          {/* DESKTOP NAV (Visible on xl) */}
+          {/* DESKTOP NAV */}
           <nav className="hidden items-center gap-6 xl:flex">
             {AUTH_NAVS.map((link) => (
               <NavLink key={link.href} href={link.href}>
@@ -251,6 +317,7 @@ export default function AuthHeader() {
             {/* Notifications Bell */}
             <div className="relative">
               <button
+                type="button"
                 onClick={() => {
                   const next = !showNotifications;
                   setShowNotifications(next);
@@ -273,9 +340,10 @@ export default function AuthHeader() {
               />
             </div>
 
-            {/* User Dropdown Trigger (Desktop xl) */}
+            {/* User Dropdown Trigger */}
             <div className="relative hidden xl:block">
               <button
+                type="button"
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                 className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-100 bg-zinc-50 p-0 hover:border-[#a78bfa]/30 transition-all"
               >
@@ -287,7 +355,7 @@ export default function AuthHeader() {
 
               {/* Profile Dropdown Menu */}
               {showProfileDropdown && (
-                <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-primary-hover/20 bg-white p-2  flex flex-col gap-0.5">
+                <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-primary-hover/20 bg-white p-2 flex flex-col gap-0.5">
                   <div className="px-3 py-2.5 border-b border-zinc-50 mb-1">
                     <p className="text-xs font-bold text-zinc-800 lowercase">
                       {currentUser.name}
@@ -303,6 +371,7 @@ export default function AuthHeader() {
                     label="profile"
                   />
                   <button
+                    type="button"
                     onClick={() => setShowLogoutDialog(true)}
                     className="w-full flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-red-500 font-medium hover:bg-red-50 transition-colors lowercase"
                   >
@@ -317,31 +386,30 @@ export default function AuthHeader() {
               />
             </div>
 
-            {/* BURGER MENU (Visible up to xl) */}
+            {/* BURGER MENU */}
             <button
+              type="button"
               onClick={toggleMobileMenu}
               className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-50 xl:hidden"
             >
-              {showMobileMenu ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
+              {showMobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* MOBILE SEARCH DRAWER */}
+      {/* MOBILE SEARCH DRAWER WITH DROPDOWN */}
       <div
-        className={`transition-all duration-300 ease-in-out md:hidden ${showSearch ? "max-h-24 opacity-100 mt-3" : "max-h-0 opacity-0 overflow-hidden"}`}
+        className={`transition-all duration-300 ease-in-out md:hidden relative ${showSearch ? "max-h-24 opacity-100 mt-3" : "max-h-0 opacity-0 overflow-hidden"}`}
       >
-        <div className="border-t border-zinc-100 pt-3">
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            onSearch={handleSearch}
-          />
+        <div className="border-t border-zinc-100 pt-3 flex justify-center">
+          <div className="relative w-full max-w-md">
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+            />
+            {renderSearchDropdown()}
+          </div>
         </div>
       </div>
 
@@ -399,6 +467,7 @@ export default function AuthHeader() {
               Profile Settings
             </Link>
             <button
+              type="button"
               onClick={() => {
                 setShowLogoutDialog(true);
                 setShowMobileMenu(false);

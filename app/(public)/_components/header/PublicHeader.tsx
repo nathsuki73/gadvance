@@ -134,8 +134,10 @@ export default function PublicHeader() {
     ${showSearch ? "max-h-24 opacity-100 mt-3" : "max-h-0 opacity-0"}
   `}
 >
-  <div className="border-t border-zinc-100 pt-3">
-    <SearchBar />
+  <div className="border-t border-zinc-100 pt-3 flex justify-center">
+    <div className="w-full max-w-md">
+      <SearchBar />
+    </div>
   </div>
 </div>
 
