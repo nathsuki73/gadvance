@@ -2,12 +2,14 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { Check, ArrowRight, RotateCcw, HelpCircle, Award } from "lucide-react";
+import { useQuizTelemetry } from "../_hooks/useQuizTelemetry";
 
 type QuizQuestion = {
   question: string;
   options: string[];
   correctAnswer: string;
   explanation?: string;
+  backendBlockId: string;
 };
 
 type QuizBlockMetadata = {
@@ -47,7 +49,7 @@ const QuizBlock = ({ content, metadata }: QuizBlockProps) => {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [animatedScore, setAnimatedScore] = useState(0);
-
+  const { trackAnswer, isSyncing } = useQuizTelemetry();
   const currentQuestion = questions[currentQuestionIndex];
 
   const score = questions.reduce((total, question, index) => {
@@ -84,12 +86,29 @@ const QuizBlock = ({ content, metadata }: QuizBlockProps) => {
     }
   }, [submitted, percentage]);
 
-  const handleSubmitAnswer = () => {
+  const handleSubmitAnswer = async () => {
     if (!selectedAnswer) return;
 
+    // 🔍 DIAGNOSTIC LOG: Let's see exactly what keys are available on your question object
+    console.log("Current Question Raw Data Structure:", currentQuestion);
+
+    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
+    const currentStepNumber = currentQuestionIndex + 1;
+    const totalQuestionsCount = questions.length;
+
+    // Local state update
     setAnswers((prev) => ({ ...prev, [currentQuestionIndex]: selectedAnswer }));
     setSelectedAnswer("");
 
+    // 2. Fire telemetry hook completely cleanly out of view layer boundaries
+    await trackAnswer({
+      backendBlockId: currentQuestion.backendBlockId,
+      isCorrect,
+      currentIndex: currentStepNumber,
+      totalItems: totalQuestionsCount,
+    });
+
+    // 3. Switch UI interfaces cleanly
     if (currentQuestionIndex === questions.length - 1) {
       setSubmitted(true);
       return;

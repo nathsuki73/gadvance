@@ -61,17 +61,33 @@ const ModuleSectionViewer = ({
               const combinedQuestions = (lesson.quiz_blocks || [])
                 .map((qb: any) => {
                   try {
-                    // Using 'any' bypasses the strict property validation error for this calculation layer
+                    // 1. Cleanly parse the text content JSON string from the database row
                     const parsed =
                       typeof qb.content === "string"
                         ? JSON.parse(qb.content)
                         : qb.content;
-                    return parsed.questions[0];
+
+                    // 2. Safely find the primary question object inside the parsed data structure
+                    const targetQuestion = Array.isArray(parsed.questions)
+                      ? parsed.questions[0]
+                      : parsed;
+
+                    if (!targetQuestion) return null;
+
+                    // 3. Return a clean, unified object ensuring backendBlockId is assigned directly
+                    return {
+                      question: targetQuestion.question,
+                      options: targetQuestion.options,
+                      correctAnswer: targetQuestion.correctAnswer,
+                      explanation: targetQuestion.explanation || "",
+                      backendBlockId: qb.id, // Use the UUID directly from the parent quiz block row
+                    };
                   } catch (e) {
+                    console.error("Error formatting quiz block item:", e);
                     return null;
                   }
                 })
-                .filter(Boolean); // Filter out any parsing errors safely
+                .filter(Boolean);
 
               // Wrap the complete compiled array back into the format QuizBlock expects
               const unifiedQuizContent = JSON.stringify({
