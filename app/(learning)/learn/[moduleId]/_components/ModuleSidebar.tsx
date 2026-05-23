@@ -10,13 +10,14 @@ import {
 } from "lucide-react";
 
 import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
-import { LessonDonutProgress } from "./LessonDonutProgress"; // Import the component from step 1
+import { LessonDonutProgress } from "./LessonDonutProgress";
 
 type ModuleSidebarProps = {
   structureTitle: string;
   lessons: Lesson[];
   activeLessonId: string;
-  completedBlockIds?: string[]; // 🎯 Added tracker reference property
+  completedBlockIds?: string[];
+  completedQuizLessons?: string[];
   onNavigate: (id: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
@@ -28,7 +29,8 @@ const ModuleSidebar = ({
   structureTitle,
   lessons,
   activeLessonId,
-  completedBlockIds = [], // Fallback default map array
+  completedBlockIds = [],
+  completedQuizLessons = [],
   onNavigate,
   isCollapsed,
   onToggleCollapse,
@@ -62,7 +64,6 @@ const ModuleSidebar = ({
       >
         {/* SIDEBAR HEADER */}
         <div className="flex h-16 items-center justify-between border-b border-zinc-200 bg-white/80 px-4 shrink-0">
-          {/* MOBILE VIEW */}
           <div className="flex w-full items-center justify-between gap-2 lg:hidden">
             <button
               onClick={() => window.history.back()}
@@ -85,7 +86,6 @@ const ModuleSidebar = ({
             </button>
           </div>
 
-          {/* DESKTOP VIEW */}
           <div className="hidden w-full items-center justify-between lg:flex">
             {!isCollapsed && (
               <div className="min-w-0 pr-2">
@@ -132,20 +132,42 @@ const ModuleSidebar = ({
             {lessons.map((lesson, index) => {
               const isActive = activeLessonId === lesson.id;
 
-              // 1. Calculate step metrics
+              // Extract individual component items safely
               const totalBlocks = lesson.blocks?.length || 0;
-              const totalQuizzes = lesson.quiz_blocks?.length || 0;
-              const stepCount = totalBlocks + totalQuizzes;
+              const totalQuizQuestions = lesson.quiz_blocks?.length || 0;
+              const isPureQuizLesson =
+                totalQuizQuestions > 0 && totalBlocks === 0;
 
-              // 2. Count how many of these specific lesson items exist in completedBlockIds payload
-              const completedBlocksCount = (lesson.blocks || []).filter((b) =>
-                completedBlockIds.includes(b.id),
-              ).length;
-              const completedQuizzesCount = (lesson.quiz_blocks || []).filter(
-                (q) => completedBlockIds.includes(q.id),
-              ).length;
-              const totalCompletedSteps =
-                completedBlocksCount + completedQuizzesCount;
+              // 🎯 1. STEP COUNT: If it's a pure quiz lesson, it should have as many steps as questions!
+              const stepCount = isPureQuizLesson
+                ? totalQuizQuestions
+                : totalBlocks;
+
+              // 🎯 2. PROGRESS ACCUMULATOR: Check real-time answered questions arrays
+              let totalCompletedSteps = 0;
+              let isEntirelyDone = false;
+
+              if (isPureQuizLesson) {
+                // Count how many of this lesson's specific quiz blocks have entries inside completedBlockIds
+                totalCompletedSteps = (lesson.quiz_blocks || []).filter((q) =>
+                  completedBlockIds.includes(q.id),
+                ).length;
+
+                // Fallback guarantee: check if parent lesson ID is flagged as finished in historical database logs
+                isEntirelyDone =
+                  completedQuizLessons.includes(lesson.id) ||
+                  (totalCompletedSteps === stepCount && stepCount > 0);
+                if (isEntirelyDone) {
+                  totalCompletedSteps = stepCount;
+                }
+              } else {
+                // Standard block content mapping loops
+                totalCompletedSteps = (lesson.blocks || []).filter((b) =>
+                  completedBlockIds.includes(b.id),
+                ).length;
+                isEntirelyDone =
+                  totalCompletedSteps === stepCount && stepCount > 0;
+              }
 
               /*
               |--------------------------------------------------------------------------
@@ -161,16 +183,13 @@ const ModuleSidebar = ({
                       onToggleCollapse();
                     }}
                     className={`
-                      hidden lg:flex relative
-                      h-11 w-11 mx-auto
-                      items-center justify-center
+                      hidden lg:flex relative h-11 w-11 mx-auto items-center justify-center
                       rounded-xl transition-all duration-150
                       ${isActive ? "bg-purple-50 text-[#8b5cf6]" : "text-zinc-400 hover:bg-zinc-200/50 hover:text-zinc-700"}
                     `}
                     title={`${lesson.title} (${totalCompletedSteps}/${stepCount} completed)`}
                   >
                     <BookOpen size={18} />
-                    {/* Micro absolute floating donut overlay position indicator */}
                     <div className="absolute right-0.5 bottom-0.5 bg-white rounded-full p-0.5">
                       <LessonDonutProgress
                         totalSteps={stepCount}
@@ -196,10 +215,8 @@ const ModuleSidebar = ({
                     if (mobileOpen) onCloseMobile();
                   }}
                   className={`
-                    flex w-full items-center gap-3
-                    rounded-xl border border-transparent
-                    px-3 py-3 text-left
-                    transition-all duration-150
+                    flex w-full items-center gap-3 rounded-xl border border-transparent
+                    px-3 py-3 text-left transition-all duration-150
                     ${isActive ? "bg-purple-50/70 border-purple-100/50 text-[#8b5cf6]" : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"}
                   `}
                 >
@@ -217,11 +234,18 @@ const ModuleSidebar = ({
                     >
                       {lesson.title}
                     </p>
-                    <p
-                      className={`text-[11px] font-light lowercase ${isActive ? "text-[#8b5cf6]/80" : "text-zinc-400"}`}
-                    >
-                      {totalCompletedSteps}/{stepCount} completed
-                    </p>
+
+                    {isEntirelyDone ? (
+                      <p className="text-[11px] font-medium text-emerald-600 lowercase tracking-wide">
+                        complete ✓
+                      </p>
+                    ) : (
+                      <p
+                        className={`text-[11px] font-light lowercase ${isActive ? "text-[#8b5cf6]/80" : "text-zinc-400"}`}
+                      >
+                        {totalCompletedSteps}/{stepCount} answered
+                      </p>
+                    )}
                   </div>
 
                   <LessonDonutProgress

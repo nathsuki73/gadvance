@@ -20,9 +20,15 @@ type BlockRendererProps = {
   // 2. Allow both shapes, or cast down to any compatible variant model mapping safely
   block: ModuleBlock | Block | any;
   onQuizBlockCompleted?: (blockId: string) => void;
+  // 🎯 ADD PROP TYPING:
+  lessonId?: string;
 };
 
-const BlockRenderer = ({ block, onQuizBlockCompleted }: BlockRendererProps) => {
+const BlockRenderer = ({
+  block,
+  onQuizBlockCompleted,
+  lessonId, // 🎯 DESTRUCTURE THE INCOMING PROP:
+}: BlockRendererProps) => {
   // 3. Optional: Type-guard string literal casting to satisfy the switch statement evaluator smoothly
   const blockType = block.type as string;
 
@@ -50,6 +56,8 @@ const BlockRenderer = ({ block, onQuizBlockCompleted }: BlockRendererProps) => {
           content={block.content}
           metadata={block.metadata}
           onQuestionCompleted={onQuizBlockCompleted}
+          // 🎯 FORWARD THE CLEAN LESSON ID UUID DOWN TO THE LOGIC ENGINE:
+          lessonId={lessonId}
         />
       );
     case "survey":

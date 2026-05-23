@@ -81,3 +81,81 @@ export async function fetchSurveyResultsAction(surveyId: string) {
     };
   }
 }
+
+/* ---------------------------------------------
+ * QUIZ / ASSESSMENT ACTIONS
+ * -------------------------------------------*/
+
+/**
+ * Start a new quiz attempt session or load an ongoing incomplete attempt
+ */
+export async function startQuizAttemptAction(lessonId: string) {
+  try {
+    const api = await getApi();
+    const res = await api.post(`/quiz/lessons/${lessonId}/attempt`);
+
+    return {
+      success: true,
+      attempt: res.data.attempt,
+    };
+  } catch (error: any) {
+    console.error("Start Quiz Attempt Error:", error);
+    return {
+      success: false,
+      error:
+        error?.response?.data?.message || "Failed to initialize quiz attempt.",
+    };
+  }
+}
+
+/**
+ * Save an individual question response answer and auto-advance the current index tracking state
+ */
+export async function saveQuizAnswerAction(
+  attemptId: string,
+  payload: {
+    quiz_block_id: string;
+    selected_option: string;
+    is_correct: boolean;
+    next_index: number;
+  },
+) {
+  try {
+    const api = await getApi();
+    const res = await api.post(`/quiz/attempts/${attemptId}/answer`, payload);
+
+    return {
+      success: true,
+      currentQuestionIndex: res.data.current_question_index,
+    };
+  } catch (error: any) {
+    console.error("Save Quiz Answer Error:", error);
+    return {
+      success: false,
+      error: error?.response?.data?.message || "Failed to save answer metrics.",
+    };
+  }
+}
+
+/**
+ * Finalize the overall quiz attempt session, compile score metrics, and lock row modifications
+ */
+export async function submitQuizAttemptAction(attemptId: string) {
+  try {
+    const api = await getApi();
+    const res = await api.post(`/quiz/attempts/${attemptId}/submit`);
+
+    return {
+      success: true,
+      data: res.data, // Contains score, correct_answers, total_questions
+    };
+  } catch (error: any) {
+    console.error("Submit Quiz Attempt Error:", error);
+    return {
+      success: false,
+      error:
+        error?.response?.data?.message ||
+        "Failed to evaluate assessment calculations.",
+    };
+  }
+}

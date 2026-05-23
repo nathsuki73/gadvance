@@ -10,12 +10,15 @@ import type { ModuleResponse } from "./types";
 import { getLearningModule } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/service";
 import { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 
-// 🎯 1. Define the TypeScript structure for the progress metric payload
+// 🎯 1. UPGRADED TYPES: Add tracking definitions returned by our Laravel model tables
 type ProgressData = {
   completed_blocks: number;
   total_blocks: number;
   percentage: number;
   completed_block_ids: string[];
+  completed_quiz_lessons: string[]; // Tracks completely finished quiz lesson rows
+  active_quiz_lesson_id: string | null; // Pointer to resume an ongoing active test
+  active_quiz_attempt_id: string | null;
 };
 
 type LearnPageProps = {
@@ -33,12 +36,15 @@ const LearnPage = ({ params }: LearnPageProps) => {
   // Data Fetching State
   const [module, setModule] = useState<ModuleResponse | null>(null);
 
-  // 🎯 2. Add state to capture and manage real-time user curriculum progress
+  // 🎯 2. UPGRADED STATE MAPS: Initialize tracking properties matching our backend schemas
   const [progressData, setProgressData] = useState<ProgressData>({
     completed_blocks: 0,
     total_blocks: 0,
     percentage: 0,
     completed_block_ids: [],
+    completed_quiz_lessons: [],
+    active_quiz_lesson_id: null,
+    active_quiz_attempt_id: null,
   });
 
   const [loading, setLoading] = useState(true);
@@ -57,36 +63,65 @@ const LearnPage = ({ params }: LearnPageProps) => {
     });
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | DATA EXTRACTION & WORKSPACE AUTO-FOCUS POINTER ROUTING
+  |--------------------------------------------------------------------------
+  */
   useEffect(() => {
     const fetchModule = async () => {
       if (!moduleId) return;
       try {
         setLoading(true);
 
-        // 🔍 Trigger service fetch request execution
         const result = await getLearningModule(moduleId);
 
         if (!result.success || !result.data) throw new Error();
 
-        // 1. result.data is purely the Module properties (id, title, lessons array)
         setModule(result.data as unknown as ModuleResponse);
 
-        // 2. result.progress is your adjacent metadata tracking object tracking IDs!
+        // 🎯 3. UPGRADED SYNC: Map the extended relational telemetry fields down securely
         if (result.progress) {
           setProgressData({
             completed_blocks: result.progress.completed_blocks ?? 0,
             total_blocks: result.progress.total_blocks ?? 0,
             percentage: result.progress.percentage ?? 0,
             completed_block_ids: result.progress.completed_block_ids ?? [],
+            completed_quiz_lessons:
+              result.progress.completed_quiz_lessons ?? [],
+            active_quiz_lesson_id:
+              result.progress.active_quiz_lesson_id ?? null,
+            active_quiz_attempt_id:
+              result.progress.active_quiz_attempt_id ?? null,
           });
         }
 
-        const firstLesson = result.data.lessons?.[0];
-        if (firstLesson) {
-          setActiveLessonId(firstLesson.id);
+        const moduleLessons = result.data.lessons || [];
+        const fallbackLesson = moduleLessons[0];
+
+        // 🎯 4. BULLPROOF AUTO-FOCUS ROUTER ENGINE:
+        // Case A: If they left off in the middle of a test, restore that exact lesson container right away!
+        if (result.progress?.active_quiz_lesson_id) {
+          setActiveLessonId(result.progress.active_quiz_lesson_id);
+        } else {
+          // Case B: Find the first uncompleted checkpoint in their progress lists to jump forward to
+          const firstIncompleteLesson = moduleLessons.find((lesson: any) => {
+            const hasUnviewedBlocks = lesson.blocks?.some(
+              (b: any) => !result.progress?.completed_block_ids?.includes(b.id),
+            );
+            const hasUnfinishedQuiz =
+              (lesson.quiz_blocks?.length ?? 0) > 0 &&
+              !result.progress?.completed_quiz_lessons?.includes(lesson.id);
+
+            return hasUnviewedBlocks || hasUnfinishedQuiz;
+          });
+
+          setActiveLessonId(
+            firstIncompleteLesson?.id || fallbackLesson?.id || "",
+          );
         }
       } catch (err) {
-        console.error(err);
+        console.error("LearnPage Hydration Error:", err);
         setError(true);
       } finally {
         setLoading(false);
@@ -111,7 +146,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
   // Navigation Event Actions
   const handleLessonChange = (id: string) => {
     setActiveLessonId(id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleNext = () => {
@@ -138,12 +175,14 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   return (
     <main className="min-h-screen bg-[#ffffff]">
-      {/* 🎯 4. Pass down the actual array array map parameters from local state hooks */}
       <ModuleSidebar
         structureTitle={module.title}
         lessons={lessons}
         activeLessonId={activeLessonId}
-        completedBlockIds={progressData.completed_block_ids} // Now completely safe!
+        completedBlockIds={progressData.completed_block_ids}
+        // 🎯 5. EXTENDED SIDEBAR CHANNELS:
+        // Pass completed quiz flags down so checkboxes can light up correctly
+        completedQuizLessons={progressData.completed_quiz_lessons}
         onNavigate={handleLessonChange}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}

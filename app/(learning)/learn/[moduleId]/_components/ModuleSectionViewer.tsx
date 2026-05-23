@@ -104,7 +104,8 @@ const ModuleSectionViewer = ({
                 <div className="space-y-2">
                   <BlockRenderer
                     block={{
-                      id: lesson.id, // Give the unified quiz the lesson id anchor
+                      // 🎯 CRITICAL BUG FIX: Change from 'module_id' or general container context tags
+                      id: lesson.id, // This MUST map directly to the row UUID (e.g., '9744c769-7795-4328-91a6-5ab97000acc1')
                       type: "pretest",
                       content: unifiedQuizContent,
                       metadata: {
@@ -113,6 +114,8 @@ const ModuleSectionViewer = ({
                       },
                     }}
                     onQuizBlockCompleted={onQuizBlockCompleted}
+                    // 🎯 FORCE TRUE SEPARATION: Passing the direct unique record primary key
+                    lessonId={lesson.id}
                   />
                 </div>
               );
