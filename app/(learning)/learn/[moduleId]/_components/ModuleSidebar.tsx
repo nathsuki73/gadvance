@@ -132,41 +132,52 @@ const ModuleSidebar = ({
             {lessons.map((lesson, index) => {
               const isActive = activeLessonId === lesson.id;
 
-              // Extract individual component items safely
               const totalBlocks = lesson.blocks?.length || 0;
               const totalQuizQuestions = lesson.quiz_blocks?.length || 0;
-              const isPureQuizLesson =
+
+              // 🎯 MIRROR THE EXACT VIEWPORT HOUSING RULES:
+              const isStandaloneQuizPage =
                 totalQuizQuestions > 0 && totalBlocks === 0;
 
-              // 🎯 1. STEP COUNT: If it's a pure quiz lesson, it should have as many steps as questions!
-              const stepCount = isPureQuizLesson
+              // 🎯 FIXED REAL TIME STEP COUNT:
+              // Dedicated test views map over question arrays (e.g., 24 items).
+              // Composite pages count text/video content items (the quiz runs as 1 final inline checker widget).
+              const stepCount = isStandaloneQuizPage
                 ? totalQuizQuestions
                 : totalBlocks;
 
-              // 🎯 2. PROGRESS ACCUMULATOR: Check real-time answered questions arrays
+              // Calculate standard content block progress
+              const completedBlocksCount = (lesson.blocks || []).filter((b) =>
+                completedBlockIds.includes(b.id),
+              ).length;
+
+              // Verify overall parent lesson status flags
+              const isQuizFinishedInDb = completedQuizLessons.includes(
+                lesson.id,
+              );
+
+              // 🎯 FIXED COMPLETED STEPS ACCUMULATOR:
               let totalCompletedSteps = 0;
               let isEntirelyDone = false;
 
-              if (isPureQuizLesson) {
-                // Count how many of this lesson's specific quiz blocks have entries inside completedBlockIds
+              if (isStandaloneQuizPage) {
+                // Standalone diagnostics count sub-questions
                 totalCompletedSteps = (lesson.quiz_blocks || []).filter((q) =>
                   completedBlockIds.includes(q.id),
                 ).length;
-
-                // Fallback guarantee: check if parent lesson ID is flagged as finished in historical database logs
-                isEntirelyDone =
-                  completedQuizLessons.includes(lesson.id) ||
-                  (totalCompletedSteps === stepCount && stepCount > 0);
-                if (isEntirelyDone) {
-                  totalCompletedSteps = stepCount;
-                }
-              } else {
-                // Standard block content mapping loops
-                totalCompletedSteps = (lesson.blocks || []).filter((b) =>
-                  completedBlockIds.includes(b.id),
-                ).length;
                 isEntirelyDone =
                   totalCompletedSteps === stepCount && stepCount > 0;
+              } else {
+                // Content pages read tracking markers straight out of their standard blocks array
+                totalCompletedSteps = completedBlocksCount;
+                isEntirelyDone =
+                  totalCompletedSteps === stepCount && stepCount > 0;
+              }
+
+              // Apply database completion overrides smoothly
+              if (isQuizFinishedInDb) {
+                totalCompletedSteps = stepCount;
+                isEntirelyDone = true;
               }
 
               /*
@@ -243,7 +254,7 @@ const ModuleSidebar = ({
                       <p
                         className={`text-[11px] font-light lowercase ${isActive ? "text-[#8b5cf6]/80" : "text-zinc-400"}`}
                       >
-                        {totalCompletedSteps}/{stepCount} answered
+                        {totalCompletedSteps}/{stepCount} completed
                       </p>
                     )}
                   </div>

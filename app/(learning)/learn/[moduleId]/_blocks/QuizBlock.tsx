@@ -186,7 +186,6 @@ const QuizBlock = ({
     if (!selectedAnswer || !activeAttemptId || isSyncing || !currentQuestion)
       return;
 
-    // 🎯 FIX 1: Safely resolve whichever ID field was packed by your compiler loop
     const targetQuizBlockId =
       currentQuestion.backendBlockId || (currentQuestion as any).id;
 
@@ -203,18 +202,7 @@ const QuizBlock = ({
       const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
       const nextIndex = currentQuestionIndex + 1;
 
-      // 🎯 FIX 2: Log payload values right before passing them down over the wire
-      console.log(
-        "✈️ [QuizBlock Sync] Submitting action to database tracker:",
-        {
-          activeAttemptId,
-          quiz_block_id: targetQuizBlockId,
-          selected_option: selectedAnswer,
-          is_correct: isCorrect,
-          next_index: nextIndex,
-        },
-      );
-
+      // 1. Submit answer data to specialized quiz engine tables
       const syncResult = await saveQuizAnswerAction(activeAttemptId, {
         quiz_block_id: targetQuizBlockId,
         selected_option: selectedAnswer,
@@ -222,23 +210,42 @@ const QuizBlock = ({
         next_index: nextIndex,
       });
 
-      // 🎯 FIX 3: Trace full response details before running the boolean gate rule assertion
       if (!syncResult || !syncResult.success) {
-        console.error(
-          "❌ [QuizBlock Sync Anomaly Detected] Server action failed. Returned value payload:",
-          syncResult,
-        );
         throw new Error("Sync anomaly");
       }
 
+      // 2. Broadcast telemetry packet to keep Laravel BlockProgress in sync
+      try {
+        await fetch("/api/telemetry/block-progress", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            lesson_id: resolvedLessonId,
+            block_id: targetQuizBlockId,
+            progress_ratio: 100,
+            time_spent_seconds: 5,
+            interaction_type: "quiz",
+            score: null,
+          }),
+        });
+      } catch (telemetryErr) {
+        console.warn(
+          "⚠️ Telemetry background dispatch caught an exception:",
+          telemetryErr,
+        );
+      }
+
+      // 3. Commit local state variables
       setAnswers((prev) => ({
         ...prev,
         [currentQuestionIndex]: selectedAnswer,
       }));
       setSelectedAnswer("");
 
-      // Notify parent canvas state engines to fill progress rings
-      onBlockCompletedLive?.(targetQuizBlockId, "quiz");
+      // 4. 🎯 FIX: Call only the quiz specific completion listener handler hook
+      // This fills the donut track safely without triggering block-doubling state updates in LearnPage
       onQuestionCompleted?.(targetQuizBlockId);
 
       if (currentQuestionIndex === questions.length - 1) {
@@ -252,7 +259,6 @@ const QuizBlock = ({
       setCurrentQuestionIndex(nextIndex);
     } catch (err) {
       console.error("Mutation Sync Error Execution Block caught error:", err);
-      // Optional fallback warning toast or alert feedback context layout goes here
     } finally {
       setIsSyncing(false);
     }
