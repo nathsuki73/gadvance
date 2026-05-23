@@ -19,9 +19,10 @@ import ReadingBlock from "../_blocks/ReadingBlock";
 type BlockRendererProps = {
   // 2. Allow both shapes, or cast down to any compatible variant model mapping safely
   block: ModuleBlock | Block | any;
+  onQuizBlockCompleted?: (blockId: string) => void;
 };
 
-const BlockRenderer = ({ block }: BlockRendererProps) => {
+const BlockRenderer = ({ block, onQuizBlockCompleted }: BlockRendererProps) => {
   // 3. Optional: Type-guard string literal casting to satisfy the switch statement evaluator smoothly
   const blockType = block.type as string;
 
@@ -44,7 +45,13 @@ const BlockRenderer = ({ block }: BlockRendererProps) => {
         <VideoDisplayBlock content={block.content} metadata={block.metadata} />
       );
     case "pretest":
-      return <QuizBlock content={block.content} metadata={block.metadata} />;
+      return (
+        <QuizBlock
+          content={block.content}
+          metadata={block.metadata}
+          onQuestionCompleted={onQuizBlockCompleted}
+        />
+      );
     case "survey":
       return <SurveyBlock content={block.content} />;
     case "reading":

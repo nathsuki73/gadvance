@@ -20,9 +20,14 @@ type QuizBlockMetadata = {
 type QuizBlockProps = {
   content?: string | null;
   metadata?: QuizBlockMetadata;
+  onQuestionCompleted?: (blockId: string) => void;
 };
 
-const QuizBlock = ({ content, metadata }: QuizBlockProps) => {
+const QuizBlock = ({
+  content,
+  metadata,
+  onQuestionCompleted,
+}: QuizBlockProps) => {
   /*
   |--------------------------------------------------------------------------
   | PARSE DATA
@@ -101,12 +106,18 @@ const QuizBlock = ({ content, metadata }: QuizBlockProps) => {
     setSelectedAnswer("");
 
     // 2. Fire telemetry hook completely cleanly out of view layer boundaries
-    await trackAnswer({
+    const syncResult = await trackAnswer({
       backendBlockId: currentQuestion.backendBlockId,
       isCorrect,
       currentIndex: currentStepNumber,
       totalItems: totalQuestionsCount,
     });
+
+    if (!syncResult.success) {
+      return;
+    }
+
+    onQuestionCompleted?.(currentQuestion.backendBlockId);
 
     // 3. Switch UI interfaces cleanly
     if (currentQuestionIndex === questions.length - 1) {

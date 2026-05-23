@@ -10,6 +10,14 @@ import type { ModuleResponse } from "./types";
 import { getLearningModule } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/service";
 import { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 
+// 🎯 1. Define the TypeScript structure for the progress metric payload
+type ProgressData = {
+  completed_blocks: number;
+  total_blocks: number;
+  percentage: number;
+  completed_block_ids: string[];
+};
+
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
 };
@@ -20,27 +28,59 @@ const LearnPage = ({ params }: LearnPageProps) => {
   // Layout & UI State
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [activeLessonId, setActiveLessonId] = useState(""); // Track by lesson instead of section
+  const [activeLessonId, setActiveLessonId] = useState("");
 
   // Data Fetching State
   const [module, setModule] = useState<ModuleResponse | null>(null);
+
+  // 🎯 2. Add state to capture and manage real-time user curriculum progress
+  const [progressData, setProgressData] = useState<ProgressData>({
+    completed_blocks: 0,
+    total_blocks: 0,
+    percentage: 0,
+    completed_block_ids: [],
+  });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  const handleQuizBlockCompleted = (blockId: string) => {
+    setProgressData((prev) => {
+      if (prev.completed_block_ids.includes(blockId)) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        completed_block_ids: [...prev.completed_block_ids, blockId],
+      };
+    });
+  };
 
   useEffect(() => {
     const fetchModule = async () => {
       if (!moduleId) return;
       try {
         setLoading(true);
+
+        // 🔍 Trigger service fetch request execution
         const result = await getLearningModule(moduleId);
 
         if (!result.success || !result.data) throw new Error();
 
-        console.log(JSON.stringify(result.data, null, 2));
-
+        // 1. result.data is purely the Module properties (id, title, lessons array)
         setModule(result.data as unknown as ModuleResponse);
 
-        // Auto-select the very first lesson to display initially
+        // 2. result.progress is your adjacent metadata tracking object tracking IDs!
+        if (result.progress) {
+          setProgressData({
+            completed_blocks: result.progress.completed_blocks ?? 0,
+            total_blocks: result.progress.total_blocks ?? 0,
+            percentage: result.progress.percentage ?? 0,
+            completed_block_ids: result.progress.completed_block_ids ?? [],
+          });
+        }
+
         const firstLesson = result.data.lessons?.[0];
         if (firstLesson) {
           setActiveLessonId(firstLesson.id);
@@ -98,11 +138,12 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   return (
     <main className="min-h-screen bg-[#ffffff]">
-      {/* Sidebar gets updated layout properties */}
+      {/* 🎯 4. Pass down the actual array array map parameters from local state hooks */}
       <ModuleSidebar
         structureTitle={module.title}
-        lessons={lessons} // <-- Pass lessons instead of sectionGroups
+        lessons={lessons}
         activeLessonId={activeLessonId}
+        completedBlockIds={progressData.completed_block_ids} // Now completely safe!
         onNavigate={handleLessonChange}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
@@ -133,13 +174,14 @@ const LearnPage = ({ params }: LearnPageProps) => {
       >
         {/* Viewer renders active lesson content */}
         <ModuleSectionViewer
-          lesson={activeLesson} // <-- Pass down the focused lesson record!
+          lesson={activeLesson}
           currentIndex={currentIndex}
           totalSections={lessons.length}
           onNext={handleNext}
           onPrevious={handlePrevious}
           isFirst={currentIndex === 0}
           isLast={currentIndex === lessons.length - 1}
+          onQuizBlockCompleted={handleQuizBlockCompleted}
         />
       </div>
     </main>

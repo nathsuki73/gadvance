@@ -5,6 +5,10 @@ import { ArrowRight, CheckCircle } from "lucide-react";
 import BlockRenderer from "./BlockRenderer"; // Ensure path matches your block parser location
 import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 
+type LessonQuizBlock = Lesson["quiz_blocks"][number] & {
+  content?: string | null;
+};
+
 type ModuleSectionViewerProps = {
   lesson: Lesson;
   currentIndex: number;
@@ -13,6 +17,7 @@ type ModuleSectionViewerProps = {
   onPrevious: () => void;
   isFirst: boolean;
   isLast: boolean;
+  onQuizBlockCompleted?: (blockId: string) => void;
 };
 
 const ModuleSectionViewer = ({
@@ -21,6 +26,7 @@ const ModuleSectionViewer = ({
   totalSections,
   onNext,
   isLast,
+  onQuizBlockCompleted,
 }: ModuleSectionViewerProps) => {
   // Check if this specific lesson is a pure quiz, pretest, or posttest milestone
   const hasContentBlocks = (lesson.blocks?.length || 0) > 0;
@@ -59,7 +65,7 @@ const ModuleSectionViewer = ({
 
               // Extract each question out of the backend virtual content fields
               const combinedQuestions = (lesson.quiz_blocks || [])
-                .map((qb: any) => {
+                .map((qb: LessonQuizBlock) => {
                   try {
                     // 1. Cleanly parse the text content JSON string from the database row
                     const parsed =
@@ -106,6 +112,7 @@ const ModuleSectionViewer = ({
                         description: `This assessment tests your understanding of all ${combinedQuestions.length} elements.`,
                       },
                     }}
+                    onQuizBlockCompleted={onQuizBlockCompleted}
                   />
                 </div>
               );
