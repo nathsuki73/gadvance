@@ -21,7 +21,7 @@ type BlockRendererProps = {
   onQuizBlockCompleted?: (blockId: string) => void;
   onBlockCompletedLive?: (
     blockId: string,
-    interactionType: "reading" | "quiz" | "text",
+    interactionType: "reading" | "quiz" | "text" | "video",
   ) => void; // 🎯 ADD LIVE TRACKING HANDLER DEFINITION
   lessonId?: string;
 };
@@ -51,7 +51,14 @@ const BlockRenderer = ({
       );
     case "video":
       return (
-        <VideoDisplayBlock content={block.content} metadata={block.metadata} />
+        <VideoDisplayBlock
+          content={block.content}
+          metadata={block.metadata}
+          backendBlockId={block.id} // Or block.backendBlockId depending on your array item structure
+          lessonId={lessonId} // Passes down the parent lesson identifier variable string
+          initialCompleted={block.completed || false} // Keeps current checkbox states synced on load
+          onCompleted={() => onBlockCompletedLive?.(block.id, "video")}
+        />
       );
     case "pretest":
       return (

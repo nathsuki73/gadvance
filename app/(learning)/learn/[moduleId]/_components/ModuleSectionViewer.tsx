@@ -20,7 +20,7 @@ type ModuleSectionViewerProps = {
   onQuizBlockCompleted?: (blockId: string) => void;
   onBlockCompletedLive: (
     blockId: string,
-    interactionType: "reading" | "quiz" | "text",
+    interactionType: "reading" | "quiz" | "text" | "video",
   ) => void;
 };
 
