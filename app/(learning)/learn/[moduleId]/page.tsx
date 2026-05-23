@@ -53,7 +53,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
   const handleQuizBlockCompleted = (blockId: string) => {
     setProgressData((prev) => {
       if (prev.completed_block_ids.includes(blockId)) {
-        return prev;
+        return prev; // Bails out smoothly if the index already exists
       }
 
       return {

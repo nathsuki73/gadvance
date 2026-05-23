@@ -83,50 +83,49 @@ const QuizBlock = ({
   */
   useEffect(() => {
     const initializeQuizSession = async () => {
-      // 🎯 FIX: Verify against the absolute resolved prop identity token key instead of URL snippets!
       if (questions.length === 0 || !resolvedLessonId) {
-        setInitialLoading(false);
         return;
       }
 
       try {
         setInitialLoading(true);
-        // 🎯 FIX: Dispatch request using the authentic lesson UUID target parameter
         const result = await startQuizAttemptAction(resolvedLessonId);
 
         if (result.success && result.attempt) {
           setActiveAttemptId(result.attempt.id);
 
-          // If a tracking session is ongoing in the database tables, load user's progress parameters
           if (result.attempt.current_question_index > 0) {
             setStarted(true);
             setCurrentQuestionIndex(result.attempt.current_question_index);
 
             const databaseAnswersMap: Record<number, string> = {};
+
             questions.forEach((q, idx) => {
               const savedAns = result.attempt.answers[q.backendBlockId];
               if (savedAns) {
                 databaseAnswersMap[idx] = savedAns.selected_option;
+
+                // 🎯 FIX: Push the restored database question block IDs straight up to the parent layout!
+                onQuestionCompleted?.(q.backendBlockId);
               }
             });
             setAnswers(databaseAnswersMap);
           }
 
-          // If the attempt state has already been flagged complete, render their results scorecard
           if (result.attempt.completed) {
             setSubmitted(true);
             setAnimatedScore(Math.round(result.attempt.score));
           }
         }
       } catch (err) {
-        console.error("Hydration State Failure Engine:", err);
+        console.error("Hydration State Error:", err);
       } finally {
         setInitialLoading(false);
       }
     };
 
     initializeQuizSession();
-  }, [questions, resolvedLessonId]); // 🎯 Sync effect listening parameter directly to the resolved prop index turns
+  }, [questions, resolvedLessonId]);
 
   /*
   |--------------------------------------------------------------------------
