@@ -188,7 +188,7 @@ const QuizBlock = ({ content, metadata }: QuizBlockProps) => {
           </div>
 
           <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-zinc-900  leading-tight">
-            {metadata?.title?.toLowerCase() ?? "Quiz"}
+            {metadata?.title ?? "Quiz"}
           </h2>
 
           <p className="mt-6 text-lg text-zinc-500 font-light leading-relaxed max-w-xl">

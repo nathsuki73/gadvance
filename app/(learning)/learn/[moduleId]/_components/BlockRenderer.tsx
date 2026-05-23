@@ -14,6 +14,7 @@ import SurveyBlock from "../_blocks/SurveyBlock";
 // 1. Keep your strict structural definition or imports untouched
 import type { ModuleBlock } from "../types";
 import type { Block } from "../types"; // Import the generic Block shape we defined earlier
+import ReadingBlock from "../_blocks/ReadingBlock";
 
 type BlockRendererProps = {
   // 2. Allow both shapes, or cast down to any compatible variant model mapping safely
@@ -46,6 +47,8 @@ const BlockRenderer = ({ block }: BlockRendererProps) => {
       return <QuizBlock content={block.content} metadata={block.metadata} />;
     case "survey":
       return <SurveyBlock content={block.content} />;
+    case "reading":
+      return <ReadingBlock content={block.content} metadata={block.metadata} />;
 
     default:
       return null;
