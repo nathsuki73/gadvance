@@ -221,6 +221,15 @@ const LearnPage = ({ params }: LearnPageProps) => {
           isFirst={currentIndex === 0}
           isLast={currentIndex === lessons.length - 1}
           onQuizBlockCompleted={handleQuizBlockCompleted}
+          onBlockCompletedLive={(blockId) => {
+            setProgressData((prev) => {
+              if (prev.completed_block_ids.includes(blockId)) return prev;
+              return {
+                ...prev,
+                completed_block_ids: [...prev.completed_block_ids, blockId],
+              };
+            });
+          }}
         />
       </div>
     </main>

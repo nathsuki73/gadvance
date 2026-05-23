@@ -18,6 +18,10 @@ type ModuleSectionViewerProps = {
   isFirst: boolean;
   isLast: boolean;
   onQuizBlockCompleted?: (blockId: string) => void;
+  onBlockCompletedLive: (
+    blockId: string,
+    interactionType: "reading" | "quiz" | "text",
+  ) => void;
 };
 
 const ModuleSectionViewer = ({
@@ -27,6 +31,7 @@ const ModuleSectionViewer = ({
   onNext,
   isLast,
   onQuizBlockCompleted,
+  onBlockCompletedLive,
 }: ModuleSectionViewerProps) => {
   // Check if this specific lesson is a pure quiz, pretest, or posttest milestone
   const hasContentBlocks = (lesson.blocks?.length || 0) > 0;
@@ -128,7 +133,12 @@ const ModuleSectionViewer = ({
               .slice()
               .sort((a, b) => a.order_index - b.order_index)
               .map((block) => (
-                <BlockRenderer key={block.id} block={block} />
+                <BlockRenderer
+                  key={block.id}
+                  block={block}
+                  lessonId={lesson.id}
+                  onBlockCompletedLive={onBlockCompletedLive}
+                />
               ))}
           </div>
         )}

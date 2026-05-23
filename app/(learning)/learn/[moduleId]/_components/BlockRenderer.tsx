@@ -17,16 +17,19 @@ import type { Block } from "../types"; // Import the generic Block shape we defi
 import ReadingBlock from "../_blocks/ReadingBlock";
 
 type BlockRendererProps = {
-  // 2. Allow both shapes, or cast down to any compatible variant model mapping safely
   block: ModuleBlock | Block | any;
   onQuizBlockCompleted?: (blockId: string) => void;
-  // 🎯 ADD PROP TYPING:
+  onBlockCompletedLive?: (
+    blockId: string,
+    interactionType: "reading" | "quiz" | "text",
+  ) => void; // 🎯 ADD LIVE TRACKING HANDLER DEFINITION
   lessonId?: string;
 };
 
 const BlockRenderer = ({
   block,
   onQuizBlockCompleted,
+  onBlockCompletedLive,
   lessonId, // 🎯 DESTRUCTURE THE INCOMING PROP:
 }: BlockRendererProps) => {
   // 3. Optional: Type-guard string literal casting to satisfy the switch statement evaluator smoothly
@@ -63,7 +66,15 @@ const BlockRenderer = ({
     case "survey":
       return <SurveyBlock content={block.content} />;
     case "reading":
-      return <ReadingBlock content={block.content} metadata={block.metadata} />;
+      return (
+        <ReadingBlock
+          backendBlockId={block.id}
+          content={block.content}
+          metadata={block.metadata}
+          lessonId={lessonId}
+          onCompleted={() => onBlockCompletedLive?.(block.id, "reading")}
+        />
+      );
 
     default:
       return null;
