@@ -11,10 +11,11 @@ import {
 } from "lucide-react";
 
 import type { SectionGroup } from "../types";
+import { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 
 type ModuleSidebarProps = {
   structureTitle: string;
-  sectionGroups: SectionGroup[];
+  sectionGroups: Lesson[];
   activeSectionId: string;
   onNavigate: (id: string) => void;
   isCollapsed: boolean;

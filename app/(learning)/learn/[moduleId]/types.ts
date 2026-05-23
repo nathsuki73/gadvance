@@ -1,5 +1,7 @@
 // types.ts
 
+import { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
+
 /*
 |--------------------------------------------------------------------------
 | BLOCK TYPES
@@ -152,6 +154,7 @@ export type ModuleResponse = {
   image?: string | null;
   learning_plans?: LearningPlan[];
   section_groups: SectionGroup[];
+  lessons: Lesson;
   created_at?: string;
   updated_at?: string;
 };

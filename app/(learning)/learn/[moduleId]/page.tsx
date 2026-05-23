@@ -4,11 +4,11 @@ import React, { use, useEffect, useMemo, useState } from "react";
 import { notFound } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
 
-import { getLearningModule } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/service";
-
 import ModuleSidebar from "./_components/ModuleSidebar";
 import ModuleSectionViewer from "./_components/ModuleSectionViewer";
-import { FlattenedSection, ModuleResponse } from "./types";
+import type { ModuleResponse } from "./types";
+import { getLearningModule } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/service";
+import { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
@@ -20,7 +20,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
   // Layout & UI State
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [activeSectionId, setActiveSectionId] = useState("");
+  const [activeLessonId, setActiveLessonId] = useState(""); // Track by lesson instead of section
 
   // Data Fetching State
   const [module, setModule] = useState<ModuleResponse | null>(null);
@@ -38,13 +38,12 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
         console.log(JSON.stringify(result.data, null, 2));
 
-        // result.data may include additional progress info from the service response
-        // cast to ModuleResponse to satisfy local state type
         setModule(result.data as unknown as ModuleResponse);
 
-        const firstSection = result.data.section_groups?.[0]?.sections?.[0];
-        if (firstSection) {
-          setActiveSectionId(firstSection.id);
+        // Auto-select the very first lesson to display initially
+        const firstLesson = result.data.lessons?.[0];
+        if (firstLesson) {
+          setActiveLessonId(firstLesson.id);
         }
       } catch (err) {
         console.error(err);
@@ -57,43 +56,32 @@ const LearnPage = ({ params }: LearnPageProps) => {
     fetchModule();
   }, [moduleId]);
 
-  const sections = useMemo<FlattenedSection[]>(() => {
-    if (!module) return [];
-
-    return module.section_groups
-      .slice()
-      .sort((a, b) => a.order_index - b.order_index)
-      .flatMap((group) =>
-        group.sections
-          .slice()
-          .sort((a, b) => a.order_index - b.order_index)
-          .map((section) => ({
-            ...section,
-            groupTitle: group.title,
-          })),
-      );
+  // Safely extract our sequential list of lessons
+  const lessons = useMemo<Lesson[]>(() => {
+    if (!module || !module.lessons) return [];
+    return module.lessons;
   }, [module]);
 
   const currentIndex = useMemo(() => {
-    return sections.findIndex((s) => s.id === activeSectionId);
-  }, [sections, activeSectionId]);
+    return lessons.findIndex((l) => l.id === activeLessonId);
+  }, [lessons, activeLessonId]);
 
-  const activeSection = sections[currentIndex];
+  const activeLesson = lessons[currentIndex];
 
   // Navigation Event Actions
-  const handleSectionChange = (id: string) => {
-    setActiveSectionId(id);
+  const handleLessonChange = (id: string) => {
+    setActiveLessonId(id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleNext = () => {
-    const next = sections[currentIndex + 1];
-    if (next) handleSectionChange(next.id);
+    const next = lessons[currentIndex + 1];
+    if (next) handleLessonChange(next.id);
   };
 
   const handlePrevious = () => {
-    const previous = sections[currentIndex - 1];
-    if (previous) handleSectionChange(previous.id);
+    const previous = lessons[currentIndex - 1];
+    if (previous) handleLessonChange(previous.id);
   };
 
   if (loading) {
@@ -104,17 +92,18 @@ const LearnPage = ({ params }: LearnPageProps) => {
     );
   }
 
-  if (error || !module || !activeSection) {
+  if (error || !module || !activeLesson) {
     notFound();
   }
 
   return (
     <main className="min-h-screen bg-[#ffffff]">
+      {/* Sidebar gets updated layout properties */}
       <ModuleSidebar
         structureTitle={module.title}
-        sectionGroups={module.section_groups}
-        activeSectionId={activeSectionId}
-        onNavigate={handleSectionChange}
+        lessons={lessons} // <-- Pass lessons instead of sectionGroups
+        activeLessonId={activeLessonId}
+        onNavigate={handleLessonChange}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
         mobileOpen={mobileSidebarOpen}
@@ -142,14 +131,15 @@ const LearnPage = ({ params }: LearnPageProps) => {
           ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}
         `}
       >
+        {/* Viewer renders active lesson content */}
         <ModuleSectionViewer
-          section={activeSection}
+          lesson={activeLesson} // <-- Pass down the focused lesson record!
           currentIndex={currentIndex}
-          totalSections={sections.length}
+          totalSections={lessons.length}
           onNext={handleNext}
           onPrevious={handlePrevious}
           isFirst={currentIndex === 0}
-          isLast={currentIndex === sections.length - 1}
+          isLast={currentIndex === lessons.length - 1}
         />
       </div>
     </main>
