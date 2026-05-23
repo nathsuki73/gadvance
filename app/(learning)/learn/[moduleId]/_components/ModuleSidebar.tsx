@@ -4,18 +4,19 @@ import React from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  Circle,
   X,
   ArrowLeft,
   BookOpen,
 } from "lucide-react";
 
 import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
+import { LessonDonutProgress } from "./LessonDonutProgress"; // Import the component from step 1
 
 type ModuleSidebarProps = {
   structureTitle: string;
   lessons: Lesson[];
   activeLessonId: string;
+  completedBlockIds?: string[]; // 🎯 Added tracker reference property
   onNavigate: (id: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
@@ -27,6 +28,7 @@ const ModuleSidebar = ({
   structureTitle,
   lessons,
   activeLessonId,
+  completedBlockIds = [], // Fallback default map array
   onNavigate,
   isCollapsed,
   onToggleCollapse,
@@ -58,9 +60,9 @@ const ModuleSidebar = ({
           ${isCollapsed ? "lg:w-16" : "lg:w-80"}
         `}
       >
-        {/* SIDEBAR ACCENT TOPPING HEADER */}
+        {/* SIDEBAR HEADER */}
         <div className="flex h-16 items-center justify-between border-b border-zinc-200 bg-white/80 px-4 shrink-0">
-          {/* MOBILE PORTVIEW BRANDING HEADER */}
+          {/* MOBILE VIEW */}
           <div className="flex w-full items-center justify-between gap-2 lg:hidden">
             <button
               onClick={() => window.history.back()}
@@ -83,7 +85,7 @@ const ModuleSidebar = ({
             </button>
           </div>
 
-          {/* DESKTOP DESK INTEGRATED HEADER */}
+          {/* DESKTOP VIEW */}
           <div className="hidden w-full items-center justify-between lg:flex">
             {!isCollapsed && (
               <div className="min-w-0 pr-2">
@@ -124,18 +126,30 @@ const ModuleSidebar = ({
           </div>
         </div>
 
-        {/* WORKSPACE ITEMS SCROLLBAR LIST */}
+        {/* LIST CONTAINER */}
         <div className="custom-scrollbar flex-1 overflow-y-auto px-3 py-4">
           <nav className="space-y-1">
             {lessons.map((lesson, index) => {
               const isActive = activeLessonId === lesson.id;
-              const stepCount =
-                (lesson.blocks?.length || 0) +
-                (lesson.quiz_blocks?.length || 0);
+
+              // 1. Calculate step metrics
+              const totalBlocks = lesson.blocks?.length || 0;
+              const totalQuizzes = lesson.quiz_blocks?.length || 0;
+              const stepCount = totalBlocks + totalQuizzes;
+
+              // 2. Count how many of these specific lesson items exist in completedBlockIds payload
+              const completedBlocksCount = (lesson.blocks || []).filter((b) =>
+                completedBlockIds.includes(b.id),
+              ).length;
+              const completedQuizzesCount = (lesson.quiz_blocks || []).filter(
+                (q) => completedBlockIds.includes(q.id),
+              ).length;
+              const totalCompletedSteps =
+                completedBlocksCount + completedQuizzesCount;
 
               /*
               |--------------------------------------------------------------------------
-              | COMPRESSED HERO ICON SLOTS (SIDEBAR COLLAPSED DETACHED MODE)
+              | SIDEBAR COLLAPSED DETACHED MODE
               |--------------------------------------------------------------------------
               */
               if (isCollapsed && !mobileOpen) {
@@ -144,29 +158,34 @@ const ModuleSidebar = ({
                     key={lesson.id}
                     onClick={() => {
                       onNavigate(lesson.id);
-                      onToggleCollapse(); // Auto-expand layout when focused via minimalist docks
+                      onToggleCollapse();
                     }}
                     className={`
-                      hidden lg:flex
+                      hidden lg:flex relative
                       h-11 w-11 mx-auto
                       items-center justify-center
                       rounded-xl transition-all duration-150
-                      ${
-                        isActive
-                          ? "bg-purple-50 text-[#8b5cf6]"
-                          : "text-zinc-400 hover:bg-zinc-200/50 hover:text-zinc-700"
-                      }
+                      ${isActive ? "bg-purple-50 text-[#8b5cf6]" : "text-zinc-400 hover:bg-zinc-200/50 hover:text-zinc-700"}
                     `}
-                    title={lesson.title}
+                    title={`${lesson.title} (${totalCompletedSteps}/${stepCount} completed)`}
                   >
                     <BookOpen size={18} />
+                    {/* Micro absolute floating donut overlay position indicator */}
+                    <div className="absolute right-0.5 bottom-0.5 bg-white rounded-full p-0.5">
+                      <LessonDonutProgress
+                        totalSteps={stepCount}
+                        completedSteps={totalCompletedSteps}
+                        size={12}
+                        strokeWidth={1.5}
+                      />
+                    </div>
                   </button>
                 );
               }
 
               /*
               |--------------------------------------------------------------------------
-              | INTEGRATED FLAT ROW ENTRIES LIST (SIDEBAR FULL EXPANDED VIEW)
+              | SIDEBAR FULL EXPANDED VIEW
               |--------------------------------------------------------------------------
               */
               return (
@@ -177,15 +196,11 @@ const ModuleSidebar = ({
                     if (mobileOpen) onCloseMobile();
                   }}
                   className={`
-                    flex w-full items-start gap-3
+                    flex w-full items-center gap-3
                     rounded-xl border border-transparent
                     px-3 py-3 text-left
                     transition-all duration-150
-                    ${
-                      isActive
-                        ? "bg-purple-50/70 border-purple-100/50 text-[#8b5cf6]"
-                        : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"
-                    }
+                    ${isActive ? "bg-purple-50/70 border-purple-100/50 text-[#8b5cf6]" : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"}
                   `}
                 >
                   {/* STEP SEQUENCE DIGIT TAG */}
@@ -195,7 +210,7 @@ const ModuleSidebar = ({
                     {(index + 1).toString().padStart(2, "0")}
                   </span>
 
-                  {/* LESSON DETAILS COMPILATION TEXTS */}
+                  {/* DETAILS TEXT BLOCK */}
                   <div className="min-w-0 flex-1 space-y-0.5">
                     <p
                       className={`text-xs font-medium leading-tight break-words ${isActive ? "font-semibold text-zinc-900" : "text-zinc-700"}`}
@@ -205,17 +220,16 @@ const ModuleSidebar = ({
                     <p
                       className={`text-[11px] font-light lowercase ${isActive ? "text-[#8b5cf6]/80" : "text-zinc-400"}`}
                     >
-                      {stepCount} learning {stepCount === 1 ? "step" : "steps"}
+                      {totalCompletedSteps}/{stepCount} completed
                     </p>
                   </div>
 
-                  {/* ACTIVE INDICATOR BLOTS */}
-                  {isActive && (
-                    <Circle
-                      size={6}
-                      className="fill-[#8b5cf6] text-[#8b5cf6] shrink-0 mt-1.5 animate-pulse"
-                    />
-                  )}
+                  <LessonDonutProgress
+                    totalSteps={stepCount}
+                    completedSteps={totalCompletedSteps}
+                    size={20}
+                    strokeWidth={2}
+                  />
                 </button>
               );
             })}
