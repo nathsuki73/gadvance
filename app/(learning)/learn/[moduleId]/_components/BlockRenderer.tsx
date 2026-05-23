@@ -42,7 +42,7 @@ const BlockRenderer = ({ block }: BlockRendererProps) => {
       return (
         <VideoDisplayBlock content={block.content} metadata={block.metadata} />
       );
-    case "quiz":
+    case "pretest":
       return <QuizBlock content={block.content} metadata={block.metadata} />;
     case "survey":
       return <SurveyBlock content={block.content} />;

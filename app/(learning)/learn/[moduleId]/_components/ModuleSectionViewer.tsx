@@ -49,26 +49,64 @@ const ModuleSectionViewer = ({
 
         {/* CONTENT SWITCH LAYER */}
         {isAssessmentMode ? (
-          <div className="rounded-2xl border border-purple-100 bg-purple-50/20 p-8 sm:p-12 text-center my-8">
-            <h3 className="text-xl font-light text-zinc-800 lowercase">
-              welcome to the{" "}
-              <span className="font-serif italic text-[#8b5cf6] font-normal">
-                {lesson.title}
-              </span>
-            </h3>
-            <p className="mt-3 text-sm font-light text-zinc-400 max-w-md mx-auto lowercase leading-relaxed">
-              this milestone features {lesson.quiz_blocks.length} evaluation
-              check questions to assess your core framework mastery.
-            </p>
-
-            {/* 
-              PRO TIPPLACEHOLDER: 
-              Swap this box out with your custom quiz view container component:
-              <ModuleQuizEngine questions={lesson.quiz_blocks} />
-            */}
-            <div className="mt-8 p-4 rounded-xl border border-dashed border-purple-200 bg-white inline-block text-xs font-mono text-zinc-400">
-              [ quiz workspace engine slot ]
+          <div className="space-y-6">
+            {/* Welcome Card banner */}
+            <div className="rounded-2xl border border-purple-100 bg-purple-50/20 p-8 sm:p-12 text-center my-8">
+              <h3 className="text-xl font-light text-zinc-800 lowercase">
+                welcome to the{" "}
+                <span className="font-serif italic text-[#8b5cf6] font-normal">
+                  {lesson.title}
+                </span>
+              </h3>
+              <p className="mt-3 text-sm font-light text-zinc-400 max-w-md mx-auto lowercase leading-relaxed">
+                this milestone features {lesson.quiz_blocks?.length || 0}{" "}
+                evaluation check questions to assess your core framework
+                mastery.
+              </p>
             </div>
+
+            {/* ACTUALLY COMBINE ALL INDIVIDUAL DB ROWS INTO ONE SINGLE QUIZ */}
+            {(() => {
+              if (!lesson.quiz_blocks || lesson.quiz_blocks.length === 0)
+                return null;
+
+              // Extract each question out of the backend virtual content fields
+              const combinedQuestions = (lesson.quiz_blocks || [])
+                .map((qb: any) => {
+                  try {
+                    // Using 'any' bypasses the strict property validation error for this calculation layer
+                    const parsed =
+                      typeof qb.content === "string"
+                        ? JSON.parse(qb.content)
+                        : qb.content;
+                    return parsed.questions[0];
+                  } catch (e) {
+                    return null;
+                  }
+                })
+                .filter(Boolean); // Filter out any parsing errors safely
+
+              // Wrap the complete compiled array back into the format QuizBlock expects
+              const unifiedQuizContent = JSON.stringify({
+                questions: combinedQuestions,
+              });
+
+              return (
+                <div className="space-y-2">
+                  <BlockRenderer
+                    block={{
+                      id: lesson.id, // Give the unified quiz the lesson id anchor
+                      type: "pretest",
+                      content: unifiedQuizContent,
+                      metadata: {
+                        title: lesson.title,
+                        description: `This assessment tests your understanding of all ${combinedQuestions.length} elements.`,
+                      },
+                    }}
+                  />
+                </div>
+              );
+            })()}
           </div>
         ) : (
           /* STANDARD CONTENT BLOCK LAYER */
