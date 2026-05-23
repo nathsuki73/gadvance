@@ -25,7 +25,6 @@ type QuizBlockProps = {
   content?: string | null;
   metadata?: QuizBlockMetadata;
   onQuestionCompleted?: (blockId: string) => void;
-  // 🎯 Ensure TypeScript registers your direct prop mapping definition
   lessonId?: string;
 };
 
@@ -33,13 +32,13 @@ const QuizBlock = ({
   content,
   metadata,
   onQuestionCompleted,
-  lessonId, // 🎯 Destructure the clean prop value directly here
+  lessonId,
 }: QuizBlockProps) => {
   /*
   |--------------------------------------------------------------------------
   | 1. DATA PARSING (ALWAYS RUNS FIRST)
   |--------------------------------------------------------------------------
-  */
+  |*/
   const questions: QuizQuestion[] = useMemo(() => {
     try {
       if (!content) return [];
@@ -54,13 +53,15 @@ const QuizBlock = ({
   |--------------------------------------------------------------------------
   | 2. ALL STATE HOOKS (UNCONDITIONAL ORDER)
   |--------------------------------------------------------------------------
-  */
+  |*/
   const [started, setStarted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [animatedScore, setAnimatedScore] = useState(0);
+  // Track backend score independently to survive clean cache reloads
+  const [serverScore, setServerScore] = useState<number | null>(null);
 
   const [activeAttemptId, setActiveAttemptId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -69,8 +70,7 @@ const QuizBlock = ({
   // Read item out of questions safely via active state index positions
   const currentQuestion = questions[currentQuestionIndex];
 
-  // 🛡️ FALLBACK RESOLUTION TRACKER:
-  // Use the clean prop identity value directly. If it's missing, fall back safely.
+  // 🛡️ FALLBACK RESOLUTION TRACKER
   const resolvedLessonId = useMemo(() => {
     if (lessonId) return lessonId;
     return "";
@@ -78,69 +78,99 @@ const QuizBlock = ({
 
   /*
   |--------------------------------------------------------------------------
-  | 3. HOOK 11: ATTEMPT INITIALIZATION HYDRATOR
+  | 3. ATTEMPT INITIALIZATION HYDRATOR
   |--------------------------------------------------------------------------
-  */
+  |*/
   useEffect(() => {
+    let isMounted = true;
+
     const initializeQuizSession = async () => {
       if (questions.length === 0 || !resolvedLessonId) {
+        if (isMounted) setInitialLoading(false);
         return;
       }
 
       try {
-        setInitialLoading(true);
+        if (isMounted) setInitialLoading(true);
         const result = await startQuizAttemptAction(resolvedLessonId);
+
+        if (!isMounted) return;
 
         if (result.success && result.attempt) {
           setActiveAttemptId(result.attempt.id);
 
-          if (result.attempt.current_question_index > 0) {
+          // CASE A: User has an active ongoing attempt in progress
+          if (
+            result.attempt.current_question_index > 0 &&
+            !result.attempt.completed
+          ) {
             setStarted(true);
             setCurrentQuestionIndex(result.attempt.current_question_index);
 
             const databaseAnswersMap: Record<number, string> = {};
-
             questions.forEach((q, idx) => {
               const savedAns = result.attempt.answers[q.backendBlockId];
               if (savedAns) {
                 databaseAnswersMap[idx] = savedAns.selected_option;
-
-                // 🎯 FIX: Push the restored database question block IDs straight up to the parent layout!
                 onQuestionCompleted?.(q.backendBlockId);
               }
             });
             setAnswers(databaseAnswersMap);
           }
 
+          // 🎯 CASE B: User has completely finished this assessment
           if (result.attempt.completed) {
+            const calculatedPercentage = Math.round(result.attempt.score);
+
+            // Calculate actual absolute points scored from percent baseline
+            const completedAbsoluteScore = Math.round(
+              (calculatedPercentage / 100) * questions.length,
+            );
+            setServerScore(completedAbsoluteScore);
+
+            setAnimatedScore(calculatedPercentage);
+            setStarted(true);
             setSubmitted(true);
-            setAnimatedScore(Math.round(result.attempt.score));
+
+            // Mark all individual question blocks complete in the sidebar on reload
+            questions.forEach((q) => {
+              onQuestionCompleted?.(q.backendBlockId);
+            });
           }
         }
       } catch (err) {
-        console.error("Hydration State Error:", err);
+        console.error("Hydration State Failure Engine:", err);
       } finally {
-        setInitialLoading(false);
+        if (isMounted) setInitialLoading(false);
       }
     };
 
     initializeQuizSession();
+
+    return () => {
+      isMounted = false;
+    };
   }, [questions, resolvedLessonId]);
 
   /*
   |--------------------------------------------------------------------------
-  | 4. HOOK 12: SCORE TICKER RUNTIME AGGREGATORS
+  | 4. SCORE TICKER RUNTIME AGGREGATORS
   |--------------------------------------------------------------------------
-  */
-  const score = questions.reduce((total, question, index) => {
+  |*/
+  const runtimeScore = questions.reduce((total, question, index) => {
     return answers[index] === question.correctAnswer ? total + 1 : total;
   }, 0);
 
+  // Fallback cleanly to verified server points if local state is unhydrated
+  const displayScore = serverScore !== null ? serverScore : runtimeScore;
+
   const percentage =
-    questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
+    questions.length > 0
+      ? Math.round((displayScore / questions.length) * 100)
+      : 0;
 
   useEffect(() => {
-    if (submitted && animatedScore === 0) {
+    if (submitted && animatedScore === 0 && percentage > 0) {
       setAnimatedScore(percentage);
     }
   }, [submitted, percentage, animatedScore]);
@@ -149,7 +179,7 @@ const QuizBlock = ({
   |--------------------------------------------------------------------------
   | CORE MUTATION HANDLERS
   |--------------------------------------------------------------------------
-  */
+  |*/
   const handleSubmitAnswer = async () => {
     if (!selectedAnswer || !activeAttemptId || isSyncing || !currentQuestion)
       return;
@@ -198,6 +228,7 @@ const QuizBlock = ({
     setAnswers({});
     setSubmitted(false);
     setAnimatedScore(0);
+    setServerScore(null);
     setActiveAttemptId(null);
 
     if (resolvedLessonId) {
@@ -214,7 +245,7 @@ const QuizBlock = ({
   |--------------------------------------------------------------------------
   | 5. UI CONDITIONALS AND RENDERS
   |--------------------------------------------------------------------------
-  */
+  |*/
   if (initialLoading) {
     return (
       <div className="flex py-20 items-center justify-center bg-white">
@@ -271,7 +302,8 @@ const QuizBlock = ({
           <span className="italic font-serif text-[#00aeef]">completed.</span>
         </h2>
         <p className="mt-4 text-zinc-500 font-light">
-          You correctly answered {score} out of {questions.length} questions.
+          You correctly answered {displayScore} out of {questions.length}{" "}
+          questions.
         </p>
         <div className="mt-12 flex justify-center">
           <button
