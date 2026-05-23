@@ -34,14 +34,14 @@ const ModuleSectionViewer = ({
         {/* DYNAMIC HEADER ANCHOR */}
         <div className="mb-10 border-b border-zinc-100 pb-6">
           <p className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[#8b5cf6] mb-1">
-            Step {(currentIndex + 1).toString().padStart(2, "0")} of{" "}
+            Part {(currentIndex + 1).toString().padStart(2, "0")} of{" "}
             {totalSections.toString().padStart(2, "0")}
           </p>
           <h1 className="text-2xl font-semibold text-zinc-900 tracking-tight">
             {lesson.title}
           </h1>
           {lesson.description && (
-            <p className="mt-2 text-sm font-light text-zinc-400 leading-relaxed lowercase">
+            <p className="mt-2 text-sm font-light text-zinc-400 leading-relaxed">
               {lesson.description}
             </p>
           )}
@@ -51,19 +51,6 @@ const ModuleSectionViewer = ({
         {isAssessmentMode ? (
           <div className="space-y-6">
             {/* Welcome Card banner */}
-            <div className="rounded-2xl border border-purple-100 bg-purple-50/20 p-8 sm:p-12 text-center my-8">
-              <h3 className="text-xl font-light text-zinc-800 lowercase">
-                welcome to the{" "}
-                <span className="font-serif italic text-[#8b5cf6] font-normal">
-                  {lesson.title}
-                </span>
-              </h3>
-              <p className="mt-3 text-sm font-light text-zinc-400 max-w-md mx-auto lowercase leading-relaxed">
-                this milestone features {lesson.quiz_blocks?.length || 0}{" "}
-                evaluation check questions to assess your core framework
-                mastery.
-              </p>
-            </div>
 
             {/* ACTUALLY COMBINE ALL INDIVIDUAL DB ROWS INTO ONE SINGLE QUIZ */}
             {(() => {

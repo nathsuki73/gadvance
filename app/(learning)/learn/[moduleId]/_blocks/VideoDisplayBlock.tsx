@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type VideoMetadata = {
   title?: string;
@@ -13,7 +15,7 @@ type VideoDisplayBlockProps = {
 };
 
 const VideoDisplayBlock = ({ content, metadata }: VideoDisplayBlockProps) => {
-  // 1. Safely parse the database JSON metadata string
+  // Safely parse the database JSON metadata string
   const parsedMetadata = useMemo<VideoMetadata>(() => {
     if (!metadata) return {};
     if (typeof metadata !== "string") return metadata;
@@ -48,7 +50,7 @@ const VideoDisplayBlock = ({ content, metadata }: VideoDisplayBlockProps) => {
         <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-zinc-900 border border-zinc-100">
           <iframe
             src={getEmbedUrl(content)}
-            title={parsedMetadata.title || "Video Lesson"}
+            title="Video Lesson"
             className="absolute top-0 left-0 h-full w-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
@@ -57,17 +59,75 @@ const VideoDisplayBlock = ({ content, metadata }: VideoDisplayBlockProps) => {
 
         {/* METADATA OVERVIEW CONTENT DRAWER */}
         {(parsedMetadata.title || parsedMetadata.description) && (
-          <div className="mt-6">
+          <div className="mt-6 prose prose-zinc max-w-none">
+            {/* 1. RENDER TITLE WITH MARKDOWN PARSING */}
             {parsedMetadata.title && (
-              <h3 className="text-lg font-semibold text-zinc-900 tracking-tight">
-                {parsedMetadata.title}
+              <h3 className="text-lg font-semibold text-zinc-900 tracking-tight mb-3">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    p: ({ children }) => (
+                      <span className="inline">{children}</span>
+                    ),
+                    strong: ({ children }) => (
+                      <strong className="font-bold text-zinc-950">
+                        {children}
+                      </strong>
+                    ),
+                    em: ({ children }) => (
+                      <em className="italic text-purple-600 font-medium">
+                        {children}
+                      </em>
+                    ),
+                  }}
+                >
+                  {parsedMetadata.title}
+                </ReactMarkdown>
               </h3>
             )}
 
+            {/* 2. RENDER DESCRIPTION BODY TEXT WITH FULL MARKDOWN SUPPORT */}
             {parsedMetadata.description && (
-              <p className="mt-2 text-sm font-light leading-relaxed text-zinc-500">
-                {parsedMetadata.description}
-              </p>
+              <div className="text-sm font-light leading-relaxed text-zinc-500">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    p: ({ children }) => (
+                      <p className="text-sm font-light leading-relaxed text-zinc-500 mb-3 last:mb-0">
+                        {children}
+                      </p>
+                    ),
+                    strong: ({ children }) => (
+                      <strong className="font-semibold text-zinc-800">
+                        {children}
+                      </strong>
+                    ),
+                    em: ({ children }) => (
+                      <em className="italic text-zinc-700">{children}</em>
+                    ),
+                    blockquote: ({ children }) => (
+                      <blockquote className="border-l-4 border-zinc-200 bg-zinc-50/50 px-4 py-2 my-3 rounded-r-lg font-light italic text-zinc-600">
+                        {children}
+                      </blockquote>
+                    ),
+                    ul: ({ children }) => (
+                      <ul className="list-disc list-inside space-y-1 my-3 text-zinc-500 font-light pl-1">
+                        {children}
+                      </ul>
+                    ),
+                    ol: ({ children }) => (
+                      <ol className="list-decimal list-inside space-y-1 my-3 text-zinc-500 font-light pl-1">
+                        {children}
+                      </ol>
+                    ),
+                    li: ({ children }) => (
+                      <li className="text-sm leading-relaxed">{children}</li>
+                    ),
+                  }}
+                >
+                  {parsedMetadata.description}
+                </ReactMarkdown>
+              </div>
             )}
           </div>
         )}
