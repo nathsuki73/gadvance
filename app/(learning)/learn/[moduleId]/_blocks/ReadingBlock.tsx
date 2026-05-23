@@ -4,6 +4,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+// 🎯 IMPORT NATIVE CLIENT SESSION HOOKS
+import { useSession } from "next-auth/react";
 
 type ReadingBlockMetadata = {
   title?: string;
@@ -36,6 +38,9 @@ const ReadingBlock = ({
   const lastSyncedRatioRef = useRef<number>(0);
 
   const [completed, setCompleted] = useState(initialCompleted);
+
+  // 🎯 CONNECT CLIENT HOOK WRAPPER TO NEXT-AUTH STACK
+  const { data: session } = useSession();
 
   const parsedMetadata = useMemo<ReadingBlockMetadata>(() => {
     if (!metadata) return {};
@@ -85,7 +90,7 @@ const ReadingBlock = ({
     window.addEventListener("mousemove", resetIdleTimer);
     resetIdleTimer();
 
-    const syncTelemetryData = () => {
+    const syncTelemetryData = (isUnmounting = false) => {
       const now = Date.now();
       const rawSecondsElapsed = Math.round(
         (now - lastSyncTimestampRef.current) / 1000,
@@ -95,12 +100,10 @@ const ReadingBlock = ({
       lastSyncTimestampRef.current = now;
 
       if (
+        !isUnmounting &&
         maxRatioRef.current <= lastSyncedRatioRef.current &&
         incrementalTimeSpent < 5
       ) {
-        console.log(
-          `🤫 ReadingBlock [${targetBlockId}]: Minor adjustment filtered out. Suppressing network traffic.`,
-        );
         return;
       }
 
@@ -108,6 +111,7 @@ const ReadingBlock = ({
         ratioToPersist: maxRatioRef.current,
         timeSpentInThisSegment: incrementalTimeSpent,
         isCompletedLocally: completed,
+        isUnmounting,
       });
 
       lastSyncedRatioRef.current = maxRatioRef.current;
@@ -122,33 +126,73 @@ const ReadingBlock = ({
       };
 
       console.log(
-        `🚀 ReadingBlock [${targetBlockId}]: Dispatching debounced scroll data upstream...`,
+        `🚀 ReadingBlock [${targetBlockId}]: Dispatching data upstream...`,
         payload,
       );
 
-      if (navigator.sendBeacon) {
+      // 🎯 EXTRACT TOKEN NATIVELY FROM THE DECLARED NEXT-AUTH CONTEXT STATE
+      const token = session?.laravelJwt;
+
+      if (!token) {
+        console.warn(
+          `⚠️ ReadingBlock [${targetBlockId}]: Synchronizer paused. NextAuth session token is un-hydrated.`,
+        );
+        return;
+      }
+
+      const BASE_LARAVEL_URL =
+        "http://127.0.0.1:8000/api/telemetry/block-progress";
+
+      if (isUnmounting && navigator.sendBeacon) {
+        // Page exit query-param signature mapping
+        const beaconUrl = `${BASE_LARAVEL_URL}?token=${token}`;
         const blob = new Blob([JSON.stringify(payload)], {
           type: "application/json",
         });
-        const beaconSuccess = navigator.sendBeacon(
-          "/api/telemetry/block-progress",
-          blob,
-        );
-        console.log(
-          `📡 ReadingBlock [${targetBlockId}]: sendBeacon dispatch outcome ->`,
-          beaconSuccess ? "Success" : "Failed/Rejected",
-        );
+        navigator.sendBeacon(beaconUrl, blob);
       } else {
-        fetch("/api/telemetry/block-progress", {
+        // Direct authenticated client-fetch tracking dispatch loop
+        fetch(BASE_LARAVEL_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
-        }).catch((err) =>
-          console.error(
-            `❌ ReadingBlock [${targetBlockId}]: Fallback fetch synchronization failed:`,
-            err,
-          ),
-        );
+        })
+          .then(async (res) => {
+            console.log(
+              `📡 Response status from Laravel server point: [${res.status}]`,
+            );
+            const rawResponseText = await res.text().catch(() => "");
+
+            if (!res.ok) {
+              let parsedErrorPayload;
+              try {
+                parsedErrorPayload = JSON.parse(rawResponseText);
+              } catch {
+                parsedErrorPayload = {
+                  rawBodyText: rawResponseText || "Empty error text context.",
+                };
+              }
+
+              console.error("❌ Rejected by Laravel Controller rules:", {
+                httpStatus: res.status,
+                errorDetails: parsedErrorPayload,
+              });
+              return;
+            }
+            console.log(
+              `✅ Telemetry processed safely by Laravel database row engines.`,
+            );
+          })
+          .catch((err) =>
+            console.error(
+              "❌ Target connection failure to absolute Laravel server:",
+              err,
+            ),
+          );
       }
     };
 
@@ -170,14 +214,17 @@ const ReadingBlock = ({
           (scrolledPastElementTop / (elementHeight + windowHeight)) * 100;
       }
 
-      // 🎯 HARD SNAPPING BASELINE DEVIATION FIX:
-      // If the scroll boundaries touch the absolute foot of the document frame, force 100% completion
+      const hasScrolledPastTop = rect.top <= 10;
+      const hasFullyRevealedBottom = rect.bottom <= windowHeight + 5;
+
       const isAtAbsoluteBottom =
         window.innerHeight + window.scrollY >=
         document.documentElement.scrollHeight - 5;
-      const parsedVisibleBottom = rect.bottom <= windowHeight + 10;
 
-      if (isAtAbsoluteBottom || parsedVisibleBottom) {
+      if (
+        (hasScrolledPastTop && hasFullyRevealedBottom) ||
+        isAtAbsoluteBottom
+      ) {
         currentRatio = 100;
       }
 
@@ -187,7 +234,6 @@ const ReadingBlock = ({
         maxRatioRef.current = cleanRatio;
       }
 
-      // 🎯 MODIFIED: Only fire complete callback when progress cleanly locks at 100%
       if (!completed && maxRatioRef.current === 100) {
         console.log(
           `🎉 ReadingBlock [${targetBlockId}]: 100% maximum visibility unlocked!`,
@@ -197,7 +243,7 @@ const ReadingBlock = ({
       }
 
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(syncTelemetryData, 2000);
+      debounceTimer = setTimeout(() => syncTelemetryData(false), 2000);
     };
 
     window.addEventListener("scroll", handleScrollTracking);
@@ -211,9 +257,10 @@ const ReadingBlock = ({
       window.removeEventListener("mousemove", resetIdleTimer);
       window.removeEventListener("scroll", handleScrollTracking);
 
-      syncTelemetryData();
+      syncTelemetryData(true);
     };
-  }, [targetBlockId, lessonId, completed, onCompleted]);
+    // 🎯 INJECT session PROPERTY INSIDE EFFECT DEPENDENCY BOUNDARIES
+  }, [targetBlockId, lessonId, completed, onCompleted, session]);
 
   if (!content) return null;
   const showHeader = parsedMetadata.title && parsedMetadata.title !== "[BLANK]";
