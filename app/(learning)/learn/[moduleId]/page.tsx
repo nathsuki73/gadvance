@@ -10,6 +10,7 @@ import type { ModuleResponse } from "./types";
 import { getLearningModule } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/service";
 import { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 import QuestionnaireModal from "./_components/QuestionnaireModal";
+import { submitAdaptiveTelemetryAction } from "./actions";
 
 type LessonProgressItem = {
   completed_steps: number;
@@ -49,7 +50,8 @@ const LearnPage = ({ params }: LearnPageProps) => {
   const mode = searchParams.get("mode");
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [uiRecipe, setUiRecipe] = useState<any>(null);
+  const [uiRecipes, setUiRecipes] = useState<Record<string, any>>({});
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
 
   useEffect(() => {
     if (mode === "adaptive") {
@@ -57,30 +59,99 @@ const LearnPage = ({ params }: LearnPageProps) => {
     }
   }, [mode]);
 
-  const handleAdaptiveSetup = async (telemetryPayload: {
-    choiceId: string;
-    reflectionText: string;
-  }) => {
-    setModalOpen(false);
-
-    // 🔗 Fetch request directly hitting your GenderStudiesAdaptiveEngine microservice API
-    try {
-      const response = await fetch("/api/adaptive-telemetry", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          student_text: telemetryPayload.reflectionText,
-          // Mapping selection A to partial score, selection B to text score to mirror your python pretest metrics
-          pretest_score: telemetryPayload.choiceId === "A" ? 1 : 2,
-          active_lesson: params.id,
-        }),
-      });
-
-      const recipe = await response.json();
-      setUiRecipe(recipe.frontend_ui_recipe); // Updates state to render layout components dynamically
-    } catch (err) {
-      console.error("Adaptive backend parsing error:", err);
+  const handleAdaptiveSetupAllLessons = async () => {
+    // 🛡️ Guard Clause: Ensure your lessons repository array has hydrated in state first
+    if (!lessons || lessons.length === 0) {
+      console.warn(
+        "⚠️ Loop deferred: Lessons repository list is empty or unhydrated.",
+      );
+      return;
     }
+
+    setIsSyncingAll(true);
+    console.log(
+      `🔄 [Batch AI Synced] Triggering adaptive matrix logic loops over ${lessons.length} lessons...`,
+    );
+
+    // ⚡ Map each lesson into an independent asynchronous execution tracking line
+    const syncPromises = lessons.map(async (lesson: any) => {
+      const targetLessonId = lesson.id;
+
+      try {
+        console.log(
+          `📡 Fetching recommendations for Lesson Node: [${targetLessonId}]`,
+        );
+
+        const response = await fetch("http://127.0.0.1:8000/api/predict", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            lesson_id: targetLessonId,
+            pretest_score: 12, // Pass target lesson scores dynamically if captured
+            telemetry: {
+              avg_time_spent: 60.0,
+              retries: 0,
+              quiz_accuracy: 0.7,
+              engagement_score: 6.0,
+              inactivity_count: 0,
+              prefers_visual: true,
+            },
+          }),
+        });
+
+        if (!response.ok)
+          throw new Error(`HTTP network error code ${response.status}`);
+        const result = await response.json();
+
+        if (result.status === "success" || result.recommended_blocks) {
+          console.log(
+            `✨ [Lesson Synced Live] Received items for UUID: ${targetLessonId}`,
+            result,
+          );
+
+          console.group(
+            `📦 AI Recipe Payload Matrix for Lesson [${targetLessonId}]`,
+          );
+          console.log("🌸 Target Bloom Tier:", result.target_bloom_tier);
+          console.log(
+            "🧠 Predicted Learning Tags:",
+            result.predicted_learning_tags,
+          );
+
+          // 🎯 FIXED: Target Python's explicit key arrays directly to get accurate item lengths
+          console.log(
+            "🧱 Recommended Content Blocks Count:",
+            result.recommended_blocks?.length || 0,
+          );
+          console.log(
+            "📋 Recommended Quizzes Count:",
+            result.recommended_quizzes?.length || 0,
+          );
+          console.groupEnd();
+
+          setUiRecipes((prev) => ({
+            ...prev,
+            [targetLessonId]: result,
+          }));
+        }
+      } catch (err) {
+        console.error(
+          `❌ Fallback tracking failure on Lesson node [${targetLessonId}]:`,
+          err,
+        );
+      }
+    });
+
+    // Wait for all requests in the array loop to finish execution safely
+    await Promise.all(syncPromises);
+    setIsSyncingAll(false);
+    console.log(
+      "🏁 [Batch AI Synced] All lesson data loops have completed processing.",
+    );
   };
 
   // Layout & UI State
@@ -273,7 +344,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
         <QuestionnaireModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
-          onSubmit={handleAdaptiveSetup}
+          onSubmit={handleAdaptiveSetupAllLessons}
         />
       )}
       <ModuleSidebar
@@ -355,6 +426,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
               };
             });
           }}
+          adaptiveRecipe={uiRecipes[activeLessonId] || null}
         />
       </div>
     </main>

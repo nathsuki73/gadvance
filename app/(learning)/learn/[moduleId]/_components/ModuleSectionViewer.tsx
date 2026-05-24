@@ -24,25 +24,34 @@ type LiveUpdatedLessonPayload = {
   percentage: number;
 };
 
-type ModuleSectionViewerProps = {
-  lesson: Lesson;
+export type ModuleSectionViewerProps = {
+  lesson: any; // or your custom explicit Lesson type structure
   currentIndex: number;
   totalSections: number;
+  lessonsProgress: Record<string, any>;
+  completedBlockIds: string[];
+  completedQuizLessons: string[];
+  lessons: any[];
   onNext: () => void;
   onPrevious: () => void;
   isFirst: boolean;
   isLast: boolean;
-  onQuizBlockCompleted?: (blockId: string) => void;
+  onQuizBlockCompleted: (blockId: string) => void;
   onBlockCompletedLive: (
     blockId: string,
-    interactionType: "reading" | "quiz" | "text" | "video",
-    updatedLesson?: LiveUpdatedLessonPayload,
+    interactionType: string,
+    updatedLesson?: any,
   ) => void;
-  lessonsProgress: Record<string, LessonProgressItem>;
-  lessons: Lesson[];
-  // 🎯 Add these two missing props to match the sidebar's real-time trackers:
-  completedBlockIds?: string[];
-  completedQuizLessons?: string[];
+
+  // 🎯 THE FIX: Add the optional adaptive tracking property to resolve the compilation mismatch!
+  adaptiveRecipe?: {
+    status: string;
+    student_context: string;
+    target_bloom_tier: string;
+    predicted_learning_tags: Array<{ label: string; confidence: number }>;
+    recommended_blocks: any[];
+    recommended_quizzes: any[];
+  } | null;
 };
 
 const ModuleSectionViewer = ({
@@ -57,6 +66,7 @@ const ModuleSectionViewer = ({
   lessons = [],
   completedBlockIds = [],
   completedQuizLessons = [],
+  adaptiveRecipe,
 }: ModuleSectionViewerProps) => {
   const hasContentBlocks = (lesson.blocks?.length || 0) > 0;
   const hasQuizBlocks = (lesson.quiz_blocks?.length || 0) > 0;

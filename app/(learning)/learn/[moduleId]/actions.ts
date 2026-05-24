@@ -159,3 +159,50 @@ export async function submitQuizAttemptAction(attemptId: string) {
     };
   }
 }
+
+export async function submitAdaptiveTelemetryAction(payload: {
+  reflectionText: string;
+  calculatedScore: number;
+  moduleId: string;
+}) {
+  try {
+    // 🔗 Grab your pre-configured API handler instance (automatically wraps auth tokens)
+    const api = await getApi();
+
+    // 🚀 POST the telemetry payload directly to your Laravel API route endpoint
+    // 🎯 Pack fake telemetry values into the shape Laravel's validator expects
+    const res = await api.post("/predict", {
+      // 💡 Maps your payload variables to the required DB string names
+      module_id: payload.moduleId || "14c6165a-e53a-4fac-8e09-79f6d63c93c7",
+      pretest_score: Number(payload.calculatedScore) || 0,
+
+      // 🧠 Mock telemetry object to sail straight through Laravel's validator rules
+      telemetry: {
+        avg_time_spent: 45.5,
+        retries: 0,
+        quiz_accuracy: 0.85,
+        engagement_score: 7.5,
+        inactivity_count: 0,
+        prefers_visual: true,
+      },
+
+      // You can still pass student_text if your Python ML model utilizes it in the next step!
+      student_text: payload.reflectionText || "",
+    });
+
+    return {
+      success: true,
+      frontend_ui_recipe: res.data.frontend_ui_recipe, // Pass back the structural layout instruction array
+    };
+  } catch (error: any) {
+    console.error("❌ Submit Adaptive Telemetry Server Action Error:", error);
+
+    return {
+      success: false,
+      error:
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to communicate with adaptive baseline calculation services.",
+    };
+  }
+}

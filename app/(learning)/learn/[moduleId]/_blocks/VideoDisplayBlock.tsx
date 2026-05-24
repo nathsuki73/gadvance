@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useSession } from "next-auth/react";
+import { enqueueBlockTelemetry } from "../_hooks/blockTelemetryQueue";
 
 type VideoMetadata = {
   title?: string;
@@ -12,8 +13,8 @@ type VideoMetadata = {
 };
 
 type VideoDisplayBlockProps = {
-  content?: string | null; // Holds the YouTube link
-  metadata?: string | VideoMetadata | null; // Holds the stringified JSON metadata
+  content?: string | null;
+  metadata?: string | VideoMetadata | null;
   backendBlockId?: string;
   lessonId?: string;
   initialCompleted?: boolean;
@@ -31,13 +32,20 @@ const VideoDisplayBlock = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const lastSyncTimestampRef = useRef<number>(Date.now());
-  const maxRatioRef = useRef<number>(0);
-  const lastSyncedRatioRef = useRef<number>(0);
+  const maxRatioRef = useRef<number>(initialCompleted ? 100 : 0);
+  const lastSyncedRatioRef = useRef<number>(initialCompleted ? 100 : 0);
+  const accumulatedSecondsRef = useRef<number>(0);
+
+  const completedRef = useRef<boolean>(initialCompleted);
+  const onCompletedRef = useRef(onCompleted);
 
   const [completed, setCompleted] = useState(initialCompleted);
   const { data: session } = useSession();
 
-  // Safely parse the database JSON metadata string
+  useEffect(() => {
+    onCompletedRef.current = onCompleted;
+  }, [onCompleted]);
+
   const parsedMetadata = useMemo<VideoMetadata>(() => {
     if (!metadata) return {};
     if (typeof metadata !== "string") return metadata;
@@ -50,17 +58,21 @@ const VideoDisplayBlock = ({
 
   const targetBlockId = backendBlockId || parsedMetadata.backendBlockId;
 
-  /*
-  |--------------------------------------------------------------------------
-  | SCROLL TELEMETRY ENGINE WITH COMPONENT DEBOUNCE FILTERING
-  |--------------------------------------------------------------------------
-  */
   useEffect(() => {
     if (!targetBlockId || !lessonId) return;
 
-    let debounceTimer: NodeJS.Timeout;
+    let debounceTimer: ReturnType<typeof setTimeout>;
     let isIdle = false;
-    let idleTimer: NodeJS.Timeout;
+    let idleTimer: ReturnType<typeof setTimeout>;
+
+    // Stagger client flushes slightly so many blocks don't POST in the same millisecond.
+    const syncDelayMs =
+      4000 +
+      (Array.from(targetBlockId).reduce(
+        (sum, char) => sum + char.charCodeAt(0),
+        0,
+      ) %
+        1200);
 
     const resetIdleTimer = () => {
       isIdle = false;
@@ -73,121 +85,87 @@ const VideoDisplayBlock = ({
     window.addEventListener("mousemove", resetIdleTimer);
     resetIdleTimer();
 
-    const syncTelemetryData = (isUnmounting = false) => {
+    const syncTelemetryData = () => {
       const now = Date.now();
       const rawSecondsElapsed = Math.round(
         (now - lastSyncTimestampRef.current) / 1000,
       );
-      const incrementalTimeSpent = isIdle ? 0 : Math.min(rawSecondsElapsed, 90);
-
       lastSyncTimestampRef.current = now;
 
-      if (
-        !isUnmounting &&
-        maxRatioRef.current <= lastSyncedRatioRef.current &&
-        incrementalTimeSpent < 5
-      ) {
+      const incrementalTimeSpent = isIdle ? 0 : Math.min(rawSecondsElapsed, 90);
+      accumulatedSecondsRef.current += incrementalTimeSpent;
+
+      const hasRatioMilestoneChanged =
+        maxRatioRef.current > lastSyncedRatioRef.current;
+      const hasSubstantialTimeAccumulated = accumulatedSecondsRef.current >= 20;
+
+      if (!hasRatioMilestoneChanged && !hasSubstantialTimeAccumulated) {
         return;
       }
 
-      lastSyncedRatioRef.current = maxRatioRef.current;
+      const token = session?.laravelJwt;
+      if (!token) return;
 
       const payload = {
         lesson_id: lessonId,
         block_id: targetBlockId,
         progress_ratio: maxRatioRef.current,
-        time_spent_seconds: incrementalTimeSpent,
-        interaction_type: "video", // Overridden from reading to track video stats explicitly
+        time_spent_seconds: accumulatedSecondsRef.current,
+        interaction_type: "video",
         score: null,
       };
 
-      const token = session?.laravelJwt;
-      if (!token) return;
+      lastSyncedRatioRef.current = maxRatioRef.current;
+      accumulatedSecondsRef.current = 0;
 
-      const BASE_LARAVEL_URL =
-        "http://127.0.0.1:8000/api/telemetry/block-progress";
-
-      if (isUnmounting && navigator.sendBeacon) {
-        const beaconUrl = `${BASE_LARAVEL_URL}?token=${token}`;
-        const blob = new Blob([JSON.stringify(payload)], {
-          type: "application/json",
-        });
-        navigator.sendBeacon(beaconUrl, blob);
-      } else {
-        fetch(BASE_LARAVEL_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        }).catch(() => {});
-      }
+      enqueueBlockTelemetry(payload, token);
     };
 
     const handleScrollTracking = () => {
       resetIdleTimer();
-
       const element = containerRef.current;
       if (!element) return;
 
       const rect = element.getBoundingClientRect();
       const windowHeight = window.innerHeight;
 
-      const elementHeight = rect.height;
-      const scrolledPastElementTop = windowHeight - rect.top;
-
-      let currentRatio = 0;
-      if (scrolledPastElementTop > 0 && rect.top < windowHeight) {
-        currentRatio =
-          (scrolledPastElementTop / (elementHeight + windowHeight)) * 100;
+      let cleanRatio = 0;
+      if (rect.top < windowHeight && rect.bottom > 0) {
+        cleanRatio = 50;
       }
 
-      const hasScrolledPastTop = rect.top <= 10;
-      const hasFullyRevealedBottom = rect.bottom <= windowHeight + 5;
-
-      const isAtAbsoluteBottom =
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - 5;
-
-      if (
-        (hasScrolledPastTop && hasFullyRevealedBottom) ||
-        isAtAbsoluteBottom
-      ) {
-        currentRatio = 100;
+      if (rect.top <= 50 && rect.bottom <= windowHeight + 10) {
+        cleanRatio = 100;
       }
-
-      const cleanRatio = Math.min(Math.max(Math.round(currentRatio), 0), 100);
 
       if (cleanRatio > maxRatioRef.current) {
         maxRatioRef.current = cleanRatio;
       }
 
-      if (!completed && maxRatioRef.current === 100) {
+      if (!completedRef.current && maxRatioRef.current === 100) {
+        completedRef.current = true;
         setCompleted(true);
-        onCompleted?.();
+        onCompletedRef.current?.();
       }
 
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => syncTelemetryData(false), 2000);
+      debounceTimer = setTimeout(() => syncTelemetryData(), syncDelayMs);
     };
 
     window.addEventListener("scroll", handleScrollTracking);
+    handleScrollTracking();
 
     return () => {
       clearTimeout(debounceTimer);
       clearTimeout(idleTimer);
       window.removeEventListener("mousemove", resetIdleTimer);
       window.removeEventListener("scroll", handleScrollTracking);
-
-      syncTelemetryData(true);
+      syncTelemetryData();
     };
-  }, [targetBlockId, lessonId, completed, onCompleted, session]);
+  }, [targetBlockId, lessonId, session?.laravelJwt]);
 
   if (!content) return null;
 
-  // Clean or extract raw YouTube URLs if needed for an iframe embed
   const getEmbedUrl = (url: string) => {
     try {
       if (url.includes("youtube.com/watch?v=")) {
@@ -211,7 +189,6 @@ const VideoDisplayBlock = ({
         className={`rounded-2xl border p-6 sm:p-8 shadow-sm transition-all duration-300 bg-white
         ${completed ? "border-purple-100 shadow-purple-50/10" : "border-zinc-100 hover:border-zinc-200"}`}
       >
-        {/* VIDEO PLAYER CANVAS CONTAINER */}
         <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-zinc-900 border border-zinc-100">
           <iframe
             src={getEmbedUrl(content)}
@@ -222,10 +199,8 @@ const VideoDisplayBlock = ({
           />
         </div>
 
-        {/* METADATA OVERVIEW CONTENT DRAWER */}
         {(parsedMetadata.title || parsedMetadata.description) && (
           <div className="mt-6 prose prose-zinc max-w-none">
-            {/* 1. RENDER TITLE WITH MARKDOWN PARSING */}
             {parsedMetadata.title && (
               <div className="mb-3 flex items-center justify-between border-b border-zinc-50 pb-2">
                 <h3 className="text-lg font-semibold text-zinc-900 tracking-tight">
@@ -258,7 +233,6 @@ const VideoDisplayBlock = ({
               </div>
             )}
 
-            {/* 2. RENDER DESCRIPTION BODY TEXT WITH FULL MARKDOWN SUPPORT */}
             {parsedMetadata.description && (
               <div className="text-sm font-light leading-relaxed text-zinc-500">
                 <ReactMarkdown
@@ -308,4 +282,12 @@ const VideoDisplayBlock = ({
   );
 };
 
-export default VideoDisplayBlock;
+// 🎯 REACT MEMO WRAPPER FIX: Prevents container re-mounting loops when parents shift state parameters!
+export default React.memo(VideoDisplayBlock, (prevProps, nextProps) => {
+  return (
+    prevProps.content === nextProps.content &&
+    prevProps.backendBlockId === nextProps.backendBlockId &&
+    prevProps.lessonId === nextProps.lessonId &&
+    prevProps.initialCompleted === nextProps.initialCompleted
+  );
+});
