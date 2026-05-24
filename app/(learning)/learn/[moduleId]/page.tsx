@@ -1,7 +1,7 @@
 "use client";
 
 import React, { use, useEffect, useMemo, useState } from "react";
-import { notFound } from "next/navigation";
+import { notFound, useSearchParams } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
 
 import ModuleSidebar from "./_components/ModuleSidebar";
@@ -9,6 +9,7 @@ import ModuleSectionViewer from "./_components/ModuleSectionViewer";
 import type { ModuleResponse } from "./types";
 import { getLearningModule } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/service";
 import { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
+import QuestionnaireModal from "./_components/QuestionnaireModal";
 
 type LessonProgressItem = {
   completed_steps: number;
@@ -43,6 +44,44 @@ type LearnPageProps = {
 
 const LearnPage = ({ params }: LearnPageProps) => {
   const { moduleId } = use(params);
+
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode");
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [uiRecipe, setUiRecipe] = useState<any>(null);
+
+  useEffect(() => {
+    if (mode === "adaptive") {
+      setModalOpen(true);
+    }
+  }, [mode]);
+
+  const handleAdaptiveSetup = async (telemetryPayload: {
+    choiceId: string;
+    reflectionText: string;
+  }) => {
+    setModalOpen(false);
+
+    // 🔗 Fetch request directly hitting your GenderStudiesAdaptiveEngine microservice API
+    try {
+      const response = await fetch("/api/adaptive-telemetry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          student_text: telemetryPayload.reflectionText,
+          // Mapping selection A to partial score, selection B to text score to mirror your python pretest metrics
+          pretest_score: telemetryPayload.choiceId === "A" ? 1 : 2,
+          active_lesson: params.id,
+        }),
+      });
+
+      const recipe = await response.json();
+      setUiRecipe(recipe.frontend_ui_recipe); // Updates state to render layout components dynamically
+    } catch (err) {
+      console.error("Adaptive backend parsing error:", err);
+    }
+  };
 
   // Layout & UI State
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -230,6 +269,13 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   return (
     <main className="min-h-screen bg-[#ffffff]">
+      {mode === "adaptive" && (
+        <QuestionnaireModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSubmit={handleAdaptiveSetup}
+        />
+      )}
       <ModuleSidebar
         structureTitle={module.title}
         lessons={lessons}
