@@ -61,6 +61,16 @@ const BlockRenderer = ({
         />
       );
     case "pretest":
+      return (
+        <QuizBlock
+          content={block.content}
+          metadata={block.metadata}
+          onQuestionCompleted={onQuizBlockCompleted}
+          // 🎯 FORWARD THE CLEAN LESSON ID UUID DOWN TO THE LOGIC ENGINE:
+          lessonId={lessonId}
+          onBlockCompletedLive={onBlockCompletedLive}
+        />
+      );
     case "quiz":
       return (
         <QuizBlock

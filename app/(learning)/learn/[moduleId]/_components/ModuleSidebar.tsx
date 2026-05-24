@@ -144,7 +144,7 @@ const ModuleSidebar = ({
               // Composite pages count text/video content items (the quiz runs as 1 final inline checker widget).
               const stepCount = isStandaloneQuizPage
                 ? totalQuizQuestions
-                : totalBlocks;
+                : totalBlocks + totalQuizQuestions;
 
               // Calculate standard content block progress
               const completedBlocksCount = (lesson.blocks || []).filter((b) =>
@@ -169,7 +169,12 @@ const ModuleSidebar = ({
                   totalCompletedSteps === stepCount && stepCount > 0;
               } else {
                 // Content pages read tracking markers straight out of their standard blocks array
-                totalCompletedSteps = completedBlocksCount;
+                const completedQuizzesCount = (lesson.quiz_blocks || []).filter(
+                  (q) => completedBlockIds.includes(q.id),
+                ).length;
+
+                totalCompletedSteps =
+                  completedBlocksCount + completedQuizzesCount;
                 isEntirelyDone =
                   totalCompletedSteps === stepCount && stepCount > 0;
               }

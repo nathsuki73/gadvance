@@ -247,7 +247,7 @@ const QuizBlock = ({
       // 4. 🎯 FIX: Call only the quiz specific completion listener handler hook
       // This fills the donut track safely without triggering block-doubling state updates in LearnPage
       onQuestionCompleted?.(targetQuizBlockId);
-
+      onBlockCompletedLive?.(targetQuizBlockId, "quiz");
       if (currentQuestionIndex === questions.length - 1) {
         const evaluation = await submitQuizAttemptAction(activeAttemptId);
         if (evaluation.success) {
