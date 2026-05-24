@@ -272,7 +272,7 @@ const ModuleSidebar = ({
                     }}
                     className={`
                       hidden lg:flex relative h-11 w-11 mx-auto items-center justify-center
-                      rounded-xl transition-all duration-150
+                      rounded-xl transition-all duration-150 pointer-events-auto
                       ${!isUnlocked ? "opacity-40 cursor-not-allowed text-zinc-300" : isActive ? "bg-purple-50 text-[#8b5cf6]" : "text-zinc-400 hover:bg-zinc-200/50 hover:text-zinc-700"}
                     `}
                     title={
@@ -316,7 +316,7 @@ const ModuleSidebar = ({
                   }}
                   className={`
                     flex w-full items-center gap-3 rounded-xl border border-transparent
-                    px-3 py-3 text-left transition-all duration-150
+                    px-3 py-3 text-left transition-all duration-150 pointer-events-auto
                     ${!isUnlocked ? "opacity-50 cursor-not-allowed bg-zinc-100/30 text-zinc-400 select-none" : isActive ? "bg-purple-50/70 border-purple-100/50 text-[#8b5cf6]" : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"}
                   `}
                 >

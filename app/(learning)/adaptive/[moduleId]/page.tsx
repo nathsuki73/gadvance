@@ -321,6 +321,7 @@ const AdaptiveLearningPage = ({ params }: AdaptivePageProps) => {
           onQuizBlockCompleted={handleQuizBlockCompleted}
           adaptiveRecipeRevision={adaptiveRecipeRevision}
           isAdaptiveMode={true}
+          learningPreference={learningPreference}
           onBlockCompletedLive={(blockId, interactionType, updatedLesson?) => {
             setProgressData((prev) => {
               const nextBlockIds = prev.completed_block_ids.includes(blockId)

@@ -44,6 +44,7 @@ export type ModuleSectionViewerProps = {
   ) => void;
   adaptiveRecipeRevision?: number;
   isAdaptiveMode?: boolean;
+  learningPreference?: "video" | "reading" | null;
 
   // 🎯 THE FIX: Add the optional adaptive tracking property to resolve the compilation mismatch!
   adaptiveRecipe?: {
@@ -71,6 +72,7 @@ const ModuleSectionViewer = ({
   adaptiveRecipe,
   adaptiveRecipeRevision = 0,
   isAdaptiveMode = false,
+  learningPreference = null,
 }: ModuleSectionViewerProps) => {
   const hasContentBlocks = (lesson.blocks?.length || 0) > 0;
   const hasQuizBlocks = (lesson.quiz_blocks?.length || 0) > 0;
@@ -109,14 +111,42 @@ const ModuleSectionViewer = ({
   });
 
   const adaptiveBlocks = useMemo(() => {
+    let blocks = [];
     if (!hasAdaptiveRecipe) {
-      return (lesson.blocks || [])
+      blocks = (lesson.blocks || [])
         .slice()
         .sort((a, b) => a.order_index - b.order_index);
+    } else {
+      blocks = (adaptiveRecipe?.recommended_blocks || []).map(
+        normalizeRecipeBlock,
+      );
     }
 
-    return (adaptiveRecipe?.recommended_blocks || []).map(normalizeRecipeBlock);
-  }, [adaptiveRecipe, hasAdaptiveRecipe, lesson.blocks]);
+    // Filter blocks based on learning preference in adaptive mode
+    if (isAdaptiveMode && learningPreference) {
+      if (learningPreference === "video") {
+        // Only show video blocks
+        return blocks.filter((block) => block.type === "video");
+      } else if (learningPreference === "reading") {
+        // Only show non-video, non-interactive blocks (text, image, title, reading, etc.)
+        return blocks.filter(
+          (block) =>
+            block.type !== "video" &&
+            block.type !== "quiz" &&
+            block.type !== "pretest" &&
+            block.type !== "survey",
+        );
+      }
+    }
+
+    return blocks;
+  }, [
+    adaptiveRecipe,
+    hasAdaptiveRecipe,
+    lesson.blocks,
+    isAdaptiveMode,
+    learningPreference,
+  ]);
 
   const adaptiveQuizzes = useMemo(() => {
     if (!hasAdaptiveRecipe) {
