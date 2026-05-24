@@ -156,9 +156,9 @@ const OTPContent = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans text-zinc-900">
-      <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-sm p-8 md:p-12 border border-zinc-100 text-center">
+      <div className="bg-white w-full max-w-[22rem] md:max-w-md rounded-[2.5rem] shadow-sm p-6 sm:p-8 md:p-12 border border-zinc-100 text-center">
         {/* Dynamic Header Icon */}
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-violet-50 text-[#8b5cf6] rounded-2xl mb-6">
+        <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-violet-50 text-[#8b5cf6] rounded-2xl mb-6">
           {isInstitutional ? (
             <GraduationCap size={32} />
           ) : (
@@ -195,7 +195,7 @@ const OTPContent = () => {
         </div>
 
         {/* 6-Digit OTP Box Grid */}
-        <div className="flex justify-between gap-2 mb-8">
+        <div className="grid grid-cols-6 gap-2 sm:gap-3 mb-8 justify-items-center">
           {otp.map((data, index) => (
             <input
               key={index}
@@ -203,11 +203,15 @@ const OTPContent = () => {
                 inputRefs.current[index] = el;
               }}
               type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              autoComplete="one-time-code"
+              aria-label={`Digit ${index + 1}`}
               maxLength={1}
               value={data}
               onChange={(e) => handleChange(e.target.value, index)}
               onKeyDown={(e) => handleKeyDown(e, index)}
-              className="w-12 h-14 text-center text-xl font-bold border border-zinc-200 rounded-xl bg-zinc-50/50 focus:border-[#8b5cf6] focus:ring-4 focus:ring-[#8b5cf6]/10 transition-all outline-none"
+              className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold border border-zinc-200 rounded-xl bg-zinc-50/50 focus:border-[#8b5cf6] focus:ring-4 focus:ring-[#8b5cf6]/10 transition-all outline-none"
             />
           ))}
         </div>
@@ -215,7 +219,7 @@ const OTPContent = () => {
         <button
           onClick={handleVerify}
           disabled={loading || isBlocked || otp.join("").length < 6}
-          className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-4 rounded-xl font-bold transition-all mb-6 shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none disabled:active:scale-100"
+          className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-3 sm:py-4 rounded-xl font-bold text-sm sm:text-base transition-all mb-6 shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-50 disabled:shadow-none disabled:active:scale-100"
         >
           {loading ? "Verifying..." : currentUI.button}
         </button>
