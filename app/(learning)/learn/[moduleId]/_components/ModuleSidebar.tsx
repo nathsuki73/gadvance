@@ -72,6 +72,7 @@ const ModuleSidebar = ({
           lg:translate-x-0
           w-[290px] sm:w-[320px]
           ${isCollapsed ? "lg:w-16" : "lg:w-80"}
+          adaptive-sidebar-item pointer-events-auto
         `}
       >
         {/* SIDEBAR HEADER */}

@@ -270,23 +270,26 @@ const AdaptiveLearningPage = ({ params }: AdaptivePageProps) => {
 
   return (
     <main className="min-h-screen bg-white">
-      {/* Sidebar - Fixed positioning (no wrapper animation needed) */}
-      <div className="adaptive-sidebar-animate">
-        <ModuleSidebar
-          structureTitle={`${module.title} (Adaptive)`}
-          lessons={lessons}
-          activeLessonId={activeLessonId}
-          completedBlockIds={[]}
-          completedQuizLessons={[]}
-          lessonsProgress={{}}
-          onNavigate={handleLessonChange}
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
-          mobileOpen={mobileSidebarOpen}
-          onCloseMobile={() => setMobileSidebarOpen(false)}
-          isAdaptiveMode={true}
-        />
-      </div>
+      {/* Sidebar - Apply animation directly */}
+      <style>{`
+        aside.adaptive-sidebar-item {
+          animation: adaptiveSidebarFadeIn 700ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+      `}</style>
+      <ModuleSidebar
+        structureTitle={`${module.title} (Adaptive)`}
+        lessons={lessons}
+        activeLessonId={activeLessonId}
+        completedBlockIds={[]}
+        completedQuizLessons={[]}
+        lessonsProgress={{}}
+        onNavigate={handleLessonChange}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+        isAdaptiveMode={true}
+      />
 
       {/* Mobile Header - Only visible on small screens */}
       <div className="sticky top-0 z-30 flex h-14 items-center border-b border-zinc-200 bg-white px-4 lg:hidden">
