@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import { ArrowDown, ArrowRight, CheckCircle, Lock } from "lucide-react";
 import BlockRenderer from "./BlockRenderer";
 import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 
@@ -10,6 +10,13 @@ type LessonQuizBlock = Lesson["quiz_blocks"][number] & {
 };
 
 type LessonProgressItem = {
+  completed_steps: number;
+  total_steps: number;
+  is_completed: boolean;
+  percentage: number;
+};
+
+type LiveUpdatedLessonPayload = {
   lesson_id: string;
   completed_steps: number;
   total_steps: number;
@@ -29,8 +36,11 @@ type ModuleSectionViewerProps = {
   onBlockCompletedLive: (
     blockId: string,
     interactionType: "reading" | "quiz" | "text" | "video",
-    updatedLesson?: LessonProgressItem, // 🌟 Add this optional server-payload object parameter
+    updatedLesson?: LiveUpdatedLessonPayload,
   ) => void;
+  lessonsProgress: Record<string, LessonProgressItem>;
+  // 🎯 ADD THE FULL LESSONS LIST TO CHECK THE NEIGHBORING SLOTS:
+  lessons: Lesson[];
 };
 
 const ModuleSectionViewer = ({
@@ -41,12 +51,42 @@ const ModuleSectionViewer = ({
   isLast,
   onQuizBlockCompleted,
   onBlockCompletedLive,
+  lessonsProgress = {},
+  lessons = [],
 }: ModuleSectionViewerProps) => {
   const hasContentBlocks = (lesson.blocks?.length || 0) > 0;
   const hasQuizBlocks = (lesson.quiz_blocks?.length || 0) > 0;
 
-  // If a lesson contains ONLY quiz blocks, it runs the assessment presentation layer
   const isAssessmentMode = hasQuizBlocks && !hasContentBlocks;
+
+  // 🎯 SMART GATEKEEPER: Check if the user is allowed to proceed to the next lesson
+  const isNextStageAccessible = useMemo(() => {
+    // 1. If the current lesson itself is finished, the next stage is automatically unlocked
+    const currentProgress = lessonsProgress[lesson.id];
+    if (
+      currentProgress?.is_completed ||
+      (currentProgress &&
+        currentProgress.completed_steps >= currentProgress.total_steps &&
+        currentProgress.total_steps > 0)
+    ) {
+      return true;
+    }
+
+    // 2. If the current lesson isn't complete, check if the NEXT lesson has existing historical progress data from the server
+    const nextLesson = lessons[currentIndex + 1];
+    if (nextLesson) {
+      const nextProgress = lessonsProgress[nextLesson.id];
+      // If the next lesson already has recorded steps or is marked complete, the pathway is open
+      if (
+        nextProgress &&
+        (nextProgress.is_completed || nextProgress.completed_steps > 0)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }, [lessonsProgress, lesson.id, currentIndex, lessons]);
 
   /*
   |--------------------------------------------------------------------------
@@ -87,14 +127,10 @@ const ModuleSectionViewer = ({
       questions: combinedQuestions,
     });
 
-    // 🎯 CHOOSE THE CORRECT TYPE FOR ACCURATE TELEMETRY TRACKING
     const dynamicQuizType = isAssessmentMode ? "pretest" : "quiz";
 
     return (
       <BlockRenderer
-        // 🎯 THE CRITICAL STATE RESET FIX:
-        // This key tells React to throw away the old quiz state completely
-        // when changing lessons, preventing score bleeding.
         key={`compiled-quiz-context-${lesson.id}`}
         block={{
           id: lesson.id,
@@ -138,7 +174,6 @@ const ModuleSectionViewer = ({
         {isAssessmentMode ? (
           <div className="space-y-6">{renderCompiledQuiz()}</div>
         ) : (
-          /* STANDARD CONTENT BLOCK LAYER WITH OPTIONAL QUIZZES APPENDED */
           <div className="space-y-2">
             {(lesson.blocks || [])
               .slice()
@@ -152,7 +187,6 @@ const ModuleSectionViewer = ({
                 />
               ))}
 
-            {/* If a lesson has BOTH content blocks AND quiz blocks, append the quizzes safely at the bottom */}
             {!isAssessmentMode && hasQuizBlocks && (
               <div className="mt-12 pt-10 border-t border-dashed border-zinc-200">
                 <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-400 mb-6">
@@ -169,23 +203,35 @@ const ModuleSectionViewer = ({
       <div className="mt-20 border-t border-zinc-100 pt-8 w-full max-w-4xl mx-auto shrink-0">
         <div className="flex justify-center">
           {!isLast ? (
-            <button
-              type="button"
-              onClick={onNext}
-              className="group flex items-center justify-center gap-3 rounded-full bg-[#8b5cf6] px-12 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all hover:bg-[#7c3aed] active:scale-[0.98] w-full sm:w-auto hover:shadow-lg hover:shadow-purple-100"
-            >
-              <span>{isAssessmentMode ? "start assessment" : "continue"}</span>
-              <ArrowRight
-                size={14}
-                strokeWidth={2.5}
-                className="transition-transform duration-200 group-hover:translate-x-0.5"
-              />
-            </button>
+            isNextStageAccessible ? (
+              /* 🔓 NEXT STAGE OPEN: Present Navigation Button */
+              <button
+                type="button"
+                onClick={onNext}
+                className="group flex items-center justify-center gap-3 rounded-full bg-[#8b5cf6] px-12 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all hover:bg-[#7c3aed] active:scale-[0.98] w-full sm:w-auto hover:shadow-lg hover:shadow-purple-100"
+              >
+                <span>
+                  {isAssessmentMode ? "start assessment" : "continue"}
+                </span>
+                <ArrowDown
+                  size={14}
+                  strokeWidth={2.5}
+                  className="transition-transform duration-200 group-hover:translate-x-0.5"
+                />
+              </button>
+            ) : (
+              /* 🔒 NEXT STAGE LOCKED: Present Lock Bar */
+              <div className="inline-flex items-center justify-center gap-2.5 rounded-full bg-zinc-50 border border-zinc-200/60 px-8 py-3.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400 select-none w-full sm:w-auto">
+                <Lock size={12} className="text-zinc-300" strokeWidth={2.5} />
+                complete current material to unlock next section
+              </div>
+            )
           ) : (
-            <div className="inline-flex items-center gap-2.5 rounded-full bg-purple-50 border border-purple-100/60 px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-[#8b5cf6]">
+            /* 🏆 CURRICULUM CAPSTONE COMPLETE */
+            <div className="inline-flex items-center gap-2.5 rounded-full bg-emerald-50 border border-emerald-100/60 px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-emerald-600">
               <CheckCircle
                 size={12}
-                className="text-[#8b5cf6]"
+                className="text-emerald-500"
                 strokeWidth={2.5}
               />
               final curriculum milestone completed

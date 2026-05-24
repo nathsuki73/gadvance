@@ -16,6 +16,14 @@ type LessonProgressItem = {
   is_completed: boolean;
   percentage: number;
 };
+type LiveUpdatedLessonPayload = {
+  lesson_id: string;
+  completed_steps: number;
+  total_steps: number;
+  is_completed: boolean;
+  percentage: number;
+};
+
 // 🎯 1. UPGRADED TYPES: Add tracking definitions returned by our Laravel model tables
 type ProgressData = {
   completed_blocks: number;
@@ -264,12 +272,14 @@ const LearnPage = ({ params }: LearnPageProps) => {
           lesson={activeLesson}
           currentIndex={currentIndex}
           totalSections={lessons.length}
+          lessonsProgress={progressData.lessons_progress}
           onNext={handleNext}
           onPrevious={handlePrevious}
           isFirst={currentIndex === 0}
           isLast={currentIndex === lessons.length - 1}
           onQuizBlockCompleted={handleQuizBlockCompleted}
-          onBlockCompletedLive={(blockId, interactionType, updatedLesson) => {
+          // 🎯 THE FIX: Add the '?' right after updatedLesson to accept optional/undefined payloads!
+          onBlockCompletedLive={(blockId, interactionType, updatedLesson?) => {
             setProgressData((prev) => {
               // 1. Maintain clean flat array record for checklist markers
               const nextBlockIds = prev.completed_block_ids.includes(blockId)
@@ -292,7 +302,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
               return {
                 ...prev,
                 completed_block_ids: nextBlockIds,
-                lessons_progress: nextLessonsProgress, // 🚀 Sidebar items flash updates instantly!
+                lessons_progress: nextLessonsProgress,
               };
             });
           }}

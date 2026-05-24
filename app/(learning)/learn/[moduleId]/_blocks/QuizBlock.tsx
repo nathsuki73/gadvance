@@ -423,7 +423,7 @@ const QuizBlock = ({
             >
               <span className="text-sm font-light lowercase">{option}</span>
               <div
-                className={`h-4 w-4 rounded-full border flex items-center justify-center transition-all duration-300 ${isSelected ? "border-[#00aeef] bg-[#00aeef]" : "border-zinc-200 bg-transparent group-hover:border-zinc-400"}`}
+                className={`h-4 w-4 hidden  rounded-full border sm:flex items-center justify-center transition-all duration-300 ${isSelected ? "border-[#00aeef] bg-[#00aeef]" : "border-zinc-200 bg-transparent group-hover:border-zinc-400"}`}
               >
                 {isSelected && (
                   <Check size={10} className="text-white" strokeWidth={3} />
@@ -437,7 +437,7 @@ const QuizBlock = ({
         <button
           onClick={handleSubmitAnswer}
           disabled={!selectedAnswer || isSyncing}
-          className="group flex items-center gap-3 rounded-full bg-zinc-900 px-8 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-20"
+          className="group flex items-center gap-3 rounded-full bg-primary hover:bg-primary-hover px-8 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all disabled:cursor-not-allowed disabled:opacity-20"
         >
           <span className="lowercase font-medium">
             {isSyncing

@@ -7,6 +7,7 @@ import {
   X,
   ArrowLeft,
   BookOpen,
+  Lock, // 🌟 Added Lock icon from Lucide for clear visual feedback
 } from "lucide-react";
 
 import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
@@ -18,6 +19,7 @@ type LessonProgressItem = {
   is_completed: boolean;
   percentage: number;
 };
+
 type ModuleSidebarProps = {
   structureTitle: string;
   lessons: Lesson[];
@@ -167,12 +169,10 @@ const ModuleSidebar = ({
               let isEntirelyDone = false;
 
               if (isStandaloneQuizPage) {
-                // Standalone diagnostics count sub-questions
                 totalCompletedSteps = (lesson.quiz_blocks || []).filter((q) =>
                   completedBlockIds.includes(q.id),
                 ).length;
 
-                // 🌟 HYBRID SNAPSHOT FALLBACK: If real-time state is empty, trust the initial backend payload object numbers
                 if (totalCompletedSteps === 0 && lessonsProgress[lesson.id]) {
                   totalCompletedSteps =
                     lessonsProgress[lesson.id].completed_steps;
@@ -181,7 +181,6 @@ const ModuleSidebar = ({
                 isEntirelyDone =
                   totalCompletedSteps === stepCount && stepCount > 0;
               } else {
-                // Content pages read tracking markers straight out of their standard blocks array
                 const completedQuizzesCount = (lesson.quiz_blocks || []).filter(
                   (q) => completedBlockIds.includes(q.id),
                 ).length;
@@ -189,7 +188,6 @@ const ModuleSidebar = ({
                 totalCompletedSteps =
                   completedBlocksCount + completedQuizzesCount;
 
-                // 🌟 HYBRID SNAPSHOT FALLBACK: If real-time state is empty, trust the initial backend payload object numbers
                 if (totalCompletedSteps === 0 && lessonsProgress[lesson.id]) {
                   totalCompletedSteps =
                     lessonsProgress[lesson.id].completed_steps;
@@ -199,9 +197,7 @@ const ModuleSidebar = ({
                   totalCompletedSteps === stepCount && stepCount > 0;
               }
 
-              // Apply database completion overrides smoothly
               if (
-                isQuizFinishedInDb ||
                 isQuizFinishedInDb ||
                 lessonsProgress[lesson.id]?.is_completed
               ) {
@@ -209,8 +205,52 @@ const ModuleSidebar = ({
                 isEntirelyDone = true;
               }
 
-              // Explicit clamp guard to keep numbers clean
               totalCompletedSteps = Math.min(totalCompletedSteps, stepCount);
+
+              // 🎯 LINEAR PROGRESS GATEKEEPER LOGIC:
+              // Index 0 (Pre-test) is always unlocked.
+              // Any subsequent lesson is ONLY unlocked if the lesson right before it is completely finished.
+              let isUnlocked = index === 0;
+              if (index > 0) {
+                const previousLesson = lessons[index - 1];
+                const prevServerProgress = lessonsProgress[previousLesson.id];
+
+                // Check local runtime array completion states or fallback onto clean server snapshots
+                const prevBlocksCount = (previousLesson.blocks || []).filter(
+                  (b) => completedBlockIds.includes(b.id),
+                ).length;
+                const prevQuizzesCount = (
+                  previousLesson.quiz_blocks || []
+                ).filter((q) => completedBlockIds.includes(q.id)).length;
+                const prevFinishedInDb = completedQuizLessons.includes(
+                  previousLesson.id,
+                );
+
+                const isPrevStandaloneQuiz =
+                  (previousLesson.quiz_blocks?.length || 0) > 0 &&
+                  (previousLesson.blocks?.length || 0) === 0;
+                const prevMaxSteps = isPrevStandaloneQuiz
+                  ? previousLesson.quiz_blocks?.length || 0
+                  : previousLesson.blocks?.length || 0;
+
+                let prevCompletedCount = isPrevStandaloneQuiz
+                  ? (previousLesson.quiz_blocks || []).filter((q) =>
+                      completedBlockIds.includes(q.id),
+                    ).length
+                  : prevBlocksCount + prevQuizzesCount;
+
+                if (prevCompletedCount === 0 && prevServerProgress) {
+                  prevCompletedCount = prevServerProgress.completed_steps;
+                }
+
+                const prevDoneCalculated =
+                  prevCompletedCount === prevMaxSteps && prevMaxSteps > 0;
+
+                isUnlocked =
+                  prevFinishedInDb ||
+                  prevDoneCalculated ||
+                  !!prevServerProgress?.is_completed;
+              }
 
               /*
               |--------------------------------------------------------------------------
@@ -221,26 +261,38 @@ const ModuleSidebar = ({
                 return (
                   <button
                     key={lesson.id}
+                    disabled={!isUnlocked} // Prevent clicking locked items
                     onClick={() => {
+                      if (!isUnlocked) return;
                       onNavigate(lesson.id);
                       onToggleCollapse();
                     }}
                     className={`
                       hidden lg:flex relative h-11 w-11 mx-auto items-center justify-center
                       rounded-xl transition-all duration-150
-                      ${isActive ? "bg-purple-50 text-[#8b5cf6]" : "text-zinc-400 hover:bg-zinc-200/50 hover:text-zinc-700"}
+                      ${!isUnlocked ? "opacity-40 cursor-not-allowed text-zinc-300" : isActive ? "bg-purple-50 text-[#8b5cf6]" : "text-zinc-400 hover:bg-zinc-200/50 hover:text-zinc-700"}
                     `}
-                    title={`${lesson.title} (${totalCompletedSteps}/${stepCount} completed)`}
+                    title={
+                      !isUnlocked
+                        ? "Complete preceding topics to unlock"
+                        : `${lesson.title} (${totalCompletedSteps}/${stepCount} completed)`
+                    }
                   >
-                    <BookOpen size={18} />
-                    <div className="absolute right-0.5 bottom-0.5 bg-white rounded-full p-0.5">
-                      <LessonDonutProgress
-                        totalSteps={stepCount}
-                        completedSteps={totalCompletedSteps}
-                        size={12}
-                        strokeWidth={1.5}
-                      />
-                    </div>
+                    {!isUnlocked ? (
+                      <Lock size={16} className="text-zinc-400" />
+                    ) : (
+                      <>
+                        <BookOpen size={18} />
+                        <div className="absolute right-0.5 bottom-0.5 bg-white rounded-full p-0.5">
+                          <LessonDonutProgress
+                            totalSteps={stepCount}
+                            completedSteps={totalCompletedSteps}
+                            size={12}
+                            strokeWidth={1.5}
+                          />
+                        </div>
+                      </>
+                    )}
                   </button>
                 );
               }
@@ -253,32 +305,44 @@ const ModuleSidebar = ({
               return (
                 <button
                   key={lesson.id}
+                  disabled={!isUnlocked} // Prevent clicking locked items
                   onClick={() => {
+                    if (!isUnlocked) return;
                     onNavigate(lesson.id);
                     if (mobileOpen) onCloseMobile();
                   }}
                   className={`
                     flex w-full items-center gap-3 rounded-xl border border-transparent
                     px-3 py-3 text-left transition-all duration-150
-                    ${isActive ? "bg-purple-50/70 border-purple-100/50 text-[#8b5cf6]" : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"}
+                    ${!isUnlocked ? "opacity-50 cursor-not-allowed bg-zinc-100/30 text-zinc-400 select-none" : isActive ? "bg-purple-50/70 border-purple-100/50 text-[#8b5cf6]" : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"}
                   `}
                 >
-                  {/* STEP SEQUENCE DIGIT TAG */}
-                  <span
-                    className={`text-[10px] font-mono font-bold pt-0.5 shrink-0 ${isActive ? "text-[#8b5cf6]" : "text-zinc-300"}`}
-                  >
-                    {(index + 1).toString().padStart(2, "0")}
-                  </span>
+                  {/* UNLOCKED DIGIT TAG OR LOCKED GRAPHIC MARKER */}
+                  {!isUnlocked ? (
+                    <div className="w-[14px] flex items-center justify-center shrink-0">
+                      <Lock size={12} className="text-zinc-300" />
+                    </div>
+                  ) : (
+                    <span
+                      className={`text-[10px] font-mono font-bold pt-0.5 shrink-0 ${isActive ? "text-[#8b5cf6]" : "text-zinc-300"}`}
+                    >
+                      {(index + 1).toString().padStart(2, "0")}
+                    </span>
+                  )}
 
                   {/* DETAILS TEXT BLOCK */}
                   <div className="min-w-0 flex-1 space-y-0.5">
                     <p
-                      className={`text-xs font-medium leading-tight break-words ${isActive ? "font-semibold text-zinc-900" : "text-zinc-700"}`}
+                      className={`text-xs font-medium leading-tight break-words ${!isUnlocked ? "text-zinc-400 font-normal" : isActive ? "font-semibold text-zinc-900" : "text-zinc-700"}`}
                     >
                       {lesson.title}
                     </p>
 
-                    {isEntirelyDone ? (
+                    {!isUnlocked ? (
+                      <p className="text-[10px] font-light text-zinc-300 lowercase tracking-wide">
+                        locked 🔒
+                      </p>
+                    ) : isEntirelyDone ? (
                       <p className="text-[11px] font-medium text-emerald-600 lowercase tracking-wide">
                         complete ✓
                       </p>
@@ -291,12 +355,14 @@ const ModuleSidebar = ({
                     )}
                   </div>
 
-                  <LessonDonutProgress
-                    totalSteps={stepCount}
-                    completedSteps={totalCompletedSteps}
-                    size={20}
-                    strokeWidth={2}
-                  />
+                  {isUnlocked && (
+                    <LessonDonutProgress
+                      totalSteps={stepCount}
+                      completedSteps={totalCompletedSteps}
+                      size={20}
+                      strokeWidth={2}
+                    />
+                  )}
                 </button>
               );
             })}
