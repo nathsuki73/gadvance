@@ -64,3 +64,53 @@ input:disabled,
     opacity: 1;
   }
 } */
+
+/* Adaptive Mode Animations */
+@keyframes adaptiveSidebarFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes adaptiveContentSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes blockPopupBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.adaptive-sidebar-animate {
+  animation: adaptiveSidebarFadeIn 700ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.adaptive-content-animate {
+  animation: adaptiveContentSlideIn 700ms cubic-bezier(0.23, 1, 0.32, 1)
+    forwards;
+  animation-delay: 300ms;
+}
+
+.adaptive-block-animate {
+  animation: blockPopupBounce 700ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}

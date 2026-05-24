@@ -19,7 +19,7 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
     router.push(`/learn/${module.id}`);
   };
   const handleAdaptiveLearning = () => {
-    router.push(`/learn/${module.id}?mode=adaptive`);
+    router.push(`/adaptive/${module.id}`);
   };
 
   return (

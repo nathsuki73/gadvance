@@ -43,23 +43,45 @@ type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
 };
 
+const EMPTY_PROGRESS_DATA: ProgressData = {
+  completed_blocks: 0,
+  total_blocks: 0,
+  percentage: 0,
+  completed_block_ids: [],
+  completed_quiz_lessons: [],
+  active_quiz_lesson_id: null,
+  active_quiz_attempt_id: null,
+  latest_activity_lesson_id: null,
+  lessons_progress: {},
+};
+
 const LearnPage = ({ params }: LearnPageProps) => {
   const { moduleId } = use(params);
 
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode");
+  const isAdaptiveMode = mode === "adaptive";
 
   const [modalOpen, setModalOpen] = useState(false);
   const [uiRecipes, setUiRecipes] = useState<Record<string, any>>({});
   const [isSyncingAll, setIsSyncingAll] = useState(false);
+  const [adaptiveRecipeRevision, setAdaptiveRecipeRevision] = useState(0);
+  const [adaptiveReady, setAdaptiveReady] = useState(!isAdaptiveMode);
 
   useEffect(() => {
-    if (mode === "adaptive") {
+    if (isAdaptiveMode) {
+      setAdaptiveReady(false);
       setModalOpen(true);
+      setUiRecipes({});
+      setAdaptiveRecipeRevision(0);
+      setProgressData(EMPTY_PROGRESS_DATA);
+      setActiveLessonId("");
     }
-  }, [mode]);
+  }, [isAdaptiveMode]);
 
   const handleAdaptiveSetupAllLessons = async () => {
+    setModalOpen(false);
+
     // 🛡️ Guard Clause: Ensure your lessons repository array has hydrated in state first
     if (!lessons || lessons.length === 0) {
       console.warn(
@@ -148,6 +170,8 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
     // Wait for all requests in the array loop to finish execution safely
     await Promise.all(syncPromises);
+    setAdaptiveRecipeRevision((prev) => prev + 1);
+    setAdaptiveReady(true);
     setIsSyncingAll(false);
     console.log(
       "🏁 [Batch AI Synced] All lesson data loops have completed processing.",
@@ -334,7 +358,23 @@ const LearnPage = ({ params }: LearnPageProps) => {
     );
   }
 
-  if (error || !module || !activeLesson) {
+  if (error || (!module && !isAdaptiveMode)) {
+    notFound();
+  }
+
+  if (isAdaptiveMode && !adaptiveReady) {
+    return (
+      <main className="min-h-screen bg-white">
+        <QuestionnaireModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSubmit={handleAdaptiveSetupAllLessons}
+        />
+      </main>
+    );
+  }
+
+  if (!activeLesson) {
     notFound();
   }
 
@@ -398,6 +438,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
           isFirst={currentIndex === 0}
           isLast={currentIndex === lessons.length - 1}
           onQuizBlockCompleted={handleQuizBlockCompleted}
+          adaptiveRecipeRevision={adaptiveRecipeRevision}
           // 🎯 THE FIX: Add the '?' right after updatedLesson to accept optional/undefined payloads!
           onBlockCompletedLive={(blockId, interactionType, updatedLesson?) => {
             setProgressData((prev) => {

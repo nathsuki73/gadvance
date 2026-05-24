@@ -32,6 +32,7 @@ type ModuleSidebarProps = {
   onToggleCollapse: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
+  isAdaptiveMode?: boolean;
 };
 
 const ModuleSidebar = ({
@@ -46,6 +47,7 @@ const ModuleSidebar = ({
   onToggleCollapse,
   mobileOpen,
   onCloseMobile,
+  isAdaptiveMode = false,
 }: ModuleSidebarProps) => {
   return (
     <>
@@ -208,10 +210,11 @@ const ModuleSidebar = ({
               totalCompletedSteps = Math.min(totalCompletedSteps, stepCount);
 
               // 🎯 LINEAR PROGRESS GATEKEEPER LOGIC:
-              // Index 0 (Pre-test) is always unlocked.
+              // In adaptive mode, all lessons are always unlocked
+              // Otherwise: Index 0 (Pre-test) is always unlocked.
               // Any subsequent lesson is ONLY unlocked if the lesson right before it is completely finished.
-              let isUnlocked = index === 0;
-              if (index > 0) {
+              let isUnlocked = isAdaptiveMode || index === 0;
+              if (!isAdaptiveMode && index > 0) {
                 const previousLesson = lessons[index - 1];
                 const prevServerProgress = lessonsProgress[previousLesson.id];
 
