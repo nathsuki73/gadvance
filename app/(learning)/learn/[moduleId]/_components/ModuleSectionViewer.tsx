@@ -256,7 +256,7 @@ const ModuleSectionViewer = ({
                 <span>
                   {isAssessmentMode ? "start assessment" : "continue"}
                 </span>
-                <ArrowRight
+                <ArrowDown
                   size={14}
                   strokeWidth={2.5}
                   className="transition-transform duration-200 group-hover:translate-x-0.5"
