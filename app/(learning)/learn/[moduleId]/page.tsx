@@ -273,6 +273,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
           currentIndex={currentIndex}
           totalSections={lessons.length}
           lessonsProgress={progressData.lessons_progress}
+          completedBlockIds={progressData.completed_block_ids}
+          completedQuizLessons={progressData.completed_quiz_lessons}
+          lessons={lessons}
           onNext={handleNext}
           onPrevious={handlePrevious}
           isFirst={currentIndex === 0}

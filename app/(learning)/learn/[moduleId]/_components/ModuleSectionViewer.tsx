@@ -39,8 +39,10 @@ type ModuleSectionViewerProps = {
     updatedLesson?: LiveUpdatedLessonPayload,
   ) => void;
   lessonsProgress: Record<string, LessonProgressItem>;
-  // 🎯 ADD THE FULL LESSONS LIST TO CHECK THE NEIGHBORING SLOTS:
   lessons: Lesson[];
+  // 🎯 Add these two missing props to match the sidebar's real-time trackers:
+  completedBlockIds?: string[];
+  completedQuizLessons?: string[];
 };
 
 const ModuleSectionViewer = ({
@@ -53,40 +55,81 @@ const ModuleSectionViewer = ({
   onBlockCompletedLive,
   lessonsProgress = {},
   lessons = [],
+  completedBlockIds = [],
+  completedQuizLessons = [],
 }: ModuleSectionViewerProps) => {
   const hasContentBlocks = (lesson.blocks?.length || 0) > 0;
   const hasQuizBlocks = (lesson.quiz_blocks?.length || 0) > 0;
 
   const isAssessmentMode = hasQuizBlocks && !hasContentBlocks;
 
-  // 🎯 SMART GATEKEEPER: Check if the user is allowed to proceed to the next lesson
+  // 🎯 OPTIMIZED INSTANT GATEKEEPER MATCHING SIDEBAR STATE:
   const isNextStageAccessible = useMemo(() => {
-    // 1. If the current lesson itself is finished, the next stage is automatically unlocked
-    const currentProgress = lessonsProgress[lesson.id];
-    if (
-      currentProgress?.is_completed ||
-      (currentProgress &&
-        currentProgress.completed_steps >= currentProgress.total_steps &&
-        currentProgress.total_steps > 0)
-    ) {
+    const totalBlocks = lesson.blocks?.length || 0;
+    const totalQuizQuestions = lesson.quiz_blocks?.length || 0;
+
+    const isStandaloneQuizPage = totalQuizQuestions > 0 && totalBlocks === 0;
+    const stepCount = isStandaloneQuizPage ? totalQuizQuestions : totalBlocks;
+
+    // A. Check live array configurations directly (Instant UI reaction)
+    const completedBlocksCount = (lesson.blocks || []).filter((b) =>
+      completedBlockIds.includes(b.id),
+    ).length;
+
+    const isQuizFinishedInDb = completedQuizLessons.includes(lesson.id);
+
+    let totalCompletedSteps = 0;
+    if (isStandaloneQuizPage) {
+      totalCompletedSteps = (lesson.quiz_blocks || []).filter((q) =>
+        completedBlockIds.includes(q.id),
+      ).length;
+    } else {
+      const completedQuizzesCount = (lesson.quiz_blocks || []).filter((q) =>
+        completedBlockIds.includes(q.id),
+      ).length;
+      totalCompletedSteps = completedBlocksCount + completedQuizzesCount;
+    }
+
+    // Fall back to server metrics if local runtime array state is fresh
+    if (totalCompletedSteps === 0 && lessonsProgress[lesson.id]) {
+      totalCompletedSteps = lessonsProgress[lesson.id].completed_steps;
+    }
+
+    const isEntirelyDone = totalCompletedSteps === stepCount && stepCount > 0;
+    const isCurrentSectionDone =
+      isQuizFinishedInDb ||
+      isEntirelyDone ||
+      !!lessonsProgress[lesson.id]?.is_completed;
+
+    if (isCurrentSectionDone) {
       return true;
     }
 
-    // 2. If the current lesson isn't complete, check if the NEXT lesson has existing historical progress data from the server
+    // B. Historical Exception Bypass rule
     const nextLesson = lessons[currentIndex + 1];
     if (nextLesson) {
       const nextProgress = lessonsProgress[nextLesson.id];
-      // If the next lesson already has recorded steps or is marked complete, the pathway is open
+      const prevToNextLesson = lessons[currentIndex];
+      const prevToNextProgress = lessonsProgress[prevToNextLesson.id];
+
       if (
-        nextProgress &&
-        (nextProgress.is_completed || nextProgress.completed_steps > 0)
+        nextProgress?.is_completed ||
+        nextProgress?.completed_steps > 0 ||
+        prevToNextProgress?.is_completed
       ) {
         return true;
       }
     }
 
     return false;
-  }, [lessonsProgress, lesson.id, currentIndex, lessons]);
+  }, [
+    lessonsProgress,
+    lesson,
+    currentIndex,
+    lessons,
+    completedBlockIds,
+    completedQuizLessons,
+  ]);
 
   /*
   |--------------------------------------------------------------------------
@@ -213,7 +256,7 @@ const ModuleSectionViewer = ({
                 <span>
                   {isAssessmentMode ? "start assessment" : "continue"}
                 </span>
-                <ArrowDown
+                <ArrowRight
                   size={14}
                   strokeWidth={2.5}
                   className="transition-transform duration-200 group-hover:translate-x-0.5"
