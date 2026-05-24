@@ -247,10 +247,23 @@ const ModuleSectionViewer = ({
     const combinedQuestions = adaptiveQuizzes
       .map((qb: LessonQuizBlock) => {
         try {
+          // Safety check: ensure content exists
+          if (!qb.content) {
+            console.warn("Quiz block has no content:", qb.id);
+            return null;
+          }
+
           const parsed =
             typeof qb.content === "string"
               ? JSON.parse(qb.content)
               : qb.content;
+
+          // Safety check: ensure parsed is an object
+          if (!parsed || typeof parsed !== "object") {
+            console.warn("Failed to parse quiz content:", qb.id);
+            return null;
+          }
+
           const targetQuestion = Array.isArray(parsed.questions)
             ? parsed.questions[0]
             : parsed;
