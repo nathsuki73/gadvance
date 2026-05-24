@@ -10,6 +10,12 @@ import type { ModuleResponse } from "./types";
 import { getLearningModule } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/service";
 import { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 
+type LessonProgressItem = {
+  completed_steps: number;
+  total_steps: number;
+  is_completed: boolean;
+  percentage: number;
+};
 // 🎯 1. UPGRADED TYPES: Add tracking definitions returned by our Laravel model tables
 type ProgressData = {
   completed_blocks: number;
@@ -19,6 +25,8 @@ type ProgressData = {
   completed_quiz_lessons: string[]; // Tracks completely finished quiz lesson rows
   active_quiz_lesson_id: string | null; // Pointer to resume an ongoing active test
   active_quiz_attempt_id: string | null;
+  latest_activity_lesson_id: string | null;
+  lessons_progress: Record<string, LessonProgressItem>;
 };
 
 type LearnPageProps = {
@@ -45,6 +53,8 @@ const LearnPage = ({ params }: LearnPageProps) => {
     completed_quiz_lessons: [],
     active_quiz_lesson_id: null,
     active_quiz_attempt_id: null,
+    latest_activity_lesson_id: null,
+    lessons_progress: {},
   });
 
   const [loading, setLoading] = useState(true);
@@ -94,6 +104,10 @@ const LearnPage = ({ params }: LearnPageProps) => {
             completionPercentage: result.progress.percentage,
             completedBlockIdsArray: result.progress.completed_block_ids,
             completedQuizLessonsArray: result.progress.completed_quiz_lessons,
+            // 🎯 ADDED FOR SESSION RESTORE TRACKING:
+            latestActivityLessonId: result.progress.latest_activity_lesson_id,
+            // 🎯 ADDED FOR REAL-TIME SIDEBAR TELEMETRY METRICS:
+            lessonsProgressObject: result.progress.lessons_progress,
           });
 
           setProgressData({
@@ -107,6 +121,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
               result.progress.active_quiz_lesson_id ?? null,
             active_quiz_attempt_id:
               result.progress.active_quiz_attempt_id ?? null,
+            latest_activity_lesson_id:
+              result.progress.latest_activity_lesson_id ?? null,
+            lessons_progress: result.progress.lessons_progress ?? {},
           });
         } else {
           console.warn(
@@ -213,6 +230,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
         // 🎯 5. EXTENDED SIDEBAR CHANNELS:
         // Pass completed quiz flags down so checkboxes can light up correctly
         completedQuizLessons={progressData.completed_quiz_lessons}
+        lessonsProgress={progressData.lessons_progress}
         onNavigate={handleLessonChange}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
@@ -251,12 +269,30 @@ const LearnPage = ({ params }: LearnPageProps) => {
           isFirst={currentIndex === 0}
           isLast={currentIndex === lessons.length - 1}
           onQuizBlockCompleted={handleQuizBlockCompleted}
-          onBlockCompletedLive={(blockId) => {
+          onBlockCompletedLive={(blockId, interactionType, updatedLesson) => {
             setProgressData((prev) => {
-              if (prev.completed_block_ids.includes(blockId)) return prev;
+              // 1. Maintain clean flat array record for checklist markers
+              const nextBlockIds = prev.completed_block_ids.includes(blockId)
+                ? prev.completed_block_ids
+                : [...prev.completed_block_ids, blockId];
+
+              // 2. Clone current lesson progress mappings record
+              const nextLessonsProgress = { ...prev.lessons_progress };
+
+              // 3. Inject the real-time server tracking numbers directly into the target map item
+              if (updatedLesson) {
+                nextLessonsProgress[updatedLesson.lesson_id] = {
+                  completed_steps: updatedLesson.completed_steps,
+                  total_steps: updatedLesson.total_steps,
+                  is_completed: updatedLesson.is_completed,
+                  percentage: updatedLesson.percentage,
+                };
+              }
+
               return {
                 ...prev,
-                completed_block_ids: [...prev.completed_block_ids, blockId],
+                completed_block_ids: nextBlockIds,
+                lessons_progress: nextLessonsProgress, // 🚀 Sidebar items flash updates instantly!
               };
             });
           }}

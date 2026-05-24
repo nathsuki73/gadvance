@@ -12,12 +12,19 @@ import {
 import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 import { LessonDonutProgress } from "./LessonDonutProgress";
 
+type LessonProgressItem = {
+  completed_steps: number;
+  total_steps: number;
+  is_completed: boolean;
+  percentage: number;
+};
 type ModuleSidebarProps = {
   structureTitle: string;
   lessons: Lesson[];
   activeLessonId: string;
   completedBlockIds?: string[];
   completedQuizLessons?: string[];
+  lessonsProgress: Record<string, LessonProgressItem>;
   onNavigate: (id: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
@@ -31,6 +38,7 @@ const ModuleSidebar = ({
   activeLessonId,
   completedBlockIds = [],
   completedQuizLessons = [],
+  lessonsProgress = {},
   onNavigate,
   isCollapsed,
   onToggleCollapse,
@@ -140,8 +148,6 @@ const ModuleSidebar = ({
                 totalQuizQuestions > 0 && totalBlocks === 0;
 
               // 🎯 FIXED REAL TIME STEP COUNT:
-              // Dedicated test views map over question arrays (e.g., 24 items).
-              // Composite pages count text/video content items (the quiz runs as 1 final inline checker widget).
               const stepCount = isStandaloneQuizPage
                 ? totalQuizQuestions
                 : totalBlocks;
@@ -165,6 +171,13 @@ const ModuleSidebar = ({
                 totalCompletedSteps = (lesson.quiz_blocks || []).filter((q) =>
                   completedBlockIds.includes(q.id),
                 ).length;
+
+                // 🌟 HYBRID SNAPSHOT FALLBACK: If real-time state is empty, trust the initial backend payload object numbers
+                if (totalCompletedSteps === 0 && lessonsProgress[lesson.id]) {
+                  totalCompletedSteps =
+                    lessonsProgress[lesson.id].completed_steps;
+                }
+
                 isEntirelyDone =
                   totalCompletedSteps === stepCount && stepCount > 0;
               } else {
@@ -175,15 +188,29 @@ const ModuleSidebar = ({
 
                 totalCompletedSteps =
                   completedBlocksCount + completedQuizzesCount;
+
+                // 🌟 HYBRID SNAPSHOT FALLBACK: If real-time state is empty, trust the initial backend payload object numbers
+                if (totalCompletedSteps === 0 && lessonsProgress[lesson.id]) {
+                  totalCompletedSteps =
+                    lessonsProgress[lesson.id].completed_steps;
+                }
+
                 isEntirelyDone =
                   totalCompletedSteps === stepCount && stepCount > 0;
               }
 
               // Apply database completion overrides smoothly
-              if (isQuizFinishedInDb) {
+              if (
+                isQuizFinishedInDb ||
+                isQuizFinishedInDb ||
+                lessonsProgress[lesson.id]?.is_completed
+              ) {
                 totalCompletedSteps = stepCount;
                 isEntirelyDone = true;
               }
+
+              // Explicit clamp guard to keep numbers clean
+              totalCompletedSteps = Math.min(totalCompletedSteps, stepCount);
 
               /*
               |--------------------------------------------------------------------------

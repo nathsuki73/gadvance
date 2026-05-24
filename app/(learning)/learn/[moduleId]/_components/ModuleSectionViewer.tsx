@@ -9,6 +9,14 @@ type LessonQuizBlock = Lesson["quiz_blocks"][number] & {
   content?: string | null;
 };
 
+type LessonProgressItem = {
+  lesson_id: string;
+  completed_steps: number;
+  total_steps: number;
+  is_completed: boolean;
+  percentage: number;
+};
+
 type ModuleSectionViewerProps = {
   lesson: Lesson;
   currentIndex: number;
@@ -21,6 +29,7 @@ type ModuleSectionViewerProps = {
   onBlockCompletedLive: (
     blockId: string,
     interactionType: "reading" | "quiz" | "text" | "video",
+    updatedLesson?: LessonProgressItem, // 🌟 Add this optional server-payload object parameter
   ) => void;
 };
 
