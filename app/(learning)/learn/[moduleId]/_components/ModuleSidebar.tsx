@@ -144,7 +144,7 @@ const ModuleSidebar = ({
               // Composite pages count text/video content items (the quiz runs as 1 final inline checker widget).
               const stepCount = isStandaloneQuizPage
                 ? totalQuizQuestions
-                : totalBlocks + totalQuizQuestions;
+                : totalBlocks;
 
               // Calculate standard content block progress
               const completedBlocksCount = (lesson.blocks || []).filter((b) =>
