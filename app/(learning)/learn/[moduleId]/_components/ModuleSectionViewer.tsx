@@ -199,7 +199,7 @@ const ModuleSectionViewer = ({
       <div className="w-full max-w-4xl mx-auto flex-1">
         {/* DYNAMIC HEADER ANCHOR */}
         <div className="mb-10 border-b border-zinc-100 pb-6">
-          <p className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[#8b5cf6] mb-1">
+          <p className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-primary mb-1">
             Part {(currentIndex + 1).toString().padStart(2, "0")} of{" "}
             {totalSections.toString().padStart(2, "0")}
           </p>
@@ -251,7 +251,7 @@ const ModuleSectionViewer = ({
               <button
                 type="button"
                 onClick={onNext}
-                className="group flex items-center justify-center gap-3 rounded-full bg-[#8b5cf6] px-12 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all hover:bg-[#7c3aed] active:scale-[0.98] w-full sm:w-auto hover:shadow-lg hover:shadow-purple-100"
+                className="group flex items-center justify-center gap-3 rounded-full bg-primary px-12 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all hover:bg-purple-600 active:scale-[0.98] w-full sm:w-auto hover:shadow-lg hover:shadow-purple-100"
               >
                 <span>
                   {isAssessmentMode ? "start assessment" : "continue"}

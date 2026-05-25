@@ -99,7 +99,7 @@ const ModuleSidebar = ({
           <div className="hidden w-full items-center justify-between lg:flex">
             {!isCollapsed && (
               <div className="min-w-0 pr-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8b5cf6]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
                   curriculum
                 </p>
                 <h2 className="truncate text-sm font-semibold text-zinc-800 leading-snug">
@@ -270,7 +270,7 @@ const ModuleSidebar = ({
                     className={`
                       hidden lg:flex relative h-11 w-11 mx-auto items-center justify-center
                       rounded-xl transition-all duration-150
-                      ${!isUnlocked ? "opacity-40 cursor-not-allowed text-zinc-300" : isActive ? "bg-purple-50 text-[#8b5cf6]" : "text-zinc-400 hover:bg-zinc-200/50 hover:text-zinc-700"}
+                      ${!isUnlocked ? "opacity-40 cursor-not-allowed text-zinc-300" : isActive ? "bg-purple-50 text-primary" : "text-zinc-400 hover:bg-zinc-200/50 hover:text-zinc-700"}
                     `}
                     title={
                       !isUnlocked
@@ -314,7 +314,7 @@ const ModuleSidebar = ({
                   className={`
                     flex w-full items-center gap-3 rounded-xl border border-transparent
                     px-3 py-3 text-left transition-all duration-150
-                    ${!isUnlocked ? "opacity-50 cursor-not-allowed bg-zinc-100/30 text-zinc-400 select-none" : isActive ? "bg-purple-50/70 border-purple-100/50 text-[#8b5cf6]" : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"}
+                    ${!isUnlocked ? "opacity-50 cursor-not-allowed bg-zinc-100/30 text-zinc-400 select-none" : isActive ? "bg-purple-50/70 border-purple-100/50 text-primary" : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"}
                   `}
                 >
                   {/* UNLOCKED DIGIT TAG OR LOCKED GRAPHIC MARKER */}
@@ -324,7 +324,7 @@ const ModuleSidebar = ({
                     </div>
                   ) : (
                     <span
-                      className={`text-[10px] font-mono font-bold pt-0.5 shrink-0 ${isActive ? "text-[#8b5cf6]" : "text-zinc-300"}`}
+                      className={`text-[10px] font-mono font-bold pt-0.5 shrink-0 ${isActive ? "text-primary" : "text-zinc-300"}`}
                     >
                       {(index + 1).toString().padStart(2, "0")}
                     </span>
@@ -348,7 +348,7 @@ const ModuleSidebar = ({
                       </p>
                     ) : (
                       <p
-                        className={`text-[11px] font-light lowercase ${isActive ? "text-[#8b5cf6]/80" : "text-zinc-400"}`}
+                        className={`text-[11px] font-light lowercase ${isActive ? "text-primary/80" : "text-zinc-400"}`}
                       >
                         {totalCompletedSteps}/{stepCount} completed
                       </p>

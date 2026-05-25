@@ -292,7 +292,7 @@ const QuizBlock = ({
   if (initialLoading) {
     return (
       <div className="flex py-20 items-center justify-center bg-white">
-        <Loader2 size={24} className="animate-spin text-[#00aeef]" />
+        <Loader2 size={24} className="animate-spin text-primary" />
         <span className="ml-3 text-sm text-zinc-400 font-light">
           restoring test data...
         </span>
@@ -341,7 +341,7 @@ const QuizBlock = ({
         </div>
         <h2 className="text-3xl font-light tracking-tight text-zinc-900">
           Assessment{" "}
-          <span className="italic font-serif text-[#00aeef]">completed.</span>
+          <span className="italic font-serif text-primary">completed.</span>
         </h2>
         <p className="mt-4 text-zinc-500 font-light">
           You correctly answered {displayScore} out of {questions.length}{" "}
@@ -363,7 +363,7 @@ const QuizBlock = ({
     return (
       <div className="mx-auto max-w-3xl py-12 px-4 animate-fade-in">
         <div className="flex flex-col items-center text-center">
-          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#00aeef] mb-6">
+          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary mb-6">
             knowledge validation
           </div>
           <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-zinc-900 leading-tight">
@@ -381,7 +381,7 @@ const QuizBlock = ({
           </div>
           <button
             onClick={() => setStarted(true)}
-            className="group mt-12 flex items-center gap-4 rounded-full bg-[#00aeef] px-10 py-5 text-white transition-all hover:bg-[#0096ce] hover:shadow-lg hover:shadow-sky-100/50"
+            className="group mt-12 flex items-center gap-4 rounded-full bg-primary hover:bg-primary-hover px-10 py-5 text-white transition-all hover:shadow-lg hover:shadow-sky-100/50"
           >
             <span className="text-xs uppercase tracking-widest font-bold">
               begin quiz
@@ -399,7 +399,7 @@ const QuizBlock = ({
   return (
     <div className="mx-auto max-w-3xl py-12 px-4 animate-fade-in">
       <div className="flex items-center justify-between pb-6 border-b border-zinc-100">
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#00aeef]">
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
           objective {(currentQuestionIndex + 1).toString().padStart(2, "0")} /{" "}
           {questions.length.toString().padStart(2, "0")}
         </span>
@@ -418,12 +418,12 @@ const QuizBlock = ({
               onClick={() => setSelectedAnswer(option)}
               disabled={isSyncing}
               className={`group flex w-full items-center justify-between rounded-2xl border p-5 text-left transition-all duration-300 disabled:opacity-50
-                ${isSelected ? "border-[#00aeef] bg-sky-50/20 text-zinc-900" : "border-zinc-100 bg-white text-zinc-500 hover:border-zinc-300 hover:text-zinc-800"}
+                ${isSelected ? "border-primary bg-sky-50/20 text-zinc-900" : "border-zinc-100 bg-white text-zinc-500 hover:border-zinc-300 hover:text-zinc-800"}
               `}
             >
               <span className="text-sm font-light lowercase">{option}</span>
               <div
-                className={`h-4 w-4 hidden  rounded-full border sm:flex items-center justify-center transition-all duration-300 ${isSelected ? "border-[#00aeef] bg-[#00aeef]" : "border-zinc-200 bg-transparent group-hover:border-zinc-400"}`}
+                className={`h-4 w-4 hidden  rounded-full border sm:flex items-center justify-center transition-all duration-300 ${isSelected ? "border-primary bg-primary" : "border-zinc-200 bg-transparent group-hover:border-zinc-400"}`}
               >
                 {isSelected && (
                   <Check size={10} className="text-white" strokeWidth={3} />
