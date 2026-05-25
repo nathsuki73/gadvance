@@ -25,13 +25,13 @@ const LandingPage = () => {
 
         <div className="mt-14 grid md:grid-cols-2 gap-6">
           <InfoCard
-            icon={<ShieldCheck className="text-[#00aeef]" size={22} />}
+            icon={<ShieldCheck className="text-primary" size={22} />}
             title="Unequal Opportunities"
             desc="Systemic barriers still limit access to leadership roles, mentorship, and equitable workplace advancement."
           />
 
           <InfoCard
-            icon={<Sparkles className="text-[#00aeef]" size={22} />}
+            icon={<Sparkles className="text-primary" size={22} />}
             title="Workplace Culture Challenges"
             desc="Organizations struggle to create environments where inclusion, representation, and belonging are fully embedded."
           />
