@@ -1,197 +1,293 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { useSession } from "next-auth/react";
+import { enqueueBlockTelemetry } from "../_hooks/blockTelemetryQueue";
 
-type VideoBlockMetadata = {
+type VideoMetadata = {
   title?: string;
-
   description?: string;
+  backendBlockId?: string;
 };
 
 type VideoDisplayBlockProps = {
   content?: string | null;
-
-  metadata?: VideoBlockMetadata;
+  metadata?: string | VideoMetadata | null;
+  backendBlockId?: string;
+  lessonId?: string;
+  initialCompleted?: boolean;
+  onCompleted?: () => void;
 };
 
-const getEmbedUrl = (url: string): string | null => {
-  try {
-    const parsed = new URL(url);
+const VideoDisplayBlock = ({
+  content,
+  metadata,
+  backendBlockId,
+  lessonId,
+  initialCompleted = false,
+  onCompleted,
+}: VideoDisplayBlockProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
 
-    const host = parsed.hostname.replace("www.", "");
+  const lastSyncTimestampRef = useRef<number>(Date.now());
+  const maxRatioRef = useRef<number>(initialCompleted ? 100 : 0);
+  const lastSyncedRatioRef = useRef<number>(initialCompleted ? 100 : 0);
+  const accumulatedSecondsRef = useRef<number>(0);
 
-    /*
-    |--------------------------------------------------------------------------
-    | YOUTUBE
-    |--------------------------------------------------------------------------
-    */
+  const completedRef = useRef<boolean>(initialCompleted);
+  const onCompletedRef = useRef(onCompleted);
 
-    if (host === "youtube.com" || host === "m.youtube.com") {
-      const videoId = parsed.searchParams.get("v");
+  const [completed, setCompleted] = useState(initialCompleted);
+  const { data: session } = useSession();
 
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+  useEffect(() => {
+    onCompletedRef.current = onCompleted;
+  }, [onCompleted]);
+
+  const parsedMetadata = useMemo<VideoMetadata>(() => {
+    if (!metadata) return {};
+    if (typeof metadata !== "string") return metadata;
+    try {
+      return JSON.parse(metadata);
+    } catch {
+      return {};
     }
+  }, [metadata]);
 
-    if (host === "youtu.be") {
-      const videoId = parsed.pathname.replace("/", "");
+  const targetBlockId = backendBlockId || parsedMetadata.backendBlockId;
 
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
-    }
+  useEffect(() => {
+    if (!targetBlockId || !lessonId) return;
 
-    /*
-    |--------------------------------------------------------------------------
-    | VIMEO
-    |--------------------------------------------------------------------------
-    */
+    let debounceTimer: ReturnType<typeof setTimeout>;
+    let isIdle = false;
+    let idleTimer: ReturnType<typeof setTimeout>;
 
-    if (host === "vimeo.com") {
-      const videoId = parsed.pathname.replace("/", "");
+    // Stagger client flushes slightly so many blocks don't POST in the same millisecond.
+    const syncDelayMs =
+      4000 +
+      (Array.from(targetBlockId).reduce(
+        (sum, char) => sum + char.charCodeAt(0),
+        0,
+      ) %
+        1200);
 
-      return videoId ? `https://player.vimeo.com/video/${videoId}` : null;
-    }
+    const resetIdleTimer = () => {
+      isIdle = false;
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        isIdle = true;
+      }, 60000);
+    };
 
-    /*
-    |--------------------------------------------------------------------------
-    | DIRECT VIDEO FILE
-    |--------------------------------------------------------------------------
-    */
+    window.addEventListener("mousemove", resetIdleTimer);
+    resetIdleTimer();
 
-    if (url.endsWith(".mp4") || url.endsWith(".webm") || url.endsWith(".ogg")) {
+    const syncTelemetryData = () => {
+      const now = Date.now();
+      const rawSecondsElapsed = Math.round(
+        (now - lastSyncTimestampRef.current) / 1000,
+      );
+      lastSyncTimestampRef.current = now;
+
+      const incrementalTimeSpent = isIdle ? 0 : Math.min(rawSecondsElapsed, 90);
+      accumulatedSecondsRef.current += incrementalTimeSpent;
+
+      const hasRatioMilestoneChanged =
+        maxRatioRef.current > lastSyncedRatioRef.current;
+      const hasSubstantialTimeAccumulated = accumulatedSecondsRef.current >= 20;
+
+      if (!hasRatioMilestoneChanged && !hasSubstantialTimeAccumulated) {
+        return;
+      }
+
+      const token = session?.laravelJwt;
+      if (!token) return;
+
+      const payload = {
+        lesson_id: lessonId,
+        block_id: targetBlockId,
+        progress_ratio: maxRatioRef.current,
+        time_spent_seconds: accumulatedSecondsRef.current,
+        interaction_type: "video",
+        score: null,
+      };
+
+      lastSyncedRatioRef.current = maxRatioRef.current;
+      accumulatedSecondsRef.current = 0;
+
+      enqueueBlockTelemetry(payload, token);
+    };
+
+    const handleScrollTracking = () => {
+      resetIdleTimer();
+      const element = containerRef.current;
+      if (!element) return;
+
+      const rect = element.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+
+      let cleanRatio = 0;
+      if (rect.top < windowHeight && rect.bottom > 0) {
+        cleanRatio = 50;
+      }
+
+      if (rect.top <= 50 && rect.bottom <= windowHeight + 10) {
+        cleanRatio = 100;
+      }
+
+      if (cleanRatio > maxRatioRef.current) {
+        maxRatioRef.current = cleanRatio;
+      }
+
+      if (!completedRef.current && maxRatioRef.current === 100) {
+        completedRef.current = true;
+        setCompleted(true);
+        onCompletedRef.current?.();
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => syncTelemetryData(), syncDelayMs);
+    };
+
+    window.addEventListener("scroll", handleScrollTracking);
+    handleScrollTracking();
+
+    return () => {
+      clearTimeout(debounceTimer);
+      clearTimeout(idleTimer);
+      window.removeEventListener("mousemove", resetIdleTimer);
+      window.removeEventListener("scroll", handleScrollTracking);
+      syncTelemetryData();
+    };
+  }, [targetBlockId, lessonId, session?.laravelJwt]);
+
+  if (!content) return null;
+
+  const getEmbedUrl = (url: string) => {
+    try {
+      if (url.includes("youtube.com/watch?v=")) {
+        return url.replace("watch?v=", "embed/");
+      }
+      if (url.includes("youtu.be/")) {
+        return url.replace("youtu.be/", "youtube.com/embed/");
+      }
+      return url;
+    } catch {
       return url;
     }
-
-    return null;
-  } catch {
-    return null;
-  }
-};
-
-const VideoDisplayBlock = ({ content, metadata }: VideoDisplayBlockProps) => {
-  /*
-  |--------------------------------------------------------------------------
-  | VALIDATION
-  |--------------------------------------------------------------------------
-  */
-
-  if (!content || content.trim() === "") {
-    return (
-      <div
-        className="border border-dashed
-          border-zinc-300 bg-white p-44
-          text-center
-        "
-      >
-        <span className="text-sm text-zinc-400">No video provided</span>
-      </div>
-    );
-  }
-
-  const embedUrl = getEmbedUrl(content);
-
-  const isDirectVideo =
-    content.endsWith(".mp4") ||
-    content.endsWith(".webm") ||
-    content.endsWith(".ogg");
+  };
 
   return (
-    <article
-      className="
-        overflow-hidden
-        
-        bg-white py-12 px-4 sm:px-8 lg:px-20 xl:px-32
-      "
+    <div
+      ref={containerRef}
+      className="mx-auto w-full max-w-3xl py-6 animate-fade-in"
     >
-      {/* HEADER */}
-      {(metadata?.title || metadata?.description) && (
-        <div
-          className="
-            border-b border-zinc-200
-            px-5 py-5
-            sm:px-6
-          "
-        >
-          {metadata?.title && (
-            <h3
-              className="
-                text-xl font-bold
-                tracking-tight
-                text-zinc-900
-              "
-            >
-              {metadata.title}
-            </h3>
-          )}
-
-          {metadata?.description && (
-            <p
-              className="
-                mt-2 leading-7
-                text-zinc-600
-              "
-            >
-              {metadata.description}
-            </p>
-          )}
+      <div
+        className={`rounded-2xl border p-6 sm:p-8 shadow-sm transition-all duration-300 bg-white
+        ${completed ? "border-purple-100 shadow-purple-50/10" : "border-zinc-100 hover:border-zinc-200"}`}
+      >
+        <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-zinc-900 border border-zinc-100">
+          <iframe
+            src={getEmbedUrl(content)}
+            title="Video Lesson"
+            className="absolute top-0 left-0 h-full w-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
         </div>
-      )}
 
-      {/* VIDEO */}
-      <div className="bg-black">
-        {embedUrl ? (
-          isDirectVideo ? (
-            <video controls className="aspect-video w-full">
-              <source src={embedUrl} />
-            </video>
-          ) : (
-            <iframe
-              src={embedUrl}
-              title={metadata?.title ?? "Learning video"}
-              className="aspect-video w-full"
-              allow="
-                accelerometer;
-                autoplay;
-                clipboard-write;
-                encrypted-media;
-                gyroscope;
-                picture-in-picture;
-                web-share
-              "
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
-            />
-          )
-        ) : (
-          <div
-            className="
-              flex aspect-video
-              items-center justify-center
-              bg-zinc-100
-              p-6 text-center
-            "
-          >
-            <div>
-              <p className="text-sm text-zinc-500">Unsupported video URL</p>
+        {(parsedMetadata.title || parsedMetadata.description) && (
+          <div className="mt-6 prose prose-zinc max-w-none">
+            {parsedMetadata.title && (
+              <div className="mb-3 flex items-center justify-between border-b border-zinc-50 pb-2">
+                <h3 className="text-lg font-semibold text-zinc-900 tracking-tight">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      p: ({ children }) => (
+                        <span className="inline">{children}</span>
+                      ),
+                      strong: ({ children }) => (
+                        <strong className="font-bold text-zinc-950">
+                          {children}
+                        </strong>
+                      ),
+                      em: ({ children }) => (
+                        <em className="italic text-purple-600 font-medium">
+                          {children}
+                        </em>
+                      ),
+                    }}
+                  >
+                    {parsedMetadata.title}
+                  </ReactMarkdown>
+                </h3>
+                {completed && (
+                  <span className="text-[10px] bg-purple-50 text-purple-600 font-bold uppercase tracking-widest px-2.5 py-1 rounded-full animate-fade-in">
+                    Watched
+                  </span>
+                )}
+              </div>
+            )}
 
-              <a
-                href={content}
-                target="_blank"
-                rel="noreferrer"
-                className="
-                  mt-4 inline-flex
-                  border border-zinc-300
-                  px-4 py-2 text-sm
-                  font-medium text-zinc-700
-                  transition hover:bg-zinc-200
-                "
-              >
-                Open Video
-              </a>
-            </div>
+            {parsedMetadata.description && (
+              <div className="text-sm font-light leading-relaxed text-zinc-500">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    p: ({ children }) => (
+                      <p className="text-sm font-light leading-relaxed text-zinc-500 mb-3 last:mb-0">
+                        {children}
+                      </p>
+                    ),
+                    strong: ({ children }) => (
+                      <strong className="font-semibold text-zinc-800">
+                        {children}
+                      </strong>
+                    ),
+                    em: ({ children }) => (
+                      <em className="italic text-zinc-700">{children}</em>
+                    ),
+                    blockquote: ({ children }) => (
+                      <blockquote className="border-l-4 border-zinc-200 bg-zinc-50/50 px-4 py-2 my-3 rounded-r-lg font-light italic text-zinc-600">
+                        {children}
+                      </blockquote>
+                    ),
+                    ul: ({ children }) => (
+                      <ul className="list-disc list-inside space-y-1 my-3 text-zinc-500 font-light pl-1">
+                        {children}
+                      </ul>
+                    ),
+                    ol: ({ children }) => (
+                      <ol className="list-decimal list-inside space-y-1 my-3 text-zinc-500 font-light pl-1">
+                        {children}
+                      </ol>
+                    ),
+                    li: ({ children }) => (
+                      <li className="text-sm leading-relaxed">{children}</li>
+                    ),
+                  }}
+                >
+                  {parsedMetadata.description}
+                </ReactMarkdown>
+              </div>
+            )}
           </div>
         )}
       </div>
-    </article>
+    </div>
   );
 };
 
-export default VideoDisplayBlock;
+// 🎯 REACT MEMO WRAPPER FIX: Prevents container re-mounting loops when parents shift state parameters!
+export default React.memo(VideoDisplayBlock, (prevProps, nextProps) => {
+  return (
+    prevProps.content === nextProps.content &&
+    prevProps.backendBlockId === nextProps.backendBlockId &&
+    prevProps.lessonId === nextProps.lessonId &&
+    prevProps.initialCompleted === nextProps.initialCompleted
+  );
+});

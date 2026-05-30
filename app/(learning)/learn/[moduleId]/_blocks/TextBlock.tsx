@@ -4,7 +4,6 @@ import React, { useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { completeBlockAction } from "../actions";
-import { useBlockCompletion } from "../_hook.ts/useBlockCompletion";
 
 type TextBlockProps = {
   blockId: string;

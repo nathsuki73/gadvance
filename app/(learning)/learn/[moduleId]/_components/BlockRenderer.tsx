@@ -3,8 +3,6 @@
 import React from "react";
 
 import BannerBlock from "../_blocks/BannerBlock";
-
-import type { ModuleBlock } from "../types";
 import TextBlock from "../_blocks/TextBlock";
 import ImageBlock from "../_blocks/ImageBlock";
 import TitleDisplay from "../_blocks/TitleDisplayBlock";
@@ -13,12 +11,31 @@ import QuizBlock from "../_blocks/QuizBlock";
 import VideoDisplayBlock from "../_blocks/VideoDisplayBlock";
 import SurveyBlock from "../_blocks/SurveyBlock";
 
+// 1. Keep your strict structural definition or imports untouched
+import type { ModuleBlock } from "../types";
+import type { Block } from "../types"; // Import the generic Block shape we defined earlier
+import ReadingBlock from "../_blocks/ReadingBlock";
+
 type BlockRendererProps = {
-  block: ModuleBlock;
+  block: ModuleBlock | Block | any;
+  onQuizBlockCompleted?: (blockId: string) => void;
+  onBlockCompletedLive?: (
+    blockId: string,
+    interactionType: "reading" | "quiz" | "text" | "video",
+  ) => void; // 🎯 ADD LIVE TRACKING HANDLER DEFINITION
+  lessonId?: string;
 };
 
-const BlockRenderer = ({ block }: BlockRendererProps) => {
-  switch (block.type) {
+const BlockRenderer = ({
+  block,
+  onQuizBlockCompleted,
+  onBlockCompletedLive,
+  lessonId, // 🎯 DESTRUCTURE THE INCOMING PROP:
+}: BlockRendererProps) => {
+  // 3. Optional: Type-guard string literal casting to satisfy the switch statement evaluator smoothly
+  const blockType = block.type as string;
+
+  switch (blockType) {
     case "banner":
       return <BannerBlock imageUrl={block.content} />;
 
@@ -34,12 +51,49 @@ const BlockRenderer = ({ block }: BlockRendererProps) => {
       );
     case "video":
       return (
-        <VideoDisplayBlock content={block.content} metadata={block.metadata} />
+        <VideoDisplayBlock
+          content={block.content}
+          metadata={block.metadata}
+          backendBlockId={block.id} // Or block.backendBlockId depending on your array item structure
+          lessonId={lessonId} // Passes down the parent lesson identifier variable string
+          initialCompleted={block.completed || false} // Keeps current checkbox states synced on load
+          onCompleted={() => onBlockCompletedLive?.(block.id, "video")}
+        />
+      );
+    case "pretest":
+      return (
+        <QuizBlock
+          content={block.content}
+          metadata={block.metadata}
+          onQuestionCompleted={onQuizBlockCompleted}
+          // 🎯 FORWARD THE CLEAN LESSON ID UUID DOWN TO THE LOGIC ENGINE:
+          lessonId={lessonId}
+          onBlockCompletedLive={onBlockCompletedLive}
+        />
       );
     case "quiz":
-      return <QuizBlock content={block.content} metadata={block.metadata} />;
+      return (
+        <QuizBlock
+          content={block.content}
+          metadata={block.metadata}
+          onQuestionCompleted={onQuizBlockCompleted}
+          // 🎯 FORWARD THE CLEAN LESSON ID UUID DOWN TO THE LOGIC ENGINE:
+          lessonId={lessonId}
+          onBlockCompletedLive={onBlockCompletedLive}
+        />
+      );
     case "survey":
       return <SurveyBlock content={block.content} />;
+    case "reading":
+      return (
+        <ReadingBlock
+          backendBlockId={block.id}
+          content={block.content}
+          metadata={block.metadata}
+          lessonId={lessonId}
+          onCompleted={() => onBlockCompletedLive?.(block.id, "reading")}
+        />
+      );
 
     default:
       return null;

@@ -21,7 +21,7 @@ const CourseGrid = () => {
       setIsLoading(true);
       try {
         const data = await searchContent(activeSearch);
-        setCourses(Array.isArray(data) ? data : data?.data || []);
+        setCourses(data);
       } catch (error) {
         console.error("Error fetching courses:", error);
       } finally {
@@ -39,14 +39,21 @@ const CourseGrid = () => {
 
   return (
     <section>
-      <div className="max-w-4xl">
-        <h1 className="text-4xl font-bold tracking-tight text-zinc-900">Explore Courses</h1>
-        <div className="mt-8">
-          <CourseSearchBar 
-            value={query} 
-            onChange={setQuery} 
-            onSearch={handleSearch} 
-          />
+      <div>
+        <div className="flex items-start justify-between gap-4 max-w-full">
+          <div className="flex-1">
+            <h1 className="text-4xl font-bold tracking-tight text-zinc-900">Explore Courses</h1>
+            <p className="mt-2 text-md text-zinc-500">
+              Discover new modules, sharpen your skills, and advance your knowledge at your own pace.
+            </p>
+          </div>
+          <div className="mt-2">
+            <CourseSearchBar 
+              value={query} 
+              onChange={setQuery} 
+              onSearch={handleSearch} 
+            />
+          </div>
         </div>
       </div>
 

@@ -173,7 +173,7 @@ export default function AuthErrorPage({
           <div className="flex flex-col gap-4">
             <Link
               href="/auth/signin"
-              className="w-full bg-[#00A8CC] hover:bg-[#0096b6] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-sky-100 active:scale-[0.98] flex items-center justify-center gap-2"
+              className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
             >
               <ArrowLeft size={14} />
               try signing in again
@@ -192,7 +192,7 @@ export default function AuthErrorPage({
 
       {/* Right Side: Decorative Ellipse Panel */}
       <div 
-        className="hidden lg:flex lg:w-1/2 bg-[#00A8CC] flex-col items-center justify-center p-12 text-white relative"
+        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
         style={{
           clipPath: 'ellipse(100% 100% at 100% 50%)'
         }}

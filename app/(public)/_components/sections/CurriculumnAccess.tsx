@@ -137,7 +137,7 @@ const CurriculumAccess = () => {
           
           {/* Text Side - Slides in from the left */}
           <div className="max-w-2xl scroll-anim slide-left opacity-0 -translate-x-10 transition-all duration-1000 ease-out">
-            <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-[#00aeef] mb-8">
+            <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-[#8b5cf6] mb-8">
               curriculum
             </h2>
             <h3 className="text-4xl md:text-5xl font-light tracking-tight text-zinc-900 leading-tight">
@@ -151,7 +151,7 @@ const CurriculumAccess = () => {
 
             <div className="mt-12 flex flex-col sm:flex-row gap-6">
               {/* Primary action */}
-              <button className="group flex items-center justify-center gap-3 rounded-full bg-[#00aeef] px-8 py-4 text-white transition-all hover:bg-[#0096ce] hover:shadow-lg hover:shadow-sky-100 active:scale-95">
+              <button className="group flex items-center justify-center gap-3 rounded-full bg-[#8b5cf6] px-8 py-4 text-white transition-all hover:bg-[#7c3aed] hover:shadow-lg hover:shadow-violet-100 active:scale-95">
                 <Download size={18} />
                 <span className="font-medium lowercase">download overview</span>
               </button>
@@ -170,9 +170,9 @@ const CurriculumAccess = () => {
             <div className="aspect-[3/4] rounded-[32px] bg-zinc-50 border border-zinc-100 p-10 flex flex-col justify-between shadow-sm transition-all duration-500 hover:-rotate-1 hover:shadow-xl hover:bg-white cursor-default">
               <div className="flex justify-between items-start">
                 <div className="h-12 w-12 rounded-2xl bg-white flex items-center justify-center shadow-sm">
-                  <FileText size={24} className="text-[#00aeef]" />
+                  <FileText size={24} className="text-[#8b5cf6]" />
                 </div>
-                <span className="text-[10px] font-bold tracking-widest text-[#00aeef] bg-sky-50 px-3 py-1 rounded-full uppercase">
+                <span className="text-[10px] font-bold tracking-widest text-[#8b5cf6] bg-violet-50 px-3 py-1 rounded-full uppercase">
                   v1.0 2026
                 </span>
               </div>
@@ -183,15 +183,15 @@ const CurriculumAccess = () => {
                 </h4>
                 <div className="mt-6 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-1.5 w-1.5 rounded-full bg-[#00aeef]" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-[#8b5cf6]" />
                     <span className="text-xs text-zinc-500 lowercase">12 foundational modules</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="h-1.5 w-1.5 rounded-full bg-[#00aeef]" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-[#8b5cf6]" />
                     <span className="text-xs text-zinc-500 lowercase">institutional framework</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="h-1.5 w-1.5 rounded-full bg-[#00aeef]" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-[#8b5cf6]" />
                     <span className="text-xs text-zinc-500 lowercase">certification standards</span>
                   </div>
                 </div>

@@ -1,97 +1,63 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import {
-  CircleUserRound,
-  BookOpen,
-  Compass,
-  Flame,
-  HandHelping,
-  MessageSquareHeart,
-} from "lucide-react";
+import { ArrowRight, ArrowLeft, CheckCircle2, PlayCircle } from "lucide-react";
+import { getUserProfile } from "./service";
+import { UserProfile } from "./types";
 
-type WorkspaceLink = {
+type ActiveModule = {
+  id: string;
+  moduleNumber: string;
   title: string;
   description: string;
+  progress: number;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  accent: string;
 };
 
-const workspaceLinks: WorkspaceLink[] = [
+const activeModulesData: ActiveModule[] = [
   {
-    title: "My Profile",
+    id: "mod-03",
+    moduleNumber: "module 03",
+    title: "The Broken Rung Framework",
     description:
-      "View your account details, placeholders, and personal learning snapshot.",
-    href: "/workspace/profile",
-    icon: CircleUserRound,
-    accent: "from-sky-500 to-blue-500",
+      "analyze structural workplace blockages preventing entry-level talents from moving into first-level management frameworks.",
+    progress: 65,
+    href: "/workspace/modules/active",
   },
   {
-    title: "Explore Courses",
+    id: "mod-04",
+    moduleNumber: "module 04",
+    title: "Gender-Inclusive Policy Drafting",
     description:
-      "Browse active learning tracks and continue where you left off.",
-    href: "/workspace/courses",
-    icon: BookOpen,
-    accent: "from-teal-500 to-cyan-500",
-  },
-  {
-    title: "Community Hub",
-    description: "Join discussion threads and connect with peer advocates.",
-    href: "/workspace/community",
-    icon: MessageSquareHeart,
-    accent: "from-orange-500 to-amber-500",
-  },
-  {
-    title: "Current Course",
-    description:
-      "Jump straight into your active module and keep your streak alive.",
-    href: "/workspace",
-    icon: Flame,
-    accent: "from-rose-500 to-orange-500",
-  },
-  {
-    title: "About the Program",
-    description:
-      "Understand mission, outcomes, and how this workspace is built.",
-    href: "/workspace/about",
-    icon: Compass,
-    accent: "from-sky-500 to-teal-500",
-  },
-  {
-    title: "Support Center",
-    description: "Get guidance, FAQs, and direct help when you need it.",
-    href: "/workspace/support",
-    icon: HandHelping,
-    accent: "from-emerald-500 to-teal-500",
+      "learn standard protocols for aligning corporate documentation with national frameworks and statutory anti-discrimination laws.",
+    progress: 20,
+    href: "/workspace/modules/policy-drafting",
   },
 ];
 
 export default function WorkspacePage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
+  const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
+  const [activeModuleIndex, setActiveModuleIndex] = useState(0);
 
-  const displayName = (() => {
-    const firstName = session?.user?.firstName?.trim();
-    if (firstName) {
-      return firstName;
-    }
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (status !== "authenticated") return;
 
-    const fullName = session?.user?.name?.trim();
-    if (!fullName) {
-      return "there";
-    }
+      const res = await getUserProfile();
 
-    const commaSeparatedName = fullName.split(",")[1]?.trim();
-    if (commaSeparatedName) {
-      return commaSeparatedName.replace(/\s+[A-Z]\.??$/, "").trim() || "there";
-    }
+      if (res.success) {
+        setProfile(res.data);
+      } else {
+        console.error(res.error);
+      }
+    };
 
-    const nameParts = fullName.split(/\s+/).filter(Boolean);
-    return nameParts.length > 1 ? nameParts[0] : "there";
-  })();
+    fetchProfile();
+  }, [status]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -101,8 +67,13 @@ export default function WorkspacePage() {
 
   if (status === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fffdf8]">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#00a9d1]/20 border-t-[#00a9d1]" />
+      <div className="flex min-h-screen items-center justify-center bg-white font-sans overflow-hidden">
+        <div className="text-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-2 border-[#8b5cf6] border-t-transparent mx-auto mb-4" />
+          <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.3em]">
+            loading your environment
+          </p>
+        </div>
       </div>
     );
   }
@@ -111,61 +82,210 @@ export default function WorkspacePage() {
     return null;
   }
 
+  const currentModule = activeModulesData[activeModuleIndex];
+  const hasMultipleModules = activeModulesData.length > 1;
+
+  const handlePrevModule = () => {
+    setActiveModuleIndex((prev) =>
+      prev === 0 ? activeModulesData.length - 1 : prev - 1,
+    );
+  };
+
+  const handleNextModule = () => {
+    setActiveModuleIndex((prev) =>
+      prev === activeModulesData.length - 1 ? 0 : prev + 1,
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-[#fffdf8] text-zinc-900">
-
-      <main className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[#00a9d1]/15 blur-3xl" />
-          <div className="absolute right-0 top-32 h-80 w-80 rounded-full bg-[#ff8a00]/15 blur-3xl" />
-        </div>
-
-        <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
-          {/* <section className="mb-4 rounded-3xl border border-zinc-200 bg-white/90 px-5 py-4 shadow-[0_10px_60px_-30px_rgba(0,169,209,0.45)] backdrop-blur">
-            <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-              Welcome back, <span className="text-teal-500">{displayName}.</span>
+    <div className="min-h-screen bg-white text-zinc-900 font-sans relative overflow-x-hidden">
+      <main className="relative z-10 mx-auto max-w-7xl px-8 py-16 lg:px-12 lg:py-24">
+        {/* Top Split Row: Welcome Section (Left) alongside Ultra-Compact Analytics (Right) */}
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 border-b border-zinc-100 pb-12">
+          {/* Welcome Header Container */}
+          <header className="max-w-2xl">
+            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.4em] block mb-3">
+              philippine advocacy terminal
+            </span>
+            <h1 className="text-4xl font-light tracking-tight text-zinc-900 sm:text-5xl leading-tight">
+              Welcome back,
+              <span className="font-semibold italic font-serif text-[#8b5cf6]">
+                {" "}
+                {profile?.first_name}.
+              </span>
             </h1>
-          </section> */}
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-            Welcome back, <span className="text-teal-500">{displayName}.</span>
-          </h1>
+          </header>
 
-          <section className="mt-10">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">
-                Workspace
-              </h2>
-            </div>
+          {/* Iconless, Ultra-Narrow Analytics Section aligned to the Far Right */}
+          <section className="w-full sm:w-auto shrink-0 lg:ml-auto">
+            <div className="flex gap-3 w-full sm:w-64 max-w-[280px]">
+              {/* Stat Block 01: In Progress */}
+              <div className="flex-1 border border-zinc-100 bg-zinc-50/20 rounded-xl p-3.5 transition-all duration-300 hover:border-zinc-200">
+                <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
+                  In Progress
+                </span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-light tracking-tight text-[#8b5cf6]">
+                    {activeModulesData.length}
+                  </span>
+                  <span className="text-[10px] text-zinc-400 font-light lowercase">
+                    {activeModulesData.length == 1 ? "module" : "modules"}
+                  </span>
+                </div>
+              </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {workspaceLinks.map((item) => {
-                const Icon = item.icon;
-
-                return (
-                  <button
-                    key={item.href}
-                    onClick={() => router.push(item.href)}
-                    className="group rounded-2xl border border-zinc-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-lg"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div
-                        className={`inline-flex h-11 w-11 items-center justify-center rounded-xl bg-linear-to-tr ${item.accent} text-white`}
-                      >
-                        <Icon className="h-5 w-5" />
-                      </div>
-                    </div>
-                    <h3 className="mt-4 text-lg font-semibold text-zinc-900">
-                      {item.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                      {item.description}
-                    </p>
-                  </button>
-                );
-              })}
+              {/* Stat Block 02: Completed */}
+              <div className="flex-1 border border-zinc-100 bg-zinc-50/20 rounded-xl p-3.5 transition-all duration-300 hover:border-zinc-200">
+                <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
+                  completed
+                </span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-light tracking-tight text-[#8b5cf6]">
+                    02
+                  </span>
+                  <span className="text-[10px] text-zinc-400 font-light lowercase">
+                    tracks
+                  </span>
+                </div>
+              </div>
             </div>
           </section>
         </div>
+
+        {/* Bottom Dual-Column Row: Active Overview beside Recent Timeline */}
+        <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+          {/* Left Column: Active Overview Container */}
+          <section className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400">
+                active overview
+              </h2>
+
+              {/* Minimalist Pagination Controls */}
+              {hasMultipleModules && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handlePrevModule}
+                    className="p-1.5 rounded-lg border border-zinc-100 bg-zinc-50/50 text-zinc-400 hover:text-[#8b5cf6] hover:bg-white transition-all active:scale-95"
+                  >
+                    <ArrowLeft size={14} />
+                  </button>
+                  <span className="text-[11px] font-medium text-zinc-400 tracking-wider">
+                    {activeModuleIndex + 1} / {activeModulesData.length}
+                  </span>
+                  <button
+                    onClick={handleNextModule}
+                    className="p-1.5 rounded-lg border border-zinc-100 bg-zinc-50/50 text-zinc-400 hover:text-[#8b5cf6] hover:bg-white transition-all active:scale-95"
+                  >
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-3xl border border-zinc-100 bg-zinc-50/30 p-8 relative overflow-hidden flex flex-col justify-between min-h-[280px]">
+              <div className="space-y-4 w-full">
+                {/* Title */}
+                <h3 className="text-2xl font-semibold tracking-tight text-zinc-900">
+                  {currentModule.title}
+                </h3>
+
+                {/* Progress Track Section */}
+                <div className="py-1 max-w-md space-y-2">
+                  <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#8b5cf6] rounded-full transition-all duration-500"
+                      style={{ width: `${currentModule.progress}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center text-[11px] font-medium text-zinc-400">
+                    <span>Course Progress:&nbsp;</span>
+                    <span className="font-bold text-[#8b5cf6] ">
+                      {currentModule.progress}% Completed
+                    </span>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <p className="text-sm text-zinc-400 font-light leading-relaxed pt-1">
+                  {currentModule.description}
+                </p>
+              </div>
+
+              {/* Bottom Resume Trigger Row */}
+              <div className="pt-6 mt-auto">
+                <button
+                  onClick={() => router.push(currentModule.href)}
+                  className="inline-flex items-center justify-center gap-1.5 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all active:scale-[0.98] shadow-sm shadow-violet-100"
+                >
+                  <PlayCircle size={12} />
+                  resume
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Right Column: Recent Timeline Block */}
+          <section className="space-y-6">
+            <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400">
+              recent timeline
+            </h2>
+
+            <div className="border border-zinc-100 rounded-3xl divide-y divide-zinc-100 bg-white overflow-hidden min-h-[280px]">
+              {/* Past Module 02 */}
+              <div className="p-6 flex items-center justify-between gap-4 group hover:bg-zinc-50/50 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 shrink-0">
+                    <CheckCircle2 size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-semibold text-zinc-900 line-clamp-1">
+                      Safe Spaces Act Mandates (RA 11313)
+                    </h4>
+                    <p className="text-xs text-zinc-400 font-light mt-0.5">
+                      completed May 12, 2026 • scored 95% on metric
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => router.push("/workspace/modules/ra11313")}
+                  className="text-zinc-300 group-hover:text-[#8b5cf6] transition-colors shrink-0"
+                >
+                  <ArrowRight size={18} />
+                </button>
+              </div>
+
+              {/* Past Module 01 */}
+              <div className="p-6 flex items-center justify-between gap-4 group hover:bg-zinc-50/50 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 shrink-0">
+                    <CheckCircle2 size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-semibold text-zinc-900 line-clamp-1">
+                      Foundations of GAD Frameworks
+                    </h4>
+                    <p className="text-xs text-zinc-400 font-light mt-0.5">
+                      completed April 28, 2026 • scored 100% on metric
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => router.push("/workspace/modules/foundations")}
+                  className="text-zinc-300 group-hover:text-[#8b5cf6] transition-colors shrink-0"
+                >
+                  <ArrowRight size={18} />
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* Footer Minimal branding row */}
+        <footer className="mt-32 pt-8 border-t border-zinc-100 flex justify-between items-center text-[10px] tracking-widest text-zinc-300 uppercase">
+          <span>gadvance dashboard environment v3.0</span>
+          <span>© 2026 protection active</span>
+        </footer>
       </main>
     </div>
   );

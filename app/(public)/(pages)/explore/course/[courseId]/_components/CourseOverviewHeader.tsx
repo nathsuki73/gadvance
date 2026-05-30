@@ -56,7 +56,7 @@ const CourseOverviewHeader = ({
 
   return (
     <>
-      <section className="bg-[#00aeef] text-white">
+      <section className="bg-primary text-white">
         <div className="mx-auto max-w-7xl px-6 py-16 md:px-12 md:py-24">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-12 items-end">
             
@@ -78,7 +78,7 @@ const CourseOverviewHeader = ({
                   {course.title}
                 </h1>
                 <p className="mt-6 text-lg text-sky-50 font-light leading-relaxed">
-                  {course.about ||
+                  {course.description ||
                     "A formal learning pathway designed for systemic gender advancement and institutional leadership."}
                 </p>
               </div>
@@ -136,7 +136,7 @@ const CourseOverviewHeader = ({
               <button
                 onClick={handlePrimaryAction}
                 disabled={isSubmitting || loadingEnrollment}
-                className="w-full lg:w-auto bg-white text-[#00aeef] px-10 py-5 text-xs font-bold uppercase tracking-[0.2em] transition-all hover:bg-sky-50 hover:-translate-y-1 active:scale-[0.98] rounded-md disabled:opacity-60"
+                className="w-full lg:w-auto bg-white text-primary px-10 py-5 text-xs font-bold uppercase tracking-[0.2em] transition-all hover:bg-sky-50 hover:-translate-y-1 active:scale-[0.98] rounded-md disabled:opacity-60"
               >
                 <div className="flex items-center justify-center gap-3">
                   {loadingEnrollment ? (

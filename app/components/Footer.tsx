@@ -39,7 +39,7 @@ const Footer = () => {
                 <Link
                   key={name}
                   href={href}
-                  className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-400 hover:text-[#00aeef] hover:bg-sky-50 transition-all duration-300"
+                  className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-400 hover:text-[#8b5cf6] hover:bg-violet-50 transition-all duration-300"
                   aria-label={name}
                 >
                   <Icon className="w-4 h-4" />
@@ -52,10 +52,10 @@ const Footer = () => {
           <div className="sm:pl-4 lg:pl-0">
             <h4 className="text-xs font-bold text-zinc-900 mb-6 sm:mb-8 uppercase tracking-[0.2em]">programs</h4>
             <ul className="space-y-4 text-sm text-zinc-500 font-light lowercase">
-              <li><Link href="/courses" className="hover:text-[#00aeef] transition-colors">all courses</Link></li>
-              <li><Link href="/leadership" className="hover:text-[#00aeef] transition-colors">women in leadership</Link></li>
-              <li><Link href="/advocacy" className="hover:text-[#00aeef] transition-colors">workplace advocacy</Link></li>
-              <li><Link href="/wellness" className="hover:text-[#00aeef] transition-colors">mental health</Link></li>
+              <li><Link href="/courses" className="hover:text-[#8b5cf6] transition-colors">all courses</Link></li>
+              <li><Link href="/leadership" className="hover:text-[#8b5cf6] transition-colors">women in leadership</Link></li>
+              <li><Link href="/advocacy" className="hover:text-[#8b5cf6] transition-colors">workplace advocacy</Link></li>
+              <li><Link href="/wellness" className="hover:text-[#8b5cf6] transition-colors">mental health</Link></li>
             </ul>
           </div>
 
@@ -63,10 +63,10 @@ const Footer = () => {
           <div>
             <h4 className="text-xs font-bold text-zinc-900 mb-6 sm:mb-8 uppercase tracking-[0.2em]">resources</h4>
             <ul className="space-y-4 text-sm text-zinc-500 font-light lowercase">
-              <li><Link href="/blog" className="hover:text-[#00aeef] transition-colors">articles & news</Link></li>
-              <li><Link href="/community" className="hover:text-[#00aeef] transition-colors">community forum</Link></li>
-              <li><Link href="/faq" className="hover:text-[#00aeef] transition-colors">help center</Link></li>
-              <li><Link href="/partners" className="hover:text-[#00aeef] transition-colors">our partners</Link></li>
+              <li><Link href="/blog" className="hover:text-[#8b5cf6] transition-colors">articles & news</Link></li>
+              <li><Link href="/community" className="hover:text-[#8b5cf6] transition-colors">community forum</Link></li>
+              <li><Link href="/faq" className="hover:text-[#8b5cf6] transition-colors">help center</Link></li>
+              <li><Link href="/partners" className="hover:text-[#8b5cf6] transition-colors">our partners</Link></li>
             </ul>
           </div>
 
@@ -79,12 +79,12 @@ const Footer = () => {
               weekly insights on equality and leadership growth.
             </p>
             <div className="relative">
-              <input
+                <input
                 type="email"
                 placeholder="email address"
-                className="w-full bg-white px-4 py-3 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-sky-100 text-sm placeholder:text-zinc-300 lowercase"
+                className="w-full bg-white px-4 py-3 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50 text-sm placeholder:text-zinc-300 lowercase"
               />
-              <button className="absolute right-1.5 top-1.5 bottom-1.5 bg-[#00aeef] text-white px-4 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-[#0096ce] transition-colors">
+              <button className="absolute right-1.5 top-1.5 bottom-1.5 bg-[#8b5cf6] text-white px-4 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-[#7c3aed] transition-colors">
                 join
               </button>
             </div>

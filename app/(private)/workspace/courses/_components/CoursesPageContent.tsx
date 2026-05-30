@@ -39,7 +39,7 @@ const CoursesPageContent = () => {
     <main className="min-h-screen bg-white px-6 py-10 md:px-12">
       <div className="mx-auto max-w-7xl">
         <div className="mb-10">
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#00aeef]">
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-primary">
             Learning Hub
           </p>
 

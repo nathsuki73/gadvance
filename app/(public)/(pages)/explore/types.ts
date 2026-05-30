@@ -5,17 +5,19 @@ export type CourseIconType = "globe" | "briefcase" | "target" | "wellness";
 export type LearningModule = {
   id: string;
   title: string;
-  about?: string;
+  description?: string;
   image?: string | null;
 };
+
 
 export type LearningPlan = {
   id: string;
   title: string;
-  about?: string;
+  description?: string;
   image?: string | null;
 
   modules?: LearningModule[];
+  lessons?: LearningModule[];
 
   // optional frontend presentation fields
   icon?: CourseIconType;

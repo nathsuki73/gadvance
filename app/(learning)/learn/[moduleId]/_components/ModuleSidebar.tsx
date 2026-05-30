@@ -1,73 +1,57 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  Circle,
   X,
   ArrowLeft,
-  Layers,
+  BookOpen,
+  Lock, // 🌟 Added Lock icon from Lucide for clear visual feedback
 } from "lucide-react";
 
-import type { SectionGroup } from "../types";
+import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
+import { LessonDonutProgress } from "./LessonDonutProgress";
+
+type LessonProgressItem = {
+  completed_steps: number;
+  total_steps: number;
+  is_completed: boolean;
+  percentage: number;
+};
 
 type ModuleSidebarProps = {
   structureTitle: string;
-  sectionGroups: SectionGroup[];
-  activeSectionId: string;
+  lessons: Lesson[];
+  activeLessonId: string;
+  completedBlockIds?: string[];
+  completedQuizLessons?: string[];
+  lessonsProgress: Record<string, LessonProgressItem>;
   onNavigate: (id: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
+  isAdaptiveMode?: boolean;
 };
 
 const ModuleSidebar = ({
   structureTitle,
-  sectionGroups,
-  activeSectionId,
+  lessons,
+  activeLessonId,
+  completedBlockIds = [],
+  completedQuizLessons = [],
+  lessonsProgress = {},
   onNavigate,
   isCollapsed,
   onToggleCollapse,
   mobileOpen,
   onCloseMobile,
+  isAdaptiveMode = false,
 }: ModuleSidebarProps) => {
-  /*
-  |--------------------------------------------------------------------------
-  | EXPANDED GROUPS
-  |--------------------------------------------------------------------------
-  */
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    new Set(sectionGroups.map((group) => group.id)),
-  );
-
-  const toggleGroup = (id: string) => {
-    setExpandedGroups((prev) => {
-      const updated = new Set(prev);
-      if (updated.has(id)) {
-        updated.delete(id);
-      } else {
-        updated.add(id);
-      }
-      return updated;
-    });
-  };
-
-  const handleCollapsedGroupClick = (id: string) => {
-    // Open the sidebar first so the user can see what they just expanded
-    onToggleCollapse();
-    // Ensure the group clicked is expanded
-    setExpandedGroups((prev) => {
-      const updated = new Set(prev);
-      updated.add(id);
-      return updated;
-    });
-  };
-
   return (
     <>
-      {/* MOBILE OVERLAY */}
+      {/* MOBILE CANVAS OVERLAY */}
       {mobileOpen && (
         <button
           onClick={onCloseMobile}
@@ -76,7 +60,7 @@ const ModuleSidebar = ({
         />
       )}
 
-      {/* SIDEBAR */}
+      {/* SIDEBAR WRAPPER HOUSING CANVAS */}
       <aside
         className={`
           fixed left-0 top-0 z-50 h-dvh
@@ -88,11 +72,11 @@ const ModuleSidebar = ({
           lg:translate-x-0
           w-[290px] sm:w-[320px]
           ${isCollapsed ? "lg:w-16" : "lg:w-80"}
+          adaptive-sidebar-item pointer-events-auto
         `}
       >
-        {/* HEADER */}
+        {/* SIDEBAR HEADER */}
         <div className="flex h-16 items-center justify-between border-b border-zinc-200 bg-white/80 px-4 shrink-0">
-          {/* MOBILE HEADER */}
           <div className="flex w-full items-center justify-between gap-2 lg:hidden">
             <button
               onClick={() => window.history.back()}
@@ -102,7 +86,7 @@ const ModuleSidebar = ({
               <ArrowLeft size={16} />
             </button>
 
-            <span className="max-w-[180px] truncate text-sm font-semibold text-zinc-900">
+            <span className="max-w-[180px] truncate text-sm font-semibold text-zinc-900 lowercase">
               {structureTitle}
             </span>
 
@@ -115,14 +99,13 @@ const ModuleSidebar = ({
             </button>
           </div>
 
-          {/* DESKTOP HEADER */}
           <div className="hidden w-full items-center justify-between lg:flex">
             {!isCollapsed && (
               <div className="min-w-0 pr-2">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">
-                  Navigation
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8b5cf6]">
+                  curriculum
                 </p>
-                <h2 className="truncate text-sm font-semibold text-zinc-800">
+                <h2 className="truncate text-sm font-semibold text-zinc-800 leading-snug">
                   {structureTitle}
                 </h2>
               </div>
@@ -156,124 +139,235 @@ const ModuleSidebar = ({
           </div>
         </div>
 
-        {/* CONTENT */}
+        {/* LIST CONTAINER */}
         <div className="custom-scrollbar flex-1 overflow-y-auto px-3 py-4">
-          <nav className="space-y-2">
-            {sectionGroups.map((group) => {
-              const isExpanded = expandedGroups.has(group.id);
+          <nav className="space-y-1">
+            {lessons.map((lesson, index) => {
+              const isActive = activeLessonId === lesson.id;
+
+              const totalBlocks = lesson.blocks?.length || 0;
+              const totalQuizQuestions = lesson.quiz_blocks?.length || 0;
+
+              // 🎯 MIRROR THE EXACT VIEWPORT HOUSING RULES:
+              const isStandaloneQuizPage =
+                totalQuizQuestions > 0 && totalBlocks === 0;
+
+              // 🎯 FIXED REAL TIME STEP COUNT:
+              const stepCount = isStandaloneQuizPage
+                ? totalQuizQuestions
+                : totalBlocks;
+
+              // Calculate standard content block progress
+              const completedBlocksCount = (lesson.blocks || []).filter((b) =>
+                completedBlockIds.includes(b.id),
+              ).length;
+
+              // Verify overall parent lesson status flags
+              const isQuizFinishedInDb = completedQuizLessons.includes(
+                lesson.id,
+              );
+
+              // 🎯 FIXED COMPLETED STEPS ACCUMULATOR:
+              let totalCompletedSteps = 0;
+              let isEntirelyDone = false;
+
+              if (isStandaloneQuizPage) {
+                totalCompletedSteps = (lesson.quiz_blocks || []).filter((q) =>
+                  completedBlockIds.includes(q.id),
+                ).length;
+
+                if (totalCompletedSteps === 0 && lessonsProgress[lesson.id]) {
+                  totalCompletedSteps =
+                    lessonsProgress[lesson.id].completed_steps;
+                }
+
+                isEntirelyDone =
+                  totalCompletedSteps === stepCount && stepCount > 0;
+              } else {
+                const completedQuizzesCount = (lesson.quiz_blocks || []).filter(
+                  (q) => completedBlockIds.includes(q.id),
+                ).length;
+
+                totalCompletedSteps =
+                  completedBlocksCount + completedQuizzesCount;
+
+                if (totalCompletedSteps === 0 && lessonsProgress[lesson.id]) {
+                  totalCompletedSteps =
+                    lessonsProgress[lesson.id].completed_steps;
+                }
+
+                isEntirelyDone =
+                  totalCompletedSteps === stepCount && stepCount > 0;
+              }
+
+              if (
+                isQuizFinishedInDb ||
+                lessonsProgress[lesson.id]?.is_completed
+              ) {
+                totalCompletedSteps = stepCount;
+                isEntirelyDone = true;
+              }
+
+              totalCompletedSteps = Math.min(totalCompletedSteps, stepCount);
+
+              // 🎯 LINEAR PROGRESS GATEKEEPER LOGIC:
+              // In adaptive mode, all lessons are always unlocked
+              // Otherwise: Index 0 (Pre-test) is always unlocked.
+              // Any subsequent lesson is ONLY unlocked if the lesson right before it is completely finished.
+              let isUnlocked = isAdaptiveMode || index === 0;
+              if (!isAdaptiveMode && index > 0) {
+                const previousLesson = lessons[index - 1];
+                const prevServerProgress = lessonsProgress[previousLesson.id];
+
+                // Check local runtime array completion states or fallback onto clean server snapshots
+                const prevBlocksCount = (previousLesson.blocks || []).filter(
+                  (b) => completedBlockIds.includes(b.id),
+                ).length;
+                const prevQuizzesCount = (
+                  previousLesson.quiz_blocks || []
+                ).filter((q) => completedBlockIds.includes(q.id)).length;
+                const prevFinishedInDb = completedQuizLessons.includes(
+                  previousLesson.id,
+                );
+
+                const isPrevStandaloneQuiz =
+                  (previousLesson.quiz_blocks?.length || 0) > 0 &&
+                  (previousLesson.blocks?.length || 0) === 0;
+                const prevMaxSteps = isPrevStandaloneQuiz
+                  ? previousLesson.quiz_blocks?.length || 0
+                  : previousLesson.blocks?.length || 0;
+
+                let prevCompletedCount = isPrevStandaloneQuiz
+                  ? (previousLesson.quiz_blocks || []).filter((q) =>
+                      completedBlockIds.includes(q.id),
+                    ).length
+                  : prevBlocksCount + prevQuizzesCount;
+
+                if (prevCompletedCount === 0 && prevServerProgress) {
+                  prevCompletedCount = prevServerProgress.completed_steps;
+                }
+
+                const prevDoneCalculated =
+                  prevCompletedCount === prevMaxSteps && prevMaxSteps > 0;
+
+                isUnlocked =
+                  prevFinishedInDb ||
+                  prevDoneCalculated ||
+                  !!prevServerProgress?.is_completed;
+              }
 
               /*
               |--------------------------------------------------------------------------
-              | COLLAPSED DESKTOP VIEW
+              | SIDEBAR COLLAPSED DETACHED MODE
               |--------------------------------------------------------------------------
               */
               if (isCollapsed && !mobileOpen) {
                 return (
                   <button
-                    key={group.id}
-                    onClick={() => handleCollapsedGroupClick(group.id)}
-                    className="
-                      hidden lg:flex
-                      h-11 w-11 mx-auto
-                      items-center justify-center
-                      rounded-xl
-                      text-zinc-500
-                      hover:bg-zinc-200/60
-                    "
-                    title={group.title}
+                    key={lesson.id}
+                    disabled={!isUnlocked} // Prevent clicking locked items
+                    onClick={() => {
+                      if (!isUnlocked) return;
+                      onNavigate(lesson.id);
+                      onToggleCollapse();
+                    }}
+                    className={`
+                      hidden lg:flex relative h-11 w-11 mx-auto items-center justify-center
+                      rounded-xl transition-all duration-150 pointer-events-auto
+                      ${!isUnlocked ? "opacity-40 cursor-not-allowed text-zinc-300" : isActive ? "bg-purple-50 text-[#8b5cf6]" : "text-zinc-400 hover:bg-zinc-200/50 hover:text-zinc-700"}
+                    `}
+                    title={
+                      !isUnlocked
+                        ? "Complete preceding topics to unlock"
+                        : `${lesson.title} (${totalCompletedSteps}/${stepCount} completed)`
+                    }
                   >
-                    <Layers size={18} />
+                    {!isUnlocked ? (
+                      <Lock size={16} className="text-zinc-400" />
+                    ) : (
+                      <>
+                        <BookOpen size={18} />
+                        <div className="absolute right-0.5 bottom-0.5 bg-white rounded-full p-0.5">
+                          <LessonDonutProgress
+                            totalSteps={stepCount}
+                            completedSteps={totalCompletedSteps}
+                            size={12}
+                            strokeWidth={1.5}
+                          />
+                        </div>
+                      </>
+                    )}
                   </button>
                 );
               }
 
               /*
               |--------------------------------------------------------------------------
-              | FULL VIEW (EXPANDED DESKTOP / MOBILE)
+              | SIDEBAR FULL EXPANDED VIEW
               |--------------------------------------------------------------------------
               */
               return (
-                <div key={group.id} className="space-y-1">
-                  {/* GROUP BUTTON */}
-                  <button
-                    onClick={() => toggleGroup(group.id)}
-                    className="
-                      flex w-full items-center justify-between
-                      rounded-xl
-                      border border-transparent
-                      px-3 py-2.5
-                      text-left
-                      transition
-                      hover:bg-zinc-200/50
-                    "
-                  >
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-800">
-                        {group.title}
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-zinc-400">
-                        {group.sections.length} sections
-                      </p>
+                <button
+                  key={lesson.id}
+                  disabled={!isUnlocked} // Prevent clicking locked items
+                  onClick={() => {
+                    if (!isUnlocked) return;
+                    onNavigate(lesson.id);
+                    if (mobileOpen) onCloseMobile();
+                  }}
+                  className={`
+                    flex w-full items-center gap-3 rounded-xl border border-transparent
+                    px-3 py-3 text-left transition-all duration-150 pointer-events-auto
+                    ${!isUnlocked ? "opacity-50 cursor-not-allowed bg-zinc-100/30 text-zinc-400 select-none" : isActive ? "bg-purple-50/70 border-purple-100/50 text-[#8b5cf6]" : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"}
+                  `}
+                >
+                  {/* UNLOCKED DIGIT TAG OR LOCKED GRAPHIC MARKER */}
+                  {!isUnlocked ? (
+                    <div className="w-[14px] flex items-center justify-center shrink-0">
+                      <Lock size={12} className="text-zinc-300" />
                     </div>
-
-                    <ChevronRight
-                      size={14}
-                      className={`
-                        text-zinc-400
-                        transition-transform duration-200
-                        ${isExpanded ? "rotate-90" : ""}
-                      `}
-                    />
-                  </button>
-
-                  {/* SECTIONS */}
-                  {isExpanded && (
-                    <div className="ml-3.5 space-y-0.5 border-l border-zinc-200 pl-2.5 py-1">
-                      {group.sections.map((section) => {
-                        const isActive = activeSectionId === section.id;
-
-                        return (
-                          <button
-                            key={section.id}
-                            onClick={() => {
-                              onNavigate(section.id);
-                              if (mobileOpen) {
-                                onCloseMobile();
-                              }
-                            }}
-                            className={`
-                              flex w-full items-center gap-2.5
-                              rounded-lg
-                              px-2.5 py-2
-                              text-left
-                              transition-all duration-150
-                              ${
-                                isActive
-                                  ? "bg-sky-50 text-sky-600 font-medium"
-                                  : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"
-                              }
-                            `}
-                          >
-                            <Circle
-                              size={5}
-                              className={`
-                                shrink-0
-                                ${
-                                  isActive
-                                    ? "fill-sky-600 text-sky-600"
-                                    : "fill-zinc-300 text-zinc-300"
-                                }
-                              `}
-                            />
-                            <span className="truncate text-sm">
-                              {section.title}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                  ) : (
+                    <span
+                      className={`text-[10px] font-mono font-bold pt-0.5 shrink-0 ${isActive ? "text-[#8b5cf6]" : "text-zinc-300"}`}
+                    >
+                      {(index + 1).toString().padStart(2, "0")}
+                    </span>
                   )}
-                </div>
+
+                  {/* DETAILS TEXT BLOCK */}
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <p
+                      className={`text-xs font-medium leading-tight break-words ${!isUnlocked ? "text-zinc-400 font-normal" : isActive ? "font-semibold text-zinc-900" : "text-zinc-700"}`}
+                    >
+                      {lesson.title}
+                    </p>
+
+                    {!isUnlocked ? (
+                      <p className="text-[10px] font-light text-zinc-300 lowercase tracking-wide">
+                        locked 🔒
+                      </p>
+                    ) : isEntirelyDone ? (
+                      <p className="text-[11px] font-medium text-emerald-600 lowercase tracking-wide">
+                        complete ✓
+                      </p>
+                    ) : (
+                      <p
+                        className={`text-[11px] font-light lowercase ${isActive ? "text-[#8b5cf6]/80" : "text-zinc-400"}`}
+                      >
+                        {totalCompletedSteps}/{stepCount} completed
+                      </p>
+                    )}
+                  </div>
+
+                  {isUnlocked && (
+                    <LessonDonutProgress
+                      totalSteps={stepCount}
+                      completedSteps={totalCompletedSteps}
+                      size={20}
+                      strokeWidth={2}
+                    />
+                  )}
+                </button>
               );
             })}
           </nav>

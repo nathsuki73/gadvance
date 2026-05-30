@@ -5,23 +5,28 @@ export type LearningModule = {
   title: string;
   about?: string;
   image?: string | null;
+  // Add the pivot relationship fields from Laravel
+  pivot?: {
+    learning_plan_id: string;
+    module_id: string;
+    order_index: number;
+  };
 };
 
 export type LearningPlan = {
   id: string;
   title: string;
-  about?: string;
+  description?: string;
   image?: string | null;
 
-  modules?: LearningModule[];
+  modules?: LearningModule[]; // Ready to use!
+  lessons?: LearningModule[];
 
   // optional frontend presentation fields
   accent?: string;
   tag?: string;
   duration?: string;
   enrolled?: number;
-
-  icon?: "globe" | "briefcase" | "target" | "wellness";
 };
 
 export type CoursePageProps = {

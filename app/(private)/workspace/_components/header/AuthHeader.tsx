@@ -1,33 +1,72 @@
 "use client";
 
-import { signOut } from "next-auth/react";
-
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation"; // 🎯 Added for programmatic navigation on item select
 import {
   Menu,
   Search,
   X,
   Bell,
-  User,
   LogOut,
   BookOpen,
   Settings,
   User2Icon,
 } from "lucide-react";
 
+import Notification from "../Notification";
+
 import logoIcon from "@/app/assets/logo.ico";
 
 import { NavLink } from "./NavLink";
 import SearchBar from "./SearchBar";
 import LogoutConfirmationDialog from "./LogoutConfirmation";
+import { getUserProfile } from "../../service";
 
-// Mock user object - replace this with your actual auth state context/hook
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+
+function resolveAvatarSrc(avatar?: string | null) {
+  if (!avatar) {
+    return null;
+  }
+
+  const trimmedAvatar = avatar.trim();
+
+  if (
+    trimmedAvatar.startsWith("http://") ||
+    trimmedAvatar.startsWith("https://") ||
+    trimmedAvatar.startsWith("data:")
+  ) {
+    return trimmedAvatar;
+  }
+
+  const storagePath = trimmedAvatar.startsWith("/")
+    ? trimmedAvatar
+    : `/${trimmedAvatar}`;
+
+  if (apiBaseUrl) {
+    return `${apiBaseUrl}${storagePath}`;
+  }
+
+  return storagePath;
+}
+
+function getInitials(name?: string | null) {
+  const trimmedName = name?.trim();
+
+  if (!trimmedName) {
+    return "U";
+  }
+
+  return trimmedName.charAt(0).toUpperCase();
+}
+
 const mockUser = {
   name: "Learner",
   email: "gadvanceproject@gmail.com",
-  avatar: null, // base64 or url if available
+  avatar: null,
 };
 
 const AUTH_NAVS = [
@@ -38,16 +77,101 @@ const AUTH_NAVS = [
 ];
 
 export default function AuthHeader() {
+  const router = useRouter();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const headerRef = useRef<HTMLElement>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [avatarFallbackIndex, setAvatarFallbackIndex] = useState(0);
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
+  const { data: session } = useSession();
+
+  // 🎯 Search State Sub-Hook Management Arrays
+  const [searchResults, setSearchResults] = useState<{ title: string; type: string; url: string; description?: string }[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const currentUser = {
+    name: session?.user?.name || mockUser.name,
+    email: session?.user?.email || mockUser.email,
+    avatarSources: [
+      resolveAvatarSrc(profileAvatar || session?.user?.image),
+      resolveAvatarSrc(session?.user?.googleImage),
+      null,
+    ],
+  };
+
+  const activeAvatarSource = useMemo(() => {
+    return currentUser.avatarSources[avatarFallbackIndex] || null;
+  }, [avatarFallbackIndex, currentUser.avatarSources]);
+
+  // 🎯 Instant Search Auto-fetching Pipeline with 250ms Debounce Protection
+  useEffect(() => {
+    if (searchQuery.trim().length === 0) {
+      setSearchResults([]);
+      setIsSearchOpen(false);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      if (!apiBaseUrl) return;
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/global-search?q=${encodeURIComponent(searchQuery)}`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${session?.laravelJwt}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setSearchResults(data);
+          setIsSearchOpen(true);
+        }
+      } catch (error) {
+        console.error("Global search fetch execution failed:", error);
+      }
+    }, 250);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, session, apiBaseUrl]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProfileAvatar = async () => {
+      if (profileAvatar || !session?.user) {
+        return;
+      }
+
+      const response = await getUserProfile();
+      if (!isMounted || !response.success) {
+        return;
+      }
+
+      const resolvedAvatar = resolveAvatarSrc(response.data.avatar ?? null);
+      if (resolvedAvatar) {
+        setProfileAvatar(resolvedAvatar);
+      }
+    };
+
+    loadProfileAvatar();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profileAvatar, session?.user]);
 
   const toggleSearch = () => {
     const willBeShown = !showSearch;
     setShowSearch(willBeShown);
+    if (!willBeShown) {
+      setSearchQuery("");
+      setIsSearchOpen(false);
+    }
     if (willBeShown) {
       setShowMobileMenu(false);
       setShowProfileDropdown(false);
@@ -69,6 +193,8 @@ export default function AuthHeader() {
         setShowSearch(false);
         setShowMobileMenu(false);
         setShowProfileDropdown(false);
+        setShowNotifications(false);
+        setIsSearchOpen(false); // Closes spotlight wrapper when clicking canvas body
       }
     };
 
@@ -78,11 +204,66 @@ export default function AuthHeader() {
     };
   }, []);
 
-  const handleSearch = () => {
-    console.log(searchQuery);
+  // Shared result click handler to perform seamless route redirect cleanups
+  const handleResultClick = (url: string) => {
+    setIsSearchOpen(false);
+    setShowSearch(false);
+    setSearchQuery("");
+    router.push(url);
+  };
 
-    // example:
-    // router.push(`/explore?search=${searchQuery}`)
+  const userAvatarKey = `${session?.user?.image || ""}-${session?.user?.googleImage || ""}-${session?.user?.name || ""}`;
+
+  const renderAvatar = (sizeClassName: string, textClassName: string) => {
+    if (activeAvatarSource) {
+      return (
+        <Image
+          key={userAvatarKey}
+          src={activeAvatarSource}
+          alt={`${currentUser.name} avatar`}
+          width={40}
+          height={40}
+          sizes="40px"
+          unoptimized={activeAvatarSource.startsWith("data:")}
+          className={sizeClassName}
+          onError={() =>
+            setAvatarFallbackIndex((currentIndex) =>
+              Math.min(currentIndex + 1, currentUser.avatarSources.length - 1),
+            )
+          }
+        />
+      );
+    }
+
+    return (
+      <span className={textClassName}>{getInitials(currentUser.name)}</span>
+    );
+  };
+
+  // Shared Sub-component template for Search Dropdown Layouts
+  const renderSearchDropdown = () => {
+    if (!isSearchOpen || searchResults.length === 0) return null;
+    return (
+      <div className="absolute top-full left-0 mt-2 w-full max-w-[400px] rounded-2xl border border-zinc-100 bg-white p-2 shadow-2xl z-50 max-h-[350px] overflow-y-auto">
+        {searchResults.map((item, index) => (
+          <button
+            key={index}
+            type="button"
+            onClick={() => handleResultClick(item.url)}
+            className="flex w-full flex-col gap-0.5 rounded-xl px-4 py-2 text-left text-sm hover:bg-zinc-50 transition-all group"
+          >
+            <div className="flex justify-between items-center w-full">
+              <span className="font-semibold text-zinc-800 group-hover:text-primary transition-colors">
+                {item.title}
+              </span>
+            </div>
+            {item.description && (
+              <p className="text-xs text-zinc-400 truncate w-full">{item.description}</p>
+            )}
+          </button>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -104,28 +285,25 @@ export default function AuthHeader() {
 
         {/* CENTER/RIGHT: Search & Navigation */}
         <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
-          {/* DESKTOP SEARCH */}
-          <div className="hidden sm:block sm:flex-1 sm:max-w-md">
+          {/* DESKTOP SEARCH COMPONENT WITH DROPDOWN */}
+          <div className="hidden sm:block sm:flex-1 sm:max-w-md relative">
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              onSearch={handleSearch}
             />
+            {renderSearchDropdown()}
           </div>
 
           {/* MOBILE SEARCH TOGGLE */}
           <button
+            type="button"
             onClick={toggleSearch}
             className="rounded-full p-2 text-zinc-600 hover:bg-zinc-100 sm:hidden"
           >
-            {showSearch ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Search className="h-5 w-5" />
-            )}
+            {showSearch ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
           </button>
 
-          {/* DESKTOP NAV (Visible on xl) */}
+          {/* DESKTOP NAV */}
           <nav className="hidden items-center gap-6 xl:flex">
             {AUTH_NAVS.map((link) => (
               <NavLink key={link.href} href={link.href}>
@@ -137,31 +315,53 @@ export default function AuthHeader() {
           {/* AUTHENTICATED USER ACTIONS */}
           <div className="flex items-center gap-2 border-l border-zinc-100 pl-2 md:pl-4">
             {/* Notifications Bell */}
-            <button className="relative rounded-full p-2 text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 transition-colors">
-              <Bell className="h-5 w-5" strokeWidth={1.8} />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#00aeef]" />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !showNotifications;
+                  setShowNotifications(next);
+                  if (next) {
+                    setShowProfileDropdown(false);
+                    setShowMobileMenu(false);
+                    setShowSearch(false);
+                  }
+                }}
+                aria-expanded={showNotifications}
+                className="relative rounded-full p-2 text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
+              >
+                <Bell className="h-5 w-5" strokeWidth={1.8} />
+                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#a78bfa]" />
+              </button>
 
-            {/* User Dropdown Trigger (Desktop xl) */}
+              <Notification
+                open={showNotifications}
+                onCloseAction={() => setShowNotifications(false)}
+              />
+            </div>
+
+            {/* User Dropdown Trigger */}
             <div className="relative hidden xl:block">
               <button
+                type="button"
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                className="flex items-center gap-2 rounded-full p-1 border border-zinc-100 hover:border-[#00aeef]/30 bg-zinc-50 transition-all"
+                className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-100 bg-zinc-50 p-0 hover:border-[#a78bfa]/30 transition-all"
               >
-                <div className="h-7 w-7 rounded-full bg-[#00aeef] flex items-center justify-center text-white text-xs font-bold">
-                  {mockUser.name.charAt(0).toUpperCase()}
-                </div>
+                {renderAvatar(
+                  "h-full w-full rounded-full object-cover",
+                  "flex h-full w-full items-center justify-center rounded-full bg-[#c4b5fd] text-white text-xs font-bold",
+                )}
               </button>
 
               {/* Profile Dropdown Menu */}
               {showProfileDropdown && (
-                <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-zinc-100 bg-white p-2 shadow-xl shadow-zinc-100/50 flex flex-col gap-0.5">
+                <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-primary-hover/20 bg-white p-2 flex flex-col gap-0.5">
                   <div className="px-3 py-2.5 border-b border-zinc-50 mb-1">
                     <p className="text-xs font-bold text-zinc-800 lowercase">
-                      {mockUser.name}
+                      {currentUser.name}
                     </p>
                     <p className="text-[10px] text-zinc-400 font-light truncate mt-0.5">
-                      {mockUser.email}
+                      {currentUser.email}
                     </p>
                   </div>
 
@@ -171,6 +371,7 @@ export default function AuthHeader() {
                     label="profile"
                   />
                   <button
+                    type="button"
                     onClick={() => setShowLogoutDialog(true)}
                     className="w-full flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-red-500 font-medium hover:bg-red-50 transition-colors lowercase"
                   >
@@ -185,50 +386,52 @@ export default function AuthHeader() {
               />
             </div>
 
-            {/* BURGER MENU (Visible up to xl) */}
+            {/* BURGER MENU */}
             <button
+              type="button"
               onClick={toggleMobileMenu}
               className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-50 xl:hidden"
             >
-              {showMobileMenu ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
+              {showMobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* MOBILE SEARCH DRAWER */}
+      {/* MOBILE SEARCH DRAWER WITH DROPDOWN */}
       <div
-        className={`transition-all duration-300 ease-in-out md:hidden ${showSearch ? "max-h-24 opacity-100 mt-3" : "max-h-0 opacity-0 overflow-hidden"}`}
+        className={`transition-all duration-300 ease-in-out md:hidden relative ${showSearch ? "max-h-24 opacity-100 mt-3" : "max-h-0 opacity-0 overflow-hidden"}`}
       >
-        <div className="border-t border-zinc-100 pt-3">
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            onSearch={handleSearch}
-          />
+        <div className="border-t border-zinc-100 pt-3 flex justify-center">
+          <div className="relative w-full max-w-md">
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+            />
+            {renderSearchDropdown()}
+          </div>
         </div>
       </div>
 
       {/* EXPANDABLE MOBILE MENU WITH LOGGED IN METRICS */}
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out xl:hidden ${showMobileMenu ? "max-h-[600px] opacity-100 mt-4" : "max-h-0 opacity-0"}`}
+        className={`overflow-hidden transition-all duration-300 ease-in-out xl:hidden ${showMobileMenu ? "max-h-150 opacity-100 mt-4" : "max-h-0 opacity-0"}`}
       >
         <nav className="flex flex-col gap-1 border-t border-zinc-100 pt-4">
           {/* User Mobile Info Card */}
           <div className="flex items-center gap-3 px-3 py-3 bg-zinc-50 rounded-2xl mb-3">
-            <div className="h-9 w-9 rounded-xl bg-[#00aeef] flex items-center justify-center text-white text-sm font-bold">
-              {mockUser.name.charAt(0).toUpperCase()}
+            <div className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-xl bg-[#c4b5fd]">
+              {renderAvatar(
+                "h-full w-full rounded-xl object-cover",
+                "flex h-full w-full items-center justify-center rounded-xl bg-[#c4b5fd] text-white text-sm font-bold",
+              )}
             </div>
             <div>
               <p className="text-sm font-semibold text-zinc-800 lowercase">
-                {mockUser.name}
+                {currentUser.name}
               </p>
               <p className="text-xs text-zinc-400 font-light truncate">
-                {mockUser.email}
+                {currentUser.email}
               </p>
             </div>
           </div>
@@ -249,23 +452,30 @@ export default function AuthHeader() {
           <div className="border-t border-zinc-50 mt-2 pt-3 flex flex-col gap-1">
             <Link
               href="/workspace"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50  font-medium"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 font-medium"
               onClick={() => setShowMobileMenu(false)}
             >
-              <BookOpen size={16} className="text-[#00aeef]" />
+              <BookOpen size={16} className="text-[#a78bfa]" />
               My learning dashboard
             </Link>
             <Link
-              href="/profile"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50  font-medium"
+              href="/workspace/profile"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 font-medium"
               onClick={() => setShowMobileMenu(false)}
             >
               <Settings size={16} className="text-zinc-400" />
               Profile Settings
             </Link>
-            <button className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-500 font-medium hover:bg-red-50/50 text-left lowercase mt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setShowLogoutDialog(true);
+                setShowMobileMenu(false);
+              }}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-500 font-medium hover:bg-red-50/50 text-left lowercase mt-1"
+            >
               <LogOut size={16} />
-              disconnect session
+              Sign out
             </button>
           </div>
         </nav>
