@@ -21,7 +21,7 @@ type LessonProgressItem = {
 };
 
 type ModuleSidebarProps = {
-  structureTitle: string;
+  structureTitle: string | undefined;
   lessons: Lesson[];
   activeLessonId: string;
   completedBlockIds?: string[];

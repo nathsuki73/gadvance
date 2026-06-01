@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/preserve-manual-memoization */
 "use client";
 
 import React, { useMemo } from "react";
@@ -115,7 +116,10 @@ const ModuleSectionViewer = ({
     if (!hasAdaptiveRecipe) {
       blocks = (lesson.blocks || [])
         .slice()
-        .sort((a, b) => a.order_index - b.order_index);
+        .sort(
+          (a: { order_index: number }, b: { order_index: number }) =>
+            a.order_index - b.order_index,
+        );
     } else {
       blocks = (adaptiveRecipe?.recommended_blocks || []).map(
         normalizeRecipeBlock,
@@ -126,11 +130,13 @@ const ModuleSectionViewer = ({
     if (isAdaptiveMode && learningPreference) {
       if (learningPreference === "video") {
         // Only show video blocks
-        return blocks.filter((block) => block.type === "video");
+        return blocks.filter(
+          (block: { type: string }) => block.type === "video",
+        );
       } else if (learningPreference === "reading") {
         // Only show non-video, non-interactive blocks (text, image, title, reading, etc.)
         return blocks.filter(
-          (block) =>
+          (block: { type: string }) =>
             block.type !== "video" &&
             block.type !== "quiz" &&
             block.type !== "pretest" &&
@@ -174,7 +180,7 @@ const ModuleSectionViewer = ({
     const stepCount = isStandaloneQuizPage ? totalQuizQuestions : totalBlocks;
 
     // A. Check live array configurations directly (Instant UI reaction)
-    const completedBlocksCount = adaptiveBlocks.filter((b) =>
+    const completedBlocksCount = adaptiveBlocks.filter((b: { id: string }) =>
       completedBlockIds.includes(b.id),
     ).length;
 
@@ -182,12 +188,12 @@ const ModuleSectionViewer = ({
 
     let totalCompletedSteps = 0;
     if (isStandaloneQuizPage) {
-      totalCompletedSteps = adaptiveQuizzes.filter((q) =>
+      totalCompletedSteps = adaptiveQuizzes.filter((q: { id: string }) =>
         completedBlockIds.includes(q.id),
       ).length;
     } else {
-      const completedQuizzesCount = adaptiveQuizzes.filter((q) =>
-        completedBlockIds.includes(q.id),
+      const completedQuizzesCount = adaptiveQuizzes.filter(
+        (q: { id: string }) => completedBlockIds.includes(q.id),
       ).length;
       totalCompletedSteps = completedBlocksCount + completedQuizzesCount;
     }
@@ -270,7 +276,7 @@ const ModuleSectionViewer = ({
 
           if (!targetQuestion) return null;
 
-          const quizId = qb.backendBlockId || qb.id || targetQuestion.id;
+          const quizId = (qb as any).backendBlockId || (qb as any).backend_block_id || qb.id || targetQuestion.id;
 
           return {
             question: targetQuestion.question,
@@ -446,7 +452,7 @@ const ModuleSectionViewer = ({
         ) : (
           <div className="space-y-2">
             {renderAdaptiveSummary()}
-            {adaptiveBlocks.map((block, index) => {
+            {adaptiveBlocks.map((block: any, index: number) => {
               const blockNode = renderAdaptiveBlockBody(block);
 
               return renderAnimatedBlock(

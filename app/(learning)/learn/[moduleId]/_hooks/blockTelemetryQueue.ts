@@ -80,10 +80,7 @@ const scheduleFlush = () => {
   }, FLUSH_DELAY_MS);
 };
 
-export const enqueueBlockTelemetry = (
-  payload: BlockTelemetryPayload,
-  token: string,
-) => {
+export const enqueueBlockTelemetry = (payload: any, token: string) => {
   const key = buildKey(payload);
   const existing = pendingTelemetry.get(key);
 

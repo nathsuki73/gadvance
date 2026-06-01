@@ -1,4 +1,7 @@
-import type { ModuleResponse, Block } from "../../../../(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
+import type {
+  ModuleResponse,
+  Block,
+} from "../../../../(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 
 export type ModuleNavItem = {
   id: string;
@@ -33,23 +36,16 @@ export type ModuleArticle = {
 export const buildModuleArticles = (
   module: ModuleResponse,
 ): ModuleArticle[] => {
-  return (
-    module.section_groups.flatMap((group) =>
-      group.sections.map((section) => ({
-        id: `section-${section.id}`,
+  return module.lessons.map((lesson) => ({
+    id: `lesson-${lesson.id}`,
+    label: lesson.title,
 
-        label: section.title,
-
-        blocks: section.blocks.map((block) => ({
-          key: block.id,
-
-          anchorId: `block-${block.id}`,
-
-          block,
-        })),
-      })),
-    ) || []
-  );
+    blocks: lesson.blocks.map((block) => ({
+      key: block.id,
+      anchorId: `block-${block.id}`,
+      block,
+    })),
+  }));
 };
 
 /**
@@ -59,19 +55,8 @@ export const buildModuleArticles = (
 export const buildModuleNavItems = (
   module: ModuleResponse,
 ): ModuleNavItem[] => {
-  return (
-    module.section_groups.map((group) => ({
-      id: `group-${group.id}`,
-
-      label: group.title,
-
-      isGroup: true,
-
-      children: group.sections.map((section) => ({
-        id: `section-${section.id}`,
-
-        label: section.title,
-      })),
-    })) || []
-  );
+  return module.lessons.map((lesson) => ({
+    id: `lesson-${lesson.id}`,
+    label: lesson.title,
+  }));
 };

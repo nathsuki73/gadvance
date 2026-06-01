@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { completeBlockAction } from "../actions";
@@ -11,9 +11,11 @@ type TextBlockProps = {
 };
 
 const TextBlock = ({ blockId, content }: TextBlockProps) => {
-  const containerRef = useBlockCompletion({
-    blockId,
-  });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    completeBlockAction(blockId);
+  }, [blockId]);
   /*
   |--------------------------------------------------------------------------
   | EMPTY STATE

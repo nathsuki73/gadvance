@@ -388,7 +388,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
         />
       )}
       <ModuleSidebar
-        structureTitle={module.title}
+        structureTitle={module?.title}
         lessons={lessons}
         activeLessonId={activeLessonId}
         completedBlockIds={progressData.completed_block_ids}
@@ -413,7 +413,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
           <Menu size={20} />
         </button>
         <span className="ml-3 truncate text-sm font-semibold text-zinc-900">
-          {module.title}
+          {module?.title}
         </span>
       </div>
 
