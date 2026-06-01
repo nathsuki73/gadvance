@@ -353,7 +353,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb]">
-        <Loader2 size={32} className="animate-spin text-[#8b5cf6]" />
+        <Loader2 size={32} className="animate-spin text-primary" />
       </div>
     );
   }
@@ -388,7 +388,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
         />
       )}
       <ModuleSidebar
-        structureTitle={module.title}
+        structureTitle={module?.title}
         lessons={lessons}
         activeLessonId={activeLessonId}
         completedBlockIds={progressData.completed_block_ids}
@@ -413,7 +413,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
           <Menu size={20} />
         </button>
         <span className="ml-3 truncate text-sm font-semibold text-zinc-900">
-          {module.title}
+          {module?.title}
         </span>
       </div>
 

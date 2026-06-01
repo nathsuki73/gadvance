@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/preserve-manual-memoization */
 "use client";
 
 import React, { useMemo } from "react";
@@ -115,7 +116,10 @@ const ModuleSectionViewer = ({
     if (!hasAdaptiveRecipe) {
       blocks = (lesson.blocks || [])
         .slice()
-        .sort((a, b) => a.order_index - b.order_index);
+        .sort(
+          (a: { order_index: number }, b: { order_index: number }) =>
+            a.order_index - b.order_index,
+        );
     } else {
       blocks = (adaptiveRecipe?.recommended_blocks || []).map(
         normalizeRecipeBlock,
@@ -126,11 +130,13 @@ const ModuleSectionViewer = ({
     if (isAdaptiveMode && learningPreference) {
       if (learningPreference === "video") {
         // Only show video blocks
-        return blocks.filter((block) => block.type === "video");
+        return blocks.filter(
+          (block: { type: string }) => block.type === "video",
+        );
       } else if (learningPreference === "reading") {
         // Only show non-video, non-interactive blocks (text, image, title, reading, etc.)
         return blocks.filter(
-          (block) =>
+          (block: { type: string }) =>
             block.type !== "video" &&
             block.type !== "quiz" &&
             block.type !== "pretest" &&
@@ -174,7 +180,7 @@ const ModuleSectionViewer = ({
     const stepCount = isStandaloneQuizPage ? totalQuizQuestions : totalBlocks;
 
     // A. Check live array configurations directly (Instant UI reaction)
-    const completedBlocksCount = adaptiveBlocks.filter((b) =>
+    const completedBlocksCount = adaptiveBlocks.filter((b: { id: string }) =>
       completedBlockIds.includes(b.id),
     ).length;
 
@@ -182,12 +188,12 @@ const ModuleSectionViewer = ({
 
     let totalCompletedSteps = 0;
     if (isStandaloneQuizPage) {
-      totalCompletedSteps = adaptiveQuizzes.filter((q) =>
+      totalCompletedSteps = adaptiveQuizzes.filter((q: { id: string }) =>
         completedBlockIds.includes(q.id),
       ).length;
     } else {
-      const completedQuizzesCount = adaptiveQuizzes.filter((q) =>
-        completedBlockIds.includes(q.id),
+      const completedQuizzesCount = adaptiveQuizzes.filter(
+        (q: { id: string }) => completedBlockIds.includes(q.id),
       ).length;
       totalCompletedSteps = completedBlocksCount + completedQuizzesCount;
     }
@@ -270,7 +276,7 @@ const ModuleSectionViewer = ({
 
           if (!targetQuestion) return null;
 
-          const quizId = qb.backendBlockId || qb.id || targetQuestion.id;
+          const quizId = (qb as any).backendBlockId || (qb as any).backend_block_id || qb.id || targetQuestion.id;
 
           return {
             question: targetQuestion.question,
@@ -418,7 +424,7 @@ const ModuleSectionViewer = ({
       <div className="w-full max-w-4xl mx-auto flex-1">
         {/* DYNAMIC HEADER ANCHOR */}
         <div className="mb-10 border-b border-zinc-100 pb-6">
-          <p className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[#8b5cf6] mb-1">
+          <p className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-primary mb-1">
             Part {(currentIndex + 1).toString().padStart(2, "0")} of{" "}
             {totalSections.toString().padStart(2, "0")}
           </p>
@@ -446,7 +452,7 @@ const ModuleSectionViewer = ({
         ) : (
           <div className="space-y-2">
             {renderAdaptiveSummary()}
-            {adaptiveBlocks.map((block, index) => {
+            {adaptiveBlocks.map((block: any, index: number) => {
               const blockNode = renderAdaptiveBlockBody(block);
 
               return renderAnimatedBlock(
@@ -483,7 +489,7 @@ const ModuleSectionViewer = ({
               <button
                 type="button"
                 onClick={onNext}
-                className="group flex items-center justify-center gap-3 rounded-full bg-[#8b5cf6] px-12 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all hover:bg-[#7c3aed] active:scale-[0.98] w-full sm:w-auto hover:shadow-lg hover:shadow-purple-100"
+                className="group flex items-center justify-center gap-3 rounded-full bg-primary px-12 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all hover:bg-purple-600 active:scale-[0.98] w-full sm:w-auto hover:shadow-lg hover:shadow-purple-100"
               >
                 <span>
                   {isAssessmentMode ? "start assessment" : "continue"}

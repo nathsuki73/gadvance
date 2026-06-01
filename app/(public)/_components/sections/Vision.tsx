@@ -124,7 +124,7 @@ const TheVisionSection = () => {
           <div className="max-w-2xl lg:sticky lg:top-24">
             {/* Main Header Animation */}
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 ease-out">
-              <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-[#00aeef]">
+              <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-primary">
                 The Vision
               </h2>
               <h3 className="mt-10 text-4xl font-light tracking-tight text-zinc-900 sm:text-6xl leading-[1.1]">

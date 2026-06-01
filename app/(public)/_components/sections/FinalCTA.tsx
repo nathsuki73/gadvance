@@ -87,14 +87,14 @@ const FinalCTA = () => {
       <div ref={scrollRef} className="relative mx-auto max-w-5xl px-8 text-center">
         
         {/* Label Animation */}
-        <h2 className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out text-sm font-bold uppercase tracking-[0.4em] text-[#00aeef] mb-12">
+        <h2 className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out text-sm font-bold uppercase tracking-[0.4em] text-primary mb-12">
           take the next step
         </h2>
         
         {/* Main Heading Animation */}
         <p className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-200 ease-out text-4xl md:text-7xl font-light tracking-tight text-zinc-900 leading-[1.1]">
           be part of the <br />
-          <span className="font-semibold italic font-serif text-[#00aeef]">equitable future</span> <br />
+          <span className="font-semibold italic font-serif text-primary">equitable future</span> <br />
           of the philippines.
         </p>
 
@@ -106,7 +106,7 @@ const FinalCTA = () => {
 
         {/* Buttons Animation - Scale and Fade */}
         <div className="scroll-anim opacity-0 translate-y-10 scale-95 transition-all duration-1000 delay-700 ease-out mt-16 flex flex-col sm:flex-row items-center justify-center gap-6">
-          <button className="group relative w-full sm:w-auto flex items-center justify-center gap-3 rounded-full bg-[#00aeef] px-10 py-5 text-white transition-all hover:bg-[#0096ce] hover:shadow-xl hover:shadow-sky-100 active:scale-95">
+          <button className="group relative w-full sm:w-auto flex items-center justify-center gap-3 rounded-full bg-primary px-10 py-5 text-white transition-all hover:bg-primary-hover hover:shadow-xl hover:shadow-sky-100 active:scale-95">
             <span className="font-medium lowercase text-lg">start your enrollment</span>
             <ArrowUpRight size={20} className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
           </button>

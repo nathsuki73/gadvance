@@ -21,7 +21,7 @@ type LessonProgressItem = {
 };
 
 type ModuleSidebarProps = {
-  structureTitle: string;
+  structureTitle: string | undefined;
   lessons: Lesson[];
   activeLessonId: string;
   completedBlockIds?: string[];
@@ -102,7 +102,7 @@ const ModuleSidebar = ({
           <div className="hidden w-full items-center justify-between lg:flex">
             {!isCollapsed && (
               <div className="min-w-0 pr-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8b5cf6]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
                   curriculum
                 </p>
                 <h2 className="truncate text-sm font-semibold text-zinc-800 leading-snug">
@@ -328,7 +328,7 @@ const ModuleSidebar = ({
                     </div>
                   ) : (
                     <span
-                      className={`text-[10px] font-mono font-bold pt-0.5 shrink-0 ${isActive ? "text-[#8b5cf6]" : "text-zinc-300"}`}
+                      className={`text-[10px] font-mono font-bold pt-0.5 shrink-0 ${isActive ? "text-primary" : "text-zinc-300"}`}
                     >
                       {(index + 1).toString().padStart(2, "0")}
                     </span>
@@ -352,7 +352,7 @@ const ModuleSidebar = ({
                       </p>
                     ) : (
                       <p
-                        className={`text-[11px] font-light lowercase ${isActive ? "text-[#8b5cf6]/80" : "text-zinc-400"}`}
+                        className={`text-[11px] font-light lowercase ${isActive ? "text-primary/80" : "text-zinc-400"}`}
                       >
                         {totalCompletedSteps}/{stepCount} completed
                       </p>

@@ -305,12 +305,12 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
   if (submitted) {
     return (
       <div className="mx-auto max-w-2xl px-6 text-center animate-fade-in min-h-[580px] md:min-h-[520px] flex flex-col justify-center items-center">
-        <div className="h-12 w-12 rounded-full bg-sky-50 text-[#00aeef] flex items-center justify-center mb-8">
+        <div className="h-12 w-12 rounded-full bg-sky-50 text-primary flex items-center justify-center mb-8">
           <Check size={20} strokeWidth={2} />
         </div>
         <h2 className="text-3xl font-light tracking-tight text-zinc-900">
           Survey Response{" "}
-          <span className="italic font-serif text-[#00aeef]">Recorded.</span>
+          <span className="italic font-serif text-primary">Recorded.</span>
         </h2>
         <p className="mt-4 text-base text-zinc-500 font-light leading-relaxed max-w-md mx-auto">
           Thank you for providing institutional metrics. Your responses have
@@ -342,7 +342,7 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
         {/* Structural Metric Header */}
         <div className="flex items-center justify-between pb-6 border-b border-zinc-100">
           <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#00aeef]">
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
               {survey.title}
             </span>
             <span className="text-xs text-zinc-400 font-light">
@@ -353,7 +353,7 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
 
           <div className="h-1.5 w-24 bg-zinc-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#00aeef] transition-all duration-500 ease-out"
+              className="h-full bg-primary transition-all duration-500 ease-out"
               style={{
                 width: `${((currentStep + 1) / survey.questions.length) * 100}%`,
               }}
@@ -379,7 +379,7 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
                   className={`group flex w-full items-center justify-between rounded-2xl border p-5 text-left transition-all duration-300
                     ${
                       active
-                        ? "border-[#00aeef] bg-sky-50/20 text-zinc-900"
+                        ? "border-primary bg-sky-50/20 text-zinc-900"
                         : "border-zinc-100 bg-white text-zinc-500 hover:border-zinc-300 hover:text-zinc-800"
                     }
                   `}
@@ -388,7 +388,7 @@ const SurveyBlock = ({ content }: SurveyBlockProps) => {
 
                   <div
                     className={`h-4 w-4 rounded-full border flex items-center justify-center transition-all duration-300
-                    ${active ? "border-[#00aeef] bg-[#00aeef]" : "border-zinc-200 bg-transparent group-hover:border-zinc-400"}
+                    ${active ? "border-primary bg-primary" : "border-zinc-200 bg-transparent group-hover:border-zinc-400"}
                   `}
                   >
                     {active && (

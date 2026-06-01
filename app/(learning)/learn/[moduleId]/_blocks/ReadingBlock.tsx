@@ -182,7 +182,7 @@ const ReadingBlock = ({
           <div className="mb-6 flex items-center gap-3 border-b border-zinc-50 pb-4">
             <div
               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-300
-              ${completed ? "bg-purple-100 text-purple-600" : "bg-purple-50 text-[#8b5cf6]"}`}
+              ${completed ? "bg-purple-100 text-purple-600" : "bg-purple-50 text-primary"}`}
             >
               <BookOpen size={16} strokeWidth={2.5} />
             </div>
