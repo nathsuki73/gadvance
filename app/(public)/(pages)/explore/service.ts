@@ -1,7 +1,9 @@
 import axios from "axios";
 import type { LearningPlan } from "./course/[courseId]/types";
 
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
+// Force client-side Axios requests through the secure Next.js Rewrite Tunnel
+// to bypass browser Mixed Content security restrictions.
+const API_BASE_URL = "/api-backend/api";
 
 export const searchContent = async (query: string = "") => {
   try {
@@ -34,9 +36,9 @@ export const searchContent = async (query: string = "") => {
       });
     };
 
-    return (Array.isArray(response.data)
-      ? response.data
-      : response.data.data || []).map((item: Record<string, unknown>) => ({
+    return (
+      Array.isArray(response.data) ? response.data : response.data.data || []
+    ).map((item: Record<string, unknown>) => ({
       ...item,
       id: String(item.id ?? item.course_id ?? item.learning_plan_id ?? ""),
       description:
@@ -110,7 +112,10 @@ export const getLearningPlanDetails = async (
 
       return normalize(response.data as Record<string, unknown>);
     } catch (detailsError) {
-      console.warn("Details endpoint failed, falling back to base course endpoint:", detailsError);
+      console.warn(
+        "Details endpoint failed, falling back to base course endpoint:",
+        detailsError,
+      );
 
       const fallbackResponse = await axios.get(
         `${API_BASE_URL}/learning-plans/${courseId}`,
