@@ -4,8 +4,6 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServerSession } from "next-auth";
 import { ModuleProgressResponse, ModuleResponse } from "./types";
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
-
 type ApiOptions = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: unknown;
@@ -16,8 +14,11 @@ interface ExtendedApiOptions extends ApiOptions {
 }
 
 async function request<T>(endpoint: string, options: ExtendedApiOptions = {}) {
-  const requiresAuth = options.requiresAuth ?? true;
+  // 2. Define your API_URL inside the function so it reads dynamically at runtime!
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://13.229.44.51";
+  const API_URL = `${baseUrl}/api`;
 
+  const requiresAuth = options.requiresAuth ?? true;
   const session = await getServerSession(authOptions);
 
   /**
@@ -43,19 +44,18 @@ async function request<T>(endpoint: string, options: ExtendedApiOptions = {}) {
   }
 
   try {
+    // 3. Add a log statement here to track what Vercel is actually fetching!
+    console.log(`SERVER ACTION FETCHING: ${API_URL}${endpoint}`);
+
     const res = await fetch(`${API_URL}${endpoint}`, {
       method: options.method || "GET",
       headers,
       body: options.body ? JSON.stringify(options.body) : undefined,
-
       cache: "no-store",
     });
 
     const result = await res.json();
 
-    /**
-     * API Error
-     */
     if (!res.ok) {
       return {
         success: false,
@@ -70,7 +70,6 @@ async function request<T>(endpoint: string, options: ExtendedApiOptions = {}) {
     };
   } catch (error) {
     console.error(`Module API Error (${endpoint}):`, error);
-
     return {
       success: false,
       error: "Network connection error",
