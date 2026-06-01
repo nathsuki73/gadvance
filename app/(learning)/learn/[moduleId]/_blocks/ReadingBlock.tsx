@@ -4,8 +4,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-// 🎯 IMPORT NATIVE CLIENT SESSION HOOKS
 import { useSession } from "next-auth/react";
+import { enqueueBlockTelemetry } from "../_hooks/blockTelemetryQueue";
 
 type ReadingBlockMetadata = {
   title?: string;
@@ -34,13 +34,19 @@ const ReadingBlock = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const lastSyncTimestampRef = useRef<number>(Date.now());
-  const maxRatioRef = useRef<number>(0);
-  const lastSyncedRatioRef = useRef<number>(0);
+  const maxRatioRef = useRef<number>(initialCompleted ? 100 : 0);
+  const lastSyncedRatioRef = useRef<number>(initialCompleted ? 100 : 0);
+  const accumulatedSecondsRef = useRef<number>(0);
+
+  const completedRef = useRef<boolean>(initialCompleted);
+  const onCompletedRef = useRef(onCompleted);
 
   const [completed, setCompleted] = useState(initialCompleted);
-
-  // 🎯 CONNECT CLIENT HOOK WRAPPER TO NEXT-AUTH STACK
   const { data: session } = useSession();
+
+  useEffect(() => {
+    onCompletedRef.current = onCompleted;
+  }, [onCompleted]);
 
   const parsedMetadata = useMemo<ReadingBlockMetadata>(() => {
     if (!metadata) return {};
@@ -54,213 +60,111 @@ const ReadingBlock = ({
 
   const targetBlockId = backendBlockId || parsedMetadata.backendBlockId;
 
-  /*
-  |--------------------------------------------------------------------------
-  | SCROLL TELEMETRY ENGINE WITH COMPONENT DEBOUNCE FILTERING
-  |--------------------------------------------------------------------------
-  */
   useEffect(() => {
-    console.log("🔍 ReadingBlock: Initializing scroll-telemetry...", {
-      targetBlockId,
-      lessonId,
-    });
+    if (!targetBlockId || !lessonId) return;
 
-    if (!targetBlockId || !lessonId) {
-      console.warn(
-        "⚠️ ReadingBlock: Initialization aborted. Missing targetBlockId or lessonId.",
-      );
-      return;
-    }
-
-    let debounceTimer: NodeJS.Timeout;
+    let debounceTimer: ReturnType<typeof setTimeout>;
     let isIdle = false;
-    let idleTimer: NodeJS.Timeout;
+    let idleTimer: ReturnType<typeof setTimeout>;
+
+    // Stagger client flushes slightly so many blocks don't POST in the same millisecond.
+    const syncDelayMs =
+      4000 +
+      (Array.from(targetBlockId).reduce(
+        (sum, char) => sum + char.charCodeAt(0),
+        0,
+      ) %
+        1200);
 
     const resetIdleTimer = () => {
       isIdle = false;
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
         isIdle = true;
-        console.log(
-          `💤 ReadingBlock [${targetBlockId}]: User went idle. Accumulator clock frozen.`,
-        );
       }, 60000);
     };
 
     window.addEventListener("mousemove", resetIdleTimer);
     resetIdleTimer();
 
-    const syncTelemetryData = (isUnmounting = false) => {
+    const syncTelemetryData = () => {
       const now = Date.now();
       const rawSecondsElapsed = Math.round(
         (now - lastSyncTimestampRef.current) / 1000,
       );
-      const incrementalTimeSpent = isIdle ? 0 : Math.min(rawSecondsElapsed, 90);
-
       lastSyncTimestampRef.current = now;
 
-      if (
-        !isUnmounting &&
-        maxRatioRef.current <= lastSyncedRatioRef.current &&
-        incrementalTimeSpent < 5
-      ) {
+      const incrementalTimeSpent = isIdle ? 0 : Math.min(rawSecondsElapsed, 90);
+      accumulatedSecondsRef.current += incrementalTimeSpent;
+
+      const hasRatioMilestoneChanged =
+        maxRatioRef.current > lastSyncedRatioRef.current;
+      const hasSubstantialTimeAccumulated = accumulatedSecondsRef.current >= 20;
+
+      if (!hasRatioMilestoneChanged && !hasSubstantialTimeAccumulated) {
         return;
       }
 
-      console.log(`📊 ReadingBlock Debounce Sync [${targetBlockId}]:`, {
-        ratioToPersist: maxRatioRef.current,
-        timeSpentInThisSegment: incrementalTimeSpent,
-        isCompletedLocally: completed,
-        isUnmounting,
-      });
-
-      lastSyncedRatioRef.current = maxRatioRef.current;
+      const token = session?.laravelJwt;
+      if (!token) return;
 
       const payload = {
         lesson_id: lessonId,
         block_id: targetBlockId,
         progress_ratio: maxRatioRef.current,
-        time_spent_seconds: incrementalTimeSpent,
+        time_spent_seconds: accumulatedSecondsRef.current,
         interaction_type: "reading",
         score: null,
       };
 
-      console.log(
-        `🚀 ReadingBlock [${targetBlockId}]: Dispatching data upstream...`,
-        payload,
-      );
+      lastSyncedRatioRef.current = maxRatioRef.current;
+      accumulatedSecondsRef.current = 0;
 
-      // 🎯 EXTRACT TOKEN NATIVELY FROM THE DECLARED NEXT-AUTH CONTEXT STATE
-      const token = session?.laravelJwt;
-
-      if (!token) {
-        console.warn(
-          `⚠️ ReadingBlock [${targetBlockId}]: Synchronizer paused. NextAuth session token is un-hydrated.`,
-        );
-        return;
-      }
-
-      const BASE_LARAVEL_URL =
-        "http://127.0.0.1:8000/api/telemetry/block-progress";
-
-      if (isUnmounting && navigator.sendBeacon) {
-        // Page exit query-param signature mapping
-        const beaconUrl = `${BASE_LARAVEL_URL}?token=${token}`;
-        const blob = new Blob([JSON.stringify(payload)], {
-          type: "application/json",
-        });
-        navigator.sendBeacon(beaconUrl, blob);
-      } else {
-        // Direct authenticated client-fetch tracking dispatch loop
-        fetch(BASE_LARAVEL_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        })
-          .then(async (res) => {
-            console.log(
-              `📡 Response status from Laravel server point: [${res.status}]`,
-            );
-            const rawResponseText = await res.text().catch(() => "");
-
-            if (!res.ok) {
-              let parsedErrorPayload;
-              try {
-                parsedErrorPayload = JSON.parse(rawResponseText);
-              } catch {
-                parsedErrorPayload = {
-                  rawBodyText: rawResponseText || "Empty error text context.",
-                };
-              }
-
-              console.error("❌ Rejected by Laravel Controller rules:", {
-                httpStatus: res.status,
-                errorDetails: parsedErrorPayload,
-              });
-              return;
-            }
-            console.log(
-              `✅ Telemetry processed safely by Laravel database row engines.`,
-            );
-          })
-          .catch((err) =>
-            console.error(
-              "❌ Target connection failure to absolute Laravel server:",
-              err,
-            ),
-          );
-      }
+      enqueueBlockTelemetry(payload, token);
     };
 
     const handleScrollTracking = () => {
       resetIdleTimer();
-
       const element = containerRef.current;
       if (!element) return;
 
       const rect = element.getBoundingClientRect();
       const windowHeight = window.innerHeight;
 
-      const elementHeight = rect.height;
-      const scrolledPastElementTop = windowHeight - rect.top;
-
-      let currentRatio = 0;
-      if (scrolledPastElementTop > 0 && rect.top < windowHeight) {
-        currentRatio =
-          (scrolledPastElementTop / (elementHeight + windowHeight)) * 100;
+      let cleanRatio = 0;
+      if (rect.top < windowHeight && rect.bottom > 0) {
+        cleanRatio = 50;
       }
 
-      const hasScrolledPastTop = rect.top <= 10;
-      const hasFullyRevealedBottom = rect.bottom <= windowHeight + 5;
-
-      const isAtAbsoluteBottom =
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - 5;
-
-      if (
-        (hasScrolledPastTop && hasFullyRevealedBottom) ||
-        isAtAbsoluteBottom
-      ) {
-        currentRatio = 100;
+      if (rect.top <= 50 && rect.bottom <= windowHeight + 10) {
+        cleanRatio = 100;
       }
-
-      const cleanRatio = Math.min(Math.max(Math.round(currentRatio), 0), 100);
 
       if (cleanRatio > maxRatioRef.current) {
         maxRatioRef.current = cleanRatio;
       }
 
-      if (!completed && maxRatioRef.current === 100) {
-        console.log(
-          `🎉 ReadingBlock [${targetBlockId}]: 100% maximum visibility unlocked!`,
-        );
+      if (!completedRef.current && maxRatioRef.current === 100) {
+        completedRef.current = true;
         setCompleted(true);
-        onCompleted?.();
+        onCompletedRef.current?.();
       }
 
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => syncTelemetryData(false), 2000);
+      debounceTimer = setTimeout(() => syncTelemetryData(), syncDelayMs);
     };
 
     window.addEventListener("scroll", handleScrollTracking);
+    handleScrollTracking();
 
     return () => {
-      console.log(
-        `Leave/Unmount action intercepted for reading block blockId: [${targetBlockId}]`,
-      );
       clearTimeout(debounceTimer);
       clearTimeout(idleTimer);
       window.removeEventListener("mousemove", resetIdleTimer);
       window.removeEventListener("scroll", handleScrollTracking);
-
-      syncTelemetryData(true);
+      syncTelemetryData();
     };
-    // 🎯 INJECT session PROPERTY INSIDE EFFECT DEPENDENCY BOUNDARIES
-  }, [targetBlockId, lessonId, completed, onCompleted, session]);
+  }, [targetBlockId, lessonId, session?.laravelJwt]);
 
   if (!content) return null;
   const showHeader = parsedMetadata.title && parsedMetadata.title !== "[BLANK]";
@@ -303,4 +207,12 @@ const ReadingBlock = ({
   );
 };
 
-export default ReadingBlock;
+// 🎯 REACT MEMO WRAPPER FIX: Prevents container re-mounting loops when parents shift state parameters!
+export default React.memo(ReadingBlock, (prevProps, nextProps) => {
+  return (
+    prevProps.content === nextProps.content &&
+    prevProps.backendBlockId === nextProps.backendBlockId &&
+    prevProps.lessonId === nextProps.lessonId &&
+    prevProps.initialCompleted === nextProps.initialCompleted
+  );
+});

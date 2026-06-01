@@ -32,6 +32,7 @@ type ModuleSidebarProps = {
   onToggleCollapse: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
+  isAdaptiveMode?: boolean;
 };
 
 const ModuleSidebar = ({
@@ -46,6 +47,7 @@ const ModuleSidebar = ({
   onToggleCollapse,
   mobileOpen,
   onCloseMobile,
+  isAdaptiveMode = false,
 }: ModuleSidebarProps) => {
   return (
     <>
@@ -70,6 +72,7 @@ const ModuleSidebar = ({
           lg:translate-x-0
           w-[290px] sm:w-[320px]
           ${isCollapsed ? "lg:w-16" : "lg:w-80"}
+          adaptive-sidebar-item pointer-events-auto
         `}
       >
         {/* SIDEBAR HEADER */}
@@ -208,10 +211,11 @@ const ModuleSidebar = ({
               totalCompletedSteps = Math.min(totalCompletedSteps, stepCount);
 
               // 🎯 LINEAR PROGRESS GATEKEEPER LOGIC:
-              // Index 0 (Pre-test) is always unlocked.
+              // In adaptive mode, all lessons are always unlocked
+              // Otherwise: Index 0 (Pre-test) is always unlocked.
               // Any subsequent lesson is ONLY unlocked if the lesson right before it is completely finished.
-              let isUnlocked = index === 0;
-              if (index > 0) {
+              let isUnlocked = isAdaptiveMode || index === 0;
+              if (!isAdaptiveMode && index > 0) {
                 const previousLesson = lessons[index - 1];
                 const prevServerProgress = lessonsProgress[previousLesson.id];
 
@@ -269,8 +273,8 @@ const ModuleSidebar = ({
                     }}
                     className={`
                       hidden lg:flex relative h-11 w-11 mx-auto items-center justify-center
-                      rounded-xl transition-all duration-150
-                      ${!isUnlocked ? "opacity-40 cursor-not-allowed text-zinc-300" : isActive ? "bg-purple-50 text-primary" : "text-zinc-400 hover:bg-zinc-200/50 hover:text-zinc-700"}
+                      rounded-xl transition-all duration-150 pointer-events-auto
+                      ${!isUnlocked ? "opacity-40 cursor-not-allowed text-zinc-300" : isActive ? "bg-purple-50 text-[#8b5cf6]" : "text-zinc-400 hover:bg-zinc-200/50 hover:text-zinc-700"}
                     `}
                     title={
                       !isUnlocked
@@ -313,8 +317,8 @@ const ModuleSidebar = ({
                   }}
                   className={`
                     flex w-full items-center gap-3 rounded-xl border border-transparent
-                    px-3 py-3 text-left transition-all duration-150
-                    ${!isUnlocked ? "opacity-50 cursor-not-allowed bg-zinc-100/30 text-zinc-400 select-none" : isActive ? "bg-purple-50/70 border-purple-100/50 text-primary" : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"}
+                    px-3 py-3 text-left transition-all duration-150 pointer-events-auto
+                    ${!isUnlocked ? "opacity-50 cursor-not-allowed bg-zinc-100/30 text-zinc-400 select-none" : isActive ? "bg-purple-50/70 border-purple-100/50 text-[#8b5cf6]" : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"}
                   `}
                 >
                   {/* UNLOCKED DIGIT TAG OR LOCKED GRAPHIC MARKER */}

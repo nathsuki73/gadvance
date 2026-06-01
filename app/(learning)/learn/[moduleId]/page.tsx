@@ -1,7 +1,7 @@
 "use client";
 
 import React, { use, useEffect, useMemo, useState } from "react";
-import { notFound } from "next/navigation";
+import { notFound, useSearchParams } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
 
 import ModuleSidebar from "./_components/ModuleSidebar";
@@ -9,6 +9,8 @@ import ModuleSectionViewer from "./_components/ModuleSectionViewer";
 import type { ModuleResponse } from "./types";
 import { getLearningModule } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/service";
 import { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
+import QuestionnaireModal from "./_components/QuestionnaireModal";
+import { submitAdaptiveTelemetryAction } from "./actions";
 
 type LessonProgressItem = {
   completed_steps: number;
@@ -41,8 +43,140 @@ type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
 };
 
+const EMPTY_PROGRESS_DATA: ProgressData = {
+  completed_blocks: 0,
+  total_blocks: 0,
+  percentage: 0,
+  completed_block_ids: [],
+  completed_quiz_lessons: [],
+  active_quiz_lesson_id: null,
+  active_quiz_attempt_id: null,
+  latest_activity_lesson_id: null,
+  lessons_progress: {},
+};
+
 const LearnPage = ({ params }: LearnPageProps) => {
   const { moduleId } = use(params);
+
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode");
+  const isAdaptiveMode = mode === "adaptive";
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [uiRecipes, setUiRecipes] = useState<Record<string, any>>({});
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
+  const [adaptiveRecipeRevision, setAdaptiveRecipeRevision] = useState(0);
+  const [adaptiveReady, setAdaptiveReady] = useState(!isAdaptiveMode);
+
+  useEffect(() => {
+    if (isAdaptiveMode) {
+      setAdaptiveReady(false);
+      setModalOpen(true);
+      setUiRecipes({});
+      setAdaptiveRecipeRevision(0);
+      setProgressData(EMPTY_PROGRESS_DATA);
+      setActiveLessonId("");
+    }
+  }, [isAdaptiveMode]);
+
+  const handleAdaptiveSetupAllLessons = async () => {
+    setModalOpen(false);
+
+    // 🛡️ Guard Clause: Ensure your lessons repository array has hydrated in state first
+    if (!lessons || lessons.length === 0) {
+      console.warn(
+        "⚠️ Loop deferred: Lessons repository list is empty or unhydrated.",
+      );
+      return;
+    }
+
+    setIsSyncingAll(true);
+    console.log(
+      `🔄 [Batch AI Synced] Triggering adaptive matrix logic loops over ${lessons.length} lessons...`,
+    );
+
+    // ⚡ Map each lesson into an independent asynchronous execution tracking line
+    const syncPromises = lessons.map(async (lesson: any) => {
+      const targetLessonId = lesson.id;
+
+      try {
+        console.log(
+          `📡 Fetching recommendations for Lesson Node: [${targetLessonId}]`,
+        );
+
+        const response = await fetch("http://127.0.0.1:8000/api/predict", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            lesson_id: targetLessonId,
+            pretest_score: 12, // Pass target lesson scores dynamically if captured
+            telemetry: {
+              avg_time_spent: 60.0,
+              retries: 0,
+              quiz_accuracy: 0.7,
+              engagement_score: 6.0,
+              inactivity_count: 0,
+              prefers_visual: true,
+            },
+          }),
+        });
+
+        if (!response.ok)
+          throw new Error(`HTTP network error code ${response.status}`);
+        const result = await response.json();
+
+        if (result.status === "success" || result.recommended_blocks) {
+          console.log(
+            `✨ [Lesson Synced Live] Received items for UUID: ${targetLessonId}`,
+            result,
+          );
+
+          console.group(
+            `📦 AI Recipe Payload Matrix for Lesson [${targetLessonId}]`,
+          );
+          console.log("🌸 Target Bloom Tier:", result.target_bloom_tier);
+          console.log(
+            "🧠 Predicted Learning Tags:",
+            result.predicted_learning_tags,
+          );
+
+          // 🎯 FIXED: Target Python's explicit key arrays directly to get accurate item lengths
+          console.log(
+            "🧱 Recommended Content Blocks Count:",
+            result.recommended_blocks?.length || 0,
+          );
+          console.log(
+            "📋 Recommended Quizzes Count:",
+            result.recommended_quizzes?.length || 0,
+          );
+          console.groupEnd();
+
+          setUiRecipes((prev) => ({
+            ...prev,
+            [targetLessonId]: result,
+          }));
+        }
+      } catch (err) {
+        console.error(
+          `❌ Fallback tracking failure on Lesson node [${targetLessonId}]:`,
+          err,
+        );
+      }
+    });
+
+    // Wait for all requests in the array loop to finish execution safely
+    await Promise.all(syncPromises);
+    setAdaptiveRecipeRevision((prev) => prev + 1);
+    setAdaptiveReady(true);
+    setIsSyncingAll(false);
+    console.log(
+      "🏁 [Batch AI Synced] All lesson data loops have completed processing.",
+    );
+  };
 
   // Layout & UI State
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -224,12 +358,35 @@ const LearnPage = ({ params }: LearnPageProps) => {
     );
   }
 
-  if (error || !module || !activeLesson) {
+  if (error || (!module && !isAdaptiveMode)) {
+    notFound();
+  }
+
+  if (isAdaptiveMode && !adaptiveReady) {
+    return (
+      <main className="min-h-screen bg-white">
+        <QuestionnaireModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSubmit={handleAdaptiveSetupAllLessons}
+        />
+      </main>
+    );
+  }
+
+  if (!activeLesson) {
     notFound();
   }
 
   return (
     <main className="min-h-screen bg-[#ffffff]">
+      {mode === "adaptive" && (
+        <QuestionnaireModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSubmit={handleAdaptiveSetupAllLessons}
+        />
+      )}
       <ModuleSidebar
         structureTitle={module.title}
         lessons={lessons}
@@ -281,6 +438,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
           isFirst={currentIndex === 0}
           isLast={currentIndex === lessons.length - 1}
           onQuizBlockCompleted={handleQuizBlockCompleted}
+          adaptiveRecipeRevision={adaptiveRecipeRevision}
           // 🎯 THE FIX: Add the '?' right after updatedLesson to accept optional/undefined payloads!
           onBlockCompletedLive={(blockId, interactionType, updatedLesson?) => {
             setProgressData((prev) => {
@@ -309,6 +467,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
               };
             });
           }}
+          adaptiveRecipe={uiRecipes[activeLessonId] || null}
         />
       </div>
     </main>
