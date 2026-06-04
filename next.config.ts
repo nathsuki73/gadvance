@@ -37,7 +37,8 @@ const nextConfig: NextConfig = {
         // Catches browser requests targeting /api-backend/
         source: "/api-backend/:path*",
         // Pipes them securely to your AWS EC2 instance over the cloud network
-        destination: "http://13.229.44.51/:path*",
+        // destination: "http://13.229.44.51/:path*",
+        destination: "http://127.0.0.1:8000/:path*",
       },
     ];
   },
