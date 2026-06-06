@@ -48,13 +48,6 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
               Continue Learning
               <ChevronRight size={16} />
             </button>
-            <button
-              onClick={handleAdaptiveLearning}
-              className="inline-flex items-center gap-3 rounded-md justify-center bg-white px-10 py-5 text-xs font-bold uppercase tracking-[0.2em] text-[#00aeef] transition-all hover:-translate-y-1 hover:bg-sky-50"
-            >
-              Adaptive Learn
-              <Sparkles size={16} />
-            </button>
           </div>
         </div>
       </div>
