@@ -372,7 +372,10 @@ export default function AuthHeader() {
             <div className="relative hidden xl:block">
               <button
                 type="button"
-                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                onClick={() => {
+                  setShowNotifications(false);
+                  setShowProfileDropdown((current) => !current);
+                }}
                 className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-100 bg-zinc-50 p-0 hover:border-[#a78bfa]/30 transition-all"
               >
                 {renderAvatar(
