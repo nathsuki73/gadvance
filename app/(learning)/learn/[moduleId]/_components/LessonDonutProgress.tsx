@@ -29,6 +29,10 @@ export const LessonDonutProgress = ({
   );
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
+  const isComplete = percentage === 100;
+  const activeRingClass = isComplete ? "text-emerald-500" : "text-[#8b5cf6]";
+  const checkColorClass = isComplete ? "text-emerald-600" : "text-[#8b5cf6]";
+
   return (
     <div
       className="relative flex items-center justify-center shrink-0"
@@ -47,7 +51,7 @@ export const LessonDonutProgress = ({
         />
         {/* Active Progress Ring */}
         <circle
-          className="text-[#8b5cf6] transition-all duration-500 ease-out"
+          className={`${activeRingClass} transition-all duration-500 ease-out`}
           stroke="currentColor"
           fill="transparent"
           strokeWidth={strokeWidth}
@@ -61,7 +65,7 @@ export const LessonDonutProgress = ({
       </svg>
       {/* Absolute Micro Inner Text Indicator when completed */}
       {percentage === 100 && (
-        <span className="absolute text-[8px] font-bold text-[#8b5cf6]">✓</span>
+        <span className={`absolute text-[8px] font-bold ${checkColorClass}`}>✓</span>
       )}
     </div>
   );

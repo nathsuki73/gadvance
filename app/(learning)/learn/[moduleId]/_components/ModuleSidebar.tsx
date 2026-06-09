@@ -346,11 +346,13 @@ const ModuleSidebar = ({
                       <p className="text-[10px] font-light text-zinc-300 lowercase tracking-wide">
                         locked 🔒
                       </p>
-                    ) : isEntirelyDone ? (
-                      <p className="text-[11px] font-medium text-emerald-600 lowercase tracking-wide">
-                        complete ✓
-                      </p>
-                    ) : (
+                    ) 
+                    // : isEntirelyDone ? (
+                    //   <p className="text-[11px] font-medium text-emerald-600 lowercase tracking-wide">
+                    //     complete ✓
+                    //   </p>
+                    // ) 
+                    : (
                       <p
                         className={`text-[11px] font-light lowercase ${isActive ? "text-primary/80" : "text-zinc-400"}`}
                       >

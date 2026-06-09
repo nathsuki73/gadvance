@@ -492,7 +492,7 @@ const ModuleSectionViewer = ({
                 className="group flex items-center justify-center gap-3 rounded-full bg-primary px-12 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all hover:bg-purple-600 active:scale-[0.98] w-full sm:w-auto hover:shadow-lg hover:shadow-purple-100"
               >
                 <span>
-                  {isAssessmentMode ? "start assessment" : "continue"}
+                  {isAssessmentMode ? "proceed" : "continue"}
                 </span>
                 <ArrowDown
                   size={14}

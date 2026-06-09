@@ -160,7 +160,7 @@ export default function PersonalityInfo() {
         <button
           type="submit"
           disabled={isSaving}
-          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#00a9d1]/20 hover:bg-primary-hover transition-all disabled:opacity-70"
+          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover transition-all disabled:opacity-70"
         >
           {isSaving ? (
             <>

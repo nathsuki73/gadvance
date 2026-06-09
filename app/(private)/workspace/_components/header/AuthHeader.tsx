@@ -60,7 +60,10 @@ function getInitials(name?: string | null) {
     return "U";
   }
 
-  return trimmedName.charAt(0).toUpperCase();
+  // Build initials from up to two name parts (first + last)
+  const parts = trimmedName.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
 const mockUser = {
@@ -87,18 +90,40 @@ export default function AuthHeader() {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [avatarFallbackIndex, setAvatarFallbackIndex] = useState(0);
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
+  const [profileInfo, setProfileInfo] = useState<any | null>(null);
   const { data: session } = useSession();
 
   // 🎯 Search State Sub-Hook Management Arrays
   const [searchResults, setSearchResults] = useState<{ title: string; type: string; url: string; description?: string }[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+  const displayName = useMemo(() => {
+    const sUser: any = session?.user || {};
+
+    const first =
+      sUser.firstName || sUser.first_name || profileInfo?.firstName || profileInfo?.first_name || "";
+    const middle =
+      sUser.middleName || sUser.middle_name || profileInfo?.middleName || profileInfo?.middle_name || "";
+    const last =
+      sUser.lastName || sUser.last_name || profileInfo?.lastName || profileInfo?.last_name || "";
+
+    const composed = [first, middle, last].filter(Boolean).join(" ").trim();
+
+    // If composed name parts exist, prefer them. Otherwise fallback to session name only if it's not an email.
+    if (composed.length > 0) return composed;
+    if (typeof sUser.name === "string" && !sUser.name.includes("@") && sUser.name.trim().length > 0) {
+      return sUser.name;
+    }
+
+    return mockUser.name;
+  }, [session?.user, profileInfo]);
+
   const currentUser = {
-    name: session?.user?.name || mockUser.name,
+    name: displayName,
     email: session?.user?.email || mockUser.email,
     avatarSources: [
       resolveAvatarSrc(profileAvatar || session?.user?.image),
-      resolveAvatarSrc(session?.user?.googleImage),
+      resolveAvatarSrc((session?.user as any)?.googleImage),
       null,
     ],
   };
@@ -151,6 +176,9 @@ export default function AuthHeader() {
       if (!isMounted || !response.success) {
         return;
       }
+
+      // Store the whole profile payload for name parts and avatar
+      setProfileInfo(response.data || null);
 
       const resolvedAvatar = resolveAvatarSrc(response.data.avatar ?? null);
       if (resolvedAvatar) {
@@ -354,8 +382,13 @@ export default function AuthHeader() {
               </button>
 
               {/* Profile Dropdown Menu */}
-              {showProfileDropdown && (
-                <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-primary-hover/20 bg-white p-2 flex flex-col gap-0.5">
+              <div
+                className={`absolute right-0 mt-3 w-56 origin-top-right rounded-2xl border border-primary-hover/20 bg-white p-2 flex flex-col gap-0.5 shadow-xl transition-all duration-200 ease-in-out transform ${
+                  showProfileDropdown
+                    ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                    : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
+                }`}
+              >
                   <div className="px-3 py-2.5 border-b border-zinc-50 mb-1">
                     <p className="text-xs font-bold text-zinc-800 lowercase">
                       {currentUser.name}
@@ -378,8 +411,7 @@ export default function AuthHeader() {
                     <LogOut size={14} />
                     sign out
                   </button>
-                </div>
-              )}
+              </div>
               <LogoutConfirmationDialog
                 open={showLogoutDialog}
                 onClose={() => setShowLogoutDialog(false)}

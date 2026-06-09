@@ -23,7 +23,7 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
   };
 
   return (
-    <section className="bg-[#00aeef] text-white">
+    <section className="bg-primary text-white">
       <div className="mx-auto max-w-7xl px-6 py-16 md:px-12 md:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-12 items-end">
           <div>
@@ -43,7 +43,7 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
           <div className="flex flex-col gap-4">
             <button
               onClick={handleContinueLearning}
-              className="inline-flex items-center gap-3 rounded-md bg-white px-10 py-5 text-xs font-bold uppercase tracking-[0.2em] text-[#00aeef] transition-all hover:-translate-y-1 hover:bg-sky-50"
+              className="inline-flex items-center gap-3 rounded-md bg-white px-10 py-5 text-xs font-bold uppercase tracking-[0.2em] text-primary transition-all hover:-translate-y-1 hover:primary-hover"
             >
               Continue Learning
               <ChevronRight size={16} />
