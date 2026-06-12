@@ -45,12 +45,12 @@ const SearchBar = ({
         autoComplete="off"
       />
 
-      {/* Right Shortcut Badge */}
+      {/* Right Shortcut Badge
       <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
         <kbd className="hidden rounded-md border border-zinc-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-zinc-400 sm:inline-block">
           ⌘K
         </kbd>
-      </div>
+      </div> */}
     </div>
   );
 };

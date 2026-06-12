@@ -149,7 +149,7 @@ const CourseOverviewHeader = ({
                   ) : isCompleted ? (
                     "View Certificate"
                   ) : isEnrolled ? (
-                    "Continue Learning"
+                    "View Module"
                   ) : (
                     "Enroll"
                   )}

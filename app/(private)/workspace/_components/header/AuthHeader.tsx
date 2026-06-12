@@ -303,7 +303,7 @@ export default function AuthHeader() {
         {/* LEFT: Logo */}
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2.5 transition-transform active:scale-95"
+          className="flex shrink-0 items-center gap-2.5 transition-transform"
         >
           <Image src={logoIcon} alt="Logo" width={32} height={32} />
           <span className="text-xl font-bold tracking-tight text-zinc-900 block">

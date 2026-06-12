@@ -24,4 +24,15 @@ export type UserProfile = {
 
   created_at: string;
   updated_at: string;
+
+  in_progress_count?: number;
+  completed_count?: number;
+
+  // 🎯 ADD THIS BLOCK: Tells TypeScript how to parse the active module payload
+  active_module?: {
+    id: string;
+    title: string;
+    description: string;
+    progress_percentage?: number;
+  } | null;
 };
