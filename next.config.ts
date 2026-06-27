@@ -1,17 +1,16 @@
 import type { NextConfig } from "next";
 
+// Fallback to local if the env variable isn't set yet
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
 const nextConfig: NextConfig = {
   images: {
     dangerouslyAllowLocalIP: true,
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
+      { protocol: "https", hostname: "images.unsplash.com" },
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
-        port: "",
         pathname: "/**",
       },
       {
@@ -20,6 +19,8 @@ const nextConfig: NextConfig = {
         port: "8000",
         pathname: "/**",
       },
+      // Add your Azure production hostname here too so Next/Image can optimize its assets:
+      // { protocol: "https", hostname: "your-azure-app.azurewebsites.net", pathname: "/**" }
     ],
   },
   experimental: {
@@ -28,17 +29,12 @@ const nextConfig: NextConfig = {
     },
   },
 
-  /* -------------------------------------------------------
-   * PRODUCTION REWRITES (Fixes Mixed Content Errors)
-   * -----------------------------------------------------*/
   async rewrites() {
     return [
       {
-        // Catches browser requests targeting /api-backend/
         source: "/api-backend/:path*",
-        // Pipes them securely to your AWS EC2 instance over the cloud network
-        // destination: "http://13.229.44.51/:path*",
-        destination: "http://127.0.0.1:8000/:path*",
+        // Now dynamically toggles between Localhost and Azure depending on your environment
+        destination: `${BACKEND_URL}/:path*`,
       },
     ];
   },

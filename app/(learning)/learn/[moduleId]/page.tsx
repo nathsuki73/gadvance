@@ -18,6 +18,7 @@ type LessonProgressItem = {
   is_completed: boolean;
   percentage: number;
 };
+
 type LiveUpdatedLessonPayload = {
   lesson_id: string;
   completed_steps: number;
