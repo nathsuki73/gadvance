@@ -2,7 +2,7 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 import { notFound } from "next/navigation";
-import { Loader2, Menu } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import LearningPageLayout from "./_components/LearningPageLayout";
 import type { ModuleResponse } from "./types";
@@ -11,10 +11,10 @@ import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/mo
 import {
   createProgressData,
   EMPTY_PROGRESS_DATA,
-  getInitialLessonId,
   normalizeLessons,
   type ProgressData,
 } from "./_lib/learning-page";
+import Pretest from "@/app/components/pretest";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
@@ -33,7 +33,8 @@ const LearnPage = ({ params }: LearnPageProps) => {
   const [module, setModule] = useState<ModuleResponse | null>(null);
   const [progressData, setProgressData] =
     useState<ProgressData>(EMPTY_PROGRESS_DATA);
-  const [activeLessonId, setActiveLessonId] = useState("");
+  const [activeLessonId, setActiveLessonId] = useState("pre_test");
+  const [pretestCompleted, setPretestCompleted] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -56,12 +57,11 @@ const LearnPage = ({ params }: LearnPageProps) => {
           result.data as unknown as ModuleResponse,
         );
         const initialLessonId =
-          result.progress?.active_quiz_lesson_id ??
-          getInitialLessonId(lessons, nextProgress);
+          result.progress?.active_quiz_lesson_id ?? "pre_test";
 
         setModule(result.data as unknown as ModuleResponse);
         setProgressData(nextProgress);
-        setActiveLessonId(initialLessonId || lessons[0]?.id || "");
+        setActiveLessonId(initialLessonId || lessons[0]?.id || "pre_test");
       } catch {
         setError(true);
       } finally {
@@ -77,6 +77,11 @@ const LearnPage = ({ params }: LearnPageProps) => {
     (lesson) => lesson.id === activeLessonId,
   );
   const activeLesson = lessons[currentIndex];
+
+  const handlePretestComplete = () => {
+    setPretestCompleted(true);
+    setActiveLessonId(lessons[0]?.id || "");
+  };
 
   const handleLessonChange = (id: string) => {
     setActiveLessonId(id);
@@ -140,8 +145,8 @@ const LearnPage = ({ params }: LearnPageProps) => {
     );
   }
 
-  if (error || !module) notFound();
-  if (!activeLesson) notFound();
+  if (error || !module || (!activeLesson && activeLessonId !== "pre_test"))
+    notFound();
 
   return (
     <LearningPageLayout
@@ -162,6 +167,8 @@ const LearnPage = ({ params }: LearnPageProps) => {
       onPrevious={handlePrevious}
       onQuizBlockCompleted={handleQuizBlockCompleted}
       onBlockCompletedLive={handleBlockCompletedLive}
+      pretestCompleted={pretestCompleted}
+      onPretestComplete={handlePretestComplete}
     />
   );
 };

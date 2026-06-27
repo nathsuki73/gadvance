@@ -3,12 +3,13 @@ import ModuleSidebar from "./ModuleSidebar";
 import ModuleSectionViewer from "./ModuleSectionViewer";
 import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 import type { ProgressData } from "../_lib/learning-page";
+import Pretest from "@/app/components/pretest";
 
 type LearningPageLayoutProps = {
   moduleId: string;
   moduleTitle?: string;
   lessons: Lesson[];
-  activeLesson: Lesson;
+  activeLesson?: Lesson;
   activeLessonId: string;
   currentIndex: number;
   progressData: ProgressData;
@@ -32,6 +33,8 @@ type LearningPageLayoutProps = {
       percentage: number;
     },
   ) => void;
+  pretestCompleted?: boolean;
+  onPretestComplete?: () => void;
 };
 
 export default function LearningPageLayout({
@@ -52,6 +55,8 @@ export default function LearningPageLayout({
   onPrevious,
   onQuizBlockCompleted,
   onBlockCompletedLive,
+  pretestCompleted = false,
+  onPretestComplete,
 }: LearningPageLayoutProps) {
   return (
     <main className="min-h-screen bg-white">
@@ -68,6 +73,7 @@ export default function LearningPageLayout({
         onToggleCollapse={onToggleCollapse}
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={onCloseMobile}
+        pretestCompleted={pretestCompleted}
       />
 
       <div className="sticky top-0 z-30 flex h-14 items-center border-b border-zinc-200 bg-white px-4 lg:hidden">
@@ -86,21 +92,30 @@ export default function LearningPageLayout({
       <div
         className={`transition-all duration-300 ease-in-out ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}`}
       >
-        <ModuleSectionViewer
-          lesson={activeLesson}
-          currentIndex={currentIndex}
-          totalSections={lessons.length}
-          lessonsProgress={progressData.lessons_progress}
-          completedBlockIds={progressData.completed_block_ids}
-          completedQuizLessons={progressData.completed_quiz_lessons}
-          lessons={lessons}
-          onNext={onNext}
-          onPrevious={onPrevious}
-          isFirst={currentIndex === 0}
-          isLast={currentIndex === lessons.length - 1}
-          onQuizBlockCompleted={onQuizBlockCompleted}
-          onBlockCompletedLive={onBlockCompletedLive}
-        />
+        {activeLessonId === "pre_test" ? (
+          <Pretest
+            isOpen
+            onClose={() => undefined}
+            onComplete={onPretestComplete || (() => undefined)}
+            moduleTitle={moduleTitle}
+          />
+        ) : (
+          <ModuleSectionViewer
+            lesson={activeLesson}
+            currentIndex={currentIndex}
+            totalSections={lessons.length}
+            lessonsProgress={progressData.lessons_progress}
+            completedBlockIds={progressData.completed_block_ids}
+            completedQuizLessons={progressData.completed_quiz_lessons}
+            lessons={lessons}
+            onNext={onNext}
+            onPrevious={onPrevious}
+            isFirst={currentIndex === 0}
+            isLast={currentIndex === lessons.length - 1}
+            onQuizBlockCompleted={onQuizBlockCompleted}
+            onBlockCompletedLive={onBlockCompletedLive}
+          />
+        )}
       </div>
     </main>
   );

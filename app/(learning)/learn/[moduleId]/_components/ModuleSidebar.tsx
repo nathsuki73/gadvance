@@ -37,6 +37,7 @@ type ModuleSidebarProps = {
   mobileOpen: boolean;
   onCloseMobile: () => void;
   isAdaptiveMode?: boolean;
+  pretestCompleted?: boolean;
 };
 
 const ModuleSidebar = ({
@@ -53,6 +54,7 @@ const ModuleSidebar = ({
   mobileOpen,
   onCloseMobile,
   isAdaptiveMode = false,
+  pretestCompleted = false,
 }: ModuleSidebarProps) => {
   // 💡 Async state flags to verify assessment existence on the fly
   const [hasPreTest, setHasPreTest] = useState(false);
@@ -295,7 +297,9 @@ const ModuleSidebar = ({
 
               totalCompletedSteps = Math.min(totalCompletedSteps, stepCount);
 
-              let isUnlocked = isAdaptiveMode || index === 0;
+              const canAccessLessons = !hasPreTest || pretestCompleted;
+              let isUnlocked =
+                isAdaptiveMode || (canAccessLessons && index === 0);
               if (!isAdaptiveMode && index > 0) {
                 const previousLesson = lessons[index - 1];
                 const prevServerProgress = lessonsProgress[previousLesson.id];
@@ -330,9 +334,10 @@ const ModuleSidebar = ({
                 const prevDoneCalculated =
                   prevCompletedCount === prevMaxSteps && prevMaxSteps > 0;
                 isUnlocked =
-                  prevFinishedInDb ||
-                  prevDoneCalculated ||
-                  !!prevServerProgress?.is_completed;
+                  canAccessLessons &&
+                  (prevFinishedInDb ||
+                    prevDoneCalculated ||
+                    !!prevServerProgress?.is_completed);
               }
 
               const currentNum = runningIndex++;
@@ -439,24 +444,46 @@ const ModuleSidebar = ({
               (() => {
                 const currentNum = runningIndex++;
                 const isPostTestActive = activeLessonId === "post_test";
+                const isUnlocked =
+                  pretestCompleted &&
+                  lessons.every((lesson) => {
+                    const completedSteps = lesson.quiz_blocks?.length || 0;
+                    return (
+                      completedSteps === 0 ||
+                      completedBlockIds.includes(lesson.id) ||
+                      completedQuizLessons.includes(lesson.id)
+                    );
+                  });
 
                 if (isCollapsed && !mobileOpen) {
                   return (
                     <button
                       key="sidebar-post-test"
+                      disabled={!isUnlocked}
                       onClick={() => {
+                        if (!isUnlocked) return;
                         onNavigate("post_test");
                         onToggleCollapse();
                       }}
-                      className={`hidden lg:flex relative h-11 w-11 mx-auto items-center justify-center rounded-xl transition-all duration-150 ${isPostTestActive ? "bg-purple-50 text-[#8b5cf6]" : "text-zinc-400 hover:bg-zinc-200/50 hover:text-zinc-700"}`}
-                      title="Course Final Post-test"
+                      className={`hidden lg:flex relative h-11 w-11 mx-auto items-center justify-center rounded-xl transition-all duration-150 ${!isUnlocked ? "opacity-40 cursor-not-allowed text-zinc-300" : isPostTestActive ? "bg-purple-50 text-[#8b5cf6]" : "text-zinc-400 hover:bg-zinc-200/50 hover:text-zinc-700"}`}
+                      title={
+                        !isUnlocked
+                          ? "Complete the module to unlock"
+                          : "Course Final Post-test"
+                      }
                     >
-                      <GraduationCap
-                        size={18}
-                        className={
-                          isPostTestActive ? "text-[#8b5cf6]" : "text-zinc-400"
-                        }
-                      />
+                      {!isUnlocked ? (
+                        <Lock size={16} className="text-zinc-400" />
+                      ) : (
+                        <GraduationCap
+                          size={18}
+                          className={
+                            isPostTestActive
+                              ? "text-[#8b5cf6]"
+                              : "text-zinc-400"
+                          }
+                        />
+                      )}
                     </button>
                   );
                 }
@@ -464,27 +491,35 @@ const ModuleSidebar = ({
                 return (
                   <button
                     key="sidebar-post-test"
+                    disabled={!isUnlocked}
                     onClick={() => {
+                      if (!isUnlocked) return;
                       onNavigate("post_test");
                       if (mobileOpen) onCloseMobile();
                     }}
-                    className={`flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-left transition-all duration-150 ${isPostTestActive ? "bg-purple-50/70 border-purple-100/50 text-[#8b5cf6]" : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"}`}
+                    className={`flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-left transition-all duration-150 ${!isUnlocked ? "opacity-50 cursor-not-allowed bg-zinc-100/30 text-zinc-400 select-none" : isPostTestActive ? "bg-purple-50/70 border-purple-100/50 text-[#8b5cf6]" : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"}`}
                   >
-                    <span
-                      className={`text-[10px] font-mono font-bold pt-0.5 shrink-0 ${isPostTestActive ? "text-primary" : "text-zinc-300"}`}
-                    >
-                      {currentNum.toString().padStart(2, "0")}
-                    </span>
+                    {!isUnlocked ? (
+                      <div className="w-[14px] flex items-center justify-center shrink-0">
+                        <Lock size={12} className="text-zinc-300" />
+                      </div>
+                    ) : (
+                      <span
+                        className={`text-[10px] font-mono font-bold pt-0.5 shrink-0 ${isPostTestActive ? "text-primary" : "text-zinc-300"}`}
+                      >
+                        {currentNum.toString().padStart(2, "0")}
+                      </span>
+                    )}
                     <div className="min-w-0 flex-1 space-y-0.5">
                       <p
-                        className={`text-xs font-medium leading-tight break-words ${isPostTestActive ? "font-semibold text-zinc-900" : "text-zinc-700"}`}
+                        className={`text-xs font-medium leading-tight break-words ${!isUnlocked ? "text-zinc-400 font-normal" : isPostTestActive ? "font-semibold text-zinc-900" : "text-zinc-700"}`}
                       >
                         Course Final Post-test
                       </p>
                       <p
-                        className={`text-[11px] font-light lowercase ${isPostTestActive ? "text-primary/80" : "text-zinc-400"}`}
+                        className={`text-[11px] font-light lowercase ${!isUnlocked ? "text-zinc-300" : isPostTestActive ? "text-primary/80" : "text-zinc-400"}`}
                       >
-                        summative validation
+                        {isUnlocked ? "summative validation" : "locked 🔒"}
                       </p>
                     </div>
                   </button>
