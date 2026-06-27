@@ -2,7 +2,11 @@
 
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServerSession } from "next-auth";
-import { ModuleProgressResponse, ModuleResponse } from "./types";
+import {
+  ModuleProgressResponse,
+  ModuleResponse,
+  StaticTestResponse,
+} from "./types";
 
 type ApiOptions = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
@@ -124,4 +128,24 @@ export async function completeBlock(blockId: string) {
   return request(`/learn/blocks/${blockId}/complete`, {
     method: "POST",
   });
+}
+
+/* -------------------------------------------------------
+ * STATIC ASSESSMENT METHODS (Pre-test / Post-test)
+ * -----------------------------------------------------*/
+
+/**
+ * Protected: Fetch a specific static pre-test or post-test diagnostic item bank.
+ * Formats directly to: ${baseUrl}/api/modules/{moduleId}/static-test?type={type}
+ */
+export async function getStaticTest(
+  moduleId: string,
+  type: "pre_test" | "post_test",
+) {
+  return request<StaticTestResponse>(
+    `/modules/${moduleId}/static-test?type=${type}`,
+    {
+      requiresAuth: true,
+    },
+  );
 }

@@ -52,3 +52,18 @@ export type ModuleResponse = {
   lessons: Lesson[]; // <-- Replaced section_groups with your clean lessons list!
   progress?: ModuleProgressResponse;
 };
+
+export type StaticQuestion = {
+  id: string;
+  lesson_id: string;
+  question_text: string;
+  options: Record<string, string>; // e.g., {"opt_1": "...", "opt_2": "..."}
+};
+
+export type StaticTestResponse = {
+  status: string;
+  test_id: string;
+  test_type: "pre_test" | "post_test";
+  module_id: string;
+  questions: StaticQuestion[];
+};
