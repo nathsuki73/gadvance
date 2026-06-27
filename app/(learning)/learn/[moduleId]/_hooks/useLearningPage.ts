@@ -1,24 +1,14 @@
-"use client";
-
-import { use, useEffect, useMemo, useState } from "react";
-import { notFound } from "next/navigation";
-import { Loader2, Menu } from "lucide-react";
-
-import LearningPageLayout from "./_components/LearningPageLayout";
-import type { ModuleResponse } from "./types";
-import { getLearningModule } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/service";
+import { useEffect, useMemo, useState } from "react";
 import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
+import { getLearningModule } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/service";
 import {
   createProgressData,
   EMPTY_PROGRESS_DATA,
   getInitialLessonId,
   normalizeLessons,
   type ProgressData,
-} from "./_lib/learning-page";
-
-type LearnPageProps = {
-  params: Promise<{ moduleId: string }>;
-};
+} from "../_lib/learning-page";
+import type { ModuleResponse } from "../types";
 
 type LessonProgressUpdate = {
   lesson_id: string;
@@ -28,8 +18,7 @@ type LessonProgressUpdate = {
   percentage: number;
 };
 
-const LearnPage = ({ params }: LearnPageProps) => {
-  const { moduleId } = use(params);
+export function useLearningPage(moduleId: string) {
   const [module, setModule] = useState<ModuleResponse | null>(null);
   const [progressData, setProgressData] =
     useState<ProgressData>(EMPTY_PROGRESS_DATA);
@@ -73,10 +62,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
   }, [moduleId]);
 
   const lessons = useMemo<Lesson[]>(() => normalizeLessons(module), [module]);
-  const currentIndex = lessons.findIndex(
-    (lesson) => lesson.id === activeLessonId,
-  );
-  const activeLesson = lessons[currentIndex];
 
   const handleLessonChange = (id: string) => {
     setActiveLessonId(id);
@@ -84,12 +69,12 @@ const LearnPage = ({ params }: LearnPageProps) => {
       window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleNext = () => {
+  const handleNext = (currentIndex: number) => {
     const nextLesson = lessons[currentIndex + 1];
     if (nextLesson) handleLessonChange(nextLesson.id);
   };
 
-  const handlePrevious = () => {
+  const handlePrevious = (currentIndex: number) => {
     const previousLesson = lessons[currentIndex - 1];
     if (previousLesson) handleLessonChange(previousLesson.id);
   };
@@ -132,38 +117,21 @@ const LearnPage = ({ params }: LearnPageProps) => {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb]">
-        <Loader2 size={32} className="animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (error || !module) notFound();
-  if (!activeLesson) notFound();
-
-  return (
-    <LearningPageLayout
-      moduleId={moduleId}
-      moduleTitle={module?.title}
-      lessons={lessons}
-      activeLesson={activeLesson}
-      activeLessonId={activeLessonId}
-      currentIndex={currentIndex}
-      progressData={progressData}
-      isSidebarCollapsed={isSidebarCollapsed}
-      mobileSidebarOpen={mobileSidebarOpen}
-      onNavigate={handleLessonChange}
-      onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
-      onCloseMobile={() => setMobileSidebarOpen(false)}
-      onOpenMobile={() => setMobileSidebarOpen(true)}
-      onNext={handleNext}
-      onPrevious={handlePrevious}
-      onQuizBlockCompleted={handleQuizBlockCompleted}
-      onBlockCompletedLive={handleBlockCompletedLive}
-    />
-  );
-};
-
-export default LearnPage;
+  return {
+    module,
+    lessons,
+    progressData,
+    activeLessonId,
+    mobileSidebarOpen,
+    isSidebarCollapsed,
+    loading,
+    error,
+    setMobileSidebarOpen,
+    setIsSidebarCollapsed,
+    handleLessonChange,
+    handleNext,
+    handlePrevious,
+    handleQuizBlockCompleted,
+    handleBlockCompletedLive,
+  };
+}
