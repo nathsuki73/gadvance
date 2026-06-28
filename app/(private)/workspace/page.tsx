@@ -104,7 +104,7 @@ export default function WorkspacePage() {
     <div className="min-h-screen bg-white text-zinc-900 font-sans relative overflow-x-hidden">
       <main className="relative z-10 mx-auto max-w-7xl px-8 py-16 lg:px-12 lg:py-24">
         {/* Top Split Row */}
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 border-b border-zinc-100 pb-12">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 border-b border-zinc-200 pb-12">
           <header className="max-w-2xl">
             <span className="text-[10px] font-bold text-primary uppercase tracking-[0.4em] block mb-3">
               philippine advocacy terminal
@@ -122,13 +122,13 @@ export default function WorkspacePage() {
           <section className="w-full sm:w-auto shrink-0 lg:ml-auto">
             <div className="flex gap-3 w-full sm:w-64 max-w-70">
               {/* Stat Block 01: In Progress */}
-              <div className="flex-1 border border-zinc-100 bg-zinc-50/20 rounded-xl p-3.5 transition-all duration-300 hover:border-zinc-200">
+              <div className="flex-1 border border-zinc-200 bg-zinc-50/20 rounded-xl p-3.5 transition-all duration-300 hover:border-zinc-200">
                 <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
                   In Progress
                 </span>
                 <div className="flex items-baseline gap-1">
                   <span className="text-2xl font-light tracking-tight text-primary">
-                    {modulesInProgressCount < 10 ? `0${modulesInProgressCount}` : modulesInProgressCount}
+                    {modulesInProgressCount < 10 ? `${modulesInProgressCount}` : modulesInProgressCount}
                   </span>
                   <span className="text-[10px] text-zinc-400 font-light lowercase">
                     {modulesInProgressCount === 1 ? "module" : "modules"}
@@ -137,13 +137,13 @@ export default function WorkspacePage() {
               </div>
 
               {/* Stat Block 02: Completed */}
-              <div className="flex-1 border border-zinc-100 bg-zinc-50/20 rounded-xl p-3.5 transition-all duration-300 hover:border-zinc-200">
+              <div className="flex-1 border border-zinc-200 bg-zinc-50/20 rounded-xl p-3.5 transition-all duration-300 hover:border-zinc-200">
                 <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
                   completed
                 </span>
                 <div className="flex items-baseline gap-1">
                   <span className="text-2xl font-light tracking-tight text-primary">
-                    {modulesCompletedCount < 10 ? `0${modulesCompletedCount}` : modulesCompletedCount}
+                    {modulesCompletedCount < 10 ? `${modulesCompletedCount}` : modulesCompletedCount}
                   </span>
                   <span className="text-[10px] text-zinc-400 font-light lowercase">
                     {modulesCompletedCount === 1 ? "module" : "modules"}
@@ -163,7 +163,7 @@ export default function WorkspacePage() {
             </h2>
 
             {activeModule ? (
-              <div className="rounded-3xl border border-zinc-100 bg-zinc-50/30 p-8 relative overflow-hidden flex flex-col justify-between min-h-70">
+              <div className="rounded-3xl border border-zinc-200 bg-zinc-50/30 p-8 relative overflow-hidden flex flex-col justify-between min-h-70">
                 <div className="space-y-4 w-full">
                   {/* Title */}
                   <h3 className="text-2xl font-semibold tracking-tight text-zinc-900">
@@ -216,7 +216,7 @@ export default function WorkspacePage() {
               recent timeline
             </h2>
 
-            <div className="border border-zinc-100 rounded-3xl divide-y divide-zinc-100 bg-white overflow-hidden min-h-70">
+            <div className="border border-zinc-200 rounded-3xl divide-y divide-zinc-100 bg-white overflow-hidden min-h-70">
               <div className="p-6 flex items-center justify-between gap-4 group hover:bg-zinc-50/50 transition-colors">
                 <div className="flex items-center gap-4">
                   <div className="h-10 w-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 shrink-0">

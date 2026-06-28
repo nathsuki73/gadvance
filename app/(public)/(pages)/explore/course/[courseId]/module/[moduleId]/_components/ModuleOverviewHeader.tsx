@@ -38,6 +38,10 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
             <p className="mt-6 max-w-3xl text-lg font-light leading-relaxed text-sky-50">
               {module.about}
             </p>
+            <p className="mt-6 text-lg text-sky-50 font-light leading-relaxed">
+              {module.description ||
+                "A formal learning pathway designed for systemic gender advancement and institutional leadership."}
+            </p>
           </div>
 
           <div className="flex flex-col gap-4">

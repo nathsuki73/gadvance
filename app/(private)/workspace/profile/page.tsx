@@ -309,27 +309,6 @@ const ProfilePage = () => {
                       </div>
                     </div>
 
-                    <div className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-4 flex flex-wrap items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-lg bg-zinc-200/60 p-2 text-zinc-500">
-                          <Shield className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-zinc-700">Account Privilege</p>
-                          <p className="text-xs text-zinc-500">Learner Tier</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-lg bg-zinc-200/60 p-2 text-zinc-500">
-                          <MapPin className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-zinc-700">Access Scope</p>
-                          <p className="text-xs text-zinc-500">Laguna, PH Regional Server</p>
-                        </div>
-                      </div>
-                    </div>
-
                     <div className="flex items-center justify-end border-t border-zinc-100 pt-5">
                       <button
                         type="submit"
