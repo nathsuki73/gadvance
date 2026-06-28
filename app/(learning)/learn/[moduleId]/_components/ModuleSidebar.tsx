@@ -185,6 +185,7 @@ const ModuleSidebar = ({
               (() => {
                 const currentNum = runningIndex++;
                 const isPreTestActive = activeLessonId === "pre_test";
+                const pretestProgress = pretestCompleted ? 1 : 0;
 
                 if (isCollapsed && !mobileOpen) {
                   return (
@@ -203,6 +204,14 @@ const ModuleSidebar = ({
                           isPreTestActive ? "text-[#8b5cf6]" : "text-zinc-400"
                         }
                       />
+                      <div className="absolute -right-1 -bottom-1 bg-white rounded-full p-0.5 shadow-sm">
+                        <LessonDonutProgress
+                          totalSteps={1}
+                          completedSteps={pretestProgress}
+                          size={12}
+                          strokeWidth={1.5}
+                        />
+                      </div>
                     </button>
                   );
                 }
@@ -230,9 +239,17 @@ const ModuleSidebar = ({
                       <p
                         className={`text-[11px] font-light lowercase ${isPreTestActive ? "text-primary/80" : "text-zinc-400"}`}
                       >
-                        diagnostic baseline
+                        {pretestCompleted
+                          ? "baseline complete"
+                          : "diagnostic baseline"}
                       </p>
                     </div>
+                    <LessonDonutProgress
+                      totalSteps={1}
+                      completedSteps={pretestProgress}
+                      size={20}
+                      strokeWidth={2}
+                    />
                   </button>
                 );
               })()}
@@ -484,6 +501,16 @@ const ModuleSidebar = ({
                           }
                         />
                       )}
+                      {isUnlocked && (
+                        <div className="absolute -right-1 -bottom-1 bg-white rounded-full p-0.5 shadow-sm">
+                          <LessonDonutProgress
+                            totalSteps={1}
+                            completedSteps={0}
+                            size={12}
+                            strokeWidth={1.5}
+                          />
+                        </div>
+                      )}
                     </button>
                   );
                 }
@@ -522,6 +549,14 @@ const ModuleSidebar = ({
                         {isUnlocked ? "summative validation" : "locked 🔒"}
                       </p>
                     </div>
+                    {isUnlocked && (
+                      <LessonDonutProgress
+                        totalSteps={1}
+                        completedSteps={0}
+                        size={20}
+                        strokeWidth={2}
+                      />
+                    )}
                   </button>
                 );
               })()}
