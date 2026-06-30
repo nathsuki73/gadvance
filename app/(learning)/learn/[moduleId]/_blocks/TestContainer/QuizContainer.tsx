@@ -5,37 +5,54 @@ import QuizActive from "./_components/AssessmentScreen";
 import QuizResults from "./_components/ResultsScreen";
 import { QuizResult, StaticTest, UserAnswers } from "./types";
 import { fetchStaticTest } from "./service";
+import QuizError from "./_components/QuizError";
 
-export type QuizState = "loading" | "ready" | "started" | "completed";
+export type QuizState = "loading" | "ready" | "started" | "completed" | "error";
 
 interface QuizContainerProps {
   moduleId: string;
 }
 
 export default function QuizContainer({ moduleId }: QuizContainerProps) {
+  useEffect(() => {
+    console.log("QuizContainer MOUNTED", moduleId);
+  }, []);
   const [quizState, setQuizState] = useState<QuizState>("loading");
   const [test, setTest] = useState<StaticTest | null>(null);
   const [answers, setAnswers] = useState<UserAnswers>({});
   const [result, setResult] = useState<QuizResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
+    if (
+      quizState === "started" ||
+      quizState === "completed" ||
+      quizState === "error" ||
+      test !== null
+    ) {
+      return;
+    }
+
+    const cancelled = false;
+
     const fetchQuizData = async () => {
       setQuizState("loading");
       setError(null);
 
       try {
         const data = await fetchStaticTest(moduleId, "pre_test");
+        if (cancelled) return;
         setTest(data);
         setQuizState("ready");
       } catch (err) {
+        if (cancelled) return;
         console.error(err);
         setError(err instanceof Error ? err.message : "Something went wrong");
-        setQuizState("loading");
+        setQuizState("error");
       }
     };
 
     if (moduleId) fetchQuizData();
-  }, [moduleId]);
+  }, [moduleId, quizState, test]);
 
   const handleStartQuiz = (): void => setQuizState("started");
 
@@ -71,6 +88,10 @@ export default function QuizContainer({ moduleId }: QuizContainerProps) {
         )}
 
         {quizState === "completed" && result && <QuizResults result={result} />}
+
+        {quizState === "error" && (
+          <QuizError error={error} onRetry={() => setQuizState("loading")} />
+        )}
       </div>
     </div>
   );
