@@ -125,23 +125,3 @@ export async function completeBlock(blockId: string) {
     method: "POST",
   });
 }
-
-/* -------------------------------------------------------
- * STATIC ASSESSMENT METHODS (Pre-test / Post-test)
- * -----------------------------------------------------*/
-
-/**
- * Protected: Fetch a specific static pre-test or post-test diagnostic item bank.
- * Formats directly to: ${baseUrl}/api/modules/{moduleId}/static-test?type={type}
- */
-export async function getStaticTest(
-  moduleId: string,
-  type: "pre_test" | "post_test",
-) {
-  return request<StaticTestResponse>(
-    `/modules/${moduleId}/static-test?type=${type}`,
-    {
-      requiresAuth: true,
-    },
-  );
-}
