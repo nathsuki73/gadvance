@@ -3,8 +3,7 @@ import ModuleSidebar from "./ModuleSidebar";
 import ModuleSectionViewer from "./ModuleSectionViewer";
 import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 import type { ProgressData } from "../_lib/learning-page";
-import Pretest from "@/app/components/pretest";
-import QuizContainer from "../_blocks/TestContainer/TestContainer";
+import QuizContainer from "../_blocks/TestContainer/QuizContainer";
 
 type LearningPageLayoutProps = {
   moduleId: string;
@@ -94,7 +93,7 @@ export default function LearningPageLayout({
         className={`transition-all duration-300 ease-in-out ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}`}
       >
         {activeLessonId === "pre_test" ? (
-          <QuizContainer />
+          <QuizContainer moduleId={moduleId} />
         ) : (
           <ModuleSectionViewer
             lesson={activeLesson}
