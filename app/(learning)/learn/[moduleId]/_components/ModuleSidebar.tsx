@@ -14,7 +14,6 @@ import {
 
 import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
 import { LessonDonutProgress } from "./LessonDonutProgress";
-import { getStaticTest } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/service";
 
 type LessonProgressItem = {
   completed_steps: number;
@@ -57,32 +56,8 @@ const ModuleSidebar = ({
   pretestCompleted = false,
 }: ModuleSidebarProps) => {
   // 💡 Async state flags to verify assessment existence on the fly
-  const [hasPreTest, setHasPreTest] = useState(false);
-  const [hasPostTest, setHasPostTest] = useState(false);
-
-  // 💡 Keep async matching perfectly with the list component
-  useEffect(() => {
-    let isMounted = true;
-    const checkAssessments = async () => {
-      try {
-        const [preRes, postRes] = await Promise.all([
-          getStaticTest(moduleId, "pre_test"),
-          getStaticTest(moduleId, "post_test"),
-        ]);
-
-        if (isMounted) {
-          if (preRes.success && preRes.data) setHasPreTest(true);
-          if (postRes.success && postRes.data) setHasPostTest(true);
-        }
-      } catch (err) {
-        console.error("Sidebar assessment link initialization failed:", err);
-      }
-    };
-    checkAssessments();
-    return () => {
-      isMounted = false;
-    };
-  }, [moduleId]);
+  const [hasPreTest, setHasPreTest] = useState(true);
+  const [hasPostTest, setHasPostTest] = useState(true);
 
   // Track layout indexing sequences continuously across execution frames
   let runningIndex = 0;
