@@ -10,7 +10,6 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { ModuleResponse } from "../types";
-import { getStaticTest } from "../service";
 
 type ModuleLessonPreviewProps = {
   module: ModuleResponse;
@@ -18,34 +17,6 @@ type ModuleLessonPreviewProps = {
 
 const ModuleLessonPreview = ({ module }: ModuleLessonPreviewProps) => {
   const lessons = module.lessons || [];
-
-  const [hasPreTest, setHasPreTest] = useState(false);
-  const [hasPostTest, setHasPostTest] = useState(false);
-
-  useEffect(() => {
-    const checkAssessments = async () => {
-      try {
-        const [preRes, postRes] = await Promise.all([
-          getStaticTest(module.id, "pre_test"),
-          getStaticTest(module.id, "post_test"),
-        ]);
-
-        if (preRes.success && preRes.data) setHasPreTest(true);
-        if (postRes.success && postRes.data) setHasPostTest(true);
-      } catch (err) {
-        console.error("Evaluation status check failed", err);
-      }
-    };
-    checkAssessments();
-  }, [module.id]);
-
-  if (lessons.length === 0 && !hasPreTest && !hasPostTest) {
-    return (
-      <div className="text-center py-12 text-zinc-400 font-light lowercase">
-        no content found for this module.
-      </div>
-    );
-  }
 
   // 💡 Initialize our dynamic incremental tracking counter
   let runningIndex = 0;
@@ -66,14 +37,11 @@ const ModuleLessonPreview = ({ module }: ModuleLessonPreviewProps) => {
         {/* Unified Contents List */}
         <div className="flex flex-col">
           {/* 💡 ENTRY MILESTONE: Course Entry Pre-test */}
-          {hasPreTest &&
+          {true &&
             (() => {
               const currentNum = runningIndex++; // Grab 00, then increment to 1
               return (
-                <Link
-                  href={`/courses/${module.id}/static-test/pre_test`}
-                  className="group flex justify-between items-center gap-8 py-6 border-b border-zinc-100 transition-colors hover:bg-zinc-50/50 px-2"
-                >
+                <div className="group flex justify-between items-center gap-8 py-6 border-b border-zinc-100 transition-colors hover:bg-zinc-50/50 px-2">
                   <div className="flex items-start gap-4 sm:gap-8">
                     <span className="text-xs font-mono font-bold text-zinc-300 pt-1">
                       {currentNum.toString().padStart(2, "0")}
@@ -99,7 +67,7 @@ const ModuleLessonPreview = ({ module }: ModuleLessonPreviewProps) => {
                       className="text-zinc-300 group-hover:text-[#8b5cf6] transition-colors"
                     />
                   </div>
-                </Link>
+                </div>
               );
             })()}
 
@@ -154,14 +122,11 @@ const ModuleLessonPreview = ({ module }: ModuleLessonPreviewProps) => {
           })}
 
           {/* 💡 EXIT MILESTONE: Course Final Post-test */}
-          {hasPostTest &&
+          {true &&
             (() => {
               const currentNum = runningIndex++; // Grab last sequential number
               return (
-                <Link
-                  href={`/courses/${module.id}/static-test/post_test`}
-                  className="group flex justify-between items-center gap-8 py-6 border-b border-zinc-100 transition-colors hover:bg-zinc-50/50 px-2"
-                >
+                <div className="group flex justify-between items-center gap-8 py-6 border-b border-zinc-100 transition-colors hover:bg-zinc-50/50 px-2">
                   <div className="flex items-start gap-4 sm:gap-8">
                     <span className="text-xs font-mono font-bold text-zinc-300 pt-1">
                       {currentNum.toString().padStart(2, "0")}
@@ -187,7 +152,7 @@ const ModuleLessonPreview = ({ module }: ModuleLessonPreviewProps) => {
                       className="text-zinc-300 group-hover:text-[#8b5cf6] transition-colors"
                     />
                   </div>
-                </Link>
+                </div>
               );
             })()}
         </div>
