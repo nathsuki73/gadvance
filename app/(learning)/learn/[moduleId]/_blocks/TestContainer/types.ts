@@ -23,3 +23,20 @@ export interface QuizResult {
 }
 
 export type UserAnswers = Record<string, string>;
+
+// ------------------- FETCH DATA TYPE ----------------------
+
+export interface LaravelQuizResponse {
+  status: string;
+  data: {
+    test_id: string;
+    test_type: "pre_test" | "post_test";
+    module_id: string;
+    questions: Array<{
+      id: number;
+      lesson_id: number;
+      question_text: string;
+      options: Record<string, string>;
+    }>;
+  };
+}

@@ -4,6 +4,7 @@ import QuizIntro from "./_components/IntroductionScreen";
 import QuizActive from "./_components/AssessmentScreen";
 import QuizResults from "./_components/ResultsScreen";
 import { QuizResult, StaticTest, UserAnswers } from "./types";
+import { fetchStaticTest } from "./service";
 
 export type QuizState = "loading" | "ready" | "started" | "completed";
 
@@ -16,10 +17,21 @@ export default function QuizContainer({ moduleId }: QuizContainerProps) {
   const [test, setTest] = useState<StaticTest | null>(null);
   const [answers, setAnswers] = useState<UserAnswers>({});
   const [result, setResult] = useState<QuizResult | null>(null);
-
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     const fetchQuizData = async () => {
-      console.log(moduleId);
+      setQuizState("loading");
+      setError(null);
+
+      try {
+        const data = await fetchStaticTest(moduleId, "pre_test");
+        setTest(data);
+        setQuizState("ready");
+      } catch (err) {
+        console.error(err);
+        setError(err instanceof Error ? err.message : "Something went wrong");
+        setQuizState("loading");
+      }
     };
 
     if (moduleId) fetchQuizData();
