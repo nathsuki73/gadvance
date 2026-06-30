@@ -19,21 +19,7 @@ export default function QuizContainer({ moduleId }: QuizContainerProps) {
 
   useEffect(() => {
     const fetchQuizData = async () => {
-      setQuizState("loading");
-      try {
-        // TODO: Replace with actual API call, e.g., const data = await api.getStaticTest(moduleId);
-        const data: StaticTest = {
-          id: "test-1",
-          title: `Module ${moduleId} Assessment`,
-          description: "Please read the questions carefully before responding.",
-          questions: [],
-        };
-
-        setTest(data);
-        setQuizState("ready");
-      } catch (error) {
-        console.error("Failed to fetch quiz data:", error);
-      }
+      console.log(moduleId);
     };
 
     if (moduleId) fetchQuizData();
@@ -46,7 +32,6 @@ export default function QuizContainer({ moduleId }: QuizContainerProps) {
   };
 
   const handleSubmit = async (): Promise<void> => {
-    // TODO: Calculate score locally or send answers to your backend API
     setResult({
       score: 0,
       total: test?.questions.length ?? 0,
