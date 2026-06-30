@@ -6,12 +6,12 @@ export async function fetchStaticTest(
   moduleId: string,
   type: "pre_test" | "post_test" = "pre_test",
 ): Promise<StaticTest> {
+  console.log("fetchStaticTest called");
   const response = await fetch(
     `${API_BASE_URL}/modules/${moduleId}/static-test?type=${type}`,
     {
       method: "GET",
       headers: {
-        "Content-Type": "application/json",
         Accept: "application/json",
       },
     },

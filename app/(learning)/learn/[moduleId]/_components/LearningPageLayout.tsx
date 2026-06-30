@@ -35,6 +35,8 @@ type LearningPageLayoutProps = {
   ) => void;
   pretestCompleted?: boolean;
   onPretestComplete?: () => void;
+  hasPreTest: boolean;
+  hasPostTest: boolean;
 };
 
 export default function LearningPageLayout({
@@ -57,6 +59,8 @@ export default function LearningPageLayout({
   onBlockCompletedLive,
   pretestCompleted = false,
   onPretestComplete,
+  hasPreTest,
+  hasPostTest,
 }: LearningPageLayoutProps) {
   return (
     <main className="min-h-screen bg-white">
@@ -74,6 +78,8 @@ export default function LearningPageLayout({
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={onCloseMobile}
         pretestCompleted={pretestCompleted}
+        hasPreTest={hasPreTest}
+        hasPostTest={hasPostTest}
       />
 
       <div className="sticky top-0 z-30 flex h-14 items-center border-b border-zinc-200 bg-white px-4 lg:hidden">
