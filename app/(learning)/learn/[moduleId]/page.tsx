@@ -2,19 +2,19 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 import { notFound } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Menu } from "lucide-react";
 
-import LearningPageLayout from "./_components/LearningPageLayout";
-import type { ModuleResponse } from "./types";
+import ModuleSidebar from "./_components/SideBar/ModuleSidebar";
+import QuizContainer from "./_blocks/TestContainer/QuizContainer";
 import { getLearningModule } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/service";
 import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
+import type { ModuleResponse } from "./types";
 import {
   createProgressData,
   EMPTY_PROGRESS_DATA,
   normalizeLessons,
   type ProgressData,
 } from "./_lib/learning-page";
-import Pretest from "@/app/components/pretest";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
@@ -30,6 +30,7 @@ type LessonProgressUpdate = {
 
 const LearnPage = ({ params }: LearnPageProps) => {
   const { moduleId } = use(params);
+
   const [module, setModule] = useState<ModuleResponse | null>(null);
   const [progressData, setProgressData] =
     useState<ProgressData>(EMPTY_PROGRESS_DATA);
@@ -41,9 +42,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    const loadModule = async () => {
-      if (!moduleId) return;
+    if (!moduleId) return;
 
+    const loadModule = async () => {
       setLoading(true);
       setError(false);
 
@@ -52,15 +53,13 @@ const LearnPage = ({ params }: LearnPageProps) => {
         if (!result.success || !result.data)
           throw new Error("Module unavailable");
 
-        const nextProgress = createProgressData(result.progress);
-        const lessons = normalizeLessons(
-          result.data as unknown as ModuleResponse,
-        );
+        const data = result.data as unknown as ModuleResponse;
+        const lessons = normalizeLessons(data);
         const initialLessonId =
           result.progress?.active_quiz_lesson_id ?? "pre_test";
 
-        setModule(result.data as unknown as ModuleResponse);
-        setProgressData(nextProgress);
+        setModule(data);
+        setProgressData(createProgressData(result.progress));
         setActiveLessonId(initialLessonId || lessons[0]?.id || "pre_test");
       } catch {
         setError(true);
@@ -78,35 +77,36 @@ const LearnPage = ({ params }: LearnPageProps) => {
   );
   const activeLesson = lessons[currentIndex];
 
-  const handlePretestComplete = () => {
-    setPretestCompleted(true);
-    setActiveLessonId(lessons[0]?.id || "");
-  };
-
-  const handleLessonChange = (id: string) => {
+  const goTo = (id: string) => {
     setActiveLessonId(id);
     if (typeof window !== "undefined")
       window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handlePretestComplete = () => {
+    setPretestCompleted(true);
+    goTo(lessons[0]?.id || "");
+  };
+
   const handleNext = () => {
-    const nextLesson = lessons[currentIndex + 1];
-    if (nextLesson) handleLessonChange(nextLesson.id);
+    const next = lessons[currentIndex + 1];
+    if (next) goTo(next.id);
   };
 
   const handlePrevious = () => {
-    const previousLesson = lessons[currentIndex - 1];
-    if (previousLesson) handleLessonChange(previousLesson.id);
+    const prev = lessons[currentIndex - 1];
+    if (prev) goTo(prev.id);
   };
 
   const handleQuizBlockCompleted = (blockId: string) => {
-    setProgressData((prev) => {
-      if (prev.completed_block_ids.includes(blockId)) return prev;
-      return {
-        ...prev,
-        completed_block_ids: [...prev.completed_block_ids, blockId],
-      };
-    });
+    setProgressData((prev) =>
+      prev.completed_block_ids.includes(blockId)
+        ? prev
+        : {
+            ...prev,
+            completed_block_ids: [...prev.completed_block_ids, blockId],
+          },
+    );
   };
 
   const handleBlockCompletedLive = (
@@ -114,27 +114,23 @@ const LearnPage = ({ params }: LearnPageProps) => {
     _interactionType: string,
     updatedLesson?: LessonProgressUpdate,
   ) => {
-    setProgressData((prev) => {
-      const nextBlockIds = prev.completed_block_ids.includes(blockId)
+    setProgressData((prev) => ({
+      ...prev,
+      completed_block_ids: prev.completed_block_ids.includes(blockId)
         ? prev.completed_block_ids
-        : [...prev.completed_block_ids, blockId];
-      const nextLessonsProgress = { ...prev.lessons_progress };
-
-      if (updatedLesson) {
-        nextLessonsProgress[updatedLesson.lesson_id] = {
-          completed_steps: updatedLesson.completed_steps,
-          total_steps: updatedLesson.total_steps,
-          is_completed: updatedLesson.is_completed,
-          percentage: updatedLesson.percentage,
-        };
-      }
-
-      return {
-        ...prev,
-        completed_block_ids: nextBlockIds,
-        lessons_progress: nextLessonsProgress,
-      };
-    });
+        : [...prev.completed_block_ids, blockId],
+      lessons_progress: updatedLesson
+        ? {
+            ...prev.lessons_progress,
+            [updatedLesson.lesson_id]: {
+              completed_steps: updatedLesson.completed_steps,
+              total_steps: updatedLesson.total_steps,
+              is_completed: updatedLesson.is_completed,
+              percentage: updatedLesson.percentage,
+            },
+          }
+        : prev.lessons_progress,
+    }));
   };
 
   if (loading) {
@@ -149,27 +145,54 @@ const LearnPage = ({ params }: LearnPageProps) => {
     notFound();
 
   return (
-    <LearningPageLayout
-      moduleId={moduleId}
-      moduleTitle={module?.title}
-      lessons={lessons}
-      activeLesson={activeLesson}
-      activeLessonId={activeLessonId}
-      currentIndex={currentIndex}
-      progressData={progressData}
-      isSidebarCollapsed={isSidebarCollapsed}
-      mobileSidebarOpen={mobileSidebarOpen}
-      onNavigate={handleLessonChange}
-      onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
-      onCloseMobile={() => setMobileSidebarOpen(false)}
-      onOpenMobile={() => setMobileSidebarOpen(true)}
-      onNext={handleNext}
-      onPrevious={handlePrevious}
-      onQuizBlockCompleted={handleQuizBlockCompleted}
-      onBlockCompletedLive={handleBlockCompletedLive}
-      pretestCompleted={pretestCompleted}
-      onPretestComplete={handlePretestComplete}
-    />
+    <main className="min-h-screen">
+      <ModuleSidebar
+        moduleId={moduleId}
+        structureTitle={module?.title}
+        lessons={lessons}
+        activeLessonId={activeLessonId}
+        completedBlockIds={progressData.completed_block_ids}
+        completedQuizLessons={progressData.completed_quiz_lessons}
+        lessonsProgress={progressData.lessons_progress}
+        onNavigate={goTo}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+        pretestCompleted={pretestCompleted}
+      />
+
+      <div className="sticky top-0 z-30 flex h-14 items-center border-b border-zinc-200 px-4 lg:hidden">
+        <button
+          onClick={() => setMobileSidebarOpen(true)}
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50"
+          aria-label="Open sidebar layout"
+        >
+          <Menu size={20} />
+        </button>
+        <span className="ml-3 truncate text-sm font-semibold text-zinc-900">
+          {module?.title}
+        </span>
+      </div>
+
+      <div
+        className={`h-screen transition-all duration-300 ease-in-out ${
+          isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"
+        }`}
+      >
+        <div
+          className={activeLessonId === "pre_test" ? "block h-full" : "hidden"}
+        >
+          <QuizContainer
+            moduleId={moduleId}
+            onContinue={() => {
+              handlePretestComplete();
+              handleNext();
+            }}
+          />
+        </div>
+      </div>
+    </main>
   );
 };
 

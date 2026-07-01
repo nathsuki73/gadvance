@@ -2,19 +2,19 @@
 
 import React from "react";
 
-type LessonDonutProgressProps = {
+type DonutProgressProps = {
   totalSteps: number;
   completedSteps: number;
   size?: number;
   strokeWidth?: number;
 };
 
-export const LessonDonutProgress = ({
+export const DonutProgress = ({
   totalSteps,
   completedSteps,
   size = 20,
   strokeWidth = 2.5,
-}: LessonDonutProgressProps) => {
+}: DonutProgressProps) => {
   // Guard against division by zero if a lesson is empty
   if (totalSteps === 0)
     return <div className="w-5 h-5 rounded-full border border-zinc-200" />;
@@ -65,7 +65,9 @@ export const LessonDonutProgress = ({
       </svg>
       {/* Absolute Micro Inner Text Indicator when completed */}
       {percentage === 100 && (
-        <span className={`absolute text-[8px] font-bold ${checkColorClass}`}>✓</span>
+        <span className={`absolute text-[8px] font-bold ${checkColorClass}`}>
+          ✓
+        </span>
       )}
     </div>
   );
