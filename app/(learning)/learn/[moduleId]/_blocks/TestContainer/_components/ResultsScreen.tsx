@@ -1,3 +1,4 @@
+import { Check, X } from "lucide-react";
 import { QuizResult } from "../types";
 
 interface QuizResultsProps {
@@ -5,28 +6,79 @@ interface QuizResultsProps {
 }
 
 export default function QuizResults({ result }: QuizResultsProps) {
+  const percentage = Math.round((result.score / result.total) * 100);
+
   return (
-    <div className="space-y-6 text-center">
-      <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-green-100">
-        <span className="text-4xl">🎉</span>
+    <div className="mx-auto flex max-w-2xl flex-col items-center space-y-10 py-8 text-center">
+      {/* Status Circle */}
+      <div className="relative flex h-44 w-44 items-center justify-center">
+        <svg className="-rotate-90 h-44 w-44">
+          <circle
+            cx="88"
+            cy="88"
+            r="72"
+            className="fill-none stroke-zinc-200"
+            strokeWidth="10"
+          />
+
+          <circle
+            cx="88"
+            cy="88"
+            r="72"
+            className={
+              result.passed
+                ? "fill-none stroke-primary"
+                : "fill-none stroke-red-500"
+            }
+            strokeWidth="10"
+            strokeLinecap="round"
+            strokeDasharray="452"
+            strokeDashoffset="452"
+            style={{
+              animation: "drawCircle 1s ease forwards",
+            }}
+          />
+        </svg>
+
+        <div className="absolute animate-[pop_0.35s_ease_0.9s_forwards] scale-0">
+          {result.passed ? (
+            <Check className="h-16 w-16 text-primary" strokeWidth={3} />
+          ) : (
+            <X className="h-16 w-16 text-red-500" strokeWidth={3} />
+          )}
+        </div>
       </div>
 
-      <div>
-        <h1 className="text-3xl font-bold">Quiz Completed</h1>
-        <p className="mt-2 text-gray-600">You have completed the assessment.</p>
+      {/* Header */}
+      <div className="space-y-3">
+        <span className="block text-[10px] font-bold uppercase tracking-[0.4em] text-primary">
+          Assessment Complete
+        </span>
+
+        <h1 className="text-5xl font-light tracking-tight text-zinc-900">
+          {result.passed ? "Congratulations!" : "Assessment Complete"}
+        </h1>
+
+        <p className="text-lg font-light text-zinc-500">
+          {result.passed
+            ? "You successfully passed this assessment."
+            : "You did not reach the required passing score."}
+        </p>
       </div>
 
-      <div className="rounded-lg border bg-gray-50 p-6">
-        <p className="text-lg text-gray-600">Your Score</p>
-        <h2 className="mt-2 text-5xl font-bold text-blue-600">
-          {result.score} / {result.total}
-        </h2>
-        <p
-          className={`mt-4 text-lg font-semibold ${
-            result.passed ? "text-green-600" : "text-red-600"
-          }`}
-        >
-          {result.passed ? "Passed ✅" : "Failed ❌"}
+      {/* Score */}
+      <div className="w-full rounded-3xl border border-zinc-200 bg-zinc-50 p-8">
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400">
+          Your Score
+        </p>
+
+        <div className="mt-4 text-6xl font-light text-zinc-900">
+          {result.score}
+          <span className="text-3xl text-zinc-400"> / {result.total}</span>
+        </div>
+
+        <p className="mt-4 text-lg font-light text-zinc-500">
+          {percentage}% Correct
         </p>
       </div>
     </div>
