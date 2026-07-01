@@ -18,7 +18,6 @@ type ModuleLessonPreviewProps = {
 const ModuleLessonPreview = ({ module }: ModuleLessonPreviewProps) => {
   const lessons = module.lessons || [];
 
-  // 💡 Initialize our dynamic incremental tracking counter
   let runningIndex = 0;
 
   return (

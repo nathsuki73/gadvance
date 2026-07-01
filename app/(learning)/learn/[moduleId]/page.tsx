@@ -1,43 +1,34 @@
 "use client";
 
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
 
 import ModuleSidebar from "./_components/SideBar/ModuleSidebar";
 import QuizContainer from "./_blocks/TestContainer/QuizContainer";
-import { getLearningModule } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/service";
-import type { Lesson } from "@/app/(public)/(pages)/explore/course/[courseId]/module/[moduleId]/types";
-import type { ModuleResponse } from "./types";
-import {
-  createProgressData,
-  EMPTY_PROGRESS_DATA,
-  normalizeLessons,
-  type ProgressData,
-} from "./_lib/learning-page";
+// import LessonContainer from "./_blocks/LessonContainer/LessonContainer";
+import { getModuleStructure } from "./service";
+import { LearningItem } from "./types";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
 };
 
-type LessonProgressUpdate = {
-  lesson_id: string;
-  completed_steps: number;
-  total_steps: number;
-  is_completed: boolean;
-  percentage: number;
+type ModuleStructure = {
+  id: string;
+  title: string;
+  items: LearningItem[];
 };
 
 const LearnPage = ({ params }: LearnPageProps) => {
   const { moduleId } = use(params);
 
-  const [module, setModule] = useState<ModuleResponse | null>(null);
-  const [progressData, setProgressData] =
-    useState<ProgressData>(EMPTY_PROGRESS_DATA);
-  const [activeLessonId, setActiveLessonId] = useState("pre_test");
-  const [pretestCompleted, setPretestCompleted] = useState(false);
+  const [module, setModule] = useState<ModuleStructure | null>(null);
+  const [activeItem, setActiveItem] = useState<LearningItem | null>(null);
+
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -45,23 +36,17 @@ const LearnPage = ({ params }: LearnPageProps) => {
     if (!moduleId) return;
 
     const loadModule = async () => {
-      setLoading(true);
-      setError(false);
-
       try {
-        const result = await getLearningModule(moduleId);
-        if (!result.success || !result.data)
-          throw new Error("Module unavailable");
+        setLoading(true);
+        setError(false);
 
-        const data = result.data as unknown as ModuleResponse;
-        const lessons = normalizeLessons(data);
-        const initialLessonId =
-          result.progress?.active_quiz_lesson_id ?? "pre_test";
+        const structure = await getModuleStructure(moduleId);
 
-        setModule(data);
-        setProgressData(createProgressData(result.progress));
-        setActiveLessonId(initialLessonId || lessons[0]?.id || "pre_test");
-      } catch {
+        console.log(structure);
+        setModule(structure);
+        setActiveItem(structure.items[0] ?? null);
+      } catch (err) {
+        console.error(err);
         setError(true);
       } finally {
         setLoading(false);
@@ -71,66 +56,27 @@ const LearnPage = ({ params }: LearnPageProps) => {
     loadModule();
   }, [moduleId]);
 
-  const lessons = useMemo<Lesson[]>(() => normalizeLessons(module), [module]);
-  const currentIndex = lessons.findIndex(
-    (lesson) => lesson.id === activeLessonId,
-  );
-  const activeLesson = lessons[currentIndex];
+  const goTo = (item: LearningItem) => {
+    setActiveItem(item);
 
-  const goTo = (id: string) => {
-    setActiveLessonId(id);
-    if (typeof window !== "undefined")
-      window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handlePretestComplete = () => {
-    setPretestCompleted(true);
-    goTo(lessons[0]?.id || "");
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   const handleNext = () => {
-    const next = lessons[currentIndex + 1];
-    if (next) goTo(next.id);
-  };
+    if (!module || !activeItem) return;
 
-  const handlePrevious = () => {
-    const prev = lessons[currentIndex - 1];
-    if (prev) goTo(prev.id);
-  };
-
-  const handleQuizBlockCompleted = (blockId: string) => {
-    setProgressData((prev) =>
-      prev.completed_block_ids.includes(blockId)
-        ? prev
-        : {
-            ...prev,
-            completed_block_ids: [...prev.completed_block_ids, blockId],
-          },
+    const currentIndex = module.items.findIndex(
+      (item) => item.id === activeItem.id,
     );
-  };
 
-  const handleBlockCompletedLive = (
-    blockId: string,
-    _interactionType: string,
-    updatedLesson?: LessonProgressUpdate,
-  ) => {
-    setProgressData((prev) => ({
-      ...prev,
-      completed_block_ids: prev.completed_block_ids.includes(blockId)
-        ? prev.completed_block_ids
-        : [...prev.completed_block_ids, blockId],
-      lessons_progress: updatedLesson
-        ? {
-            ...prev.lessons_progress,
-            [updatedLesson.lesson_id]: {
-              completed_steps: updatedLesson.completed_steps,
-              total_steps: updatedLesson.total_steps,
-              is_completed: updatedLesson.is_completed,
-              percentage: updatedLesson.percentage,
-            },
-          }
-        : prev.lessons_progress,
-    }));
+    const next = module.items[currentIndex + 1];
+
+    if (next) {
+      setActiveItem(next);
+    }
   };
 
   if (loading) {
@@ -141,56 +87,59 @@ const LearnPage = ({ params }: LearnPageProps) => {
     );
   }
 
-  if (error || !module || (!activeLesson && activeLessonId !== "pre_test"))
+  if (error || !module || !activeItem) {
     notFound();
+  }
 
   return (
     <main className="min-h-screen">
       <ModuleSidebar
         moduleId={moduleId}
-        structureTitle={module?.title}
-        lessons={lessons}
-        activeLessonId={activeLessonId}
-        completedBlockIds={progressData.completed_block_ids}
-        completedQuizLessons={progressData.completed_quiz_lessons}
-        lessonsProgress={progressData.lessons_progress}
+        structureTitle={module.title}
+        items={module.items}
+        activeItem={activeItem}
         onNavigate={goTo}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
-        pretestCompleted={pretestCompleted}
       />
 
       <div className="sticky top-0 z-30 flex h-14 items-center border-b border-zinc-200 px-4 lg:hidden">
         <button
           onClick={() => setMobileSidebarOpen(true)}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50"
-          aria-label="Open sidebar layout"
         >
           <Menu size={20} />
         </button>
+
         <span className="ml-3 truncate text-sm font-semibold text-zinc-900">
-          {module?.title}
+          {module.title}
         </span>
       </div>
 
       <div
-        className={`h-screen transition-all duration-300 ease-in-out ${
+        className={`h-screen transition-all duration-300 ${
           isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"
         }`}
       >
-        <div
-          className={activeLessonId === "pre_test" ? "block h-full" : "hidden"}
-        >
+        {activeItem.type === "pretest" && (
+          <QuizContainer moduleId={activeItem.id} onContinue={handleNext} />
+        )}
+
+        {/* {activeItem.type === "lesson" && (
+          <LessonContainer lessonId={activeItem.id} onContinue={handleNext} />
+        )} */}
+
+        {/* {activeItem.type === "posttest" && (
           <QuizContainer
-            moduleId={moduleId}
+            testId={activeItem.id}
+            type="posttest"
             onContinue={() => {
-              handlePretestComplete();
-              handleNext();
+              console.log("Course Completed");
             }}
           />
-        </div>
+        )} */}
       </div>
     </main>
   );

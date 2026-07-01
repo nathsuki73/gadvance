@@ -1,7 +1,3 @@
-"use client";
-
-import { DonutProgress } from "./DonutProgress";
-
 type Props = {
   index: number;
   label: string;
@@ -11,8 +7,7 @@ type Props = {
   active: boolean;
   locked?: boolean;
   collapsed: boolean;
-  stepCount: number;
-  completedSteps: number;
+  trailing?: string;
   onClick: () => void;
 };
 
@@ -25,8 +20,7 @@ export default function SideBarNavItem({
   active,
   locked = false,
   collapsed,
-  stepCount,
-  completedSteps,
+  trailing,
   onClick,
 }: Props) {
   const dot = locked ? "bg-zinc-300" : active ? dotColor : dotColorInactive;
@@ -36,8 +30,8 @@ export default function SideBarNavItem({
       <button
         disabled={locked}
         onClick={onClick}
-        title={locked ? "Locked" : label}
-        className={`relative mx-auto hidden h-9 w-9 items-center justify-center rounded-xl transition-colors lg:flex ${
+        title={label}
+        className={`relative mx-auto hidden h-11 w-11 items-center justify-center rounded-xl transition-colors lg:flex ${
           locked
             ? "cursor-not-allowed opacity-40"
             : active
@@ -46,16 +40,6 @@ export default function SideBarNavItem({
         }`}
       >
         <span className={`h-2.5 w-2.5 rounded-full ${dot}`} />
-        {!locked && (
-          <div className="absolute -bottom-1 -right-1 rounded-full bg-white p-0.5 shadow-sm">
-            <DonutProgress
-              totalSteps={stepCount}
-              completedSteps={completedSteps}
-              size={12}
-              strokeWidth={1.5}
-            />
-          </div>
-        )}
       </button>
     );
   }
@@ -90,13 +74,8 @@ export default function SideBarNavItem({
           {locked ? "locked" : sublabel}
         </p>
       </span>
-      {!locked && (
-        <DonutProgress
-          totalSteps={stepCount}
-          completedSteps={completedSteps}
-          size={20}
-          strokeWidth={2}
-        />
+      {trailing && (
+        <span className="shrink-0 text-xs text-zinc-400">{trailing}</span>
       )}
     </button>
   );
