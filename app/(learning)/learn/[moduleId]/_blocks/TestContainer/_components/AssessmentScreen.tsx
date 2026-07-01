@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { StaticTest, UserAnswers } from "../types";
 
 interface QuizActiveProps {
@@ -13,53 +14,122 @@ export default function QuizActive({
   onAnswer,
   onSubmit,
 }: QuizActiveProps) {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+  const [visible, setVisible] = useState(true);
+
+  const question = test.questions[currentQuestion];
+  const selected = answers[question.id];
+
+  const handleSubmitAnswer = () => {
+    if (!selected) return;
+
+    setSubmitted(true);
+
+    setTimeout(() => {
+      setTimeout(() => {
+        if (currentQuestion === test.questions.length - 1) {
+          onSubmit();
+        } else {
+          setCurrentQuestion((prev) => prev + 1);
+          setSubmitted(false);
+        }
+      }, 250);
+    }, 500);
+  };
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">{test.title}</h1>
-        <p className="text-gray-500">{test.questions.length} Questions</p>
-      </div>
+    <div className="space-y-10">
+      {/* Header */}
+      <header className="border-b border-zinc-200 pb-8">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-primary">
+            Assessment
+          </span>
 
-      {test.questions.map((question, index) => (
-        <div key={question.id} className="rounded-lg border p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold">
-            {index + 1}. {question.question}
+          <span className="text-xs font-light text-zinc-500">
+            {currentQuestion + 1} / {test.questions.length}
+          </span>
+        </div>
+
+        <div className="mt-6 h-1 overflow-hidden rounded-full bg-zinc-100">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-500"
+            style={{
+              width: `${((currentQuestion + 1) / test.questions.length) * 100}%`,
+            }}
+          />
+        </div>
+      </header>
+
+      {/* Question */}
+      <div
+        className={`space-y-8 transition-all duration-300 ${
+          visible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+        }`}
+      >
+        <div>
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400">
+            Question {currentQuestion + 1}
+          </p>
+
+          <h2 className="max-w-3xl text-3xl font-light leading-tight tracking-tight text-zinc-900">
+            {question.question}
           </h2>
+        </div>
 
-          <div className="space-y-3">
-            {question.choices.map((choice) => {
-              const isSelected = answers[question.id] === choice.id;
-              return (
-                <label
-                  key={choice.id}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition ${
-                    isSelected
-                      ? "border-blue-500 bg-blue-50"
-                      : "hover:border-gray-400"
+        {/* Answers */}
+        <div className="space-y-4">
+          {question.choices.map((choice) => {
+            const isSelected = selected === choice.id;
+
+            return (
+              <button
+                key={choice.id}
+                disabled={submitted}
+                onClick={() => onAnswer(question.id, choice.id)}
+                className={`group flex w-full items-start gap-5 rounded-2xl border p-6 text-left transition-all duration-200 ${
+                  isSelected
+                    ? "border-primary bg-primary/5"
+                    : "border-zinc-200 hover:border-primary/40 hover:bg-zinc-50"
+                } ${
+                  submitted ? "cursor-not-allowed opacity-70" : "cursor-pointer"
+                }`}
+              >
+                <div
+                  className={`mt-1 flex h-6 w-6 items-center justify-center rounded-full border transition ${
+                    isSelected ? "border-primary bg-primary" : "border-zinc-300"
                   }`}
                 >
-                  <input
-                    type="radio"
-                    name={question.id}
-                    value={choice.id}
-                    checked={isSelected}
-                    onChange={() => onAnswer(question.id, choice.id)}
-                  />
-                  <span>{choice.text}</span>
-                </label>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+                  {isSelected && (
+                    <div className="h-2.5 w-2.5 rounded-full bg-white" />
+                  )}
+                </div>
 
-      <div className="flex justify-end">
-        <button
-          onClick={onSubmit}
-          className="rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition hover:bg-green-700"
-        >
-          Submit Quiz
-        </button>
+                <span className="text-base font-light leading-relaxed text-zinc-700">
+                  {choice.text}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-zinc-200 pt-8">
+          <span className="text-sm font-light text-zinc-500">
+            Select one answer before continuing.
+          </span>
+
+          <button
+            disabled={!selected || submitted}
+            onClick={handleSubmitAnswer}
+            className="rounded-lg bg-primary px-6 py-2.5 text-[10px] font-bold uppercase tracking-[0.3em] text-white transition-all hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {currentQuestion === test.questions.length - 1
+              ? "Finish Assessment"
+              : "Submit Answer"}
+          </button>
+        </div>
       </div>
     </div>
   );
