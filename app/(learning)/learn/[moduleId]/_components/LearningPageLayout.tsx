@@ -99,7 +99,14 @@ export default function LearningPageLayout({
         className={`h-screen transition-all duration-300 ease-in-out ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}`}
       >
         {activeLessonId === "pre_test" ? (
-          <QuizContainer moduleId={moduleId} />
+          <QuizContainer
+            moduleId={moduleId}
+            onContinue={() => {
+              onPretestComplete?.();
+              onNext();
+              console.log("pressed");
+            }}
+          />
         ) : (
           <ModuleSectionViewer
             lesson={activeLesson}

@@ -11,9 +11,13 @@ export type QuizState = "loading" | "ready" | "started" | "completed" | "error";
 
 interface QuizContainerProps {
   moduleId: string;
+  onContinue: () => void;
 }
 
-export default function QuizContainer({ moduleId }: QuizContainerProps) {
+export default function QuizContainer({
+  moduleId,
+  onContinue,
+}: QuizContainerProps) {
   useEffect(() => {
     console.log("QuizContainer MOUNTED", moduleId);
   }, []);
@@ -102,7 +106,7 @@ export default function QuizContainer({ moduleId }: QuizContainerProps) {
 
         {quizState === "completed" && result && (
           <div className="flex h-full items-center justify-center">
-            <QuizResults result={result} />
+            <QuizResults result={result} onContinue={onContinue} />
           </div>
         )}
 

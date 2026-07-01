@@ -1,11 +1,12 @@
-import { Check, X } from "lucide-react";
+import { Check, ChevronRight, X } from "lucide-react";
 import { QuizResult } from "../types";
 
 interface QuizResultsProps {
   result: QuizResult;
+  onContinue: () => void;
 }
 
-export default function QuizResults({ result }: QuizResultsProps) {
+export default function QuizResults({ result, onContinue }: QuizResultsProps) {
   const percentage = Math.round((result.score / result.total) * 100);
 
   return (
@@ -63,10 +64,6 @@ export default function QuizResults({ result }: QuizResultsProps) {
         Assessment Complete
       </span>
 
-      <h1 className="mt-4 text-4xl font-light tracking-tight text-zinc-900">
-        {result.passed ? "Passed" : "Not Passed"}
-      </h1>
-
       <p className="mt-3 text-zinc-500">
         You answered{" "}
         <span className="font-medium text-zinc-900">
@@ -79,6 +76,14 @@ export default function QuizResults({ result }: QuizResultsProps) {
         {percentage}
         <span className="text-3xl text-zinc-400">%</span>
       </div>
+
+      <button
+        onClick={onContinue}
+        className="mt-12 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-[10px] font-bold uppercase tracking-[0.3em] text-white transition-all hover:bg-primary-hover active:scale-[0.98]"
+      >
+        Continue
+        <ChevronRight size={14} />
+      </button>
     </div>
   );
 }
