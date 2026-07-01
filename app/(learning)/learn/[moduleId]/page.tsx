@@ -9,6 +9,7 @@ import QuizContainer from "./_blocks/TestContainer/QuizContainer";
 // import LessonContainer from "./_blocks/LessonContainer/LessonContainer";
 import { getModuleStructure } from "./service";
 import { LearningItem } from "./types";
+import { div } from "framer-motion/client";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
@@ -25,6 +26,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   const [module, setModule] = useState<ModuleStructure | null>(null);
   const [activeItem, setActiveItem] = useState<LearningItem | null>(null);
+  const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -41,10 +43,11 @@ const LearnPage = ({ params }: LearnPageProps) => {
         setError(false);
 
         const structure = await getModuleStructure(moduleId);
-
-        console.log(structure);
         setModule(structure);
-        setActiveItem(structure.items[0] ?? null);
+
+        const first = structure.items[0] ?? null;
+        setActiveItem(first);
+        if (first) setVisitedIds(new Set([first.id]));
       } catch (err) {
         console.error(err);
         setError(true);
@@ -58,11 +61,10 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   const goTo = (item: LearningItem) => {
     setActiveItem(item);
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    setVisitedIds((prev) =>
+      prev.has(item.id) ? prev : new Set(prev).add(item.id),
+    );
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleNext = () => {
@@ -71,12 +73,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
     const currentIndex = module.items.findIndex(
       (item) => item.id === activeItem.id,
     );
-
     const next = module.items[currentIndex + 1];
 
-    if (next) {
-      setActiveItem(next);
-    }
+    if (next) goTo(next);
   };
 
   if (loading) {
@@ -112,34 +111,41 @@ const LearnPage = ({ params }: LearnPageProps) => {
         >
           <Menu size={20} />
         </button>
-
         <span className="ml-3 truncate text-sm font-semibold text-zinc-900">
           {module.title}
         </span>
       </div>
 
       <div
-        className={`h-screen transition-all duration-300 ${
-          isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"
-        }`}
+        className={`h-screen transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}`}
       >
-        {activeItem.type === "pretest" && (
-          <QuizContainer moduleId={activeItem.id} onContinue={handleNext} />
-        )}
-
-        {activeItem.type === "lesson" && (
-          <LessonContainer lessonId={activeItem.id} onContinue={handleNext} />
-        )}
-
-        {activeItem.type === "posttest" && (
-          <QuizContainer
-            moduleId={activeItem.id}
-            type="posttest"
-            onContinue={() => {
-              console.log("Course Completed");
-            }}
-          />
-        )}
+        {module.items
+          .filter((item) => visitedIds.has(item.id))
+          .map((item) => (
+            <div
+              key={item.id}
+              className={item.id === activeItem.id ? "block h-full" : "hidden"}
+            >
+              {item.type === "pretest" && (
+                <QuizContainer
+                  moduleId={item.id}
+                  type="pretest"
+                  onContinue={handleNext}
+                />
+              )}
+              {item.type === "lesson" && (
+                // <LessonContainer lessonId={item.id} onContinue={handleNext} />
+                <div>hey</div>
+              )}
+              {item.type === "posttest" && (
+                <QuizContainer
+                  moduleId={item.id}
+                  type="posttest"
+                  onContinue={() => console.log("Course Completed")}
+                />
+              )}
+            </div>
+          ))}
       </div>
     </main>
   );
