@@ -153,6 +153,7 @@ const SignUp = () => {
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                     Email Address
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
                   <input
                     name="email"
@@ -171,32 +172,12 @@ const SignUp = () => {
                   )}
                 </div>
 
-                {/* 🎯 FIX: Birthday Input Component Field */}
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
-                    Birthday
-                  </label>
-                  <input
-                    name="birthday"
-                    type="date"
-                    value={formData.birthday}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-xl border ${
-                      errors.birthday ? "border-red-400" : "border-zinc-100"
-                    } focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
-                  />
-                  {errors.birthday && (
-                    <p className="text-[9px] text-red-500 font-bold mt-1.5 uppercase tracking-wider">
-                      {errors.birthday}
-                    </p>
-                  )}
-                </div>
-
                 {/* Password Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                       Password
+                      <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
                       name="password"
@@ -212,6 +193,7 @@ const SignUp = () => {
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                       Confirm Password
+                      <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
                       name="confirmPassword"

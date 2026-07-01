@@ -134,6 +134,7 @@ const OnboardingPageOne = () => {
             <div>
               <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                 Date of Birth
+                <span className="text-red-500 ml-1">*</span>
               </label>
               <input
                 name="birthday"
