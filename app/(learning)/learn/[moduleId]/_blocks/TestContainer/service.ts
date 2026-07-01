@@ -37,6 +37,7 @@ export async function fetchStaticTest(
       id: String(q.id),
       question: q.question_text,
       choices: choices,
+      correctAnswer: q.correct_answer,
     };
   });
 

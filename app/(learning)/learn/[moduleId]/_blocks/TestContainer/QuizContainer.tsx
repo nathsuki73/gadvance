@@ -61,11 +61,24 @@ export default function QuizContainer({ moduleId }: QuizContainerProps) {
   };
 
   const handleSubmit = async (): Promise<void> => {
+    if (!test) return;
+
+    const score = test.questions.reduce((total, question) => {
+      return total + (answers[question.id] === question.correctAnswer ? 1 : 0);
+    }, 0);
+
+    const total = test.questions.length;
+
+    // Change the passing percentage if needed
+    const passingPercentage = 0.75;
+    const passed = score >= Math.ceil(total * passingPercentage);
+
     setResult({
-      score: 0,
-      total: test?.questions.length ?? 0,
-      passed: false,
+      score,
+      total,
+      passed,
     });
+
     setQuizState("completed");
   };
 

@@ -7,6 +7,7 @@ export interface Question {
   id: string;
   question: string;
   choices: Choice[];
+  correctAnswer: string;
 }
 
 export interface StaticTest {
@@ -37,6 +38,7 @@ export interface LaravelQuizResponse {
       lesson_id: number;
       question_text: string;
       options: Record<string, string>;
+      correct_answer: string;
     }>;
   };
 }
