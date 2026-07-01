@@ -30,7 +30,7 @@ const CourseCard = ({ module }: CourseCardProps) => {
   const Icon = iconByType[module.icon as keyof typeof iconByType] || Target;
 
   return (
-    <article className="group flex flex-col gap-6 rounded-[32px] border border-zinc-100 bg-white p-8 text-left transition-all duration-500 hover:border-[#8b5cf6]/50 hover:shadow-xl hover:shadow-sky-100/20">
+    <article className="group flex flex-col gap-6 rounded-[32px] border border-zinc-200 bg-white p-8 text-left transition-all duration-500 hover:border-[#8b5cf6]/50 hover:shadow-xl hover:shadow-sky-100/20">
       
       {/* Header: Minimal Tag & Icon */}
       <div className="flex items-start justify-between">

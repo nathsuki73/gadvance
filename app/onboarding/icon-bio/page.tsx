@@ -8,6 +8,8 @@ import logoIcon from "@/app/assets/logo.ico";
 import imageCompression from "browser-image-compression";
 import Image from "next/image";
 
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+
 const IconBio = () => {
   const { data: session, update } = useSession();
   const router = useRouter();
@@ -121,6 +123,10 @@ const IconBio = () => {
       const p1 = JSON.parse(localStorage.getItem("onboarding_p1") || "{}");
       const p2 = JSON.parse(localStorage.getItem("onboarding_p2") || "{}");
 
+      const extractedBirthday = String(
+        p1.birthday || p1.date_of_birth || p1.dob || "",
+      ).trim();
+
       // 2. CONSTRUCT COMPLETE PAYLOAD
       const finalPayload = {
         firstName: String(p1.firstName || ""),
@@ -128,7 +134,9 @@ const IconBio = () => {
         lastName: String(p1.lastName || ""),
         age: String(p1.age || ""),
         gender: String(p1.gender || ""),
-        dob: String(p1.dob || ""),
+        birthday: extractedBirthday,
+        date_of_birth: extractedBirthday,
+        birth_date: extractedBirthday,
         phone: String(p2.phone || ""),
         addressLine: String(p2.addressLine || ""),
         city: String(p2.city || ""),
@@ -146,6 +154,31 @@ const IconBio = () => {
         alert(result.error || "Failed to save profile");
         setLoading(false);
         return;
+      }
+
+      if (apiBaseUrl && session?.laravelJwt && extractedBirthday) {
+        const profileUpdatePayload = {
+          firstName: String(p1.firstName || ""),
+          middleName: String(p1.middleName || ""),
+          lastName: String(p1.lastName || ""),
+          age: String(p1.age || ""),
+          gender: String(p1.gender || ""),
+          birthday: extractedBirthday,
+        };
+
+        const birthdayResponse = await fetch(`${apiBaseUrl}/api/user/profile/update`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${session.laravelJwt}`,
+          },
+          body: JSON.stringify(profileUpdatePayload),
+        });
+
+        if (!birthdayResponse.ok) {
+          throw new Error("Birthday could not be saved after onboarding.");
+        }
       }
 
       // 4. UPDATE SESSION (Original Logic)
@@ -243,6 +276,7 @@ const IconBio = () => {
             <div>
               <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                 Short Bio
+                <span className="text-red-500 ml-1">*</span>
               </label>
               <textarea
                 name="bio"

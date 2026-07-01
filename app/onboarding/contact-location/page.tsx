@@ -159,7 +159,10 @@ const ContactLocation = () => {
 /* Reusable Input Component */
 const InputField = ({ label, name, type = "text", placeholder, defaultValue, required = false }: any) => (
   <div>
-    <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">{label}</label>
+      <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+        {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </label>
     <input
       name={name}
       type={type}

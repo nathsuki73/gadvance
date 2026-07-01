@@ -58,7 +58,7 @@ const OnboardingPageOne = () => {
       lastName: formData.get("lastName"),
       age: formData.get("age"),
       gender: formData.get("gender"),
-      dob: formData.get("dob"),
+      birthday: formData.get("birthday"),
     };
 
     // Save to LocalStorage
@@ -84,7 +84,7 @@ const OnboardingPageOne = () => {
               step 01 / 03
             </span>
             <h1 className="text-3xl font-bold text-zinc-900 mt-2 tracking-tight">
-              Personal Identity
+              Personal Identity 
             </h1>
             <p className="text-zinc-400 text-sm font-light mt-2">
               Let's start with your basic information.
@@ -94,7 +94,7 @@ const OnboardingPageOne = () => {
           <form className="space-y-5" onSubmit={handleNext}>
             <div className="grid grid-cols-2 gap-4">
               <InputField
-                label="First Name"
+                label="First Name" 
                 name="firstName"
                 defaultValue={googleFirst}
                 required
@@ -136,10 +136,10 @@ const OnboardingPageOne = () => {
                 Date of Birth
               </label>
               <input
-                name="dob"
+                name="birthday"
                 type="date"
                 required
-                defaultValue={persistedData?.dob || ""}
+                defaultValue={persistedData?.birthday || ""}
                 className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 bg-zinc-50/50 text-sm"
               />
             </div>
@@ -189,6 +189,7 @@ const InputField = ({
   <div>
     <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
       {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
     </label>
     <input
       name={name}
