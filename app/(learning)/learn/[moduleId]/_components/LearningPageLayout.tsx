@@ -54,13 +54,8 @@ export default function LearningPageLayout({
   onCloseMobile,
   onOpenMobile,
   onNext,
-  onPrevious,
-  onQuizBlockCompleted,
-  onBlockCompletedLive,
   pretestCompleted = false,
   onPretestComplete,
-  hasPreTest,
-  hasPostTest,
 }: LearningPageLayoutProps) {
   return (
     <main className="min-h-screen">
@@ -78,8 +73,6 @@ export default function LearningPageLayout({
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={onCloseMobile}
         pretestCompleted={pretestCompleted}
-        hasPreTest={hasPreTest}
-        hasPostTest={hasPostTest}
       />
 
       <div className="sticky top-0 z-30 flex h-14 items-center border-b border-zinc-200  px-4 lg:hidden">
@@ -113,6 +106,7 @@ export default function LearningPageLayout({
               }}
             />
           </div>
+
           <div
             className={
               activeLessonId === "pre_test" ? "hidden" : "block h-full"
