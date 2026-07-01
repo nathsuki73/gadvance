@@ -9,7 +9,6 @@ import QuizContainer from "./_blocks/TestContainer/QuizContainer";
 // import LessonContainer from "./_blocks/LessonContainer/LessonContainer";
 import { getModuleStructure } from "./service";
 import { LearningItem } from "./types";
-import { div } from "framer-motion/client";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
@@ -26,6 +25,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   const [module, setModule] = useState<ModuleStructure | null>(null);
   const [activeItem, setActiveItem] = useState<LearningItem | null>(null);
+  const [activeBlockId, setActiveBlockId] = useState<string | undefined>(
+    undefined,
+  );
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -47,6 +49,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
         const first = structure.items[0] ?? null;
         setActiveItem(first);
+        setActiveBlockId(undefined);
         if (first) setVisitedIds(new Set([first.id]));
       } catch (err) {
         console.error(err);
@@ -59,8 +62,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
     loadModule();
   }, [moduleId]);
 
-  const goTo = (item: LearningItem) => {
+  const goTo = (item: LearningItem, blockId?: string) => {
     setActiveItem(item);
+    setActiveBlockId(blockId);
     setVisitedIds((prev) =>
       prev.has(item.id) ? prev : new Set(prev).add(item.id),
     );
@@ -97,6 +101,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
         structureTitle={module.title}
         items={module.items}
         activeItem={activeItem}
+        activeBlockId={activeBlockId}
         onNavigate={goTo}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
@@ -135,7 +140,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
               )}
               {item.type === "lesson" && (
                 // <LessonContainer lessonId={item.id} onContinue={handleNext} />
-                <div>hey</div>
+                <div>lesssssonss</div>
               )}
               {item.type === "posttest" && (
                 <QuizContainer

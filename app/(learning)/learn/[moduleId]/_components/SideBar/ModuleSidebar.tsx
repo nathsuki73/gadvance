@@ -4,18 +4,13 @@ import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import SideBarNavItem from "./_components/SideBarNavItem";
 
-type SubTopic = {
-  id: string;
-  title: string;
-  order_index: number;
-  completed?: boolean;
-};
+type LessonBlock = { id: string; title: string };
 type LearningItem = {
   id: string;
   title: string;
   type: "pretest" | "lesson" | "posttest";
   order: number;
-  subtopics?: SubTopic[];
+  lesson_blocks?: LessonBlock[];
 };
 
 type Props = {
@@ -23,8 +18,8 @@ type Props = {
   structureTitle?: string;
   items: LearningItem[];
   activeItem: LearningItem;
-  activeTopicId?: string;
-  onNavigate: (item: LearningItem, topicId?: string) => void;
+  activeBlockId?: string;
+  onNavigate: (item: LearningItem, blockId?: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   mobileOpen: boolean;
@@ -40,17 +35,11 @@ const DOT_COLORS: Record<
   posttest: { active: "bg-amber-500", inactive: "bg-amber-200" },
 };
 
-const LABELS: Record<LearningItem["type"], string> = {
-  pretest: "diagnostic baseline",
-  lesson: "lesson",
-  posttest: "summative validation",
-};
-
 export default function ModuleSidebar({
   structureTitle,
   items = [],
   activeItem,
-  activeTopicId,
+  activeBlockId,
   onNavigate,
   isCollapsed,
   onToggleCollapse,
@@ -62,18 +51,32 @@ export default function ModuleSidebar({
   );
   const collapsedView = isCollapsed && !mobileOpen;
 
-  const go = (item: LearningItem, topicId?: string) => {
-    onNavigate(item, topicId);
-    if (mobileOpen) onCloseMobile();
-    if (isCollapsed) onToggleCollapse();
+  const go = (item: LearningItem, blockId?: string) => {
+    if (item.type === "lesson") {
+      setExpanded((prev) => {
+        if (prev.has(item.id)) return prev;
+        const next = new Set(prev);
+        next.add(item.id);
+        return next;
+      });
+    }
+
+    onNavigate(item, blockId);
   };
 
-  const toggleExpand = (id: string) =>
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  const openLesson = (item: LearningItem) => {
+    const alreadyOpen = expanded.has(item.id);
+    if (!alreadyOpen) {
+      setExpanded((prev) => new Set(prev).add(item.id));
+      go(item, "overview");
+    } else {
+      setExpanded((prev) => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
+    }
+  };
 
   return (
     <>
@@ -126,80 +129,63 @@ export default function ModuleSidebar({
 
         <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {items.map((item, i) => {
-            const active = item.id === activeItem.id && !activeTopicId;
             const colors = DOT_COLORS[item.type];
-            const hasSubtopics =
-              item.type === "lesson" && (item.subtopics?.length ?? 0) > 0;
+            const blocks = item.lesson_blocks ?? [];
+            const hasBlocks = item.type === "lesson";
             const isOpen = expanded.has(item.id);
-
-            const label =
-              item.type === "pretest"
-                ? "Course Entry Pre-test"
-                : item.type === "posttest"
-                  ? "Course Final Post-test"
-                  : item.title;
-
-            const completedCount =
-              item.subtopics?.filter((s) => s.completed).length ?? 0;
-            const sublabel = hasSubtopics
-              ? `${completedCount}/${item.subtopics!.length} completed`
-              : LABELS[item.type];
 
             return (
               <div key={item.id}>
                 <SideBarNavItem
                   index={i}
-                  label={label}
-                  sublabel={sublabel}
+                  label={item.title}
+                  sublabel={
+                    hasBlocks ? `${blocks.length + 2} steps` : item.type
+                  }
                   dotColor={colors.active}
                   dotColorInactive={colors.inactive}
-                  active={item.id === activeItem.id}
+                  active={item.id === activeItem.id && !activeBlockId}
                   collapsed={collapsedView}
                   trailing={
-                    hasSubtopics && !collapsedView
+                    hasBlocks && !collapsedView
                       ? isOpen
                         ? "▾"
                         : "▸"
                       : undefined
                   }
-                  onClick={() =>
-                    hasSubtopics ? toggleExpand(item.id) : go(item)
-                  }
+                  onClick={() => (hasBlocks ? openLesson(item) : go(item))}
                 />
 
-                {hasSubtopics && isOpen && !collapsedView && (
+                {hasBlocks && isOpen && !collapsedView && (
                   <div className="ml-4 mt-1 space-y-1 border-l border-zinc-200 pl-3">
-                    {item
-                      .subtopics!.slice()
-                      .sort((a, b) => a.order_index - b.order_index)
-                      .map((topic) => {
-                        const topicActive = activeTopicId === topic.id;
-                        const dot = topicActive
-                          ? "bg-blue-500"
-                          : topic.completed
-                            ? "bg-emerald-400"
-                            : "bg-zinc-300";
-                        return (
-                          <button
-                            key={topic.id}
-                            onClick={() => go(item, topic.id)}
-                            className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors ${
-                              topicActive
-                                ? "bg-purple-50/70 text-[#8b5cf6]"
-                                : "text-zinc-500 hover:bg-zinc-200/40 hover:text-zinc-800"
-                            }`}
-                          >
-                            <span
-                              className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`}
-                            />
-                            <span
-                              className={`truncate text-[11.5px] ${topicActive ? "font-semibold" : "font-normal"}`}
-                            >
-                              {topic.title}
-                            </span>
-                          </button>
-                        );
-                      })}
+                    <SubRow
+                      label="Overview"
+                      active={
+                        item.id === activeItem.id &&
+                        activeBlockId === "overview"
+                      }
+                      onClick={() => go(item, "overview")}
+                    />
+
+                    {blocks.map((block) => (
+                      <SubRow
+                        key={block.id}
+                        label={block.title}
+                        active={
+                          item.id === activeItem.id &&
+                          activeBlockId === block.id
+                        }
+                        onClick={() => go(item, block.id)}
+                      />
+                    ))}
+
+                    <SubRow
+                      label="Quiz"
+                      active={
+                        item.id === activeItem.id && activeBlockId === "quiz"
+                      }
+                      onClick={() => go(item, "quiz")}
+                    />
                   </div>
                 )}
               </div>
@@ -213,7 +199,7 @@ export default function ModuleSidebar({
             aria-label="Exit module"
             className={`flex items-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition-colors hover:bg-zinc-50 ${
               collapsedView
-                ? "h-10 w-10 w-full justify-center"
+                ? "h-10 w-full justify-center"
                 : "w-1/3 gap-2 px-3 py-2.5"
             }`}
           >
@@ -225,5 +211,35 @@ export default function ModuleSidebar({
         </div>
       </aside>
     </>
+  );
+}
+
+function SubRow({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors ${
+        active
+          ? "bg-purple-50/70 text-[#8b5cf6]"
+          : "text-zinc-500 hover:bg-zinc-200/40 hover:text-zinc-800"
+      }`}
+    >
+      <span
+        className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? "bg-blue-500" : "bg-zinc-300"}`}
+      />
+      <span
+        className={`truncate text-[11.5px] ${active ? "font-semibold" : "font-normal"}`}
+      >
+        {label}
+      </span>
+    </button>
   );
 }

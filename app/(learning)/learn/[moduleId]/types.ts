@@ -2,7 +2,6 @@ export type SubTopic = {
   id: string;
   title: string;
   order_index: number;
-  completed?: boolean; // assumption — see note below
 };
 
 export type LearningItem = {

@@ -43,5 +43,6 @@ export async function getModuleStructure(
 
   const payload: LaravelModuleStructureResponse = await response.json();
 
+  console.log(payload.data);
   return payload.data;
 }
