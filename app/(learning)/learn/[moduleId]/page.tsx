@@ -127,19 +127,19 @@ const LearnPage = ({ params }: LearnPageProps) => {
           <QuizContainer moduleId={activeItem.id} onContinue={handleNext} />
         )}
 
-        {/* {activeItem.type === "lesson" && (
+        {activeItem.type === "lesson" && (
           <LessonContainer lessonId={activeItem.id} onContinue={handleNext} />
-        )} */}
+        )}
 
-        {/* {activeItem.type === "posttest" && (
+        {activeItem.type === "posttest" && (
           <QuizContainer
-            testId={activeItem.id}
+            moduleId={activeItem.id}
             type="posttest"
             onContinue={() => {
               console.log("Course Completed");
             }}
           />
-        )} */}
+        )}
       </div>
     </main>
   );

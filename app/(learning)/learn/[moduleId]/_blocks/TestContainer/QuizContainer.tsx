@@ -8,24 +8,25 @@ import { fetchStaticTest } from "./service";
 import QuizError from "./_components/QuizError";
 
 export type QuizState = "loading" | "ready" | "started" | "completed" | "error";
+export type QuizType = "pretest" | "posttest";
 
 interface QuizContainerProps {
   moduleId: string;
+  type: QuizType;
   onContinue: () => void;
 }
 
 export default function QuizContainer({
   moduleId,
+  type,
   onContinue,
 }: QuizContainerProps) {
-  useEffect(() => {
-    console.log("QuizContainer MOUNTED", moduleId);
-  }, []);
   const [quizState, setQuizState] = useState<QuizState>("loading");
   const [test, setTest] = useState<StaticTest | null>(null);
   const [answers, setAnswers] = useState<UserAnswers>({});
   const [result, setResult] = useState<QuizResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     if (
       quizState === "started" ||
@@ -36,27 +37,33 @@ export default function QuizContainer({
       return;
     }
 
-    const cancelled = false;
+    let cancelled = false;
 
     const fetchQuizData = async () => {
       setQuizState("loading");
       setError(null);
 
       try {
-        const data = await fetchStaticTest(moduleId, "pre_test");
+        const data = await fetchStaticTest(
+          moduleId,
+          type === "pretest" ? "pre_test" : "post_test",
+        );
         if (cancelled) return;
         setTest(data);
         setQuizState("ready");
       } catch (err) {
         if (cancelled) return;
-        console.error(err);
         setError(err instanceof Error ? err.message : "Something went wrong");
         setQuizState("error");
       }
     };
 
     if (moduleId) fetchQuizData();
-  }, [moduleId, quizState, test]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [moduleId, type, quizState, test]);
 
   const handleStartQuiz = (): void => setQuizState("started");
 
@@ -77,18 +84,13 @@ export default function QuizContainer({
     const passingPercentage = 0.75;
     const passed = score >= Math.ceil(total * passingPercentage);
 
-    setResult({
-      score,
-      total,
-      passed,
-    });
-
+    setResult({ score, total, passed });
     setQuizState("completed");
   };
 
   return (
-    <div className="h-full ">
-      <div className="h-full bg-white p-8 items-center justify-center">
+    <div className="h-full">
+      <div className="h-full items-center justify-center bg-white p-8">
         {quizState === "loading" && <QuizLoader />}
 
         {quizState === "ready" && test && (
@@ -106,7 +108,11 @@ export default function QuizContainer({
 
         {quizState === "completed" && result && (
           <div className="flex h-full items-center justify-center">
-            <QuizResults result={result} onContinue={onContinue} />
+            <QuizResults
+              result={result}
+              onContinue={onContinue}
+              showPassFail={type === "posttest"}
+            />
           </div>
         )}
 
