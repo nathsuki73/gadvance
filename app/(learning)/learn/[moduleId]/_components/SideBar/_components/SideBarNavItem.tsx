@@ -37,7 +37,7 @@ export default function SideBarNavItem({
         disabled={locked}
         onClick={onClick}
         title={locked ? "Locked" : label}
-        className={`relative mx-auto hidden h-11 w-11 items-center justify-center rounded-xl transition-colors lg:flex ${
+        className={`relative mx-auto hidden h-9 w-9 items-center justify-center rounded-xl transition-colors lg:flex ${
           locked
             ? "cursor-not-allowed opacity-40"
             : active

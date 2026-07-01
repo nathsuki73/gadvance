@@ -131,7 +131,7 @@ export default function ModuleSidebar({
           </div>
         </div>
 
-        <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-3 py-4">
+        <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-3 py-4 ">
           <SideBarNavItem
             index={idx++}
             label="Course Entry Pre-test"
