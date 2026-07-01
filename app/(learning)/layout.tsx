@@ -6,11 +6,9 @@ type LearnLayoutProps = {
   children: React.ReactNode;
 };
 
-const LearnLayout = ({
-  children,
-}: LearnLayoutProps) => {
+const LearnLayout = ({ children }: LearnLayoutProps) => {
   return (
-    <div className="min-h-screen overflow-hidden bg-[#f5f7fb] text-zinc-900 antialiased">
+    <div className="min-h-screen overflow-hidden text-zinc-900 antialiased">
       {children}
     </div>
   );

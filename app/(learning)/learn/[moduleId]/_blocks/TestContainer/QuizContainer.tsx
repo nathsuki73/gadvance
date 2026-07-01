@@ -70,8 +70,8 @@ export default function QuizContainer({ moduleId }: QuizContainerProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10">
-      <div className="mx-auto max-w-3xl rounded-xl bg-white p-8 shadow-lg">
+    <div className="h-full ">
+      <div className="h-fullbg-white p-8">
         {quizState === "loading" && <QuizLoader />}
 
         {quizState === "ready" && test && (

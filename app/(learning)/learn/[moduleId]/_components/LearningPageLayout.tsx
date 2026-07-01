@@ -63,7 +63,7 @@ export default function LearningPageLayout({
   hasPostTest,
 }: LearningPageLayoutProps) {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen">
       <ModuleSidebar
         moduleId={moduleId}
         structureTitle={moduleTitle}
@@ -82,7 +82,7 @@ export default function LearningPageLayout({
         hasPostTest={hasPostTest}
       />
 
-      <div className="sticky top-0 z-30 flex h-14 items-center border-b border-zinc-200 bg-white px-4 lg:hidden">
+      <div className="sticky top-0 z-30 flex h-14 items-center border-b border-zinc-200  px-4 lg:hidden">
         <button
           onClick={onOpenMobile}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50"
@@ -96,7 +96,7 @@ export default function LearningPageLayout({
       </div>
 
       <div
-        className={`transition-all duration-300 ease-in-out ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}`}
+        className={`h-screen transition-all duration-300 ease-in-out ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}`}
       >
         {activeLessonId === "pre_test" ? (
           <QuizContainer moduleId={moduleId} />
