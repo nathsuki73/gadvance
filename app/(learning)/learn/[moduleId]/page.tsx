@@ -39,8 +39,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [hasPreTest, setHasPreTest] = useState(false);
-  const [hasPostTest, setHasPostTest] = useState(false);
 
   useEffect(() => {
     const loadModule = async () => {
@@ -171,8 +169,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
       onBlockCompletedLive={handleBlockCompletedLive}
       pretestCompleted={pretestCompleted}
       onPretestComplete={handlePretestComplete}
-      hasPreTest={hasPreTest}
-      hasPostTest={hasPostTest}
     />
   );
 };
