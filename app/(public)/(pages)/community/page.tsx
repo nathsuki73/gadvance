@@ -5,7 +5,7 @@ import { Users, Sparkles, MessageSquare, ArrowRight } from "lucide-react";
 
 const CommunityPage = () => {
   return (
-    <main className="min-h-screen bg-white font-sans text-zinc-900 selection:bg-sky-100 selection:text-[#00aeef]">
+    <main className="min-h-screen bg-white font-sans text-zinc-900 selection:bg-sky-100 selection:text-primary">
       
       {/* Section 1: Hero - Right Aligned starting section */}
       <section className="relative py-32 sm:py-48 overflow-hidden">
@@ -16,11 +16,11 @@ const CommunityPage = () => {
           
           {/* the starting text on the right side */}
           <div className="lg:w-1/2 text-center lg:text-left">
-            <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-[#00aeef] mb-8">
+            <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-primary mb-8">
               community
             </h2>
             <h1 className="text-4xl md:text-7xl font-light tracking-tight text-zinc-900 leading-[1.1]">
-              growing <span className="font-semibold italic font-serif text-[#00aeef]">together.</span>
+              growing <span className="font-semibold italic font-serif text-primary">together.</span>
             </h1>
             <p className="mt-12 text-xl text-zinc-500 font-light leading-relaxed lowercase max-w-xl mx-auto lg:mx-0">
               gadvance is more than a learning platform; it is a collective of 
@@ -28,7 +28,7 @@ const CommunityPage = () => {
               to dismantling gender barriers in the philippines.
             </p>
             <div className="mt-12 flex justify-center lg:justify-start">
-              <button className="group flex items-center gap-3 rounded-full bg-[#00aeef] px-8 py-4 text-white transition-all hover:bg-[#0096ce] hover:shadow-lg hover:shadow-sky-100">
+              <button className="group flex items-center gap-3 rounded-full bg-primary px-8 py-4 text-white transition-all hover:bg-[#0096ce] hover:shadow-lg hover:shadow-sky-100">
                 <span className="font-medium lowercase">join the collective</span>
                 <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
               </button>
@@ -49,7 +49,7 @@ const CommunityPage = () => {
                {/* decorative floating card */}
                <div className="absolute bottom-10 right-10 bg-white p-6 rounded-2xl shadow-xl shadow-zinc-200/50 border border-zinc-50 animate-bounce-slow">
                   <div className="flex items-center gap-3">
-                    <div className="h-2 w-2 rounded-full bg-[#00aeef]" />
+                    <div className="h-2 w-2 rounded-full bg-primary" />
                     <span className="text-xs font-bold text-zinc-800 lowercase">500+ active members</span>
                   </div>
                </div>
@@ -64,7 +64,7 @@ const CommunityPage = () => {
           <div className="max-w-3xl mx-auto mb-24">
             <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-400 mb-6">the network</h2>
             <h3 className="text-3xl md:text-5xl font-light tracking-tight text-zinc-900 lowercase">
-              designed for <span className="italic font-serif text-[#00aeef]">collaborative advocacy.</span>
+              designed for <span className="italic font-serif text-primary">collaborative advocacy.</span>
             </h3>
           </div>
 
@@ -93,11 +93,11 @@ const CommunityPage = () => {
         <div className="container mx-auto px-8 text-center max-w-4xl">
           <div className="inline-flex items-center gap-4 mb-12">
             <div className="h-px w-8 bg-zinc-200" />
-            <Users size={20} className="text-[#00aeef]" />
+            <Users size={20} className="text-primary" />
             <div className="h-px w-8 bg-zinc-200" />
           </div>
           <h2 className="text-4xl md:text-6xl font-light tracking-tight text-zinc-900 leading-tight lowercase mb-12">
-            your voice is the <span className="text-[#00aeef] font-medium">missing piece.</span>
+            your voice is the <span className="text-primary font-medium">missing piece.</span>
           </h2>
           <p className="text-xl text-zinc-500 font-light lowercase leading-relaxed mb-12">
              gadvance is built on the shared experiences of its members. by joining, you contribute to a growing data-driven movement that informs our 2026 curriculum and institutional audits.
@@ -118,7 +118,7 @@ const CommunityPage = () => {
 
 const CommunityItem = ({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) => (
   <div className="flex flex-col items-center space-y-6">
-    <div className="h-14 w-14 rounded-full bg-white border border-zinc-100 shadow-sm flex items-center justify-center text-[#00aeef]">
+    <div className="h-14 w-14 rounded-full bg-white border border-zinc-100 shadow-sm flex items-center justify-center text-primary">
       {icon}
     </div>
     <h4 className="text-xl font-semibold text-zinc-900 lowercase">{title}</h4>

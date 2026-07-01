@@ -393,7 +393,7 @@ export default function AuthHeader() {
                 }`}
               >
                   <div className="px-3 py-2.5 border-b border-zinc-200 mb-1">
-                    <p className="text-xs font-bold text-zinc-800 lowercase">
+                    <p className="text-xs font-bold text-zinc-800 ">
                       {currentUser.name}
                     </p>
                     <p className="text-[10px] text-zinc-400 font-light truncate mt-0.5">

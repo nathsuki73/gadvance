@@ -144,7 +144,7 @@ export default function PublicHeader() {
       {/* EXPANDABLE MOBILE/TABLET MENU */}
       <div className={`
         overflow-hidden transition-all duration-300 ease-in-out xl:hidden
-        ${showMobileMenu ? "max-h-[500px] opacity-100 mt-4" : "max-h-0 opacity-0"}
+        ${showMobileMenu ? "max-h-125 opacity-100 mt-4" : "max-h-0 opacity-0"}
       `}>
         <nav className="flex flex-col gap-2 border-t border-zinc-100 pt-4">
          

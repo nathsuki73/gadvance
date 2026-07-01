@@ -10,11 +10,10 @@ export function NavLink({ href, children }: NavLinkProps) {
   return (
     <Link 
       href={href} 
-      className="group relative py-1 text-sm font-medium text-zinc-600 transition-colors hover:text-black"
+      className="group relative py-1 text-sm font-medium text-zinc-600 transition-all duration-200 "
     >
       {children}
-      {/* The Minimal Line Slider */}
-      <span className="absolute inset-x-0 -bottom-1 h-0.5 origin-left scale-x-0 bg-[#00A9D1] transition-transform duration-300 ease-out group-hover:scale-x-100" />
+      <span className="absolute inset-x-0 -bottom-1 h-0.5 origin-left scale-x-0 bg-primary transition-transform duration-300 ease-out group-hover:scale-x-100" />
     </Link>
   );
 }
