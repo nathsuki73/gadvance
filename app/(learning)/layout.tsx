@@ -8,9 +8,7 @@ type LearnLayoutProps = {
 
 const LearnLayout = ({ children }: LearnLayoutProps) => {
   return (
-    <div className="min-h-screen overflow-hidden text-zinc-900 antialiased">
-      {children}
-    </div>
+    <div className="min-h-screen text-zinc-900 antialiased">{children}</div>
   );
 };
 
