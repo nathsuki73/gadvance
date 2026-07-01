@@ -84,7 +84,7 @@ export default function QuizContainer({ moduleId }: QuizContainerProps) {
 
   return (
     <div className="h-full ">
-      <div className="h-fullbg-white p-8">
+      <div className="h-full bg-white p-8 items-center justify-center">
         {quizState === "loading" && <QuizLoader />}
 
         {quizState === "ready" && test && (
@@ -100,7 +100,11 @@ export default function QuizContainer({ moduleId }: QuizContainerProps) {
           />
         )}
 
-        {quizState === "completed" && result && <QuizResults result={result} />}
+        {quizState === "completed" && result && (
+          <div className="flex h-full items-center justify-center">
+            <QuizResults result={result} />
+          </div>
+        )}
 
         {quizState === "error" && (
           <QuizError error={error} onRetry={() => setQuizState("loading")} />

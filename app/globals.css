@@ -17,6 +17,7 @@
   --color-primary: var(--custom-primary);
   --color-primary-hover: var(--custom-primary-hover);
   --animate-quiz-in: quiz-in 300ms ease-out;
+  --animate-circle-progress: circle-progress 1s ease-out forwards;
 }
 
 :root {
@@ -130,5 +131,15 @@ input:disabled,
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes circle-progress {
+  from {
+    stroke-dashoffset: 100;
+  }
+
+  to {
+    stroke-dashoffset: var(--progress);
   }
 }

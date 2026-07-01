@@ -9,77 +9,75 @@ export default function QuizResults({ result }: QuizResultsProps) {
   const percentage = Math.round((result.score / result.total) * 100);
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col items-center space-y-10 py-8 text-center">
-      {/* Status Circle */}
-      <div className="relative flex h-44 w-44 items-center justify-center">
-        <svg className="-rotate-90 h-44 w-44">
+    <div className="mx-auto flex max-w-xl flex-col items-center py-16 text-center">
+      <div className="relative h-40 w-40">
+        <svg viewBox="0 0 120 120" className="rotate-90 h-full w-full">
+          {/* Background track */}
           <circle
-            cx="88"
-            cy="88"
-            r="72"
+            cx="60"
+            cy="60"
+            r="52"
+            strokeWidth="1"
             className="fill-none stroke-zinc-200"
-            strokeWidth="10"
           />
 
+          {/* Animated progress */}
           <circle
-            cx="88"
-            cy="88"
-            r="72"
-            className={
-              result.passed
-                ? "fill-none stroke-primary"
-                : "fill-none stroke-red-500"
+            cx="60"
+            cy="60"
+            r="52"
+            strokeWidth="4"
+            strokeLinecap="square"
+            pathLength="100"
+            strokeDasharray="100"
+            strokeDashoffset="100"
+            className={`fill-none animate-circle-progress ${
+              result.passed ? "stroke-primary" : "stroke-[#8b5cf6]"
+            }`}
+            style={
+              {
+                "--progress": 100 - percentage,
+              } as React.CSSProperties
             }
-            strokeWidth="10"
-            strokeLinecap="round"
-            strokeDasharray="452"
-            strokeDashoffset="452"
-            style={{
-              animation: "drawCircle 1s ease forwards",
-            }}
           />
         </svg>
 
-        <div className="absolute animate-[pop_0.35s_ease_0.9s_forwards] scale-0">
+        <div className="absolute inset-0 flex items-center justify-center">
           {result.passed ? (
-            <Check className="h-16 w-16 text-primary" strokeWidth={3} />
+            <Check
+              className="animate-[fade-in_.3s_ease_.8s_forwards] opacity-0 text-primary"
+              size={48}
+              strokeWidth={1.5}
+            />
           ) : (
-            <X className="h-16 w-16 text-red-500" strokeWidth={3} />
+            <X
+              className="animate-[fade-in_.3s_ease_.8s_forwards] opacity-0"
+              size={48}
+              strokeWidth={2.5}
+            />
           )}
         </div>
       </div>
 
-      {/* Header */}
-      <div className="space-y-3">
-        <span className="block text-[10px] font-bold uppercase tracking-[0.4em] text-primary">
-          Assessment Complete
-        </span>
+      <span className="mt-10 text-[10px] font-bold uppercase tracking-[0.4em] text-primary">
+        Assessment Complete
+      </span>
 
-        <h1 className="text-5xl font-light tracking-tight text-zinc-900">
-          {result.passed ? "Congratulations!" : "Assessment Complete"}
-        </h1>
+      <h1 className="mt-4 text-4xl font-light tracking-tight text-zinc-900">
+        {result.passed ? "Passed" : "Not Passed"}
+      </h1>
 
-        <p className="text-lg font-light text-zinc-500">
-          {result.passed
-            ? "You successfully passed this assessment."
-            : "You did not reach the required passing score."}
-        </p>
-      </div>
+      <p className="mt-3 text-zinc-500">
+        You answered{" "}
+        <span className="font-medium text-zinc-900">
+          {result.score} of {result.total}
+        </span>{" "}
+        questions correctly.
+      </p>
 
-      {/* Score */}
-      <div className="w-full rounded-3xl border border-zinc-200 bg-zinc-50 p-8">
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400">
-          Your Score
-        </p>
-
-        <div className="mt-4 text-6xl font-light text-zinc-900">
-          {result.score}
-          <span className="text-3xl text-zinc-400"> / {result.total}</span>
-        </div>
-
-        <p className="mt-4 text-lg font-light text-zinc-500">
-          {percentage}% Correct
-        </p>
+      <div className="mt-6 text-6xl font-extralight text-zinc-900">
+        {percentage}
+        <span className="text-3xl text-zinc-400">%</span>
       </div>
     </div>
   );
