@@ -6,6 +6,7 @@ import {
   getLessonState,
   isPostTestUnlocked,
 } from "./_components/SideBarProgress";
+import { ArrowLeft } from "lucide-react";
 
 type LessonProgressItem = {
   completed_steps: number;
@@ -111,15 +112,6 @@ export default function ModuleSidebar({
             <div
               className={`flex items-center gap-1.5 ${isCollapsed ? "mx-auto" : ""}`}
             >
-              {!isCollapsed && (
-                <button
-                  onClick={() => window.history.back()}
-                  className="flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-500"
-                  aria-label="Go back"
-                >
-                  ‹
-                </button>
-              )}
               <button
                 onClick={onToggleCollapse}
                 className="flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-500"
@@ -189,6 +181,23 @@ export default function ModuleSidebar({
             completedSteps={0}
             onClick={() => postUnlocked && go("post_test")}
           />
+        </div>
+
+        <div className="shrink-0 border-t border-zinc-200 bg-white/80 p-3">
+          <button
+            onClick={() => window.history.back()}
+            aria-label="Exit module"
+            className={`flex  items-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition-colors hover:bg-zinc-50 ${
+              collapsedView
+                ? "w-full h-10 w-10 justify-center"
+                : "w-1/3 gap-2 px-3 py-2.5"
+            }`}
+          >
+            <ArrowLeft size={16} className="shrink-0" />
+            {!collapsedView && (
+              <span className="text-xs font-medium">Exit</span>
+            )}
+          </button>
         </div>
       </aside>
     </>
