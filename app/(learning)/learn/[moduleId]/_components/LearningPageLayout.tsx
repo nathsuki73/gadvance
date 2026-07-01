@@ -98,32 +98,27 @@ export default function LearningPageLayout({
       <div
         className={`h-screen transition-all duration-300 ease-in-out ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}`}
       >
-        {activeLessonId === "pre_test" ? (
-          <QuizContainer
-            moduleId={moduleId}
-            onContinue={() => {
-              onPretestComplete?.();
-              onNext();
-              console.log("pressed");
-            }}
-          />
-        ) : (
-          <ModuleSectionViewer
-            lesson={activeLesson}
-            currentIndex={currentIndex}
-            totalSections={lessons.length}
-            lessonsProgress={progressData.lessons_progress}
-            completedBlockIds={progressData.completed_block_ids}
-            completedQuizLessons={progressData.completed_quiz_lessons}
-            lessons={lessons}
-            onNext={onNext}
-            onPrevious={onPrevious}
-            isFirst={currentIndex === 0}
-            isLast={currentIndex === lessons.length - 1}
-            onQuizBlockCompleted={onQuizBlockCompleted}
-            onBlockCompletedLive={onBlockCompletedLive}
-          />
-        )}
+        <div className="relative h-full">
+          <div
+            className={
+              activeLessonId === "pre_test" ? "block h-full" : "hidden"
+            }
+          >
+            <QuizContainer
+              moduleId={moduleId}
+              onContinue={() => {
+                onPretestComplete?.();
+                onNext();
+                console.log("pressed");
+              }}
+            />
+          </div>
+          <div
+            className={
+              activeLessonId === "pre_test" ? "hidden" : "block h-full"
+            }
+          ></div>
+        </div>
       </div>
     </main>
   );
