@@ -5,6 +5,7 @@ export interface ModuleStructureItem {
   type: "pretest" | "lesson" | "posttest";
   title: string;
   order: number;
+  description?: string;
 }
 
 export interface ModuleStructure {
@@ -46,6 +47,7 @@ export async function getModuleStructure(
 
   const payload = await response.json();
   const laravelData: LaravelModuleStructure = payload.data;
+  console.log(laravelData);
   return {
     courseId: laravelData.learning_plan_id,
     id: laravelData.id,
