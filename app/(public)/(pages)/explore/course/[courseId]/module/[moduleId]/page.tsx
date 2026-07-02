@@ -28,6 +28,7 @@ const ModulePage = ({
       try {
         setLoading(true);
         const result = await getModule(moduleId);
+        console.log(result);
         if (!result.success || !result.data) throw new Error();
         setModule(result.data);
       } catch (err) {
