@@ -8,14 +8,17 @@ export interface ModuleStructureItem {
 }
 
 export interface ModuleStructure {
+  courseId: string;
   id: string;
   title: string;
   items: ModuleStructureItem[];
 }
 
-interface LaravelModuleStructureResponse {
-  success: boolean;
-  data: ModuleStructure;
+interface LaravelModuleStructure {
+  learning_plan_id: string;
+  id: string;
+  title: string;
+  items: ModuleStructureItem[];
 }
 
 export async function getModuleStructure(
@@ -41,8 +44,12 @@ export async function getModuleStructure(
     );
   }
 
-  const payload: LaravelModuleStructureResponse = await response.json();
-
-  console.log(payload.data);
-  return payload.data;
+  const payload = await response.json();
+  const laravelData: LaravelModuleStructure = payload.data;
+  return {
+    courseId: laravelData.learning_plan_id,
+    id: laravelData.id,
+    title: laravelData.title,
+    items: laravelData.items,
+  };
 }

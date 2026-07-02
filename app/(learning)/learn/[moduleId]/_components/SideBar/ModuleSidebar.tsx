@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import SideBarNavItem from "./_components/SideBarNavItem";
+import { useRouter } from "next/navigation";
 
 type LessonBlock = { id: string; title: string };
 type LearningItem = {
@@ -14,6 +15,7 @@ type LearningItem = {
 };
 
 type Props = {
+  courseId: string;
   moduleId: string;
   structureTitle?: string;
   items: LearningItem[];
@@ -36,6 +38,8 @@ const DOT_COLORS: Record<
 };
 
 export default function ModuleSidebar({
+  courseId,
+  moduleId,
   structureTitle,
   items = [],
   activeItem,
@@ -46,6 +50,9 @@ export default function ModuleSidebar({
   mobileOpen,
   onCloseMobile,
 }: Props) {
+  const router = useRouter();
+  console.log("id");
+  console.log(courseId);
   const [expanded, setExpanded] = useState<Set<string>>(
     new Set([activeItem.id]),
   );
@@ -195,7 +202,9 @@ export default function ModuleSidebar({
 
         <div className="shrink-0 border-t border-zinc-200 bg-white/80 p-3">
           <button
-            onClick={() => window.history.back()}
+            onClick={() =>
+              router.push(`/explore/course/${courseId}/module/${moduleId}`)
+            }
             aria-label="Exit module"
             className={`flex items-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition-colors hover:bg-zinc-50 ${
               collapsedView

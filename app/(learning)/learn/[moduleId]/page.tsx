@@ -7,17 +7,11 @@ import { Loader2, Menu } from "lucide-react";
 import ModuleSidebar from "./_components/SideBar/ModuleSidebar";
 import QuizContainer from "./_blocks/TestContainer/QuizContainer";
 // import LessonContainer from "./_blocks/LessonContainer/LessonContainer";
-import { getModuleStructure } from "./service";
+import { getModuleStructure, ModuleStructure } from "./service";
 import { LearningItem } from "./types";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
-};
-
-type ModuleStructure = {
-  id: string;
-  title: string;
-  items: LearningItem[];
 };
 
 const LearnPage = ({ params }: LearnPageProps) => {
@@ -46,7 +40,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
         const structure = await getModuleStructure(moduleId);
         setModule(structure);
-
+        console.log(module?.courseId + "asdasd");
         const first = structure.items[0] ?? null;
         setActiveItem(first);
         setActiveBlockId(undefined);
@@ -97,6 +91,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
   return (
     <main className="min-h-screen">
       <ModuleSidebar
+        courseId={module.courseId}
         moduleId={moduleId}
         structureTitle={module.title}
         items={module.items}
