@@ -7,8 +7,13 @@ import { Loader2, Menu } from "lucide-react";
 import ModuleSidebar from "./_components/SideBar/ModuleSidebar";
 import QuizContainer from "./_blocks/TestContainer/QuizContainer";
 // import LessonContainer from "./_blocks/LessonContainer/LessonContainer";
-import { getModuleStructure, ModuleStructure } from "./service";
+import {
+  getModuleStructure,
+  ModuleStructure,
+  ModuleStructureItem,
+} from "./service";
 import { LearningItem } from "./types";
+import LessonContainer from "./_components/LessonContainer/LessonContainer";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
@@ -17,6 +22,7 @@ type LearnPageProps = {
 const LearnPage = ({ params }: LearnPageProps) => {
   const { moduleId } = use(params);
 
+  const [lessonItems, setLessonItems] = useState<ModuleStructureItem[]>();
   const [module, setModule] = useState<ModuleStructure | null>(null);
   const [activeItem, setActiveItem] = useState<LearningItem | null>(null);
   const [activeBlockId, setActiveBlockId] = useState<string | undefined>(
@@ -40,8 +46,8 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
         const structure = await getModuleStructure(moduleId);
         setModule(structure);
-        console.log(module?.courseId + "asdasd");
         const first = structure.items[0] ?? null;
+        setLessonItems(structure.items);
         setActiveItem(first);
         setActiveBlockId(undefined);
         if (first) setVisitedIds(new Set([first.id]));
@@ -134,8 +140,12 @@ const LearnPage = ({ params }: LearnPageProps) => {
                 />
               )}
               {item.type === "lesson" && (
-                // <LessonContainer lessonId={item.id} onContinue={handleNext} />
-                <div>lesssssonss</div>
+                <LessonContainer
+                  lessonItems={lessonItems}
+                  lessonId={item.id}
+                  activeBlockId={activeBlockId}
+                  onContinue={handleNext}
+                />
               )}
               {item.type === "posttest" && (
                 <QuizContainer
