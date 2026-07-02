@@ -33,15 +33,22 @@ export default function PersonalityInfo() {
         });
 
         if (response.ok) {
-          const dbData = await response.json();
-          setBio(dbData.bio || "");
-          
-          if (dbData.avatar) {
-            // Check if stored URL is absolute or relative path from Laravel storage
-            const fullAvatarUrl = dbData.avatar.startsWith("http") 
-              ? dbData.avatar 
-              : `${apiBaseUrl}/storage/${dbData.avatar}`;
+          const payload = await response.json();
+          const dbData = payload?.data ?? payload;
+
+          setBio(dbData?.bio || "");
+
+          const avatarPath = dbData?.avatar;
+          if (avatarPath) {
+            const fullAvatarUrl =
+              avatarPath.startsWith("http")
+                ? avatarPath
+                : avatarPath.startsWith("/")
+                  ? `${apiBaseUrl}${avatarPath}`
+                  : `${apiBaseUrl}/storage/${avatarPath}`;
             setAvatarPreview(fullAvatarUrl);
+          } else {
+            setAvatarPreview(null);
           }
         }
       } catch (error) {
