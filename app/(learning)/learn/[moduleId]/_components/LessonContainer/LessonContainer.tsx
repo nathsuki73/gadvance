@@ -79,7 +79,7 @@ export default function LessonContainer({
     };
 
     return (
-      <div className="size-full bg-amber-300 max-w-4xl p-6">
+      <div className="size-full">
         <TopicOverview lesson={formattedLesson} onContinue={onContinue} />{" "}
       </div>
     );

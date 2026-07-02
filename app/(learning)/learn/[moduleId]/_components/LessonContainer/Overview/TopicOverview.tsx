@@ -21,11 +21,11 @@ export default function TopicOverview({
 
   return (
     <div
-      className={`size-full overflow-hidden rounded-2xl border transition-all duration-300 border-indigo-400 shadow-md ring-1 ring-indigo-400/30"
+      className={`size-full overflow-hidden transition-all duration-300 "
       }`}
     >
-      <div className="bg-indigo-50/70 px-6 py-4 border-b border-zinc-100 flex items-center justify-start text-left">
-        <h3 className="font-semibold text-zinc-800 text-lg tracking-tight">
+      <div className="bg-indigo-50/70 px-12 sm:px-23 py-4 border-b border-zinc-100 flex items-center justify-start text-left">
+        <h3 className="font-semibold text-zinc-800 text-5xl tracking-tight">
           {lesson.title}
         </h3>
       </div>
@@ -40,7 +40,7 @@ export default function TopicOverview({
             {objectives.map((objective, index) => (
               <li
                 key={index}
-                className="flex items-center gap-3 text-sm font-medium text-zinc-600 bg-zinc-50/60 px-4 py-2 rounded-xl border border-zinc-100/80 w-full transition-colors hover:bg-zinc-50"
+                className="w-full flex items-center gap-3 text-sm text-zinc-600 font-medium"
               >
                 <span className="h-2 w-2 shrink-0 rounded-full bg-indigo-400" />
                 <span className="text-left flex-1">{objective}</span>
