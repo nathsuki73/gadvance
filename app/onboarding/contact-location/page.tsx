@@ -1,47 +1,64 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown, Globe } from "lucide-react";
 import logoIcon from "@/app/assets/logo.ico";
 
 const ContactLocation = () => {
   const router = useRouter();
   const [persistedData, setPersistedData] = useState<any>(null);
+  
+  // Custom Dropdown UI State
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState("Philippines");
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Load state from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem("onboarding_p2");
     if (saved) {
       try {
-        setPersistedData(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setPersistedData(parsed);
+        if (parsed.country) {
+          setSelectedCountry(parsed.country);
+        }
       } catch (e) {
         // ignore
       }
     }
   }, []);
 
+  // Close dropdown if user clicks outside of it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleNext = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    // Create the data object for this step
     const pageTwoData = {
       phone: formData.get("phone"),
       addressLine: formData.get("addressLine"),
       city: formData.get("city"),
       state: formData.get("state"),
-      country: formData.get("country"),
+      country: formData.get("country"), // Reads from hidden input field seamlessly
       postalCode: formData.get("postalCode"),
     };
     
-    // Store in localStorage to persist across file navigation
     localStorage.setItem("onboarding_p2", JSON.stringify(pageTwoData));
-    
-    // Navigate to Page 3 (Final Step)
     router.push("/onboarding/icon-bio");
   };
 
   const handleBack = () => {
-    // Save current form values before navigating back
     const form = document.getElementById("contactLocationForm") as HTMLFormElement | null;
     if (form) {
       const fd = new FormData(form);
@@ -106,7 +123,43 @@ const ContactLocation = () => {
 
             {/* Country and Postal Grid */}
             <div className="grid grid-cols-2 gap-4">
-               <InputField label="Country" name="country" defaultValue={persistedData?.country || "Philippines"} required />
+               {/* Custom Polished Dropdown UI */}
+               <div className="relative text-left" ref={dropdownRef}>
+                 <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+                   Country <span className="text-red-500 ml-1">*</span>
+                 </label>
+                 
+                 {/* 🎯 HIDDEN INPUT FOR FORMDATA GRABS */}
+                 <input type="hidden" name="country" value={selectedCountry} />
+
+                 <button
+                   type="button"
+                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                   className="flex w-full items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 text-sm text-zinc-600 focus:border-[#8b5cf6] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all text-left"
+                 >
+                   <div className="flex items-center gap-3">
+                     <Globe className="h-4 w-4 text-zinc-400 shrink-0" />
+                     <span className="font-normal text-zinc-600">{selectedCountry}</span>
+                   </div>
+                   <ChevronDown className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
+                 </button>
+
+                 {isDropdownOpen && (
+                   <div className="absolute z-50 mt-2 max-h-48 w-full overflow-y-auto rounded-xl border border-zinc-100 bg-white p-1.5 shadow-2xl shadow-zinc-200/40 animate-in fade-in slide-in-from-top-1 duration-150">
+                     <button
+                       type="button"
+                       onClick={() => {
+                         setSelectedCountry("Philippines");
+                         setIsDropdownOpen(false);
+                       }}
+                       className="flex w-full items-center rounded-lg px-3 py-2.5 text-xs font-medium text-[#8b5cf6] bg-violet-50/70 text-left"
+                     >
+                       Philippines
+                     </button>
+                   </div>
+                 )}
+               </div>
+
                <InputField label="Postal Code" name="postalCode" placeholder="e.g. 4000" required defaultValue={persistedData?.postalCode || ""} />
             </div>
 
