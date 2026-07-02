@@ -79,16 +79,8 @@ export default function LessonContainer({
     };
 
     return (
-      <div className="mx-auto max-w-4xl p-6">
-        <TopicOverview lesson={formattedLesson} active={true} />
-        <div className="mt-6 flex justify-end">
-          <button
-            onClick={onContinue}
-            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow transition hover:bg-primary/90"
-          >
-            Start Lesson
-          </button>
-        </div>
+      <div className="size-full bg-amber-300 max-w-4xl p-6">
+        <TopicOverview lesson={formattedLesson} onContinue={onContinue} />{" "}
       </div>
     );
   }

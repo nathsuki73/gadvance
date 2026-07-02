@@ -123,14 +123,14 @@ const LearnPage = ({ params }: LearnPageProps) => {
       </div>
 
       <div
-        className={`h-screen transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}`}
+        className={`h-screen max-h-screen transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}`}
       >
         {module.items
           .filter((item) => visitedIds.has(item.id))
           .map((item) => (
             <div
               key={item.id}
-              className={item.id === activeItem.id ? "block h-full" : "hidden"}
+              className={item.id === activeItem.id ? "h-full" : "hidden"}
             >
               {item.type === "pretest" && (
                 <QuizContainer
