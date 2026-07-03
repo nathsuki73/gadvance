@@ -6,7 +6,7 @@ import SideBarNavItem from "./_components/SideBarNavItem";
 import { useRouter } from "next/navigation";
 
 type LessonBlock = { id: string; title: string };
-type LearningItem = {
+export type LearningItem = {
   id: string;
   title: string;
   type: "pretest" | "lesson" | "posttest";
