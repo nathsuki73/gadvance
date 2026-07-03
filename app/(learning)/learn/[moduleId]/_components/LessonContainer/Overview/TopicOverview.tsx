@@ -49,14 +49,6 @@ export default function TopicOverview({
           </ul>
         </div>
       )}
-      <div className="mt-6 flex justify-end w-full max-w-md mx-auto">
-        <button
-          onClick={onContinue}
-          className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow transition hover:bg-primary/90"
-        >
-          Start Lesson
-        </button>
-      </div>
     </div>
   );
 }

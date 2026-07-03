@@ -12,12 +12,14 @@ type LessonContainerProps = {
   lessonId: string;
   activeBlockId: string | undefined;
   onContinue: () => void;
+  handleNextSubRow: () => void;
 };
 
 export default function LessonContainer({
   lessonItems,
   lessonId,
   activeBlockId,
+  handleNextSubRow,
   onContinue,
 }: LessonContainerProps) {
   // 2. State now uses the combined type
@@ -79,8 +81,24 @@ export default function LessonContainer({
     };
 
     return (
-      <div className="size-full">
-        <TopicOverview lesson={formattedLesson} onContinue={onContinue} />{" "}
+      /* 1. flex flex-col: Stacks the content and button vertically.
+        2. min-h-full: Ensures it occupies the full container height, but can grow if content overflows.
+      */
+      <div className="flex flex-col min-h-full w-full justify-between p-6">
+        {/* 3. flex-1 allows this block to take up all remaining space, pushing the button to the bottom */}
+        <div className="flex-1 w-full">
+          <TopicOverview lesson={formattedLesson} onContinue={onContinue} />
+        </div>
+
+        {/* 4. The button sits at the base and will naturally be pushed down if content overflows */}
+        <div className="mt-6 flex justify-center shrink-0">
+          <button
+            onClick={handleNextSubRow}
+            className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors shadow-sm"
+          >
+            {activeBlockId === "quiz" ? "Next Lesson" : "Next Step"}
+          </button>
+        </div>
       </div>
     );
   }

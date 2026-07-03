@@ -4,7 +4,9 @@ import { use, useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
 
-import ModuleSidebar from "./_components/SideBar/ModuleSidebar";
+import ModuleSidebar, {
+  LearningItem,
+} from "./_components/SideBar/ModuleSidebar";
 import QuizContainer from "./_blocks/TestContainer/QuizContainer";
 // import LessonContainer from "./_blocks/LessonContainer/LessonContainer";
 import {
@@ -12,7 +14,6 @@ import {
   ModuleStructure,
   ModuleStructureItem,
 } from "./service";
-import { LearningItem } from "./types";
 import LessonContainer from "./_components/LessonContainer/LessonContainer";
 
 type LearnPageProps = {
@@ -79,7 +80,60 @@ const LearnPage = ({ params }: LearnPageProps) => {
     );
     const next = module.items[currentIndex + 1];
 
-    if (next) goTo(next);
+    if (next) {
+      // If the next item is a lesson, initialize it at the "overview" subrow
+      const initialBlockId = next.type === "lesson" ? "overview" : undefined;
+      goTo(next, initialBlockId);
+    }
+  };
+
+  const handleNextSubRow = () => {
+    if (!activeItem) return;
+
+    if (activeItem.type !== "lesson") return;
+
+    const blocks = activeItem.lesson_blocks ?? [];
+
+    // 1. If currently on overview, go to the first block (if it exists) or the quiz
+    if (activeBlockId === "overview") {
+      if (blocks.length > 0) {
+        goTo(activeItem, blocks[0].id);
+      } else {
+        goTo(activeItem, "quiz");
+      }
+      return;
+    }
+
+    // 2. If currently on one of the lesson blocks, find its index
+    const currentBlockIndex = blocks.findIndex((b) => b.id === activeBlockId);
+
+    if (currentBlockIndex !== -1) {
+      // If there is another block after this one, go to it
+      if (currentBlockIndex < blocks.length - 1) {
+        goTo(activeItem, blocks[currentBlockIndex + 1].id);
+      } else {
+        // Otherwise, we reached the end of the blocks array, go to quiz
+        goTo(activeItem, "quiz");
+      }
+      return;
+    }
+
+    // 3. If currently on the quiz, we have reached the end of this lesson
+    if (activeBlockId === "quiz") {
+      // Optional: Find the next main item in the 'items' array
+      if (!module) return;
+      const currentItemIndex = module.items.findIndex(
+        (item) => item.id === activeItem.id,
+      );
+      if (
+        currentItemIndex !== -1 &&
+        currentItemIndex < module.items.length - 1
+      ) {
+        const nextItem = module.items[currentItemIndex + 1];
+        // Automatically jump to the overview of the next lesson/item
+        goTo(nextItem, nextItem.type === "lesson" ? "overview" : undefined);
+      }
+    }
   };
 
   if (loading) {
@@ -145,6 +199,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
                   lessonId={item.id}
                   activeBlockId={activeBlockId}
                   onContinue={handleNext}
+                  handleNextSubRow={handleNextSubRow}
                 />
               )}
               {item.type === "posttest" && (
