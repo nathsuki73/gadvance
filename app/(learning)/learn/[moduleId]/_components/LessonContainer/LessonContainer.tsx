@@ -22,29 +22,34 @@ export default function LessonContainer({
   handleNextSubRow,
   onContinue,
 }: LessonContainerProps) {
-  // 2. State now uses the combined type
-  const [overview, setOverview] = useState<ModuleStructureItem>();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  // Cache the overviews in an object keyed by lessonId
+  const [overviewsCache, setOverviewsCache] = useState<
+    Record<string, ModuleStructureItem>
+  >({});
 
   useEffect(() => {
+    // If we already have the data for this lessonId, don't refetch
+    if (overviewsCache[lessonId]) return;
+
     const fetchLessonOverview = async () => {
       try {
-        setLoading(true);
+        setLoading(true); // Turn loading ON before fetch
         const fetchedLessons: Lesson[] = await fetchOverview(lessonId);
-
-        // Grab the description from the first item returned (if it exists)
         const apiDescription = fetchedLessons[0]?.description || "";
 
-        // 1. Find the specific lesson item that matches the active lessonId
         const currentLessonItem = lessonItems?.find(
           (item) => item.id === lessonId,
         );
 
-        // 2. Combine the properties of that found item with the API description
-        setOverview({
-          ...currentLessonItem, // Spreads title, id, etc., from the matched item
-          description: apiDescription,
-        } as ModuleStructureItem);
+        // Store the combined item in cache
+        setOverviewsCache((prev) => ({
+          ...prev,
+          [lessonId]: {
+            ...currentLessonItem,
+            description: apiDescription,
+          } as ModuleStructureItem,
+        }));
       } catch (error) {
         console.error("Failed to fetch lesson overview:", error);
       } finally {
@@ -53,7 +58,7 @@ export default function LessonContainer({
     };
 
     fetchLessonOverview();
-  }, [lessonId, lessonItems]); // Don't forget to include these in the dependency array!
+  }, [lessonId, lessonItems, overviewsCache]);
 
   if (loading) {
     return (
@@ -63,34 +68,19 @@ export default function LessonContainer({
     );
   }
 
-  // 4. Checking against 'overview' instead of the undefined 'lesson'
-  if (!overview) {
-    return (
-      <div className="p-8 text-zinc-500">Lesson data could not be found.</div>
-    );
-  }
+  // Get current data from cache
+  const currentOverview = overviewsCache[lessonId];
 
-  // --- Dynamic View Router Logic ---
-
-  // 1. Show Overview Component
   if (activeBlockId === "overview" || !activeBlockId) {
-    // 5. Transform your combined state into the shape expected by TopicOverview
-    const formattedLesson = {
-      title: overview.title,
-      description: overview.description ?? "",
-    };
-
     return (
-      /* 1. flex flex-col: Stacks the content and button vertically.
-        2. min-h-full: Ensures it occupies the full container height, but can grow if content overflows.
-      */
       <div className="flex flex-col min-h-full w-full justify-between p-6">
-        {/* 3. flex-1 allows this block to take up all remaining space, pushing the button to the bottom */}
         <div className="flex-1 w-full">
-          <TopicOverview lesson={formattedLesson} onContinue={onContinue} />
+          <TopicOverview
+            overview={currentOverview} // Pass the cached data down
+            onContinue={onContinue}
+          />
         </div>
 
-        {/* 4. The button sits at the base and will naturally be pushed down if content overflows */}
         <div className="mt-6 flex justify-center shrink-0">
           <button
             onClick={handleNextSubRow}
@@ -105,9 +95,34 @@ export default function LessonContainer({
 
   // 2. Show Lesson Unit Quiz
   if (activeBlockId === "quiz") {
-    return <div>quiz</div>;
+    return (
+      <div className="flex flex-col min-h-full w-full justify-between p-6">
+        <div className="flex-1 w-full">quiz</div>
+
+        <div className="mt-6 flex justify-center shrink-0">
+          <button
+            onClick={handleNextSubRow}
+            className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors shadow-sm"
+          >
+            Next Lesson
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  // 3. Custom Default
-  return <div>lessssson</div>;
+  return (
+    <div className="flex flex-col min-h-full w-full justify-between p-6">
+      <div className="flex-1 w-full">lesson</div>
+
+      <div className="mt-6 flex justify-center shrink-0">
+        <button
+          onClick={handleNextSubRow}
+          className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors shadow-sm"
+        >
+          {activeBlockId === "quiz" ? "Next Lesson" : "Next Step"}
+        </button>
+      </div>
+    </div>
+  );
 }

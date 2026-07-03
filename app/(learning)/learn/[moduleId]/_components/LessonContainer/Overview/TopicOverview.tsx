@@ -1,32 +1,33 @@
-type Lesson = {
-  title: string;
-  description: string;
-};
+import { ModuleStructureItem } from "../../../service";
 
 interface TopicOverviewProps {
-  lesson: Lesson;
-  active?: boolean;
+  overview?: ModuleStructureItem;
   onContinue: () => void;
 }
 
-export default function TopicOverview({
-  lesson,
-  onContinue,
-}: TopicOverviewProps) {
+export default function TopicOverview({ overview }: TopicOverviewProps) {
+  if (!overview) {
+    return (
+      <div className="p-8 text-zinc-500">Lesson data could not be found.</div>
+    );
+  }
+
+  const formattedLesson = {
+    title: overview.title,
+    description: overview.description ?? "",
+  };
+
   const objectives =
-    lesson.description
+    formattedLesson.description
       ?.split("\n")
       .filter((line) => line.trim().startsWith("-"))
       .map((line) => line.replace("-", "").trim()) || [];
 
   return (
-    <div
-      className={`size-full overflow-hidden transition-all duration-300 "
-      }`}
-    >
+    <div className="size-full overflow-hidden transition-all duration-300">
       <div className="bg-indigo-50/70 px-12 sm:px-23 py-4 border-b border-zinc-100 flex items-center justify-start text-left">
         <h3 className="font-semibold text-zinc-800 text-5xl tracking-tight">
-          {lesson.title}
+          {formattedLesson.title}
         </h3>
       </div>
 
