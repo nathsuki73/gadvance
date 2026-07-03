@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import TopicOverview from "./Overview/TopicOverview";
 import { ModuleStructureItem } from "../../service";
-import { fetchOverview } from "./service";
+import { fetchOverview, fetchSubtopics } from "./service";
 import { Lesson } from "./Overview/types";
+import Subtopic, { SubtopicItem } from "./SubTopic/Subtopic";
 
 type LessonContainerProps = {
   lessonItems?: ModuleStructureItem[];
@@ -26,6 +27,10 @@ export default function LessonContainer({
   // Cache the overviews in an object keyed by lessonId
   const [overviewsCache, setOverviewsCache] = useState<
     Record<string, ModuleStructureItem>
+  >({});
+
+  const [subtopicsCache, setSubtopicsCache] = useState<
+    Record<string, SubtopicItem[]>
   >({});
 
   useEffect(() => {
@@ -60,6 +65,39 @@ export default function LessonContainer({
     fetchLessonOverview();
   }, [lessonId, lessonItems, overviewsCache]);
 
+  useEffect(() => {
+    // Only run if we have a valid activeBlockId, and it's not a generic view or already cached
+    if (
+      !activeBlockId ||
+      activeBlockId === "overview" ||
+      activeBlockId === "quiz" ||
+      subtopicsCache[activeBlockId]
+    ) {
+      return;
+    }
+
+    const fetchLessonSubtopics = async () => {
+      try {
+        setLoading(true);
+        console.log("ACTIVE BLOCK ID:" + activeBlockId);
+        console.log("LESSON ID:" + lessonId);
+        // Fetch subtopics specific to this active block item
+        const data: SubtopicItem[] = await fetchSubtopics(activeBlockId);
+        console.log("DATA: a" + data);
+        setSubtopicsCache((prev) => ({
+          ...prev,
+          [activeBlockId]: data,
+        }));
+      } catch (error) {
+        console.error("Failed to fetch subtopics:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLessonSubtopics();
+  }, [activeBlockId, subtopicsCache]);
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
@@ -70,6 +108,9 @@ export default function LessonContainer({
 
   // Get current data from cache
   const currentOverview = overviewsCache[lessonId];
+  if (!activeBlockId) return;
+  const currentSubtopic = subtopicsCache[activeBlockId];
+  console.log("");
 
   if (activeBlockId === "overview" || !activeBlockId) {
     return (
@@ -113,7 +154,9 @@ export default function LessonContainer({
 
   return (
     <div className="flex flex-col min-h-full w-full justify-between p-6">
-      <div className="flex-1 w-full">lesson</div>
+      <div className="flex-1 w-full">
+        <Subtopic subtopics={currentSubtopic} />
+      </div>
 
       <div className="mt-6 flex justify-center shrink-0">
         <button
