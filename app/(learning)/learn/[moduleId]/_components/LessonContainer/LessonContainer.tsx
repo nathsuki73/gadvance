@@ -7,6 +7,7 @@ import { ModuleStructureItem } from "../../service";
 import { fetchOverview, fetchSubtopics } from "./service";
 import { Lesson } from "./Overview/types";
 import Subtopic, { SubtopicItem } from "./SubTopic/Subtopic";
+import LessonQuiz from "./Quiz/LessonQuiz";
 
 type LessonContainerProps = {
   lessonItems?: ModuleStructureItem[];
@@ -138,7 +139,7 @@ export default function LessonContainer({
   if (activeBlockId === "quiz") {
     return (
       <div className="flex flex-col min-h-full w-full justify-between p-6">
-        <div className="flex-1 w-full">quiz</div>
+        <LessonQuiz lessonBlockId={lessonId} />
 
         <div className="mt-6 flex justify-center shrink-0">
           <button
