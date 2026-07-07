@@ -168,7 +168,7 @@ export default function ModuleSidebar({
                       <DonutProgress
                         totalSteps={item.totalSteps}
                         completedSteps={item.completedSteps ?? 0}
-                        size={collapsedView ? 22 : 24}
+                        size={collapsedView ? 22 : 20}
                         strokeWidth={2}
                       />
                     ) : undefined
