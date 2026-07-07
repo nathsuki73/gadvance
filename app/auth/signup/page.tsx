@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import { handleSignIn } from "../../lib/auth";
@@ -107,9 +108,10 @@ const SignUp = () => {
         {/* Logo - Top Left */}
         <div className="absolute top-8 left-8 flex items-center gap-3">
           <div className="relative h-7 w-7">
-            <img
+            <Image
               src={logoIcon.src}
               alt="GADVance logo"
+              fill
               className="object-contain"
             />
           </div>
@@ -168,6 +170,27 @@ const SignUp = () => {
                   {errors.email && (
                     <p className="text-[9px] text-red-500 font-bold mt-1.5 uppercase tracking-wider">
                       {errors.email}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+                    Birthday
+                    <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <input
+                    name="birthday"
+                    type="date"
+                    value={formData.birthday}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 rounded-xl border ${
+                      errors.birthday ? "border-red-400" : "border-zinc-100"
+                    } focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 bg-zinc-50/50`}
+                  />
+                  {errors.birthday && (
+                    <p className="text-[9px] text-red-500 font-bold mt-1.5 uppercase tracking-wider">
+                      {errors.birthday}
                     </p>
                   )}
                 </div>
