@@ -15,6 +15,7 @@ import {
   ModuleStructureItem,
 } from "./service";
 import LessonContainer from "./_components/LessonContainer/LessonContainer";
+import { useScrollDirection } from "./_hooks/useScrollDirection";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
@@ -42,6 +43,8 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  const showHeader = useScrollDirection();
 
   useEffect(() => {
     if (!moduleId) return;
@@ -213,7 +216,11 @@ const LearnPage = ({ params }: LearnPageProps) => {
         onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
-      <div className="sticky top-0 z-30 flex bg-white h-14 items-center border-b border-zinc-200 px-4 lg:hidden">
+      <div
+        className={`fixed inset-x-0 top-0 z-30 flex h-14 items-center border-b border-zinc-200 bg-white px-4 transition-transform duration-200 lg:hidden ${
+          showHeader ? "translate-y-0" : "-translate-y-full"
+        }`}
+      >
         <button
           onClick={() => setMobileSidebarOpen(true)}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50"
@@ -226,7 +233,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
       </div>
 
       <div
-        className={`h-screen max-h-screen transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}`}
+        className={`h-screen max-h-screen transition-all duration-300 pt-14 lg:pt-0 ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}`}
       >
         {module.items
           .filter((item) => visitedIds.has(item.id))
