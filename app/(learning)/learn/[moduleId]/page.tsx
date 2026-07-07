@@ -213,7 +213,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
         onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
-      <div className="sticky top-0 z-30 flex h-14 items-center border-b border-zinc-200 px-4 lg:hidden">
+      <div className="sticky top-0 z-30 flex bg-white h-14 items-center border-b border-zinc-200 px-4 lg:hidden">
         <button
           onClick={() => setMobileSidebarOpen(true)}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50"

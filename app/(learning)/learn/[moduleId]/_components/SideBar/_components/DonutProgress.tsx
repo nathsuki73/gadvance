@@ -64,11 +64,6 @@ export const DonutProgress = ({
         />
       </svg>
       {/* Absolute Micro Inner Text Indicator when completed */}
-      {percentage === 100 && (
-        <span className={`absolute text-[8px] font-bold ${checkColorClass}`}>
-          ✓
-        </span>
-      )}
     </div>
   );
 };
