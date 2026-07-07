@@ -8,6 +8,7 @@ type Props = {
   locked?: boolean;
   collapsed: boolean;
   trailing?: string;
+  icon?: React.ReactNode;
   onClick: () => void;
 };
 
@@ -21,6 +22,7 @@ export default function SideBarNavItem({
   locked = false,
   collapsed,
   trailing,
+  icon,
   onClick,
 }: Props) {
   const dot = locked ? "bg-zinc-300" : active ? dotColor : dotColorInactive;
@@ -39,7 +41,9 @@ export default function SideBarNavItem({
               : "hover:bg-zinc-200/50"
         }`}
       >
-        <span className={`h-2.5 w-2.5 rounded-full ${dot}`} />
+        <span className="flex h-4 w-4 items-center justify-center">
+          {icon ?? <span className={`h-2.5 w-2.5 rounded-full ${dot}`} />}
+        </span>
       </button>
     );
   }
@@ -56,7 +60,11 @@ export default function SideBarNavItem({
             : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"
       }`}
     >
-      <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
+      <span className="shrink-0">
+        <span className="flex h-2 w-2 items-center justify-center pr-4">
+          {icon ?? <span className={`block h-1 w-1 rounded-full ${dot}`} />}
+        </span>
+      </span>
       <span
         className={`shrink-0 pt-0.5 font-mono text-[10px] font-bold ${active ? "text-primary" : "text-zinc-300"}`}
       >

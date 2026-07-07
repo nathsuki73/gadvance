@@ -11,15 +11,23 @@ export type QuizState = "loading" | "ready" | "started" | "completed" | "error";
 export type QuizType = "pretest" | "posttest";
 
 interface QuizContainerProps {
+  itemId: string;
   moduleId: string;
   type: QuizType;
   onContinue: () => void;
+  onProgressChange?: (
+    itemId: string,
+    completedSteps: number,
+    totalSteps: number,
+  ) => void;
 }
 
 export default function QuizContainer({
+  itemId,
   moduleId,
   type,
   onContinue,
+  onProgressChange,
 }: QuizContainerProps) {
   const [quizState, setQuizState] = useState<QuizState>("loading");
   const [test, setTest] = useState<StaticTest | null>(null);
@@ -64,6 +72,16 @@ export default function QuizContainer({
       cancelled = true;
     };
   }, [moduleId, type, quizState, test]);
+
+  useEffect(() => {
+    if (!test) return;
+
+    onProgressChange?.(
+      itemId,
+      Object.keys(answers).length,
+      test.questions.length,
+    );
+  }, [answers, itemId, onProgressChange, test]);
 
   const handleStartQuiz = (): void => setQuizState("started");
 

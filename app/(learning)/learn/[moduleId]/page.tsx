@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
 
@@ -30,6 +30,12 @@ const LearnPage = ({ params }: LearnPageProps) => {
     undefined,
   );
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
+  const [lessonProgress, setLessonProgress] = useState<
+    Record<string, Set<string>>
+  >({});
+  const [quizProgress, setQuizProgress] = useState<
+    Record<string, { completedSteps: number; totalSteps: number }>
+  >({});
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -69,8 +75,31 @@ const LearnPage = ({ params }: LearnPageProps) => {
     setVisitedIds((prev) =>
       prev.has(item.id) ? prev : new Set(prev).add(item.id),
     );
+
+    if (item.type === "lesson" && blockId) {
+      setLessonProgress((prev) => {
+        const current = prev[item.id] ?? new Set<string>();
+        if (current.has(blockId)) return prev;
+
+        const next = new Set(current);
+        next.add(blockId);
+
+        return { ...prev, [item.id]: next };
+      });
+    }
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const handleQuizProgress = useCallback(
+    (itemId: string, completedSteps: number, totalSteps: number) => {
+      setQuizProgress((prev) => ({
+        ...prev,
+        [itemId]: { completedSteps, totalSteps },
+      }));
+    },
+    [],
+  );
 
   const handleNext = () => {
     if (!module || !activeItem) return;
@@ -148,13 +177,33 @@ const LearnPage = ({ params }: LearnPageProps) => {
     notFound();
   }
 
+  const itemsWithProgress = module.items.map((item) => {
+    const learningItem = item as LearningItem;
+
+    if (item.type === "lesson") {
+      const blocks = learningItem.lesson_blocks ?? [];
+      return {
+        ...item,
+        totalSteps: blocks.length + 2,
+        completedSteps: lessonProgress[item.id]?.size ?? 0,
+      };
+    }
+
+    const progress = quizProgress[item.id];
+    return {
+      ...item,
+      totalSteps: progress?.totalSteps,
+      completedSteps: progress?.completedSteps,
+    };
+  });
+
   return (
     <main className="min-h-screen">
       <ModuleSidebar
         courseId={module.courseId}
         moduleId={moduleId}
         structureTitle={module.title}
-        items={module.items}
+        items={itemsWithProgress}
         activeItem={activeItem}
         activeBlockId={activeBlockId}
         onNavigate={goTo}
@@ -188,8 +237,10 @@ const LearnPage = ({ params }: LearnPageProps) => {
             >
               {item.type === "pretest" && (
                 <QuizContainer
+                  itemId={item.id}
                   moduleId={item.id}
                   type="pretest"
+                  onProgressChange={handleQuizProgress}
                   onContinue={handleNext}
                 />
               )}
@@ -204,8 +255,10 @@ const LearnPage = ({ params }: LearnPageProps) => {
               )}
               {item.type === "posttest" && (
                 <QuizContainer
+                  itemId={item.id}
                   moduleId={item.id}
                   type="posttest"
+                  onProgressChange={handleQuizProgress}
                   onContinue={() => console.log("Course Completed")}
                 />
               )}

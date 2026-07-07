@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import SideBarNavItem from "./_components/SideBarNavItem";
 import { useRouter } from "next/navigation";
+import { DonutProgress } from "./_components/DonutProgress";
 
 type LessonBlock = { id: string; title: string };
 export type LearningItem = {
@@ -12,6 +13,10 @@ export type LearningItem = {
   type: "pretest" | "lesson" | "posttest";
   order: number;
   lesson_blocks?: LessonBlock[];
+
+  // progress
+  totalSteps?: number;
+  completedSteps?: number;
 };
 
 type Props = {
@@ -51,8 +56,6 @@ export default function ModuleSidebar({
   onCloseMobile,
 }: Props) {
   const router = useRouter();
-  console.log("id");
-  console.log(courseId);
   const [expanded, setExpanded] = useState<Set<string>>(
     new Set([activeItem.id]),
   );
@@ -96,13 +99,13 @@ export default function ModuleSidebar({
       )}
 
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-dvh w-[290px] flex-col border-r border-zinc-200 bg-zinc-50/80 backdrop-blur-md transition-all duration-300 ease-in-out sm:w-[320px] ${
+        className={`fixed left-0 top-0 z-50 flex h-dvh w-72.5 flex-col border-r border-zinc-200 bg-zinc-50/80 backdrop-blur-md transition-all duration-300 ease-in-out sm:w-80 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 ${isCollapsed ? "lg:w-16" : "lg:w-80"}`}
       >
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-zinc-200 bg-white/80 px-4">
           <div className="flex w-full items-center justify-between gap-2 lg:hidden">
-            <span className="max-w-[220px] truncate text-sm font-semibold lowercase text-zinc-900">
+            <span className="max-w-55 truncate text-sm font-semibold lowercase text-zinc-900">
               {structureTitle}
             </span>
             <button
@@ -159,6 +162,16 @@ export default function ModuleSidebar({
                         ? "▾"
                         : "▸"
                       : undefined
+                  }
+                  icon={
+                    item.totalSteps ? (
+                      <DonutProgress
+                        totalSteps={item.totalSteps}
+                        completedSteps={item.completedSteps ?? 0}
+                        size={collapsedView ? 22 : 32}
+                        strokeWidth={3}
+                      />
+                    ) : undefined
                   }
                   onClick={() => (hasBlocks ? openLesson(item) : go(item))}
                 />
