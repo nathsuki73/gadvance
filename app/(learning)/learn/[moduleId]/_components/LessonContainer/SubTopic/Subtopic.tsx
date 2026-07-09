@@ -1,5 +1,7 @@
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
+import { useState } from "react";
+import LessonQuiz from "./MiniQuiz/LessonQuiz";
 
 export type SubtopicItem = {
   id: string;
@@ -20,6 +22,7 @@ interface SubtopicProps {
 export default function Subtopic({ subtopics }: SubtopicProps) {
   // 1. Normalize subtopics into a reliable flat array
   console.log("Subtopics prop received:", subtopics);
+  const [showQuiz, setShowQuiz] = useState(false);
 
   const subtopicsArray: SubtopicItem[] = (() => {
     if (!subtopics) return [];
@@ -126,6 +129,28 @@ export default function Subtopic({ subtopics }: SubtopicProps) {
           </div>
         );
       })}
+
+      <div className="max-w-3xl mx-auto px-6 sm:px-12 pt-10 border-t border-zinc-200">
+        {!showQuiz ? (
+          <div className="text-center space-y-4">
+            <h3 className="text-xl font-semibold text-zinc-800">
+              You&rsquo;ve reached the end of the lesson!
+            </h3>
+            <p className="text-zinc-600">
+              Ready to test what you&rsquo;ve learned?
+            </p>
+
+            <button
+              onClick={() => setShowQuiz(true)}
+              className="rounded-lg bg-indigo-600 px-6 py-3 text-white font-medium hover:bg-indigo-700 transition"
+            >
+              Start Quiz
+            </button>
+          </div>
+        ) : (
+          <LessonQuiz lessonBlockId={subtopicsArray[0].lesson_block_id} />
+        )}
+      </div>
     </div>
   );
 }

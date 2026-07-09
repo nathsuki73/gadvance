@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Quiz } from "../../Quiz/types";
-import { fetchLessonQuiz } from "../../Quiz/service";
+import { fetchMiniQuiz } from "./service";
 
 export type QuizState = "loading" | "ready" | "started" | "completed" | "error";
 
@@ -23,7 +23,7 @@ export function useLessonQuiz(lessonBlockId: string) {
       setError(null);
 
       try {
-        const data = await fetchLessonQuiz(lessonBlockId);
+        const data = await fetchMiniQuiz(lessonBlockId);
 
         if (cancelled) return;
 
