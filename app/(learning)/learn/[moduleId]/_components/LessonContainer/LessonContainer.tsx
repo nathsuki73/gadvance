@@ -39,6 +39,9 @@ export default function LessonContainer({
     {},
   );
 
+  const [lastActiveBlockId, setLastActiveBlockId] =
+    useState<string>("overview");
+
   useEffect(() => {
     // If we already have the data for this lessonId, don't refetch
     if (overviewsCache[lessonId]) return;
@@ -70,6 +73,18 @@ export default function LessonContainer({
 
     fetchLessonOverview();
   }, [lessonId, lessonItems, overviewsCache]);
+
+  useEffect(() => {
+    if (
+      activeBlockId &&
+      activeBlockId !== "overview" &&
+      activeBlockId !== "quiz"
+    ) {
+      setLastActiveBlockId(activeBlockId);
+    } else if (activeBlockId) {
+      setLastActiveBlockId(activeBlockId);
+    }
+  }, [activeBlockId]);
 
   useEffect(() => {
     // Only run if we have a valid activeBlockId, and it's not a generic view or already cached
@@ -113,15 +128,16 @@ export default function LessonContainer({
   // }
 
   const currentOverview = overviewsCache[lessonId];
-  if (!activeBlockId) return null; // Safe fallback
-  const currentSubtopic = subtopicsCache[activeBlockId];
+  const currentSubtopic = subtopicsCache[activeBlockId || ""] ?? [];
 
-  const isOverview = activeBlockId === "overview";
-  const isQuiz = activeBlockId === "quiz";
-  const isSubtopic = !isOverview && !isQuiz;
+  const isOverview = lastActiveBlockId === "overview";
+  const isQuiz = lastActiveBlockId === "quiz";
+  const isSubtopic =
+    lastActiveBlockId &&
+    lastActiveBlockId !== "overview" &&
+    lastActiveBlockId !== "quiz";
 
-  const showMiniQuiz = !!miniQuizStates[activeBlockId];
-
+  const showMiniQuiz = !!miniQuizStates[lastActiveBlockId];
   const knownBlockIds = Object.keys(subtopicsCache);
   return (
     <div className="flex flex-col min-h-full w-full justify-between p-6">
@@ -132,19 +148,12 @@ export default function LessonContainer({
 
       {/* 2. Subtopic View */}
       <div className={`flex-1 w-full space-y-6 ${isSubtopic ? "" : "hidden"}`}>
-        {/* The lesson body text/media stays visible all the time */}
         <Subtopic subtopics={currentSubtopic} />
 
-        {/* FIX: Keep this container permanently mounted so the 
-          underlying MiniQuiz mapping loop is NEVER destroyed during loads.
-        */}
         <div className="max-w-3xl mx-auto px-6 sm:px-12 pt-10 border-t border-zinc-200">
-          {/* Banner: Only show if subtopic data is loaded AND the quiz hasn't started yet */}
           <div
             className={`text-center space-y-4 ${
-              currentSubtopic &&
-              currentSubtopic.length > 0 &&
-              !miniQuizStates[activeBlockId || ""]
+              currentSubtopic && currentSubtopic.length > 0 && !showMiniQuiz
                 ? ""
                 : "hidden"
             }`}
@@ -157,10 +166,10 @@ export default function LessonContainer({
             </p>
             <button
               onClick={() =>
-                activeBlockId &&
+                lastActiveBlockId &&
                 setMiniQuizStates((prev) => ({
                   ...prev,
-                  [activeBlockId]: true,
+                  [lastActiveBlockId]: true,
                 }))
               }
               className="rounded-lg bg-indigo-600 px-6 py-3 text-white font-medium hover:bg-indigo-700 transition"
@@ -169,10 +178,9 @@ export default function LessonContainer({
             </button>
           </div>
 
-          {/* Stable Array Mapping Loop that now safely survives network updates */}
           {knownBlockIds.map((blockId) => {
             const isThisQuizActive =
-              miniQuizStates[blockId] && activeBlockId === blockId;
+              miniQuizStates[blockId] && lastActiveBlockId === blockId;
             return (
               <div key={blockId} className={isThisQuizActive ? "" : "hidden"}>
                 <MiniQuiz lessonBlockId={blockId} />
