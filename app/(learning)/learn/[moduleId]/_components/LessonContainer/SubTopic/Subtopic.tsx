@@ -1,7 +1,5 @@
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
-import { useState } from "react";
-import LessonQuiz from "./MiniQuiz/LessonQuiz";
 
 export type SubtopicItem = {
   id: string;
@@ -20,18 +18,12 @@ interface SubtopicProps {
 }
 
 export default function Subtopic({ subtopics }: SubtopicProps) {
-  // 1. Normalize subtopics into a reliable flat array
-  console.log("Subtopics prop received:", subtopics);
-  const [showQuiz, setShowQuiz] = useState(false);
-
-  const subtopicsArray: SubtopicItem[] = (() => {
+  const subtopicsArray = (() => {
     if (!subtopics) return [];
     if (Array.isArray(subtopics)) return subtopics;
-    // If it's a Record/Object, flatten all nested arrays into a single array
     return Object.values(subtopics).flat();
   })();
 
-  // 2. Fallback UI if there are no subtopics loaded
   if (subtopicsArray.length === 0) {
     return (
       <div className="p-8 text-zinc-500 text-center">
@@ -40,7 +32,6 @@ export default function Subtopic({ subtopics }: SubtopicProps) {
     );
   }
 
-  // 3. Sort subtopics safely using the normalized array
   const sortedSubtopics = [...subtopicsArray].sort(
     (a, b) => a.content_order - b.content_order,
   );
@@ -49,13 +40,10 @@ export default function Subtopic({ subtopics }: SubtopicProps) {
     <div className="size-full overflow-hidden transition-all duration-300 space-y-6">
       {sortedSubtopics.map((item) => {
         const text = item.body_text?.trim() || "";
-
-        // Check if the current block text is purely a standalone list quote block item
         const isQuote = text.startsWith("“") || text.startsWith('"');
 
         return (
           <div key={item.id} className="w-full flex flex-col">
-            {/* Header section */}
             {item.section_title && (
               <div className="bg-indigo-50/70 px-6 sm:px-12 py-4 border-b border-zinc-100 flex items-center justify-start text-left mb-4">
                 <h3 className="font-semibold text-zinc-800 text-2xl tracking-tight">
@@ -63,26 +51,17 @@ export default function Subtopic({ subtopics }: SubtopicProps) {
                 </h3>
               </div>
             )}
-
-            {/* Content Body Layout container */}
             <div className="px-6 sm:px-12 max-w-3xl mx-auto w-full space-y-3">
-              {/* Media Block */}
               {item.media_url && item.media_type === "image" && (
                 <div className="my-3 rounded-xl overflow-hidden border border-zinc-200 shadow-sm relative h-72 w-full bg-zinc-50">
                   <Image
                     src={item.media_url}
-                    alt="Lesson visual aid"
+                    alt="Visual aid"
                     fill
-                    sizes="(max-w-768px) 100vw, 768px"
                     className="object-cover"
-                    priority={
-                      item.content_order === 1 || item.content_order === 2
-                    }
                   />
                 </div>
               )}
-
-              {/* Dynamic Text Node Element Rendering */}
               {text && (
                 <div className="text-left">
                   {isQuote ? (
@@ -94,25 +73,25 @@ export default function Subtopic({ subtopics }: SubtopicProps) {
                   ) : (
                     <ReactMarkdown
                       components={{
-                        h3: ({ node, ...props }) => (
+                        h3: (props) => (
                           <h3
-                            className="font-bold text-zinc-800 text-xl tracking-tight mt-5 mb-2 first:mt-0"
+                            className="font-bold text-zinc-800 text-xl tracking-tight mt-5 mb-2"
                             {...props}
                           />
                         ),
-                        p: ({ node, ...props }) => (
+                        p: (props) => (
                           <p
-                            className="text-zinc-600 text-base leading-relaxed mb-3 last:mb-0"
+                            className="text-zinc-600 text-base leading-relaxed mb-3"
                             {...props}
                           />
                         ),
-                        ul: ({ node, ...props }) => (
+                        ul: (props) => (
                           <ul
                             className="space-y-2 pl-1 my-3 list-none"
                             {...props}
                           />
                         ),
-                        li: ({ node, ...props }) => (
+                        li: (props) => (
                           <li className="flex items-start gap-3 text-sm text-zinc-600 font-medium">
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400 mt-2" />
                             <span className="flex-1">{props.children}</span>
@@ -129,28 +108,6 @@ export default function Subtopic({ subtopics }: SubtopicProps) {
           </div>
         );
       })}
-
-      <div className="max-w-3xl mx-auto px-6 sm:px-12 pt-10 border-t border-zinc-200">
-        {!showQuiz ? (
-          <div className="text-center space-y-4">
-            <h3 className="text-xl font-semibold text-zinc-800">
-              You&rsquo;ve reached the end of the lesson!
-            </h3>
-            <p className="text-zinc-600">
-              Ready to test what you&rsquo;ve learned?
-            </p>
-
-            <button
-              onClick={() => setShowQuiz(true)}
-              className="rounded-lg bg-indigo-600 px-6 py-3 text-white font-medium hover:bg-indigo-700 transition"
-            >
-              Start Quiz
-            </button>
-          </div>
-        ) : (
-          <LessonQuiz lessonBlockId={subtopicsArray[0].lesson_block_id} />
-        )}
-      </div>
     </div>
   );
 }

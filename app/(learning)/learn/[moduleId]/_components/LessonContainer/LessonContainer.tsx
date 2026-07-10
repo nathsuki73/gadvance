@@ -7,7 +7,8 @@ import { ModuleStructureItem } from "../../service";
 import { fetchOverview, fetchSubtopics } from "./service";
 import { Lesson } from "./Overview/types";
 import Subtopic, { SubtopicItem } from "./SubTopic/Subtopic";
-import LessonQuiz from "./Quiz/LessonQuiz";
+import { LessonQuiz as MainLessonQuiz } from "./Quiz/LessonQuiz";
+import { LessonQuiz as MiniQuiz } from "./SubTopic/MiniQuiz/LessonQuiz";
 
 type LessonContainerProps = {
   lessonItems?: ModuleStructureItem[];
@@ -33,6 +34,10 @@ export default function LessonContainer({
   const [subtopicsCache, setSubtopicsCache] = useState<
     Record<string, SubtopicItem[]>
   >({});
+
+  const [miniQuizStates, setMiniQuizStates] = useState<Record<string, boolean>>(
+    {},
+  );
 
   useEffect(() => {
     // If we already have the data for this lessonId, don't refetch
@@ -115,6 +120,9 @@ export default function LessonContainer({
   const isQuiz = activeBlockId === "quiz";
   const isSubtopic = !isOverview && !isQuiz;
 
+  const showMiniQuiz = !!miniQuizStates[activeBlockId];
+
+  const knownBlockIds = Object.keys(subtopicsCache);
   return (
     <div className="flex flex-col min-h-full w-full justify-between p-6">
       {/* 1. Overview View */}
@@ -123,13 +131,60 @@ export default function LessonContainer({
       </div>
 
       {/* 2. Subtopic View */}
-      <div className={`flex-1 w-full ${isSubtopic ? "" : "hidden"}`}>
+      <div className={`flex-1 w-full space-y-6 ${isSubtopic ? "" : "hidden"}`}>
+        {/* The lesson body text/media stays visible all the time */}
         <Subtopic subtopics={currentSubtopic} />
+
+        {/* FIX: Keep this container permanently mounted so the 
+          underlying MiniQuiz mapping loop is NEVER destroyed during loads.
+        */}
+        <div className="max-w-3xl mx-auto px-6 sm:px-12 pt-10 border-t border-zinc-200">
+          {/* Banner: Only show if subtopic data is loaded AND the quiz hasn't started yet */}
+          <div
+            className={`text-center space-y-4 ${
+              currentSubtopic &&
+              currentSubtopic.length > 0 &&
+              !miniQuizStates[activeBlockId || ""]
+                ? ""
+                : "hidden"
+            }`}
+          >
+            <h3 className="text-xl font-semibold text-zinc-800">
+              You&rsquo;ve reached the end of the lesson!
+            </h3>
+            <p className="text-zinc-600">
+              Ready to test what you&rsquo;ve learned?
+            </p>
+            <button
+              onClick={() =>
+                activeBlockId &&
+                setMiniQuizStates((prev) => ({
+                  ...prev,
+                  [activeBlockId]: true,
+                }))
+              }
+              className="rounded-lg bg-indigo-600 px-6 py-3 text-white font-medium hover:bg-indigo-700 transition"
+            >
+              Start Quiz
+            </button>
+          </div>
+
+          {/* Stable Array Mapping Loop that now safely survives network updates */}
+          {knownBlockIds.map((blockId) => {
+            const isThisQuizActive =
+              miniQuizStates[blockId] && activeBlockId === blockId;
+            return (
+              <div key={blockId} className={isThisQuizActive ? "" : "hidden"}>
+                <MiniQuiz lessonBlockId={blockId} />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* 3. Quiz View (Stays mounted, retains state) */}
       <div className={`flex-1 w-full ${isQuiz ? "" : "hidden"}`}>
-        <LessonQuiz lessonBlockId={lessonId} />
+        <MainLessonQuiz lessonBlockId={lessonId} />
       </div>
 
       {/* Persistent Navigation Footer */}

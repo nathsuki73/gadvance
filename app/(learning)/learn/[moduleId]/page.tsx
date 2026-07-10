@@ -256,7 +256,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
                 <LessonContainer
                   lessonItems={lessonItems}
                   lessonId={item.id}
-                  activeBlockId={isCurrentlyActive ? activeBlockId : "overview"}
+                  activeBlockId={activeBlockId}
                   onContinue={handleNext}
                   handleNextSubRow={handleNextSubRow}
                 />

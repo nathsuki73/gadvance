@@ -11,7 +11,7 @@ type Props = {
 
 type QuizState = "loading" | "ready" | "started" | "completed" | "error";
 
-export default function LessonQuiz({ lessonBlockId }: Props) {
+export function LessonQuiz({ lessonBlockId }: Props) {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [quizState, setQuizState] = useState<QuizState>("loading");
 

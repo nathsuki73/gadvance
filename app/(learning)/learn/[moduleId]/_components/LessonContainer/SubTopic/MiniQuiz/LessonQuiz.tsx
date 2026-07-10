@@ -11,7 +11,7 @@ type Props = {
   lessonBlockId: string;
 };
 
-export default function LessonQuiz({ lessonBlockId }: Props) {
+export function LessonQuiz({ lessonBlockId }: Props) {
   const {
     quiz,
     quizState,
