@@ -99,72 +99,46 @@ export default function LessonContainer({
     fetchLessonSubtopics();
   }, [activeBlockId, subtopicsCache]);
 
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-primary" size={28} />
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="flex h-full items-center justify-center p-8">
+  //       <Loader2 className="animate-spin text-primary" size={28} />
+  //     </div>
+  //   );
+  // }
 
-  // Get current data from cache
   const currentOverview = overviewsCache[lessonId];
-  if (!activeBlockId) return;
+  if (!activeBlockId) return null; // Safe fallback
   const currentSubtopic = subtopicsCache[activeBlockId];
-  console.log("");
 
-  if (activeBlockId === "overview" || !activeBlockId) {
-    return (
-      <div className="flex flex-col min-h-full w-full justify-between p-6">
-        <div className="flex-1 w-full">
-          <TopicOverview
-            overview={currentOverview} // Pass the cached data down
-            onContinue={onContinue}
-          />
-        </div>
-
-        <div className="mt-6 flex justify-center shrink-0">
-          <button
-            onClick={handleNextSubRow}
-            className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors shadow-sm"
-          >
-            {activeBlockId === "quiz" ? "Next Lesson" : "Next Step"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // 2. Show Lesson Unit Quiz
-  if (activeBlockId === "quiz") {
-    return (
-      <div className="flex flex-col min-h-full w-full justify-between p-6">
-        <LessonQuiz lessonBlockId={lessonId} />
-
-        <div className="mt-6 flex justify-center shrink-0">
-          <button
-            onClick={handleNextSubRow}
-            className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors shadow-sm"
-          >
-            Next Lesson
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const isOverview = activeBlockId === "overview";
+  const isQuiz = activeBlockId === "quiz";
+  const isSubtopic = !isOverview && !isQuiz;
 
   return (
     <div className="flex flex-col min-h-full w-full justify-between p-6">
-      <div className="flex-1 w-full">
+      {/* 1. Overview View */}
+      <div className={`flex-1 w-full ${isOverview ? "" : "hidden"}`}>
+        <TopicOverview overview={currentOverview} onContinue={onContinue} />
+      </div>
+
+      {/* 2. Subtopic View */}
+      <div className={`flex-1 w-full ${isSubtopic ? "" : "hidden"}`}>
         <Subtopic subtopics={currentSubtopic} />
       </div>
 
+      {/* 3. Quiz View (Stays mounted, retains state) */}
+      <div className={`flex-1 w-full ${isQuiz ? "" : "hidden"}`}>
+        <LessonQuiz lessonBlockId={lessonId} />
+      </div>
+
+      {/* Persistent Navigation Footer */}
       <div className="mt-6 flex justify-center shrink-0">
         <button
           onClick={handleNextSubRow}
           className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors shadow-sm"
         >
-          {activeBlockId === "quiz" ? "Next Lesson" : "Next Step"}
+          {isQuiz ? "Next Lesson" : "Next Step"}
         </button>
       </div>
     </div>

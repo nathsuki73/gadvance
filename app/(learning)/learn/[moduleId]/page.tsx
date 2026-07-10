@@ -235,12 +235,13 @@ const LearnPage = ({ params }: LearnPageProps) => {
       <div
         className={`h-screen max-h-screen transition-all duration-300 pt-14 lg:pt-0 ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}`}
       >
-        {module.items
-          .filter((item) => visitedIds.has(item.id))
-          .map((item) => (
+        {module.items.map((item) => {
+          const isCurrentlyActive = item.id === activeItem.id;
+
+          return (
             <div
               key={item.id}
-              className={item.id === activeItem.id ? "h-full" : "hidden"}
+              className={isCurrentlyActive ? "h-full" : "hidden"}
             >
               {item.type === "pretest" && (
                 <QuizContainer
@@ -255,7 +256,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
                 <LessonContainer
                   lessonItems={lessonItems}
                   lessonId={item.id}
-                  activeBlockId={activeBlockId}
+                  activeBlockId={isCurrentlyActive ? activeBlockId : "overview"}
                   onContinue={handleNext}
                   handleNextSubRow={handleNextSubRow}
                 />
@@ -270,7 +271,8 @@ const LearnPage = ({ params }: LearnPageProps) => {
                 />
               )}
             </div>
-          ))}
+          );
+        })}
       </div>
     </main>
   );
