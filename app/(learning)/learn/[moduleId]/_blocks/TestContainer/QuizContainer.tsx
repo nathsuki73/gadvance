@@ -61,7 +61,13 @@ export default function QuizContainer({
 
         // Unpack the unified response server wrapper safely
         if (response.success && response.data) {
-          setTest(response.data); // Correctly sets the StaticTest object shape
+          setTest(response.data);
+
+          // Hydrate answers already saved in the database if they exist
+          if (response.data.previouslySavedAnswers) {
+            setAnswers(response.data.previouslySavedAnswers);
+          }
+
           setQuizState("ready");
         } else {
           // Fallback if success flag came back false from the network engine
@@ -129,6 +135,8 @@ export default function QuizContainer({
         {quizState === "started" && test && (
           <QuizActive
             test={test}
+            attemptId={test.attemptId}
+            initialIndex={test.currentIndex ?? 0}
             answers={answers}
             onAnswer={handleAnswer}
             onSubmit={handleSubmit}

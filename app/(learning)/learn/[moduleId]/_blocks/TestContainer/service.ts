@@ -116,3 +116,28 @@ export async function fetchStaticTest(
     },
   };
 }
+
+export async function saveQuizProgress(
+  attemptId: string,
+  payload: {
+    question_id: string;
+    selected_choice_id: string;
+    current_index: number;
+  },
+): Promise<{ success: boolean; error?: string }> {
+  // Uses your secure internal custom request wrapper which handles the authorization JWT automatically
+  const response = await request(`/quiz-attempts/${attemptId}/save-answer`, {
+    method: "POST",
+    body: payload,
+    requiresAuth: true,
+  });
+
+  if (!response.success) {
+    return {
+      success: false,
+      error: response.error || "Failed to save progress",
+    };
+  }
+
+  return { success: true };
+}

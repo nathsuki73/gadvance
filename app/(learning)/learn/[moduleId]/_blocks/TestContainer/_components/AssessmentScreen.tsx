@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { StaticTest, UserAnswers } from "../types";
+import { saveQuizProgress } from "../service";
 
 interface QuizActiveProps {
   test: StaticTest;
+  attemptId?: string;
+  initialIndex: number;
   answers: UserAnswers;
   onAnswer: (qId: string, cId: string) => void;
   onSubmit: () => void;
@@ -10,22 +13,47 @@ interface QuizActiveProps {
 
 export default function QuizActive({
   test,
+  attemptId,
+  initialIndex,
   answers,
   onAnswer,
   onSubmit,
 }: QuizActiveProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const question = test.questions[currentQuestion];
   const selected = answers[question.id];
 
-  const handleSubmitAnswer = () => {
-    if (!selected) return;
+  const handleSubmitAnswer = async () => {
+    if (!selected || submitted || isSaving) return;
 
     setSubmitted(true);
+    setIsSaving(true);
 
+    // 1. If an attempt session is active, send progress to Laravel over the secure server pipeline
+    if (attemptId) {
+      try {
+        const nextIndexPointer = currentQuestion + 1;
+
+        const response = await saveQuizProgress(attemptId, {
+          question_id: question.id,
+          selected_choice_id: selected,
+          current_index: nextIndexPointer,
+        });
+
+        if (!response.success) {
+          console.error("Progress Sync Warning:", response.error);
+        }
+      } catch (err) {
+        console.error("Network synchronization failed:", err);
+      }
+    }
+
+    // 2. Short visual timeout delay before shifting UI focus cards
     setTimeout(() => {
+      setIsSaving(false);
       if (currentQuestion === test.questions.length - 1) {
         onSubmit();
       } else {
