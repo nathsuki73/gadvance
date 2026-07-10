@@ -246,7 +246,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
               {item.type === "pretest" && (
                 <QuizContainer
                   itemId={item.id}
-                  moduleId={item.id}
+                  moduleId={moduleId}
                   type="pretest"
                   onProgressChange={handleQuizProgress}
                   onContinue={handleNext}

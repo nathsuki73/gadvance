@@ -52,13 +52,24 @@ export default function QuizContainer({
       setError(null);
 
       try {
-        const data = await fetchStaticTest(
+        const response = await fetchStaticTest(
           moduleId,
           type === "pretest" ? "pre_test" : "post_test",
         );
+
         if (cancelled) return;
-        setTest(data);
-        setQuizState("ready");
+
+        // Unpack the unified response server wrapper safely
+        if (response.success && response.data) {
+          setTest(response.data); // Correctly sets the StaticTest object shape
+          setQuizState("ready");
+        } else {
+          // Fallback if success flag came back false from the network engine
+          setError(
+            response.error || "Failed to load test sequence configuration",
+          );
+          setQuizState("error");
+        }
       } catch (err) {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : "Something went wrong");

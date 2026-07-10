@@ -1,3 +1,8 @@
+export type ApiOptions = {
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  body?: unknown;
+};
+
 export interface Choice {
   id: string;
   text: string;
@@ -12,9 +17,12 @@ export interface Question {
 
 export interface StaticTest {
   id: string;
+  attemptId?: string;
   title: string;
   description: string;
   questions: Question[];
+  currentIndex?: number;
+  previouslySavedAnswers?: UserAnswers;
 }
 
 export interface QuizResult {
@@ -30,14 +38,17 @@ export type UserAnswers = Record<string, string>;
 export interface LaravelQuizResponse {
   status: string;
   data: {
+    attempt_id: string;
     test_id: string;
     test_type: "pre_test" | "post_test";
-    module_id: string;
+    description: string;
+    current_index: number;
+    previously_saved_answers: Record<string, string>; // Added: Map of question_id -> selected_choice_id
     questions: Array<{
-      id: number;
-      lesson_id: number;
+      id: string | number; // Safe lookup handling for both integer or string UUID types
+      lesson_id: number | null;
       question_text: string;
-      options: Record<string, string>;
+      options: Record<string, string>; // e.g., {"A": "Option text", "B": "Another option text"}
       correct_answer: string;
     }>;
   };
