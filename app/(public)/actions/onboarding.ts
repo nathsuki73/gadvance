@@ -62,6 +62,45 @@ export async function finishOnBoarding(data: onboardingParams) {
     return { success: false, error: result.message || "Server Error" };
   }
 
+  const extractedBirthday = String(
+    data.birthday || data.date_of_birth || "",
+  ).trim();
+
+  if (extractedBirthday) {
+    const profileUpdatePayload = {
+      firstName: data.firstName,
+      middleName: data.middleName || "",
+      lastName: data.lastName,
+      age: String((data as Record<string, unknown>).age || ""),
+      gender: String((data as Record<string, unknown>).gender || ""),
+      birthday: extractedBirthday,
+    };
+
+    const birthdayRes = await fetch(`${apiBaseUrl}/api/user/profile/update`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${session.laravelJwt}`,
+      },
+      body: JSON.stringify(profileUpdatePayload),
+    });
+
+    if (!birthdayRes.ok) {
+      let birthdayResult: { message?: string } = {};
+      try {
+        birthdayResult = (await birthdayRes.json()) as { message?: string };
+      } catch {
+        birthdayResult = {};
+      }
+
+      return {
+        success: false,
+        error: birthdayResult.message || "Birthday could not be saved.",
+      };
+    }
+  }
+
   return {
     success: true,
     user: result.user,

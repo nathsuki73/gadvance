@@ -49,13 +49,41 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(workspaceUrl);
   }
 
-  if (isWorkspaceRoute && !isPublicPage && isOnboardingStatus(token?.status)) {
-    const onboardingUrl = request.nextUrl.clone();
-    onboardingUrl.pathname = "/onboarding";
-    onboardingUrl.search = "";
-    return NextResponse.redirect(onboardingUrl);
-  }
+  // if (isWorkspaceRoute && !isPublicPage && isOnboardingStatus(token?.status)) {
+  //   const onboardingUrl = request.nextUrl.clone();
+  //   onboardingUrl.pathname = "/onboarding";
+  //   onboardingUrl.search = "";
+  //   return NextResponse.redirect(onboardingUrl);
+  // }
 
+  let resolvedStatus = token?.status;
+
+  if (isWorkspaceRoute && !isPublicPage && isOnboardingStatus(resolvedStatus) && token?.laravelJwt) {
+      try {
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+        const res = await fetch(`${apiBaseUrl}/api/profile`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token.laravelJwt}`,
+          },
+        });
+
+        if (res.ok) {
+          const payload = await res.json();
+          const dbData = payload?.data ?? payload;
+          const dbStatus = dbData?.status?.trim().toLowerCase();
+
+          if (dbStatus === "active") {
+            resolvedStatus = "active"; // Override the stale token status dynamically!
+          }
+        }
+      } catch (err) {
+        console.error("Middleware live status check fallback failed:", err);
+      }
+  }
+  
   return NextResponse.next();
 }
 
