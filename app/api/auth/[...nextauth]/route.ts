@@ -295,7 +295,7 @@ async function refreshLaravelIdentity(laravelToken: string) {
   return mapLaravelIdentityResponse(rawData);
 }
 
-async function completeSignupOtp(params: { email: string; otp: string }) {
+async function completeSignupOtp(params: { email: string; otp: string; dateOfBirth?: string }) {
   if (!laravelApiBaseUrl) {
     console.warn("Missing API URL. Set NEXT_PUBLIC_API_URL.");
     return null;
@@ -312,6 +312,7 @@ async function completeSignupOtp(params: { email: string; otp: string }) {
     body: JSON.stringify({
       email: params.email,
       otp: params.otp,
+      date_of_birth: params.dateOfBirth,
     }),
   });
 
@@ -350,18 +351,20 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         otp: { label: "OTP", type: "text" },
         password: { label: "Password", type: "password" },
+        dateOfBirth: { label: "Birthday", type: "text" },
       },
       async authorize(credentials) {
         const email = credentials?.email?.trim();
         const otp = credentials?.otp?.trim();
         const password = credentials?.password;
+        const dateOfBirth = credentials?.dateOfBirth;
 
         if (!email) {
           return null;
         }
 
         if (otp) {
-          const completed = await completeSignupOtp({ email, otp });
+          const completed = await completeSignupOtp({ email, otp, dateOfBirth });
           if (!completed) {
             return null;
           }
@@ -482,6 +485,10 @@ export const authOptions: NextAuthOptions = {
 
         if (session?.sessionToken) {
           token.sessionToken = session.sessionToken;
+        }
+
+        if (session?.user?.laravelJwt) {
+          token.laravelJwt = session.user.laravelJwt;
         }
       }
 
