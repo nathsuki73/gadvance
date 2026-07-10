@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StaticTest, UserAnswers } from "../types";
+import { QuizResult, StaticTest, UserAnswers } from "../types";
 import { saveQuizProgress } from "../service";
 
 interface QuizActiveProps {
@@ -8,7 +8,7 @@ interface QuizActiveProps {
   initialIndex: number;
   answers: UserAnswers;
   onAnswer: (qId: string, cId: string) => void;
-  onSubmit: () => void;
+  onSubmit: (finalResult?: QuizResult | undefined) => Promise<void>;
 }
 
 export default function QuizActive({
@@ -19,7 +19,7 @@ export default function QuizActive({
   onAnswer,
   onSubmit,
 }: QuizActiveProps) {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState(initialIndex);
   const [submitted, setSubmitted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -29,10 +29,13 @@ export default function QuizActive({
   const handleSubmitAnswer = async () => {
     if (!selected || submitted || isSaving) return;
 
+    // FIX 1: Define variables at the very top of the function context scope layout
+    const isLastQuestion = currentQuestion === test.questions.length - 1;
+    let backendResult = null;
+
     setSubmitted(true);
     setIsSaving(true);
 
-    // 1. If an attempt session is active, send progress to Laravel over the secure server pipeline
     if (attemptId) {
       try {
         const nextIndexPointer = currentQuestion + 1;
@@ -43,19 +46,26 @@ export default function QuizActive({
           current_index: nextIndexPointer,
         });
 
-        if (!response.success) {
-          console.error("Progress Sync Warning:", response.error);
+        if (response.success && response.data?.status === "completed") {
+          const score = response.data.score ?? 0;
+          const total = response.data?.total ?? test.questions.length;
+
+          backendResult = {
+            score,
+            total,
+            passed: score >= Math.ceil(total * 0.75),
+          };
         }
       } catch (err) {
         console.error("Network synchronization failed:", err);
       }
     }
 
-    // 2. Short visual timeout delay before shifting UI focus cards
+    // Short visual timeout delay before shifting UI focus cards
     setTimeout(() => {
       setIsSaving(false);
-      if (currentQuestion === test.questions.length - 1) {
-        onSubmit();
+      if (isLastQuestion) {
+        onSubmit(backendResult as QuizResult);
       } else {
         setCurrentQuestion((prev) => prev + 1);
         setSubmitted(false);
@@ -107,14 +117,17 @@ export default function QuizActive({
             return (
               <button
                 key={choice.id}
-                disabled={submitted}
+                // FIX 2: Added isSaving to disabled attribute constraints
+                disabled={submitted || isSaving}
                 onClick={() => onAnswer(question.id, choice.id)}
                 className={`flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition-all duration-200 sm:gap-5 sm:p-6 ${
                   isSelected
                     ? "border-primary bg-primary/5"
                     : "border-zinc-200 hover:border-primary/40 hover:bg-zinc-50"
                 } ${
-                  submitted ? "cursor-not-allowed opacity-70" : "cursor-pointer"
+                  submitted || isSaving
+                    ? "cursor-not-allowed opacity-70"
+                    : "cursor-pointer"
                 }`}
               >
                 <div
@@ -138,17 +151,22 @@ export default function QuizActive({
         {/* Footer */}
         <div className="flex flex-col gap-4 border-t border-zinc-200 pt-6 sm:flex-row sm:items-center sm:justify-between sm:pt-8">
           <span className="text-center text-sm font-light text-zinc-500 sm:text-left">
-            Select one answer before continuing.
+            {isSaving
+              ? "Saving progress..."
+              : "Select one answer before continuing."}
           </span>
 
           <button
-            disabled={!selected || submitted}
+            // FIX 3: Fully protect the main submit pipeline from multiple rapid clicks
+            disabled={!selected || submitted || isSaving}
             onClick={handleSubmitAnswer}
             className="w-full rounded-lg bg-primary px-6 py-3 text-[10px] font-bold uppercase tracking-[0.3em] text-white transition-all hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
           >
-            {currentQuestion === test.questions.length - 1
-              ? "Finish Assessment"
-              : "Submit Answer"}
+            {isSaving
+              ? "Saving..."
+              : currentQuestion === test.questions.length - 1
+                ? "Finish Assessment"
+                : "Submit Answer"}
           </button>
         </div>
       </div>

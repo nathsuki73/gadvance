@@ -113,6 +113,9 @@ export async function fetchStaticTest(
       questions: formattedQuestions,
       currentIndex: serverData.current_index,
       previouslySavedAnswers: serverData.previously_saved_answers,
+
+      status: serverData.status,
+      score: serverData.score ?? 0,
     },
   };
 }
@@ -124,13 +127,19 @@ export async function saveQuizProgress(
     selected_choice_id: string;
     current_index: number;
   },
-): Promise<{ success: boolean; error?: string }> {
-  // Uses your secure internal custom request wrapper which handles the authorization JWT automatically
-  const response = await request(`/quiz-attempts/${attemptId}/save-answer`, {
-    method: "POST",
-    body: payload,
-    requiresAuth: true,
-  });
+): Promise<{
+  success: boolean;
+  data?: LaravelQuizResponse["data"];
+  error?: string;
+}> {
+  const response = await request<LaravelQuizResponse["data"]>(
+    `/quiz-attempts/${attemptId}/save-answer`,
+    {
+      method: "POST",
+      body: payload,
+      requiresAuth: true,
+    },
+  );
 
   if (!response.success) {
     return {
@@ -139,5 +148,8 @@ export async function saveQuizProgress(
     };
   }
 
-  return { success: true };
+  return {
+    success: true,
+    data: response.data,
+  };
 }

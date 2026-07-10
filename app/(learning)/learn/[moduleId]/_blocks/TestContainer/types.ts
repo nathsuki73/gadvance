@@ -23,6 +23,8 @@ export interface StaticTest {
   questions: Question[];
   currentIndex?: number;
   previouslySavedAnswers?: UserAnswers;
+  status?: "started" | "completed";
+  score?: number;
 }
 
 export interface QuizResult {
@@ -51,5 +53,8 @@ export interface LaravelQuizResponse {
       options: Record<string, string>; // e.g., {"A": "Option text", "B": "Another option text"}
       correct_answer: string;
     }>;
+    status: "started" | "completed" | undefined;
+    score: number;
+    total: number;
   };
 }
