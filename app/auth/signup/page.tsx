@@ -14,8 +14,6 @@ import logoIcon from "@/app/assets/logo.ico";
 const signUpSchema = z
   .object({
     email: z.string().email("Invalid email address"),
-    // 🎯 FIX: Added birthday string validation rule to the form checker schema
-    birthday: z.string().min(1, "Birthday is required"),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
@@ -33,11 +31,9 @@ const SignUp = () => {
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
-  // 🎯 FIX: Initialized birthday string property within default state
+
   const [formData, setFormData] = useState({
     email: "",
-    birthday: "",
     password: "",
     confirmPassword: "",
   });
@@ -76,12 +72,10 @@ const SignUp = () => {
     setLoading(true);
 
     try {
-      // 🎯 FIX: Forward birthday over to Server Actions file array block mapping
       const response = await handleRegistration(
         formData.email,
         formData.password,
         formData.confirmPassword,
-        formData.birthday,
       );
       if (response.success) {
         setLoading(false);
@@ -170,27 +164,6 @@ const SignUp = () => {
                   {errors.email && (
                     <p className="text-[9px] text-red-500 font-bold mt-1.5 uppercase tracking-wider">
                       {errors.email}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
-                    Birthday
-                    <span className="text-red-500 ml-1">*</span>
-                  </label>
-                  <input
-                    name="birthday"
-                    type="date"
-                    value={formData.birthday}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-xl border ${
-                      errors.birthday ? "border-red-400" : "border-zinc-100"
-                    } focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 bg-zinc-50/50`}
-                  />
-                  {errors.birthday && (
-                    <p className="text-[9px] text-red-500 font-bold mt-1.5 uppercase tracking-wider">
-                      {errors.birthday}
                     </p>
                   )}
                 </div>
