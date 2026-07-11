@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BarChart3, X } from "lucide-react";
+import { Waypoints, X } from "lucide-react";
 
 interface AnalyticsDrawerProps {
   moduleId: string;
@@ -25,7 +25,7 @@ export default function AnalyticsDrawer({
         className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
         title="View Analytics"
       >
-        <BarChart3 size={22} />
+        <Waypoints size={22} />
       </button>
 
       {/* Backdrop overlay */}
