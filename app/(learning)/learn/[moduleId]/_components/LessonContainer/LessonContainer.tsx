@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
 import TopicOverview from "./Overview/TopicOverview";
 import { ModuleStructureItem } from "../../service";
 import { fetchOverview, fetchSubtopics } from "./service";
@@ -25,7 +24,6 @@ export default function LessonContainer({
   handleNextSubRow,
   onContinue,
 }: LessonContainerProps) {
-  const [loading, setLoading] = useState(false);
   // Cache the overviews in an object keyed by lessonId
   const [overviewsCache, setOverviewsCache] = useState<
     Record<string, ModuleStructureItem>
@@ -34,10 +32,6 @@ export default function LessonContainer({
   const [subtopicsCache, setSubtopicsCache] = useState<
     Record<string, SubtopicItem[]>
   >({});
-
-  const [miniQuizStates, setMiniQuizStates] = useState<Record<string, boolean>>(
-    {},
-  );
 
   const [lastActiveBlockId, setLastActiveBlockId] =
     useState<string>("overview");
@@ -48,7 +42,6 @@ export default function LessonContainer({
 
     const fetchLessonOverview = async () => {
       try {
-        setLoading(true); // Turn loading ON before fetch
         const fetchedLessons: Lesson[] = await fetchOverview(lessonId);
         const apiDescription = fetchedLessons[0]?.description || "";
 
@@ -66,8 +59,6 @@ export default function LessonContainer({
         }));
       } catch (error) {
         console.error("Failed to fetch lesson overview:", error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -99,7 +90,6 @@ export default function LessonContainer({
 
     const fetchLessonSubtopics = async () => {
       try {
-        setLoading(true);
         console.log("ACTIVE BLOCK ID:" + activeBlockId);
         console.log("LESSON ID:" + lessonId);
         // Fetch subtopics specific to this active block item
@@ -112,12 +102,11 @@ export default function LessonContainer({
       } catch (error) {
         console.error("Failed to fetch subtopics:", error);
       } finally {
-        setLoading(false);
       }
     };
 
     fetchLessonSubtopics();
-  }, [activeBlockId, subtopicsCache]);
+  }, [activeBlockId, subtopicsCache, lessonId]);
 
   // if (loading) {
   //   return (
