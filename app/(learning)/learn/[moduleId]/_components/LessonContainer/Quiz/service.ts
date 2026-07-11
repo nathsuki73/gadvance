@@ -5,7 +5,6 @@ import { getServerSession } from "next-auth";
 import {
   LessonQuizOptionResponse,
   LessonQuizQuestionResponse,
-  LessonQuizResponse,
   Question,
   Quiz,
   SaveAnswerResponse,
