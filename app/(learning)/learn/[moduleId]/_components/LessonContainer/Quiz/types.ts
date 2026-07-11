@@ -18,8 +18,15 @@ export interface LessonQuizQuestionResponse {
   options: LessonQuizOptionResponse[];
 }
 
+// Updated to catch metadata properties coming over the API wire from Laravel
 export interface LessonQuizResponse {
   success: boolean;
+  id?: string;
+  attempt_id?: string;
+  current_index?: number;
+  status?: "started" | "completed";
+  score?: number;
+  previously_saved_answers?: Record<string, string>;
   data: LessonQuizQuestionResponse[];
 }
 
@@ -35,9 +42,29 @@ export interface Question {
   correctAnswer: string;
 }
 
+// Updated so the hook can safely access tracking variables out of state hooks
 export interface Quiz {
   id: string;
   title: string;
   description: string;
   questions: Question[];
+  attemptId?: string; // Linked attempt model primary UUID key string
+  currentIndex?: number; // Current progress pointer index location location marker
+  status?: "started" | "completed"; // Active vs submitted phase flag string
+  previouslySavedAnswers?: Record<string, string>;
+  score?: number; // Persisted correct answers aggregate counter metrics
+}
+
+export interface SaveAnswerSuccessPayload {
+  message: string;
+  quiz_status: "started" | "completed";
+  current_index?: number;
+  score?: number;
+  total?: number;
+}
+
+export interface SaveAnswerResponse {
+  success: boolean;
+  data?: SaveAnswerSuccessPayload;
+  error?: string;
 }
