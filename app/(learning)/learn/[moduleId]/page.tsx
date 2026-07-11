@@ -16,6 +16,7 @@ import {
 } from "./service";
 import LessonContainer from "./_components/LessonContainer/LessonContainer";
 import { useScrollDirection } from "./_hooks/useScrollDirection";
+import AnalyticsDrawer from "./_components/Analytics/Analytics";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
@@ -274,6 +275,11 @@ const LearnPage = ({ params }: LearnPageProps) => {
           );
         })}
       </div>
+      <AnalyticsDrawer
+        moduleId={moduleId}
+        lessonProgress={lessonProgress}
+        quizProgress={quizProgress}
+      />
     </main>
   );
 };
