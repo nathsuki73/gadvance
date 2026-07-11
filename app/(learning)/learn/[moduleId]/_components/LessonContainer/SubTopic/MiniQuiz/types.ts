@@ -18,9 +18,20 @@ export interface LessonQuizQuestionResponse {
   options: LessonQuizOptionResponse[];
 }
 
+// 🟢 UPGRADED: Captures the inner tracking object structures returned by the backend
+export interface MiniQuizAttemptData {
+  attempt_id: string;
+  current_index: number;
+  status: "started" | "completed";
+  previously_saved_answers: Record<string, string>;
+  score: number;
+  questions: LessonQuizQuestionResponse[];
+}
+
+// 🟢 UPGRADED: Handles both raw arrays and nested metadata tracking response payloads
 export interface LessonQuizResponse {
   success: boolean;
-  data: LessonQuizQuestionResponse[];
+  data: LessonQuizQuestionResponse[] | MiniQuizAttemptData;
 }
 
 export interface Choice {
@@ -35,9 +46,18 @@ export interface Question {
   correctAnswer: string;
 }
 
+// 🟢 UPGRADED: Holds persistence fields so your frontend hooks can read them easily
 export interface Quiz {
   id: string;
   title: string;
   description: string;
   questions: Question[];
+
+  // Optional parameters to ensure backwards compatibility with older static files
+  attemptId?: string;
+  attempt_id?: string;
+  currentIndex?: number;
+  status?: "started" | "completed";
+  previouslySavedAnswers?: Record<string, string>;
+  score?: number;
 }

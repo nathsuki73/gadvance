@@ -137,7 +137,6 @@ export default function LessonContainer({
     lastActiveBlockId !== "overview" &&
     lastActiveBlockId !== "quiz";
 
-  const showMiniQuiz = !!miniQuizStates[lastActiveBlockId];
   const knownBlockIds = Object.keys(subtopicsCache);
   return (
     <div className="flex flex-col min-h-full w-full justify-between p-6">
@@ -152,41 +151,23 @@ export default function LessonContainer({
 
         <div className="max-w-3xl mx-auto px-6 sm:px-12 pt-10 border-t border-zinc-200">
           <div
-            className={`text-center space-y-4 ${
-              currentSubtopic && currentSubtopic.length > 0 && !showMiniQuiz
-                ? ""
-                : "hidden"
-            }`}
+            className={
+              currentSubtopic && currentSubtopic.length > 0 ? "" : "hidden"
+            }
           >
-            <h3 className="text-xl font-semibold text-zinc-800">
+            <h3 className="text-xl font-semibold text-zinc-800 text-center mb-8">
               You&rsquo;ve reached the end of the lesson!
             </h3>
-            <p className="text-zinc-600">
-              Ready to test what you&rsquo;ve learned?
-            </p>
-            <button
-              onClick={() =>
-                lastActiveBlockId &&
-                setMiniQuizStates((prev) => ({
-                  ...prev,
-                  [lastActiveBlockId]: true,
-                }))
-              }
-              className="rounded-lg bg-indigo-600 px-6 py-3 text-white font-medium hover:bg-indigo-700 transition"
-            >
-              Start Quiz
-            </button>
-          </div>
 
-          {knownBlockIds.map((blockId) => {
-            const isThisQuizActive =
-              miniQuizStates[blockId] && lastActiveBlockId === blockId;
-            return (
-              <div key={blockId} className={isThisQuizActive ? "" : "hidden"}>
+            {knownBlockIds.map((blockId) => (
+              <div
+                key={blockId}
+                className={lastActiveBlockId === blockId ? "" : "hidden"}
+              >
                 <MiniQuiz lessonBlockId={blockId} />
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </div>
 
