@@ -1,4 +1,4 @@
-"use server";
+"use server"; // 🟢 Maintained as a pure Server Action layer
 
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServerSession } from "next-auth";
@@ -12,18 +12,6 @@ import {
 } from "./types";
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
-
-async function getAuthHeaders(): Promise<HeadersInit> {
-  const session = await getServerSession(authOptions);
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
-  if (session?.laravelJwt) {
-    headers["Authorization"] = `Bearer ${session.laravelJwt}`;
-  }
-  return headers;
-}
 
 // Helper utility to safely guard whether our dynamic response is the attempt wrapper object
 function isMiniQuizAttemptData(
@@ -39,12 +27,22 @@ function isMiniQuizAttemptData(
 
 // 🟢 FETCH ENGINE FOR MINI QUIZ
 export async function fetchMiniQuiz(lessonBlockId: string): Promise<Quiz> {
-  const authHeaders = await getAuthHeaders();
+  // 💡 FIX: Fetch the session directly inside the request scope boundary execution thread
+  const session = await getServerSession(authOptions);
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
+  if (session?.laravelJwt) {
+    headers["Authorization"] = `Bearer ${session.laravelJwt}`;
+  }
+
   const response = await fetch(
     `${API_BASE_URL}/lessons/${lessonBlockId}/mini-quiz`,
     {
       method: "GET",
-      headers: authHeaders,
+      headers: headers,
       cache: "no-store",
     },
   );
@@ -59,7 +57,6 @@ export async function fetchMiniQuiz(lessonBlockId: string): Promise<Quiz> {
   const json: LessonQuizResponse = await response.json();
   const serverData = json.data;
 
-  // Dynamically resolve where the questions list lives depending on response schema shape
   const rawQuestions: LessonQuizQuestionResponse[] = isMiniQuizAttemptData(
     serverData,
   )
@@ -90,7 +87,6 @@ export async function fetchMiniQuiz(lessonBlockId: string): Promise<Quiz> {
     questions: formattedQuestions,
   };
 
-  // If the backend returned full structured object attempt logs, merge them into the contract
   if (isMiniQuizAttemptData(serverData)) {
     return {
       ...baseQuiz,
@@ -110,6 +106,9 @@ export interface SaveMiniQuizSuccessPayload {
   message: string;
   quiz_status: "started" | "completed";
   current_index?: number;
+  score?: number;
+  total?: number;
+  p_lt?: number;
 }
 
 export interface SaveMiniQuizResponse {
@@ -128,12 +127,22 @@ export async function saveMiniQuizProgress(
   },
 ): Promise<SaveMiniQuizResponse> {
   try {
-    const authHeaders = await getAuthHeaders();
+    // 💡 FIX: Fetch the session directly inside the request scope boundary execution thread
+    const session = await getServerSession(authOptions);
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+    if (session?.laravelJwt) {
+      headers["Authorization"] = `Bearer ${session.laravelJwt}`;
+    }
+
     const response = await fetch(
       `${API_BASE_URL}/mini-quiz-attempts/${attemptId}/save-answer`,
       {
         method: "POST",
-        headers: authHeaders,
+        headers: headers,
         body: JSON.stringify(payload),
       },
     );

@@ -6,7 +6,11 @@ import { fetchMiniQuiz, saveMiniQuizProgress } from "./service";
 
 export type QuizState = "loading" | "ready" | "started" | "completed" | "error";
 
-export function useLessonQuiz(lessonBlockId: string) {
+// 💡 Added onBktUpdate callback signature property parameter to the hook
+export function useLessonQuiz(
+  lessonBlockId: string,
+  onBktUpdate?: (lessonBlockId: string, currentPLt: number) => void,
+) {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [quizState, setQuizState] = useState<QuizState>("loading");
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -40,12 +44,15 @@ export function useLessonQuiz(lessonBlockId: string) {
 
         if (data.status === "completed") {
           setQuizState("completed");
-        } else if (data.currentIndex && data.currentIndex > 0) {
-          // Resuming an in-progress attempt — skip the intro
-          setCurrentQuestion(data.currentIndex);
+        } else if (
+          data.previouslySavedAnswers &&
+          Object.keys(data.previouslySavedAnswers).length > 0
+        ) {
+          // 💡 RESUME: If they have *any* saved responses in the DB, drop them straight into action layout
+          setCurrentQuestion(data.currentIndex ?? 0);
           setQuizState("started");
         } else {
-          // Fresh attempt — show the quiz's own intro screen
+          // FRESH: No progress logged yet, show start intro panel
           setQuizState("ready");
         }
       } catch (err) {
@@ -87,14 +94,18 @@ export function useLessonQuiz(lessonBlockId: string) {
     const isLastQuestion = currentQuestion === quiz.questions.length - 1;
     const nextIndexPointer = currentQuestion + 1;
     const activeAttemptId = quiz.attemptId;
-    // Persist choice entry state row logs securely to your database
+
     if (activeAttemptId) {
       try {
-        await saveMiniQuizProgress(activeAttemptId, {
+        const result = await saveMiniQuizProgress(activeAttemptId, {
           question_id: questionId,
           selected_choice_id: selectedChoiceId,
           current_index: nextIndexPointer,
         });
+
+        if (result.success && result.data?.p_lt !== undefined && onBktUpdate) {
+          onBktUpdate(lessonBlockId, result.data.p_lt);
+        }
       } catch (err) {
         console.error("Failed to sync structural mini-quiz answer state:", err);
       }
