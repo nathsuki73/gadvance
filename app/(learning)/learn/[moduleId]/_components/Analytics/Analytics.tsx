@@ -1,7 +1,14 @@
 "use client";
 
-import { useState, useRef, useLayoutEffect, useCallback } from "react";
+import {
+  useState,
+  useRef,
+  useLayoutEffect,
+  useCallback,
+  useEffect,
+} from "react";
 import { Waypoints, X, Info, Brain } from "lucide-react";
+import { fetchLiveKCMastery } from "./service"; // 🌟 Import our live action
 
 const pulseStyles = `
   @keyframes nodePulse {
@@ -18,16 +25,18 @@ type Point = { x: number; y: number };
 type Line = { id: string; d: string; color: string; width: number };
 
 interface BKTMetrics {
-  mastery: number; // P(L_t) -> Current Live Calculation State
-  prior: number; // P(L_0)
-  transit: number; // P(T)
-  guess: number; // P(G)
-  slip: number; // P(S)
+  mastery: number;
+  prior: number;
+  transit: number;
+  guess: number;
+  slip: number;
 }
 
 interface SelectedNodeState {
+  id: string; // Track node ID for targeted sync updates
   label: string;
   details: string;
+  type: "root" | "kc" | "sub" | "quiz" | "q";
   bkt?: BKTMetrics;
 }
 
@@ -43,7 +52,7 @@ interface ActiveItem {
 
 interface AnalyticsDrawerProps {
   moduleId: string;
-  lessonProgress: Record<string, Set<string>>; // Track active sets
+  lessonProgress: Record<string, Set<string>>;
   quizProgress: Record<string, { completedSteps: number; totalSteps: number }>;
   activeItem: ActiveItem | null | undefined;
   liveBktMastery?: Record<string, number>;
@@ -62,7 +71,50 @@ export default function AnalyticsDrawer({
   );
   const [lines, setLines] = useState<Line[]>([]);
 
-  // Safely map Knowledge Components from your actual active database rows
+  // 🌟 1. LOCAL STATE SYNC: Holds data retrieved from the server actions layer
+  const [localBktState, setLocalBktState] =
+    useState<Record<string, number>>(liveBktMastery);
+
+  // Sync with initial props if they update from the parent shell layout wrapper
+  useEffect(() => {
+    if (liveBktMastery && Object.keys(liveBktMastery).length > 0) {
+      setLocalBktState(liveBktMastery);
+    }
+  }, [liveBktMastery]);
+
+  // 🌟 Isolate the primitive ID string directly during the render phase
+  const activeItemId = activeItem?.id;
+
+  // 🌟 2. HOT UPDATE LOADER: Pulls fresh metrics from Laravel on request
+  const refreshLiveTelemetry = useCallback(async () => {
+    if (!activeItemId) return;
+
+    try {
+      const freshData = await fetchLiveKCMastery(activeItemId);
+      setLocalBktState(freshData);
+
+      setSelectedNode((prev) => {
+        if (prev && prev.type === "kc") {
+          const liveVal = freshData[prev.id] ?? 0;
+          return {
+            ...prev,
+            bkt: prev.bkt ? { ...prev.bkt, mastery: liveVal } : undefined,
+          };
+        }
+        return prev;
+      });
+    } catch (e) {
+      console.error("Telemetry sync pipeline dropped frame:", e);
+    }
+  }, [activeItemId]); // 🌟 Clean, primitive dependencies that pass the compiler perfectly!
+
+  // Trigger a fresh sync whenever the drawer opens
+  useEffect(() => {
+    if (isOpen) {
+      refreshLiveTelemetry();
+    }
+  }, [isOpen, refreshLiveTelemetry]);
+
   const currentBlocks = activeItem?.lesson_blocks ?? [];
   const KCs = currentBlocks.map((block: LessonBlock, idx: number) => ({
     id: block.id,
@@ -76,7 +128,6 @@ export default function AnalyticsDrawer({
     (_, i) => `Question ${i + 1}`,
   );
 
-  // ─── 💡 AUDIT AND COMPUTE LIVE REWRITE MATRIX ───
   const handleNodeSelection = (
     id: string,
     label: string,
@@ -84,53 +135,47 @@ export default function AnalyticsDrawer({
     fullTitle?: string,
   ) => {
     let details = "";
-    let computedMastery = 0.3; // Baseline fallback prior assignment
+    let computedMastery = 0;
 
-    // 1. Check if the element has an active Python BKT script update registered inside state
-    if (liveBktMastery && liveBktMastery[id] !== undefined) {
-      computedMastery = liveBktMastery[id];
+    // 🌟 3. CONNECT TO LOG: Read directly from local state sync layer
+    if (localBktState && localBktState[id] !== undefined) {
+      computedMastery = localBktState[id];
     } else {
-      // 2. Otherwise, dynamically extract exact performance data rows out of client parameters
       switch (type) {
         case "root":
-          // Average mastery across all tracked active components
-          const activeKeys = Object.keys(liveBktMastery);
+          const activeKeys = Object.keys(localBktState);
           if (activeKeys.length > 0) {
             const sum = activeKeys.reduce(
-              (acc, k) => acc + (liveBktMastery[k] ?? 0.3),
+              (acc, k) => acc + (localBktState[k] ?? 0),
               0,
             );
             computedMastery = sum / activeKeys.length;
           }
           break;
-
+        case "kc":
+          computedMastery = localBktState[id];
+          break;
         case "quiz":
           const quizData = quizProgress[activeItem?.id || ""];
           if (quizData && quizData.totalSteps > 0) {
             computedMastery = quizData.completedSteps / quizData.totalSteps;
           }
           break;
-
         case "sub":
-          // Check if this subtopic has been completed based on active navigation paths
           const parentLessonId = activeItem?.id || "";
           const completedSet = lessonProgress[parentLessonId];
-          if (completedSet && completedSet.has(id)) {
-            computedMastery = 1.0; // Completed module node checkpoint
-          } else {
-            computedMastery = 0.0; // Unvisited state node
-          }
+          if (completedSet && completedSet.has(id)) computedMastery = 1.0;
+          else computedMastery = 0.0;
           break;
       }
     }
 
-    // Assign operational model guess parameters contextually based on multigs settings
     const guessValue = type === "q" ? 0.2 : 0.18;
     const slipValue = type === "q" ? 0.1 : 0.08;
 
     const bkt: BKTMetrics = {
       mastery: computedMastery,
-      prior: 0.3,
+      prior: 0,
       transit: 0.15,
       guess: guessValue,
       slip: slipValue,
@@ -142,7 +187,7 @@ export default function AnalyticsDrawer({
           "Averaged operational skill matrix calculated across all active system nodes.";
         break;
       case "kc":
-        details = `Latent competence tracking index computed for Knowledge Component: "${fullTitle || label}".`;
+        details = `Live latent competence tracking index computed for Knowledge Component: "${fullTitle || label}".`;
         break;
       case "sub":
         details = `Discrete state variable checking path coverage for subtopic element node block: ${label}.`;
@@ -156,7 +201,7 @@ export default function AnalyticsDrawer({
         break;
     }
 
-    setSelectedNode({ label: fullTitle || label, details, bkt });
+    setSelectedNode({ id, label: fullTitle || label, details, type, bkt });
   };
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -281,9 +326,18 @@ export default function AnalyticsDrawer({
         className={`fixed top-0 right-0 z-50 h-full w-full max-w-md border-l border-zinc-200 bg-white p-6 shadow-2xl transition-transform duration-300 overflow-y-auto ${isOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
-          <h3 className="text-lg font-semibold text-zinc-900">
-            Module AI Analytics
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-zinc-900">
+              Module AI Analytics
+            </h3>
+            {/* 🌟 Refresh trigger button to allow live auditing */}
+            <button
+              onClick={refreshLiveTelemetry}
+              className="text-[10px] font-bold tracking-wide text-zinc-400 border border-zinc-200 bg-zinc-50 rounded-md px-1.5 py-0.5 hover:bg-zinc-100"
+            >
+              Sync Live
+            </button>
+          </div>
           <button
             onClick={() => setIsOpen(false)}
             className="p-1 rounded-lg border border-zinc-200"
@@ -293,6 +347,48 @@ export default function AnalyticsDrawer({
         </div>
 
         <div className="mt-6 space-y-6">
+          {/* Knowledge Component Standings Sheet */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+              Knowledge Component Standings
+            </h4>
+            <div className="grid grid-cols-1 gap-2">
+              {KCs.map((kc) => {
+                // 🌟 Reading live data stream values
+                const liveMastery = localBktState[kc.id];
+                return (
+                  <div
+                    key={kc.id}
+                    onClick={() =>
+                      handleNodeSelection(kc.id, kc.label, "kc", kc.title)
+                    }
+                    className="flex flex-col p-3 bg-zinc-50 hover:bg-zinc-100/80 border border-zinc-200/60 rounded-xl cursor-pointer transition-colors"
+                  >
+                    <div className="flex justify-between items-start mb-1.5">
+                      <div className="min-w-0 pr-2">
+                        <span className="inline-block text-[10px] font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-1.5 py-0.5 mb-1">
+                          {kc.label}
+                        </span>
+                        <h5 className="text-xs font-bold text-zinc-800 truncate">
+                          {kc.title}
+                        </h5>
+                      </div>
+                      <span className="text-xs font-black text-indigo-600 shrink-0">
+                        {(liveMastery * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-zinc-200/70 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-indigo-500 to-blue-500 transition-all duration-500"
+                        style={{ width: `${liveMastery * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <div
             ref={containerRef}
             className="relative bg-white border border-zinc-100 rounded-xl p-4 shadow-xs flex flex-col items-center min-h-[360px]"
@@ -326,49 +422,58 @@ export default function AnalyticsDrawer({
 
             {/* Main Multi-lane Tracking Architecture Grid */}
             <div className="flex w-full mt-14 relative z-10 gap-1 justify-between items-start">
-              {KCs.map((kc) => (
-                <div
-                  key={kc.id}
-                  className="flex flex-col items-center flex-1 min-w-0 px-0.5"
-                >
-                  <div className="h-14" />
-                  <div
-                    ref={(el) => {
-                      if (el) kcNodeRefs.current.set(kc.id, el);
-                      else kcNodeRefs.current.delete(kc.id);
-                    }}
-                    title={kc.title}
-                    onClick={() =>
-                      handleNodeSelection(kc.id, kc.label, "kc", kc.title)
-                    }
-                    className="h-[21px] w-[21px] rounded-full bg-indigo-400 animate-pulse-node node-interactive flex-shrink-0"
-                  />
-                  <div
-                    ref={(el) => {
-                      if (el) subGroupRefs.current.set(kc.id, el);
-                      else subGroupRefs.current.delete(kc.id);
-                    }}
-                    className="flex flex-col gap-1 mt-[50px] p-1 bg-emerald-50/40 rounded-lg border border-emerald-100/60 shadow-2xs items-center"
-                  >
-                    {kc.sub.map((sub, i) => (
-                      <div
-                        key={i}
-                        title={`${kc.label} - Sub-unit ${i + 1}`}
-                        onClick={() =>
-                          handleNodeSelection(
-                            `${kc.id}-sub-${i}`,
-                            `${kc.label} - Sub-unit ${i + 1}`,
-                            "sub",
-                          )
-                        }
-                        className="h-[21px] w-[21px] rounded-full bg-emerald-400 animate-pulse-node node-interactive flex-shrink-0"
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+              {KCs.map((kc) => {
+                // 🌟 Nodes light up dynamically using backend sync states
+                const nodeMastery = localBktState[kc.id];
+                let bgStyleColor = "bg-zinc-300";
+                if (nodeMastery > 0.85) bgStyleColor = "bg-indigo-600";
+                else if (nodeMastery > 0.5) bgStyleColor = "bg-indigo-400";
+                else if (nodeMastery > 0.1) bgStyleColor = "bg-indigo-300/80";
 
-              {/* Assessment Column Node Chain */}
+                return (
+                  <div
+                    key={kc.id}
+                    className="flex flex-col items-center flex-1 min-w-0 px-0.5"
+                  >
+                    <div className="h-14" />
+                    <div
+                      ref={(el) => {
+                        if (el) kcNodeRefs.current.set(kc.id, el);
+                        else kcNodeRefs.current.delete(kc.id);
+                      }}
+                      title={kc.title}
+                      onClick={() =>
+                        handleNodeSelection(kc.id, kc.label, "kc", kc.title)
+                      }
+                      className={`h-[21px] w-[21px] rounded-full ${bgStyleColor} animate-pulse-node node-interactive flex-shrink-0`}
+                    />
+                    <div
+                      ref={(el) => {
+                        if (el) subGroupRefs.current.set(kc.id, el);
+                        else subGroupRefs.current.delete(kc.id);
+                      }}
+                      className="flex flex-col gap-1 mt-[50px] p-1 bg-emerald-50/40 rounded-lg border border-emerald-100/60 shadow-2xs items-center"
+                    >
+                      {kc.sub.map((sub, i) => (
+                        <div
+                          key={i}
+                          title={`${kc.label} - Sub-unit ${i + 1}`}
+                          onClick={() =>
+                            handleNodeSelection(
+                              `${kc.id}-sub-${i}`,
+                              `${kc.label} - Sub-unit ${i + 1}`,
+                              "sub",
+                            )
+                          }
+                          className="h-[21px] w-[21px] rounded-full bg-emerald-400 animate-pulse-node node-interactive flex-shrink-0"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Assessment Column */}
               <div className="flex flex-col items-center flex-1 min-w-0 px-0.5">
                 <div className="h-14" />
                 <div
