@@ -9,9 +9,10 @@ import { QuizQuestionState } from "./QuizQuestionState";
 
 type Props = {
   lessonBlockId: string;
+  onBktUpdate?: (lessonBlockId: string, currentPLt: number) => void;
 };
 
-export function LessonQuiz({ lessonBlockId }: Props) {
+export function LessonQuiz({ lessonBlockId, onBktUpdate }: Props) {
   const {
     quiz,
     quizState,
@@ -23,7 +24,7 @@ export function LessonQuiz({ lessonBlockId }: Props) {
     startQuiz,
     selectAnswer,
     goToNextQuestion,
-  } = useLessonQuiz(lessonBlockId);
+  } = useLessonQuiz(lessonBlockId, onBktUpdate);
 
   if (quizState === "loading") {
     return <QuizLoadingState />;

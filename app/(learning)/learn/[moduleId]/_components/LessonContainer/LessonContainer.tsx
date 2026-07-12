@@ -15,6 +15,8 @@ type LessonContainerProps = {
   activeBlockId: string | undefined;
   onContinue: () => void;
   handleNextSubRow: () => void;
+  // 💡 Added: Callback prop to bubble up live BKT updates to the main page shell
+  onBktUpdate?: (lessonBlockId: string, currentPLt: number) => void;
 };
 
 export default function LessonContainer({
@@ -23,6 +25,7 @@ export default function LessonContainer({
   activeBlockId,
   handleNextSubRow,
   onContinue,
+  onBktUpdate, // 💡 Accept it here
 }: LessonContainerProps) {
   // Cache the overviews in an object keyed by lessonId
   const [overviewsCache, setOverviewsCache] = useState<
@@ -35,6 +38,12 @@ export default function LessonContainer({
 
   const [lastActiveBlockId, setLastActiveBlockId] =
     useState<string>("overview");
+
+  const currentEffectiveBlock = activeBlockId || lastActiveBlockId;
+
+  if (activeBlockId && activeBlockId !== lastActiveBlockId) {
+    setLastActiveBlockId(activeBlockId);
+  }
 
   useEffect(() => {
     // If we already have the data for this lessonId, don't refetch
@@ -66,18 +75,6 @@ export default function LessonContainer({
   }, [lessonId, lessonItems, overviewsCache]);
 
   useEffect(() => {
-    if (
-      activeBlockId &&
-      activeBlockId !== "overview" &&
-      activeBlockId !== "quiz"
-    ) {
-      setLastActiveBlockId(activeBlockId);
-    } else if (activeBlockId) {
-      setLastActiveBlockId(activeBlockId);
-    }
-  }, [activeBlockId]);
-
-  useEffect(() => {
     // Only run if we have a valid activeBlockId, and it's not a generic view or already cached
     if (
       !activeBlockId ||
@@ -101,32 +98,24 @@ export default function LessonContainer({
         }));
       } catch (error) {
         console.error("Failed to fetch subtopics:", error);
-      } finally {
       }
     };
 
     fetchLessonSubtopics();
   }, [activeBlockId, subtopicsCache, lessonId]);
 
-  // if (loading) {
-  //   return (
-  //     <div className="flex h-full items-center justify-center p-8">
-  //       <Loader2 className="animate-spin text-primary" size={28} />
-  //     </div>
-  //   );
-  // }
-
   const currentOverview = overviewsCache[lessonId];
   const currentSubtopic = subtopicsCache[activeBlockId || ""] ?? [];
 
-  const isOverview = lastActiveBlockId === "overview";
-  const isQuiz = lastActiveBlockId === "quiz";
+  const isOverview = currentEffectiveBlock === "overview";
+  const isQuiz = currentEffectiveBlock === "quiz";
   const isSubtopic =
-    lastActiveBlockId &&
-    lastActiveBlockId !== "overview" &&
-    lastActiveBlockId !== "quiz";
+    currentEffectiveBlock &&
+    currentEffectiveBlock !== "overview" &&
+    currentEffectiveBlock !== "quiz";
 
   const knownBlockIds = Object.keys(subtopicsCache);
+
   return (
     <div className="flex flex-col min-h-full w-full justify-between p-6">
       {/* 1. Overview View */}
@@ -151,9 +140,10 @@ export default function LessonContainer({
             {knownBlockIds.map((blockId) => (
               <div
                 key={blockId}
-                className={lastActiveBlockId === blockId ? "" : "hidden"}
+                className={currentEffectiveBlock === blockId ? "" : "hidden"}
               >
-                <MiniQuiz lessonBlockId={blockId} />
+                {/* 💡 Forward the onBktUpdate listener straight into the MiniQuiz component */}
+                <MiniQuiz lessonBlockId={blockId} onBktUpdate={onBktUpdate} />
               </div>
             ))}
           </div>
