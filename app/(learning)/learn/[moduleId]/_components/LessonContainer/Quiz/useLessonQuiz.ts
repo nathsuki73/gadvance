@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchLessonQuiz, saveLessonQuizProgress } from "./service";
-import { Quiz } from "./types";
+import { BackendOptionResponse, BackendQuestionResponse, Quiz } from "./types";
 
 export type QuizState = "loading" | "ready" | "started" | "completed" | "error";
 
@@ -89,11 +89,52 @@ export function useLessonQuiz(lessonBlockId: string, isActive: boolean) {
 
     if (quiz.attemptId) {
       try {
-        await saveLessonQuizProgress(quiz.attemptId, {
+        console.log("Attempt id: " + quiz.attemptId);
+        const response = await saveLessonQuizProgress(quiz.attemptId, {
           question_id: questionId,
           selected_choice_id: selectedChoiceId,
           current_index: nextIndexPointer,
         });
+
+        if (response.success && response.data) {
+          if (response.data.quiz_status === "completed") {
+            setQuizState("completed");
+            setIsSaving(false);
+            return;
+          }
+
+          // If the backend returned a newly pruned question array list, update our state
+          if (response.data.questions) {
+            const rawQuestions: BackendQuestionResponse[] =
+              response.data.questions;
+            setQuiz((prevQuiz) => {
+              if (!prevQuiz) return null;
+
+              // Map the backend questions back into the frontend structure format
+              const updatedQuestions = rawQuestions.map(
+                (q: BackendQuestionResponse) => ({
+                  id: q.id,
+                  question: q.question_text,
+                  choices: (q.options || []).map(
+                    (opt: BackendOptionResponse) => ({
+                      id: opt.id,
+                      text: opt.option_text,
+                    }),
+                  ),
+                  correctAnswer:
+                    q.options.find(
+                      (opt: BackendOptionResponse) => opt.is_correct,
+                    )?.id ?? "",
+                }),
+              );
+
+              return {
+                ...prevQuiz,
+                questions: updatedQuestions,
+              };
+            });
+          }
+        }
       } catch (err) {
         console.error("Failed to sync structural answer state:", err);
       }

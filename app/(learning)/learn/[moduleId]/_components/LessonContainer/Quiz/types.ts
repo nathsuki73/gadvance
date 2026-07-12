@@ -55,12 +55,26 @@ export interface Quiz {
   score?: number; // Persisted correct answers aggregate counter metrics
 }
 
+export interface BackendOptionResponse {
+  id: string;
+  option_text: string;
+  is_correct: boolean;
+}
+
+export interface BackendQuestionResponse {
+  id: string;
+  question_text: string;
+  order_index: number;
+  options: BackendOptionResponse[];
+}
+
 export interface SaveAnswerSuccessPayload {
   message: string;
   quiz_status: "started" | "completed";
   current_index?: number;
   score?: number;
   total?: number;
+  questions?: BackendQuestionResponse[];
 }
 
 export interface SaveAnswerResponse {
