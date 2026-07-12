@@ -9,9 +9,10 @@ import { QuizCompleted } from "./_components/QuizCompleted";
 
 type Props = {
   lessonBlockId: string;
+  isActive: boolean;
 };
 
-export function LessonQuiz({ lessonBlockId }: Props) {
+export function LessonQuiz({ lessonBlockId, isActive }: Props) {
   const {
     quiz,
     quizState,
@@ -24,7 +25,7 @@ export function LessonQuiz({ lessonBlockId }: Props) {
     answers,
     handleNextQuestion,
     handleSelectAnswer,
-  } = useLessonQuiz(lessonBlockId);
+  } = useLessonQuiz(lessonBlockId, isActive);
 
   switch (quizState) {
     case "loading":

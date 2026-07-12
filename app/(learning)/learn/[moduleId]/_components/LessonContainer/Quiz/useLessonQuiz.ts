@@ -4,9 +4,9 @@ import { Quiz } from "./types";
 
 export type QuizState = "loading" | "ready" | "started" | "completed" | "error";
 
-export function useLessonQuiz(lessonBlockId: string) {
+export function useLessonQuiz(lessonBlockId: string, isActive: boolean) {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
-  const [quizState, setQuizState] = useState<QuizState>("loading");
+  const [quizState, setQuizState] = useState<QuizState>("ready");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -14,6 +14,10 @@ export function useLessonQuiz(lessonBlockId: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // 🌟 1. Safe early return: If it's not active, do ABSOLUTELY NOTHING.
+    // No setStates are called here, completely satisfying the React compiler.
+    if (!isActive) return;
+
     let cancelled = false;
 
     async function loadQuiz() {
@@ -22,7 +26,6 @@ export function useLessonQuiz(lessonBlockId: string) {
 
       try {
         const data = await fetchLessonQuiz(lessonBlockId);
-        console.log("DATA" + JSON.stringify(data));
         if (cancelled) return;
 
         setQuiz(data);
@@ -43,7 +46,7 @@ export function useLessonQuiz(lessonBlockId: string) {
           setCurrentQuestion(data.currentIndex ?? 0);
           setQuizState("started");
         } else {
-          setQuizState("ready");
+          setQuizState("started");
         }
       } catch (err) {
         if (cancelled) return;
@@ -53,10 +56,15 @@ export function useLessonQuiz(lessonBlockId: string) {
     }
 
     loadQuiz();
+
     return () => {
       cancelled = true;
     };
-  }, [lessonBlockId]);
+  }, [lessonBlockId, isActive]);
+
+  // Use state variables derived directly during render phase if not active
+  // This effectively mocks the "ready" state safely without using setState!
+  const effectiveQuizState = isActive ? quizState : "ready";
 
   const score = useMemo(() => {
     if (!quiz) return 0;
@@ -79,10 +87,8 @@ export function useLessonQuiz(lessonBlockId: string) {
     const isLastQuestion = currentQuestion === quiz.questions.length - 1;
     const nextIndexPointer = currentQuestion + 1;
 
-    // 3. PERSIST PROGRESS: Ping the backend endpoint using the unified pipeline layout
     if (quiz.attemptId) {
       try {
-        console.log("Attempt id: " + quiz.attemptId);
         await saveLessonQuizProgress(quiz.attemptId, {
           question_id: questionId,
           selected_choice_id: selectedChoiceId,
@@ -110,7 +116,7 @@ export function useLessonQuiz(lessonBlockId: string) {
 
   return {
     quiz,
-    quizState,
+    quizState: effectiveQuizState,
     setQuizState,
     currentQuestion,
     submitted,

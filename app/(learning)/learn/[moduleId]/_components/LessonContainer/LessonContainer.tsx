@@ -152,7 +152,7 @@ export default function LessonContainer({
 
       {/* 3. Quiz View (Stays mounted, retains state) */}
       <div className={`flex-1 w-full ${isQuiz ? "" : "hidden"}`}>
-        <MainLessonQuiz lessonBlockId={lessonId} />
+        <MainLessonQuiz lessonBlockId={lessonId} isActive={isQuiz} />
       </div>
 
       {/* Persistent Navigation Footer */}
