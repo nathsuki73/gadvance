@@ -76,7 +76,6 @@ const AUTH_NAVS = [
   { href: "/workspace", label: "Workspace" },
   { href: "/workspace/courses", label: "My Courses" },
   { href: "/explore", label: "Explore" },
-  { href: "/workspace/certificates", label: "Certificates" },
 ];
 
 export default function AuthHeader() {
@@ -386,7 +385,7 @@ export default function AuthHeader() {
 
               {/* Profile Dropdown Menu */}
               <div
-                className={`absolute right-0 mt-3 w-56 origin-top-right rounded-2xl border border-primary-hover/20 bg-white p-2 flex flex-col gap-0.5 shadow-xl transition-all duration-200 ease-in-out transform ${
+                className={`absolute right-0 mt-3 w-56 z-50 origin-top-right rounded-2xl border border-primary-hover/20 bg-white p-2 flex flex-col gap-0.5 shadow-xl transition-all duration-200 ease-in-out transform ${
                   showProfileDropdown
                     ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
                     : "opacity-0 scale-95 -translate-y-1 pointer-events-none"

@@ -213,7 +213,7 @@ export default function WorkspacePage() {
           {/* Right Column: Recent Timeline Block */}
           <section className="space-y-6">
             <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400">
-              recent timeline
+              recent timeline (just a template, not live data)
             </h2>
 
             <div className="border border-zinc-200 rounded-3xl divide-y divide-zinc-100 bg-white overflow-hidden min-h-70">
