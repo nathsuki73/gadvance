@@ -1,5 +1,6 @@
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
+import SubtopicSkeleton from "./SubtopicSkeleton";
 
 export type SubtopicItem = {
   id: string;
@@ -25,11 +26,7 @@ export default function Subtopic({ subtopics }: SubtopicProps) {
   })();
 
   if (subtopicsArray.length === 0) {
-    return (
-      <div className="p-8 text-zinc-500 text-center">
-        No subtopics available.
-      </div>
-    );
+    return <SubtopicSkeleton />;
   }
 
   const sortedSubtopics = [...subtopicsArray].sort(
