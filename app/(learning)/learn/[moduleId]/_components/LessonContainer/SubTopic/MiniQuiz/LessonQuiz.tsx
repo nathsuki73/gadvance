@@ -19,6 +19,7 @@ export function LessonQuiz({ lessonBlockId, onBktUpdate }: Props) {
     answers,
     currentQuestion,
     submitted,
+    isSaving,
     error,
     score,
     startQuiz,
@@ -53,6 +54,7 @@ export function LessonQuiz({ lessonBlockId, onBktUpdate }: Props) {
       totalQuestions={quiz.questions.length}
       selected={answers[question.id]}
       submitted={submitted}
+      isSaving={isSaving}
       onSelect={(choiceId) => selectAnswer(question.id, choiceId)}
       onNext={goToNextQuestion}
     />

@@ -7,6 +7,7 @@ type Props = {
   totalQuestions: number;
   selected: string | undefined;
   submitted: boolean;
+  isSaving: boolean;
   onSelect: (choiceId: string) => void;
   onNext: () => void;
 };
@@ -17,6 +18,7 @@ export function QuizQuestionState({
   totalQuestions,
   selected,
   submitted,
+  isSaving,
   onSelect,
   onNext,
 }: Props) {
@@ -42,7 +44,7 @@ export function QuizQuestionState({
             return (
               <button
                 key={choice.id}
-                disabled={submitted}
+                disabled={submitted || isSaving}
                 onClick={() => onSelect(choice.id)}
                 className={`flex w-full items-start gap-5 rounded-2xl border p-6 text-left transition ${
                   isSelected
