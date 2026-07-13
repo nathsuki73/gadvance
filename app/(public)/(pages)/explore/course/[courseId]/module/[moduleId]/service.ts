@@ -2,7 +2,11 @@
 
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServerSession } from "next-auth";
-import { ModuleProgressResponse, ModuleResponse } from "./types";
+import {
+  ModuleProgressResponse,
+  ModuleResponse,
+  StaticTestResponse,
+} from "./types";
 
 type ApiOptions = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
@@ -44,9 +48,6 @@ async function request<T>(endpoint: string, options: ExtendedApiOptions = {}) {
   }
 
   try {
-    // 3. Add a log statement here to track what Vercel is actually fetching!
-    console.log(`SERVER ACTION FETCHING: ${API_URL}${endpoint}`);
-
     const res = await fetch(`${API_URL}${endpoint}`, {
       method: options.method || "GET",
       headers,
@@ -68,8 +69,7 @@ async function request<T>(endpoint: string, options: ExtendedApiOptions = {}) {
       data: result.data as T,
       progress: result.progress,
     };
-  } catch (error) {
-    console.error(`Module API Error (${endpoint}):`, error);
+  } catch {
     return {
       success: false,
       error: "Network connection error",

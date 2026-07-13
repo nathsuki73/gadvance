@@ -47,13 +47,13 @@ const CourseGrid = () => {
               Discover new modules, sharpen your skills, and advance your knowledge at your own pace.
             </p>
           </div>
-          <div className="mt-2">
+          {/* <div className="mt-2">
             <CourseSearchBar 
               value={query} 
               onChange={setQuery} 
               onSearch={handleSearch} 
             />
-          </div>
+          </div> */}
         </div>
       </div>
 

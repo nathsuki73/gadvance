@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession, getSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { finishOnBoarding } from "../../(public)/actions/onboarding"; // Ensure path is correct
 import logoIcon from "@/app/assets/logo.ico";
 import imageCompression from "browser-image-compression";
 import Image from "next/image";
+
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
 
 const IconBio = () => {
   const { data: session, update } = useSession();
@@ -31,17 +33,6 @@ const IconBio = () => {
     return `/storage/uploads/avatars/avatar_${emailKey}_${timestamp}.${extension}`;
   };
 
-  const waitForSessionStatus = async (targetStatus: string) => {
-    for (let i = 0; i < 8; i += 1) {
-      const latest = await getSession();
-      if (latest?.user?.status?.trim().toLowerCase() === targetStatus) {
-        return true;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 150));
-    }
-    return false;
-  };
-
   useEffect(() => {
     const saved = localStorage.getItem("onboarding_p3");
     if (saved) {
@@ -63,16 +54,13 @@ const IconBio = () => {
     const nextAvatarPath = buildAvatarPath(file);
 
     const options = {
-      maxSizeMB: 0.4, // Downsize the raw file footprint first
-      maxWidthOrHeight: 800, // Resizes dimensions to a clean avatar size
+      maxSizeMB: 0.4,
+      maxWidthOrHeight: 800,
       useWebWorker: true,
     };
 
     try {
-      // 1. Run the initial layout compression
       const compressedFile = await imageCompression(file, options);
-
-      // 2. Convert the compressed file into an HTML Image Element
       const bitmap = await createImageBitmap(compressedFile);
       const canvas = document.createElement("canvas");
       canvas.width = bitmap.width;
@@ -83,11 +71,8 @@ const IconBio = () => {
         ctx.drawImage(bitmap, 0, 0);
       }
 
-      // 3. Export directly to WebP format with 75% quality compression
-      // This turns a huge image into a tiny fraction of its original size
       const webpBase64 = canvas.toDataURL("image/webp", 0.75);
 
-      // 4. Update state and localStorage
       setAvatarBase64(webpBase64);
       setAvatarPreview(webpBase64);
 
@@ -121,6 +106,10 @@ const IconBio = () => {
       const p1 = JSON.parse(localStorage.getItem("onboarding_p1") || "{}");
       const p2 = JSON.parse(localStorage.getItem("onboarding_p2") || "{}");
 
+      const extractedBirthday = String(
+        p1.birthday || p1.date_of_birth || p1.dob || "",
+      ).trim();
+
       // 2. CONSTRUCT COMPLETE PAYLOAD
       const finalPayload = {
         firstName: String(p1.firstName || ""),
@@ -128,7 +117,9 @@ const IconBio = () => {
         lastName: String(p1.lastName || ""),
         age: String(p1.age || ""),
         gender: String(p1.gender || ""),
-        dob: String(p1.dob || ""),
+        birthday: extractedBirthday,
+        date_of_birth: extractedBirthday,
+        birth_date: extractedBirthday,
         phone: String(p2.phone || ""),
         addressLine: String(p2.addressLine || ""),
         city: String(p2.city || ""),
@@ -139,7 +130,7 @@ const IconBio = () => {
         avatar: avatarBase64,
       };
 
-      // 3. CALL SERVER ACTION (Original Logic)
+      // 3. CALL SERVER ACTION
       const result = await finishOnBoarding(finalPayload);
 
       if (!result.success) {
@@ -148,26 +139,29 @@ const IconBio = () => {
         return;
       }
 
-      // 4. UPDATE SESSION (Original Logic)
-      const nextStatus = (result.user?.status ?? "active").trim().toLowerCase();
-      await update({
-        user: {
-          id: session?.user?.id,
-          email: session?.user?.email,
-          role: session?.user?.role,
-          status: nextStatus,
-        },
-      });
-
-      // 5. WAIT FOR THE UPDATED SESSION TO BE WRITTEN BEFORE REDIRECTING
-      await waitForSessionStatus(nextStatus);
-
-      // Clear local storage after success
+      // Clear local storage completely
       localStorage.removeItem("onboarding_p1");
       localStorage.removeItem("onboarding_p2");
       localStorage.removeItem("onboarding_p3");
 
-      router.replace("/workspace");
+      // 4. UPDATE SESSION ENGINE
+      // Force NextAuth to inject 'active' status and preserve credentials structures
+      const nextStatus = (result.user?.status ?? "active").trim().toLowerCase();
+      await update({
+        user: {
+          ...session?.user,
+          status: nextStatus,
+          laravelJwt: session?.laravelJwt,
+        },
+      });
+
+      // 5. BREAK OUT OF LOGIC LOOP
+      // Give the encrypted session state cookies 200ms to settle,
+      // then force an absolute browser refresh directly into your workspace layout.
+      setTimeout(() => {
+        window.location.href = "/workspace";
+      }, 200);
+
     } catch (error) {
       console.error("Onboarding Finalize Error:", error);
       alert("Something went wrong. Please try again.");
@@ -243,6 +237,7 @@ const IconBio = () => {
             <div>
               <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                 Short Bio
+                <span className="text-red-500 ml-1">*</span>
               </label>
               <textarea
                 name="bio"
@@ -275,7 +270,6 @@ const IconBio = () => {
         </div>
       </div>
 
-      {/* Decorative Right Panel */}
       <div
         className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
         style={{ clipPath: "ellipse(100% 100% at 100% 50%)" }}

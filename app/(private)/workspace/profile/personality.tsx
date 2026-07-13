@@ -33,15 +33,22 @@ export default function PersonalityInfo() {
         });
 
         if (response.ok) {
-          const dbData = await response.json();
-          setBio(dbData.bio || "");
-          
-          if (dbData.avatar) {
-            // Check if stored URL is absolute or relative path from Laravel storage
-            const fullAvatarUrl = dbData.avatar.startsWith("http") 
-              ? dbData.avatar 
-              : `${apiBaseUrl}/storage/${dbData.avatar}`;
+          const payload = await response.json();
+          const dbData = payload?.data ?? payload;
+
+          setBio(dbData?.bio || "");
+
+          const avatarPath = dbData?.avatar;
+          if (avatarPath) {
+            const fullAvatarUrl =
+              avatarPath.startsWith("http")
+                ? avatarPath
+                : avatarPath.startsWith("/")
+                  ? `${apiBaseUrl}${avatarPath}`
+                  : `${apiBaseUrl}/storage/${avatarPath}`;
             setAvatarPreview(fullAvatarUrl);
+          } else {
+            setAvatarPreview(null);
           }
         }
       } catch (error) {
@@ -160,7 +167,7 @@ export default function PersonalityInfo() {
         <button
           type="submit"
           disabled={isSaving}
-          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#00a9d1]/20 hover:bg-primary-hover transition-all disabled:opacity-70"
+          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover transition-all disabled:opacity-70"
         >
           {isSaving ? (
             <>

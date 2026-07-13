@@ -1,27 +1,57 @@
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import axios from "axios";
-import { getServerSession } from "next-auth";
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
-// 1. Create a base configuration instance
-const apiInstance = axios.create({
-  baseURL: `${process.env.NEXT_PUBLIC_API_URL}/api`,
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  },
-});
+export interface ModuleStructureItem {
+  id: string;
+  type: "pretest" | "lesson" | "posttest";
+  title: string;
+  order: number;
+  description?: string;
+}
 
-// 2. Export a function to get the API client with the dynamic server session token
-export async function getApi() {
-  const session = await getServerSession(authOptions);
-  const token = session?.laravelJwt;
+export interface ModuleStructure {
+  courseId: string;
+  id: string;
+  title: string;
+  items: ModuleStructureItem[];
+}
 
-  if (token) {
-    apiInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  } else {
-    // Clean it up if there's no session, preventing token leakage between requests
-    delete apiInstance.defaults.headers.common["Authorization"];
+interface LaravelModuleStructure {
+  learning_plan_id: string;
+  id: string;
+  title: string;
+  items: ModuleStructureItem[];
+}
+
+export async function getModuleStructure(
+  moduleId: string,
+): Promise<ModuleStructure> {
+  const response = await fetch(
+    `${API_BASE_URL}/modules/${moduleId}/structure`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    },
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+
+    throw new Error(
+      errorData.message ||
+        `Failed to fetch module structure: ${response.status}`,
+    );
   }
 
-  return apiInstance;
+  const payload = await response.json();
+  const laravelData: LaravelModuleStructure = payload.data;
+  console.log(laravelData);
+  return {
+    courseId: laravelData.learning_plan_id,
+    id: laravelData.id,
+    title: laravelData.title,
+    items: laravelData.items,
+  };
 }

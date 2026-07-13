@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, Search, X } from "lucide-react"; 
+import { Menu, X } from "lucide-react"; 
 
 import logoIcon from "@/app/assets/logo.ico";
 
@@ -83,22 +83,7 @@ export default function PublicHeader() {
         {/* CENTER/RIGHT: Search & Navigation */}
         <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
           
-         {/* DESKTOP SEARCH */}
-<div className="hidden sm:block sm:flex-1 sm:max-w-md">
-  <SearchBar />
-</div>
 
-{/* MOBILE SEARCH TOGGLE */}
-<button
-  onClick={toggleSearch}
-  className="rounded-full p-2 text-zinc-600 hover:bg-zinc-100 sm:hidden"
->
-  {showSearch ? (
-    <X className="h-5 w-5" />
-  ) : (
-    <Search className="h-5 w-5" />
-  )}
-</button>
 
           {/* DESKTOP NAV (xl only) */}
           
@@ -127,24 +112,10 @@ export default function PublicHeader() {
           </div>
         </div>
       </div>
-
-<div
-  className={`
-     transition-all duration-300 ease-in-out md:hidden
-    ${showSearch ? "max-h-24 opacity-100 mt-3" : "max-h-0 opacity-0"}
-  `}
->
-  <div className="border-t border-zinc-100 pt-3 flex justify-center">
-    <div className="w-full max-w-md">
-      <SearchBar />
-    </div>
-  </div>
-</div>
-
       {/* EXPANDABLE MOBILE/TABLET MENU */}
       <div className={`
         overflow-hidden transition-all duration-300 ease-in-out xl:hidden
-        ${showMobileMenu ? "max-h-[500px] opacity-100 mt-4" : "max-h-0 opacity-0"}
+        ${showMobileMenu ? "max-h-125 opacity-100 mt-4" : "max-h-0 opacity-0"}
       `}>
         <nav className="flex flex-col gap-2 border-t border-zinc-100 pt-4">
          

@@ -201,8 +201,11 @@ export default function Notification({ open, onCloseAction }: Props) {
             ))}
           </div>
         ) : error ? (
+          // <div className="rounded-xl bg-zinc-50 px-4 py-5 text-center text-sm text-zinc-500">
+          //   {error}
+          // </div>
           <div className="rounded-xl bg-zinc-50 px-4 py-5 text-center text-sm text-zinc-500">
-            {error}
+            This feature is under development.
           </div>
         ) : notifications.length === 0 ? (
           <div className="p-4 text-center text-sm text-zinc-500">

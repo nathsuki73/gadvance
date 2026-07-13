@@ -88,7 +88,7 @@ export default function Pretest({
               <ChevronLeft size={16} />
               Back to Modules
             </button> */}
-            <div className="text-left">
+            <div className="text-left mt-12">
               <p className="text-xl font-semibold uppercase tracking-[0.25em] text-zinc-500">
                 Pre-test Assessment
               </p>

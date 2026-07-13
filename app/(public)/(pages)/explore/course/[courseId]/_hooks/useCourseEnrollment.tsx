@@ -92,6 +92,13 @@ export const useCourseEnrollment = ({
     }
 
     if (enrollment) {
+      const firstModule = course.modules?.[0];
+
+      if (firstModule) {
+        router.push(`/explore/course/${course.id}/module/${firstModule.id}`);
+        return;
+      }
+
       router.push(`/dashboard/learning/${course.id}`);
       return;
     }

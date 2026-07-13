@@ -45,7 +45,7 @@ const CourseModulePreview = ({
           {modulesList.map((module, index) => {
             // Layout classes applied equally to buttons and link anchors
             const itemClasses =
-              "group w-full text-left flex justify-between items-center gap-8 py-6 border-b border-zinc-100 transition-colors hover:bg-zinc-50/50 px-2";
+              "group w-full text-left flex justify-between items-center gap-8 py-6 border-b border-zinc-200 transition-colors hover:bg-zinc-50/50 px-2";
 
             // Common child node structure
             const innerContent = (
