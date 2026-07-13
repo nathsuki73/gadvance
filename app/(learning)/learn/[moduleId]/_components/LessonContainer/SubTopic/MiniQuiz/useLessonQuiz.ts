@@ -6,7 +6,6 @@ import { fetchMiniQuiz, saveMiniQuizProgress } from "./service";
 
 export type QuizState = "loading" | "ready" | "started" | "completed" | "error";
 
-// 💡 Added onBktUpdate callback signature property parameter to the hook
 export function useLessonQuiz(
   lessonBlockId: string,
   onBktUpdate?: (lessonBlockId: string, currentPLt: number) => void,
@@ -48,11 +47,9 @@ export function useLessonQuiz(
           data.previouslySavedAnswers &&
           Object.keys(data.previouslySavedAnswers).length > 0
         ) {
-          // 💡 RESUME: If they have *any* saved responses in the DB, drop them straight into action layout
           setCurrentQuestion(data.currentIndex ?? 0);
           setQuizState("started");
         } else {
-          // FRESH: No progress logged yet, show start intro panel
           setQuizState("ready");
         }
       } catch (err) {
@@ -78,24 +75,33 @@ export function useLessonQuiz(
   const startQuiz = () => setQuizState("started");
 
   const selectAnswer = (questionId: string, choiceId: string) => {
+    // Only allow changing answer if we haven't locked it in yet
+    if (submitted) return;
     setAnswers((prev) => ({ ...prev, [questionId]: choiceId }));
   };
 
   const goToNextQuestion = async () => {
-    if (!quiz || isSaving) return;
+    // 1. Guard check: Ensure quiz exists and an answer was actually picked
+    if (!quiz) return;
 
     const questionId = quiz.questions[currentQuestion].id;
     const selectedChoiceId = answers[questionId];
     if (!selectedChoiceId) return;
 
-    setSubmitted(true);
-    setIsSaving(true);
-
     const isLastQuestion = currentQuestion === quiz.questions.length - 1;
     const nextIndexPointer = currentQuestion + 1;
     const activeAttemptId = quiz.attemptId;
 
+    // 2. OPTIMISTIC UI SHIFT: Change local state immediately
+    if (isLastQuestion) {
+      setQuizState("completed");
+    } else {
+      setCurrentQuestion((prev) => prev + 1);
+    }
+
+    // 3. BACKGROUND SYNC: Fire network request to server without blocking the UI
     if (activeAttemptId) {
+      setIsSaving(true);
       try {
         const result = await saveMiniQuizProgress(activeAttemptId, {
           question_id: questionId,
@@ -107,19 +113,14 @@ export function useLessonQuiz(
           onBktUpdate(lessonBlockId, result.data.p_lt);
         }
       } catch (err) {
-        console.error("Failed to sync structural mini-quiz answer state:", err);
+        console.error(
+          "Failed to sync structural mini-quiz answer state in background:",
+          err,
+        );
+      } finally {
+        setIsSaving(false);
       }
     }
-
-    setTimeout(() => {
-      setIsSaving(false);
-      if (isLastQuestion) {
-        setQuizState("completed");
-      } else {
-        setCurrentQuestion((prev) => prev + 1);
-        setSubmitted(false);
-      }
-    }, 500);
   };
 
   return {
