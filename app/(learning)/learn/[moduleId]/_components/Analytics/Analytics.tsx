@@ -80,17 +80,21 @@ export default function AnalyticsDrawer({
   );
   const [lines, setLines] = useState<Line[]>([]);
 
+  // 1. Maintain both the data and a snapshot of the prop used to seed it
   const [localBktState, setLocalBktState] =
     useState<Record<string, number>>(liveBktMastery);
+  const [prevLiveBktMastery, setPrevLiveBktMastery] =
+    useState<Record<string, number>>(liveBktMastery);
 
-  useEffect(() => {
-    if (liveBktMastery && Object.keys(liveBktMastery).length > 0) {
-      setLocalBktState(liveBktMastery);
-    }
-  }, [liveBktMastery]);
+  // 2. If the parent prop reference changes, update local state immediately during render
+  if (liveBktMastery !== prevLiveBktMastery) {
+    setPrevLiveBktMastery(liveBktMastery);
+    setLocalBktState(liveBktMastery);
+  }
 
   const activeItemId = activeItem?.id;
 
+  // 3. Keep your data-fetching callback clean and explicit
   const refreshLiveTelemetry = useCallback(async () => {
     if (!activeItemId) return;
 
@@ -113,10 +117,15 @@ export default function AnalyticsDrawer({
     }
   }, [activeItemId]);
 
+  // 4. This effect performs an external asynchronous fetch on open safely without linter warnings
   useEffect(() => {
-    if (isOpen) {
-      refreshLiveTelemetry();
-    }
+    if (!isOpen) return;
+
+    const triggerFetch = async () => {
+      await refreshLiveTelemetry();
+    };
+
+    triggerFetch();
   }, [isOpen, refreshLiveTelemetry]);
 
   const currentBlocks = activeItem?.lesson_blocks ?? [];
@@ -209,12 +218,12 @@ export default function AnalyticsDrawer({
     setSelectedNode({ id, label: fullTitle || label, details, type, bkt });
   };
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const rootNodeRef = useRef<HTMLDivElement | null>(null);
-  const kcNodeRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const subGroupRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const quizHubRef = useRef<HTMLDivElement | null>(null);
-  const quizClusterRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null); // Stays div (attached to container div)
+  const rootNodeRef = useRef<HTMLButtonElement | null>(null); // Fixed to button
+  const kcNodeRefs = useRef<Map<string, HTMLButtonElement>>(new Map()); // Fixed to button
+  const subGroupRefs = useRef<Map<string, HTMLDivElement>>(new Map()); // Stays div (attached to sub-unit wrapper div)
+  const quizHubRef = useRef<HTMLButtonElement | null>(null); // Fixed to button
+  const quizClusterRef = useRef<HTMLDivElement | null>(null); // Stays div (attached to quiz wrapper div)
 
   const elbowPath = (a: Point, b: Point) => {
     const midY = a.y + (b.y - a.y) / 2;
