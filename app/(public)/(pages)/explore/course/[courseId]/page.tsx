@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, use } from "react";
-import { notFound } from "next/navigation";
+import { notFound, usePathname, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import CourseOverviewHeader from "./_components/CourseOverviewHeader";
 import { getLearningPlanDetails } from "../../service";
@@ -24,6 +24,14 @@ const CoursePage = ({ params }: CoursePageProps) => {
 
   // 1. Store the full enrollment object here instead of just a boolean
   const [enrollmentData, setEnrollmentData] = useState<Enrollment | null>(null);
+
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleBackToCourse = () => {
+    const courseLink = pathname.split("/course")[0];
+    router.push(courseLink);
+  };
 
   useEffect(() => {
     if (status === "loading") return;
@@ -72,7 +80,7 @@ const CoursePage = ({ params }: CoursePageProps) => {
       <nav className="sticky top-0 z-50 border-b border-zinc-50 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
           <button
-            onClick={() => window.history.back()}
+            onClick={handleBackToCourse}
             className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary"
           >
             <ArrowLeft
@@ -80,7 +88,7 @@ const CoursePage = ({ params }: CoursePageProps) => {
               strokeWidth={1.5}
               className="transition-transform duration-300 group-hover:-translate-x-1"
             />
-            <span className="lowercase font-medium">back to courses</span>
+            <span className="lowercase font-medium">back to explore</span>
           </button>
         </div>
       </nav>
