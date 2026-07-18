@@ -44,7 +44,6 @@ export type ModuleProgressResponse = {
 };
 
 export type ModuleResponse = {
-  [x: string]: any;
   id: string;
   title: string;
   about?: string;

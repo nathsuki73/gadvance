@@ -69,20 +69,6 @@ const ModulePage = ({
       </nav>
 
       <ModuleOverviewHeader module={module} />
-
-      <section className="mx-auto max-w-7xl px-6 py-16 md:px-12">
-        <div className="mb-12">
-          <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-primary mb-4">
-            module structure
-          </h2>
-          <p className="text-zinc-500 font-light lowercase">
-            explore the structured sections inside this module.
-          </p>
-        </div>
-
-        {/* Passing everything straight into the list component */}
-        <ModuleLessonPreview module={module} />
-      </section>
     </main>
   );
 };
