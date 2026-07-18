@@ -1,34 +1,86 @@
-import axios from "axios";
+"use server";
+
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getServerSession } from "next-auth";
 import { Course } from "./type";
 
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
-export const getRecentCourses = async (): Promise<Course[]> => {
+// 🔒 Internal request engine matching your secure system
+async function secureRequest<T>(
+  endpoint: string,
+  method: "GET" | "POST" = "GET",
+  params?: Record<string, string>,
+) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.laravelJwt) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    Authorization: `Bearer ${session.laravelJwt}`,
+  };
+
   try {
-    const response = await axios.get(`${API_BASE_URL}/learning-plans`, {
-      params: {
-        limit: 4,
-      },
+    // Construct URL with query parameters if present
+    let url = `${API_URL}${endpoint}`;
+    if (params) {
+      const searchParams = new URLSearchParams(params);
+      url += `?${searchParams.toString()}`;
+    }
+
+    const res = await fetch(url, {
+      method,
+      headers,
     });
 
-    return response.data?.data || response.data || [];
+    const result = await res.json();
+
+    if (!res.ok) {
+      return {
+        success: false,
+        error: result.message || "Request failed",
+      };
+    }
+
+    return {
+      success: true,
+      data: result.data as T,
+    };
   } catch (error) {
-    console.error("Error fetching recent courses:", error);
+    console.error(`Fetch error at ${endpoint}:`, error);
+    return { success: false, error: "Network connection error" };
+  }
+}
+
+// 📚 1. Securely fetch personal enrolled courses
+export async function getEnrolledCourses(): Promise<Course[]> {
+  const response = await secureRequest<Course[]>(
+    "/user/enrolled-courses",
+    "GET",
+  );
+
+  if (!response.success || !response.data) {
+    console.error("Error fetching enrolled courses:", response.error);
     return [];
   }
-};
 
-export const searchCourses = async (query: string): Promise<Course[]> => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/learning-plans`, {
-      params: {
-        search: query,
-      },
-    });
+  return response.data;
+}
 
-    return response.data?.data || response.data || [];
-  } catch (error) {
-    console.error("Error searching courses:", error);
+// 🔍 2. Securely search courses
+export async function searchCourses(query: string): Promise<Course[]> {
+  const response = await secureRequest<Course[]>("/learning-plans", "GET", {
+    search: query,
+  });
+
+  if (!response.success || !response.data) {
+    console.error("Error searching courses:", response.error);
     return [];
   }
-};
+
+  return response.data;
+}

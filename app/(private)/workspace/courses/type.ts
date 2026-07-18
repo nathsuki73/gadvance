@@ -5,4 +5,5 @@ export type Course = {
   image?: string | null;
   category?: string;
   enrolled?: number;
+  duration?: number;
 };

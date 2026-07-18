@@ -95,13 +95,9 @@ export default function WorkspacePage() {
         {/* Top Split Row */}
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 border-b border-zinc-200 pb-12">
           <header className="max-w-2xl">
-            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.4em] block mb-3">
-              philippine advocacy terminal
-            </span>
             <h1 className="text-4xl font-light tracking-tight text-zinc-900 sm:text-5xl leading-tight">
-              Welcome back,
+              Welcome to GADvance,{" "}
               <span className="font-semibold italic font-serif text-primary">
-                {" "}
                 {derivedFirstName}.
               </span>
             </h1>
