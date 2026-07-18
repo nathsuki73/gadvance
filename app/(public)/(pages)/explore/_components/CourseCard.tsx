@@ -1,15 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  ArrowUpRight,
-  Clock3,
-  Globe,
-  Briefcase,
-  Heart,
-  Target,
-  Users,
-} from "lucide-react";
+import { ArrowUpRight, Clock3, Users } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import type { LearningPlan } from "../types";
@@ -18,67 +10,67 @@ type CourseCardProps = {
   module: LearningPlan;
 };
 
-const iconByType = {
-  globe: Globe,
-  briefcase: Briefcase,
-  target: Target,
-  wellness: Heart,
-} as const;
-
 const CourseCard = ({ module }: CourseCardProps) => {
   const router = useRouter();
-  const Icon = iconByType[module.icon as keyof typeof iconByType] || Target;
+
+  const handleCardClick = () => {
+    router.push(`/explore/course/${module.id}`);
+  };
 
   return (
-    <article className="group flex flex-col gap-6 rounded-[32px] border border-zinc-200 bg-white p-8 text-left transition-all duration-500 hover:border-[#8b5cf6]/50 hover:shadow-xl hover:shadow-sky-100/20">
-      
-      {/* Header: Minimal Tag & Icon */}
-      <div className="flex items-start justify-between">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-50 text-[#8b5cf6] transition-colors group-hover:bg-purple-50">
-          <Icon size={18} strokeWidth={1.5} />
-        </div>
+    <article
+      onClick={handleCardClick}
+      className="group relative flex flex-col gap-5 overflow-hidden rounded-3xl border border-purple-100 bg-purple-50 p-7 text-left shadow-[0_1px_2px_rgba(24,24,27,0.04)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_24px_48px_-12px_rgba(139,92,246,0.18)] cursor-pointer select-none active:scale-[0.99] active:translate-y-0"
+    >
+      {/* Signature: ambient glow that blooms on hover */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/20 blur-3xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+      />
 
+      {/* Header */}
+      <div className="relative flex items-start justify-end">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-purple-200 bg-white/60 text-zinc-400 transition-all duration-300 group-hover:border-primary/40 group-hover:bg-primary group-hover:text-white">
+          <ArrowUpRight
+            size={15}
+            className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+          />
+        </div>
       </div>
 
-      {/* Content: Lowercase & Airy */}
-      <div className="flex-1">
-        <h3 className="text-xl font-semibold tracking-tight text-zinc-900">
+      {/* Content */}
+      <div className="relative flex-1">
+        <h3 className="text-lg font-semibold leading-snug tracking-tight text-zinc-900 transition-colors duration-200 group-hover:text-primary">
           {module.title}
         </h3>
 
-        <p className="mt-3 text-sm leading-relaxed text-zinc-500 font-light">
-          {module.description || "Structured learning modules and guided activities."}
+        <p className="mt-2 text-sm leading-relaxed text-zinc-600 line-clamp-2">
+          {module.description ||
+            "Structured learning modules and guided activities."}
         </p>
       </div>
 
-      {/* Meta Stats: Monochromatic */}
-      <div className="flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-        <span className="inline-flex items-center gap-2">
-          <Clock3 size={14} strokeWidth={2} />
-          {module.duration}
-        </span>
+      {/* Divider */}
+      <div className="h-px w-full bg-purple-100" />
 
-        <span className="inline-flex items-center gap-2">
-          <Users size={14} strokeWidth={2} />
-          {module.enrolled}
+      {/* Footer: meta + CTA */}
+      <div className="relative flex items-center justify-between">
+        <div className="flex items-center gap-3.5 text-xs font-medium text-zinc-500">
+          <span className="inline-flex items-center gap-1.5">
+            <Clock3 size={13} strokeWidth={2} className="text-primary/60" />
+            {module.duration || "0h"}
+          </span>
+          <span className="h-1 w-1 rounded-full bg-purple-300" />
+          <span className="inline-flex items-center gap-1.5">
+            <Users size={13} strokeWidth={2} className="text-primary/60" />
+            {module.enrolled || 0}
+          </span>
+        </div>
+
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition-colors duration-200 group-hover:text-primary">
+          view course
         </span>
       </div>
-
-      {/* Divider */}
-      <div className="h-px w-full bg-zinc-50" />
-
-      {/* Action: Subtle Arrow Link */}
-      <button
-        type="button"
-        onClick={() => router.push(`/explore/course/${module.id}`)}
-        className="group/btn flex items-center justify-end w-full text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-[#8b5cf6] gap-1"
-      >
-        <span className="lowercase font-medium">view course</span>
-        <ArrowUpRight 
-          size={16} 
-          className="transition-transform duration-300 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" 
-        />
-      </button>
     </article>
   );
 };
