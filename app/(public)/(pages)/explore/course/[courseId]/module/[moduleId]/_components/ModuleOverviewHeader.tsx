@@ -90,12 +90,6 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
       <div className="mx-auto grid max-w-7xl gap-12 px-6 py-12 md:px-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:py-20">
         {/* LEFT PANEL: CONTENT HERO */}
         <div>
-          <div className="mb-5 flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-[0.35em] text-primary">
-            <span className="rounded-full border border-zinc-200 bg-white px-3 py-1 font-medium text-zinc-500">
-              Module Journey
-            </span>
-          </div>
-
           <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl lg:text-6xl leading-[1.1]">
             {module.title}
           </h1>
