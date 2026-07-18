@@ -30,7 +30,6 @@ const CourseGrid = () => {
     fetchCourses();
   }, [activeSearch]);
 
-  // This is called when the form is submitted
   const handleSearch = () => {
     setActiveSearch(query);
   };
