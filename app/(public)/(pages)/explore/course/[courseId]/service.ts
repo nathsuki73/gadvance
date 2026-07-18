@@ -62,19 +62,6 @@ async function request<T>(endpoint: string, options: ExtendedApiOptions = {}) {
     };
   }
 }
-
-/**
- * Public: Count enrollments of a learning plan
- * Crucial fix: explicitly sets requiresAuth to false so logged out users can fetch it.
- */
-export async function getEnrollmentCount(learningPlanId: string) {
-  return request<{
-    total_enrolled: number;
-  }>(`/learning-plans/${learningPlanId}/enrollments/count`, {
-    requiresAuth: false, // <--- ALLOWS ANONYMOUS ACCESS
-  });
-}
-
 /**
  * Protected: Get current user's enrollment for a specific learning plan
  */

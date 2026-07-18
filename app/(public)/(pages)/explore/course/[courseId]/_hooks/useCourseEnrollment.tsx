@@ -1,86 +1,44 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { LearningPlan, Enrollment } from "../types"; // Adjust path as necessary
-import {
-  deleteEnrollment,
-  enrollLearningPlan,
-  getMyEnrollment,
-  getEnrollmentCount,
-} from "../service";
+import type { LearningPlan, Enrollment } from "../types";
+import { deleteEnrollment, enrollLearningPlan } from "../service";
 
 interface UseCourseEnrollmentProps {
   course: LearningPlan;
   isLoggedIn?: boolean;
+  initialEnrollment: Enrollment | null;
   onEnrollSuccess?: () => void;
 }
 
 export const useCourseEnrollment = ({
   course,
   isLoggedIn,
+  initialEnrollment,
   onEnrollSuccess,
 }: UseCourseEnrollmentProps) => {
   const router = useRouter();
 
   const [showActionDialog, setShowActionDialog] = useState(false);
-  const [dialogVariant, setDialogVariant] = useState<"enroll" | "unenroll">("enroll");
+  const [dialogVariant, setDialogVariant] = useState<"enroll" | "unenroll">(
+    "enroll",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
-  const [loadingEnrollment, setLoadingEnrollment] = useState(true);
-  const [enrolledCount, setEnrolledCount] = useState(course.enrolled || 0);
+
+  // 1. Seed values directly using props from the parent data query context
+  const [enrollment, setEnrollment] = useState<Enrollment | null>(
+    initialEnrollment,
+  );
+  const [enrolledCount, setEnrolledCount] = useState(
+    course.enrollments_count || 0,
+  );
 
   /**
-   * Fetches user-specific private enrollment details
+   * NOTE: All local loading state indicators, separate backend fetchers (loadEnrollment, loadEnrollmentCount),
+   * and all mounting useEffect triggers have been completely deleted from here.
+   * This completely prevents the UI text and metric flashes!
    */
-  const loadEnrollment = useCallback(async () => {
-    if (!isLoggedIn) {
-      setEnrollment(null);
-      setLoadingEnrollment(false);
-      return;
-    }
-
-    try {
-      setLoadingEnrollment(true);
-      const result = await getMyEnrollment(course.id);
-
-      if (result.success && result.data) {
-        setEnrollment(result.data as Enrollment);
-      } else {
-        setEnrollment(null);
-      }
-    } catch (error) {
-      console.error("Enrollment fetch failed:", error);
-      setEnrollment(null);
-    } finally {
-      setLoadingEnrollment(false);
-    }
-  }, [course.id, isLoggedIn]);
-
-  /**
-   * Fetches public course metrics (Always runs regardless of auth)
-   */
-  const loadEnrollmentCount = useCallback(async () => {
-    try {
-      const result = await getEnrollmentCount(course.id);
-      if (result.success && result.data) {
-        setEnrolledCount(result.data.total_enrolled);
-      }
-    } catch (error) {
-      console.error("Enrollment count fetch failed:", error);
-    }
-  }, [course.id]);
-
-  /**
-   * Separate Lifecycles: Logging out won't block public data
-   */
-  useEffect(() => {
-    loadEnrollmentCount();
-  }, [loadEnrollmentCount, isLoggedIn]);
-
-  useEffect(() => {
-    loadEnrollment();
-  }, [loadEnrollment]);
 
   /**
    * Primary Button CTA handler
@@ -130,7 +88,8 @@ export const useCourseEnrollment = ({
           return;
         }
 
-        await loadEnrollment();
+        // 2. Optimistically update states locally so changes reflect on screen instantly
+        setEnrollment(result.data as Enrollment);
         setEnrolledCount((prev) => prev + 1);
 
         if (onEnrollSuccess) {
@@ -151,6 +110,8 @@ export const useCourseEnrollment = ({
       }
 
       setShowActionDialog(false);
+
+      // 3. Clear router cache tree and prompt updates seamlessly
       router.refresh();
     } catch (error) {
       console.error("Action failed:", error);
@@ -161,7 +122,7 @@ export const useCourseEnrollment = ({
 
   return {
     enrollment,
-    loadingEnrollment,
+    loadingEnrollment: false,
     enrolledCount,
     isSubmitting,
     showActionDialog,

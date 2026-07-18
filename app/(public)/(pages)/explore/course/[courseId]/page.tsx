@@ -6,7 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import CourseOverviewHeader from "./_components/CourseOverviewHeader";
 import { getLearningPlanDetails } from "../../service";
 
-import type { LearningPlan, CoursePageProps } from "./types";
+import type { LearningPlan, CoursePageProps, Enrollment } from "./types";
 import { useSession } from "next-auth/react";
 import { getMyEnrollment } from "./service";
 import CoursePageSkeleton from "./_components/CoursePageSkeleton";
@@ -22,26 +22,27 @@ const CoursePage = ({ params }: CoursePageProps) => {
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  // Shared state tracking enrollment to sync sibling previews immediately
-  const [isEnrolled, setIsEnrolled] = useState<boolean>(false);
+  // 1. Store the full enrollment object here instead of just a boolean
+  const [enrollmentData, setEnrollmentData] = useState<Enrollment | null>(null);
 
   useEffect(() => {
-    // 1. Wait until NextAuth determines if the user is loading or not
     if (status === "loading") return;
 
     const fetchCourseAndEnrollment = async () => {
       try {
         setDataLoading(true);
 
-        // Fetch course details
-        const data = await getLearningPlanDetails(courseId);
-        setLearningPlan(data);
+        // 1. If your service already returns the model data, 'res' IS the course structure!
+        const courseData = await getLearningPlanDetails(courseId);
+        console.log("Course Data:", courseData);
 
-        // Fetch enrollment status if user is logged in
+        // 2. Direct assignment works perfectly without checking for data wrappers
+        setLearningPlan(courseData);
+
         if (isLoggedIn) {
           const enrollmentResult = await getMyEnrollment(courseId);
           if (enrollmentResult.success && enrollmentResult.data) {
-            setIsEnrolled(true);
+            setEnrollmentData(enrollmentResult.data as Enrollment);
           }
         }
       } catch (err) {
@@ -57,8 +58,6 @@ const CoursePage = ({ params }: CoursePageProps) => {
     }
   }, [courseId, status, isLoggedIn]);
 
-  // Combined Loading Gate: Keep the user behind a clean skeleton layout
-  // until NextAuth resolves AND your backend database returns records.
   if (status === "loading" || dataLoading) {
     return <CoursePageSkeleton />;
   }
@@ -87,10 +86,11 @@ const CoursePage = ({ params }: CoursePageProps) => {
       </nav>
 
       {/* Hero Header Section */}
+      {/* 2. Pass the parsed enrollment down as a prop */}
       <CourseOverviewHeader
         course={learningPlan}
         isLoggedIn={isLoggedIn}
-        onEnrollSuccess={() => setIsEnrolled(true)}
+        initialEnrollment={enrollmentData}
       />
     </main>
   );
