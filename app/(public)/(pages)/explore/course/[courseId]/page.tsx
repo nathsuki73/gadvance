@@ -2,37 +2,37 @@
 
 import React, { useEffect, useState, use } from "react";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
-import CourseModulePreview from "./_components/CourseModulesPreview";
+import { ArrowLeft } from "lucide-react";
 import CourseOverviewHeader from "./_components/CourseOverviewHeader";
 import { getLearningPlanDetails } from "../../service";
 
-import type {
-  LearningPlan,
-  CoursePageProps,
-} from "./types";
+import type { LearningPlan, CoursePageProps } from "./types";
 import { useSession } from "next-auth/react";
 import { getMyEnrollment } from "./service";
+import CoursePageSkeleton from "./_components/CoursePageSkeleton";
 
 const CoursePage = ({ params }: CoursePageProps) => {
-  const { data: session } = useSession();
-  const isLoggedIn = !!session;
+  const { data: session, status } = useSession();
+  const isLoggedIn = status === "authenticated";
 
   const resolvedParams = use(params);
   const courseId = resolvedParams.courseId;
 
   const [learningPlan, setLearningPlan] = useState<LearningPlan | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(false);
-  
+
   // Shared state tracking enrollment to sync sibling previews immediately
   const [isEnrolled, setIsEnrolled] = useState<boolean>(false);
 
   useEffect(() => {
+    // 1. Wait until NextAuth determines if the user is loading or not
+    if (status === "loading") return;
+
     const fetchCourseAndEnrollment = async () => {
       try {
-        setLoading(true);
-        
+        setDataLoading(true);
+
         // Fetch course details
         const data = await getLearningPlanDetails(courseId);
         setLearningPlan(data);
@@ -48,21 +48,19 @@ const CoursePage = ({ params }: CoursePageProps) => {
         console.error("Fetch error:", err);
         setError(true);
       } finally {
-        setLoading(false);
+        setDataLoading(false);
       }
     };
 
     if (courseId) {
       fetchCourseAndEnrollment();
     }
-  }, [courseId, isLoggedIn]);
+  }, [courseId, status, isLoggedIn]);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <Loader2 className="animate-spin text-[#8b5cf6]/30" size={32} strokeWidth={1.5} />
-      </div>
-    );
+  // Combined Loading Gate: Keep the user behind a clean skeleton layout
+  // until NextAuth resolves AND your backend database returns records.
+  if (status === "loading" || dataLoading) {
+    return <CoursePageSkeleton />;
   }
 
   if (error || !learningPlan) {
@@ -78,10 +76,10 @@ const CoursePage = ({ params }: CoursePageProps) => {
             onClick={() => window.history.back()}
             className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary"
           >
-            <ArrowLeft 
-              size={16} 
-              strokeWidth={1.5} 
-              className="transition-transform duration-300 group-hover:-translate-x-1" 
+            <ArrowLeft
+              size={16}
+              strokeWidth={1.5}
+              className="transition-transform duration-300 group-hover:-translate-x-1"
             />
             <span className="lowercase font-medium">back to courses</span>
           </button>
@@ -89,21 +87,11 @@ const CoursePage = ({ params }: CoursePageProps) => {
       </nav>
 
       {/* Hero Header Section */}
-      <CourseOverviewHeader 
+      <CourseOverviewHeader
         course={learningPlan}
         isLoggedIn={isLoggedIn}
         onEnrollSuccess={() => setIsEnrolled(true)}
       />
-
-      {/* Content Section */}
-      <section className="mx-auto max-w-7xl px-6 py-16 md:px-12">
-        
-        <CourseModulePreview
-          course={learningPlan}
-          isLoggedIn={isLoggedIn}
-          isEnrolled={isEnrolled}
-        />
-      </section>
     </main>
   );
 };
