@@ -9,7 +9,6 @@ import {
   PlayCircle,
   LockKeyhole,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ActionConfirmationDialog from "./ActionConfirmationDialog";
 import EnrollmentRequiredDialog from "./EnrollmentRequiredDialog";
@@ -123,14 +122,14 @@ const CourseOverviewHeader = ({
               </div>
             </div>
 
-            <div className="mt-10 max-h-[460px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-200">
+            <div className="mt-10 max-h-115 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-200">
               {course.modules?.length ? (
                 <div className="flex flex-col">
                   {course.modules.map((module, index) => {
                     const moduleRow = (
                       <div className="grid grid-cols-[auto_1fr_auto] gap-5 w-full items-start">
                         {/* Number Indicator */}
-                        <span className="pt-0.5 pl-3 pr-3 text-xs font-bold tracking-widest text-zinc-300 font-mono min-w-[24px]">
+                        <span className="pt-0.5 pl-3 pr-3 text-xs font-bold tracking-widest text-zinc-300 font-mono min-w-6">
                           {(index + 1).toString().padStart(2, "0")}
                         </span>
 
