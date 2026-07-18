@@ -140,7 +140,7 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
             </div>
           </div>
 
-          <div className="mt-10 max-h-[460px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-200">
+          <div className="mt-10 max-h-115 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-200">
             <div className="flex flex-col">
               {/* ENTRY MILESTONE: Course Entry Pre-test */}
               {(() => {
@@ -148,7 +148,7 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
                 return (
                   <div className="group flex w-full border-b border-zinc-100 py-6 text-left transition-all hover:bg-zinc-50/50 rounded-xl px-2 -mx-2">
                     <div className="grid grid-cols-[auto_1fr_auto] gap-5 w-full items-start">
-                      <span className="pt-0.5 pl-3 pr-3 text-xs font-bold tracking-widest text-zinc-300 font-mono min-w-[24px]">
+                      <span className="pt-0.5 pl-3 pr-3 text-xs font-bold tracking-widest text-zinc-300 font-mono min-w-6">
                         {currentNum.toString().padStart(2, "0")}
                       </span>
                       <div className="flex flex-col gap-1 min-w-0">
@@ -190,7 +190,7 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
                     className="group flex w-full border-b border-zinc-100 py-6 text-left transition-all hover:bg-zinc-50/50 rounded-xl px-2 -mx-2"
                   >
                     <div className="grid grid-cols-[auto_1fr_auto] gap-5 w-full items-start">
-                      <span className="pt-0.5 pl-3 pr-3 text-xs font-bold tracking-widest text-zinc-300 font-mono min-w-[24px]">
+                      <span className="pt-0.5 pl-3 pr-3 text-xs font-bold tracking-widest text-zinc-300 font-mono min-w-6">
                         {currentNum.toString().padStart(2, "0")}
                       </span>
                       <div className="flex flex-col gap-1 min-w-0">
@@ -225,7 +225,7 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
                 return (
                   <div className="group flex w-full border-b border-zinc-100 py-6 text-left transition-all hover:bg-zinc-50/50 rounded-xl px-2 -mx-2">
                     <div className="grid grid-cols-[auto_1fr_auto] gap-5 w-full items-start">
-                      <span className="pt-0.5 pl-3 pr-3 text-xs font-bold tracking-widest text-zinc-300 font-mono min-w-[24px]">
+                      <span className="pt-0.5 pl-3 pr-3 text-xs font-bold tracking-widest text-zinc-300 font-mono min-w-6">
                         {currentNum.toString().padStart(2, "0")}
                       </span>
                       <div className="flex flex-col gap-1 min-w-0">

@@ -12,7 +12,7 @@ import { getMyEnrollment } from "./service";
 import CoursePageSkeleton from "./_components/CoursePageSkeleton";
 
 const CoursePage = ({ params }: CoursePageProps) => {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const isLoggedIn = status === "authenticated";
 
   const resolvedParams = use(params);
