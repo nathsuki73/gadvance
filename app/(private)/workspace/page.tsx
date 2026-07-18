@@ -1,104 +1,93 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ArrowRight, CheckCircle2, PlayCircle } from "lucide-react";
 import { getUserProfile } from "./service";
 import { UserProfile } from "./types";
+import WorkspaceSkeleton from "./_components/WorkspaceSkeleton";
+
+interface ActiveModule {
+  id: string;
+  title: string;
+  description: string;
+  progress: number;
+  href: string;
+}
 
 export default function WorkspacePage() {
   const router = useRouter();
-  const { status } = useSession();
-  const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
+  const { data: session, status } = useSession();
+
+  // Start with null to prevent rendering half-baked session fallbacks
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   // Dynamic Metrics tracking states
-  const [modulesInProgressCount, setModulesInProgressCount] = useState<number>(0);
+  const [modulesInProgressCount, setModulesInProgressCount] =
+    useState<number>(0);
   const [modulesCompletedCount, setModulesCompletedCount] = useState<number>(0);
 
-  // 🎯 LIVE DATABASE STATE: Safely holds the course module payload returned from the backend
-  const [activeModule, setActiveModule] = useState<{
-    id: string;
-    title: string;
-    description: string;
-    progress: number;
-    href: string;
-  } | null>(null);
-
-  const fetchProfileAndMetrics = useCallback(async () => {
-    if (status !== "authenticated") return;
-
-    const res = await getUserProfile();
-
-    if (res.success && res.data) {
-      setProfile(res.data);
-
-      // Sync dynamic analytics counters safely
-      const inProgress = res.data.in_progress_count ?? 0;
-      const completed = res.data.completed_count ?? 0;
-      setModulesInProgressCount(inProgress);
-      setModulesCompletedCount(completed);
-
-      // Hydrate the active overview card using the latest live module payload
-      if (res.data.active_module) {
-        setActiveModule({
-          id: res.data.active_module.id,
-          title: res.data.active_module.title,
-          description: res.data.active_module.description,
-          progress: res.data.active_module.progress_percentage ?? 0,
-          href: `/learn/${res.data.active_module.id}`,
-        });
-      } else {
-        setActiveModule(null);
-      }
-    }
-  }, [status]);
+  // Live module overview state
+  const [activeModule, setActiveModule] = useState<ActiveModule | null>(null);
 
   useEffect(() => {
-    fetchProfileAndMetrics();
-
-    if (status !== "authenticated") {
+    // 1. Enforce Authentication Redirect
+    if (status === "unauthenticated") {
+      router.replace("/auth/signin");
       return;
     }
 
-    const handleRefresh = () => {
-      void fetchProfileAndMetrics();
-    };
+    // 2. Only fetch once NextAuth has resolved the user session
+    if (status !== "authenticated") return;
 
-    const intervalId = window.setInterval(handleRefresh, 30000);
+    let cancelled = false;
 
-    window.addEventListener("focus", handleRefresh);
-    document.addEventListener("visibilitychange", handleRefresh);
+    async function loadWorkspaceData() {
+      const res = await getUserProfile();
+      if (cancelled) return;
+
+      if (res.success && res.data) {
+        setProfile(res.data);
+
+        // Sync dynamic analytics counters safely
+        setModulesInProgressCount(res.data.in_progress_count ?? 0);
+        setModulesCompletedCount(res.data.completed_count ?? 0);
+
+        // Hydrate the active overview card using the latest live module payload
+        if (res.data.active_module) {
+          setActiveModule({
+            id: res.data.active_module.id,
+            title: res.data.active_module.title,
+            description: res.data.active_module.description,
+            progress: res.data.active_module.progress_percentage ?? 0,
+            href: `/learn/${res.data.active_module.id}`,
+          });
+        } else {
+          setActiveModule(null);
+        }
+      }
+    }
+
+    loadWorkspaceData();
 
     return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener("focus", handleRefresh);
-      document.removeEventListener("visibilitychange", handleRefresh);
+      cancelled = true;
     };
-  }, [fetchProfileAndMetrics, status]);
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.replace("/auth/signin");
-    }
   }, [status, router]);
 
-  if (status === "loading") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white font-sans overflow-hidden">
-        <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto mb-4" />
-          <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.3em]">
-            loading your environment
-          </p>
-        </div>
-      </div>
-    );
+  // Keep the user on the loading screen until NextAuth is ready AND our DB profile is loaded
+  if (status === "loading" || (status === "authenticated" && !profile)) {
+    return <WorkspaceSkeleton />;
   }
 
   if (status === "unauthenticated") {
     return null;
   }
+
+  // Derive first name purely from the freshly fetched profile, or fall back to NextAuth session
+  const derivedFirstName =
+    profile?.first_name || session?.user?.name?.split(" ")[0] || "User";
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-sans relative overflow-x-hidden">
@@ -113,7 +102,7 @@ export default function WorkspacePage() {
               Welcome back,
               <span className="font-semibold italic font-serif text-primary">
                 {" "}
-                {profile?.first_name || "User"}.
+                {derivedFirstName}.
               </span>
             </h1>
           </header>
@@ -128,7 +117,7 @@ export default function WorkspacePage() {
                 </span>
                 <div className="flex items-baseline gap-1">
                   <span className="text-2xl font-light tracking-tight text-primary">
-                    {modulesInProgressCount < 10 ? `${modulesInProgressCount}` : modulesInProgressCount}
+                    {modulesInProgressCount}
                   </span>
                   <span className="text-[10px] text-zinc-400 font-light lowercase">
                     {modulesInProgressCount === 1 ? "module" : "modules"}
@@ -143,7 +132,7 @@ export default function WorkspacePage() {
                 </span>
                 <div className="flex items-baseline gap-1">
                   <span className="text-2xl font-light tracking-tight text-primary">
-                    {modulesCompletedCount < 10 ? `${modulesCompletedCount}` : modulesCompletedCount}
+                    {modulesCompletedCount}
                   </span>
                   <span className="text-[10px] text-zinc-400 font-light lowercase">
                     {modulesCompletedCount === 1 ? "module" : "modules"}
@@ -205,7 +194,9 @@ export default function WorkspacePage() {
               </div>
             ) : (
               <div className="rounded-3xl border border-dashed border-zinc-200 p-8 text-center flex flex-col items-center justify-center min-h-70">
-                <p className="text-sm text-zinc-400 font-light">No modules currently assigned to your account.</p>
+                <p className="text-sm text-zinc-400 font-light">
+                  No modules currently assigned to your account.
+                </p>
               </div>
             )}
           </section>
