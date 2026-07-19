@@ -1,98 +1,70 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowRight, CheckCircle2, PlayCircle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { PlayCircle } from "lucide-react";
 import { getUserProfile } from "./service";
-import { UserProfile } from "./types";
 import WorkspaceSkeleton from "./_components/WorkspaceSkeleton";
-
-interface ActiveModule {
-  id: string;
-  title: string;
-  description: string;
-  progress: number;
-  href: string;
-}
 
 export default function WorkspacePage() {
   const router = useRouter();
+
+  // 1. Get auth status from NextAuth
   const { data: session, status } = useSession();
 
-  // Start with null to prevent rendering half-baked session fallbacks
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-
-  // Dynamic Metrics tracking states
-  const [modulesInProgressCount, setModulesInProgressCount] =
-    useState<number>(0);
-  const [modulesCompletedCount, setModulesCompletedCount] = useState<number>(0);
-
-  // Live module overview state
-  const [activeModule, setActiveModule] = useState<ActiveModule | null>(null);
-
-  useEffect(() => {
-    // 1. Enforce Authentication Redirect
-    if (status === "unauthenticated") {
-      router.replace("/auth/signin");
-      return;
-    }
-
-    // 2. Only fetch once NextAuth has resolved the user session
-    if (status !== "authenticated") return;
-
-    let cancelled = false;
-
-    async function loadWorkspaceData() {
+  // 2. Query hooks only executes once authenticated
+  const { data: profileResponse, isLoading: isProfileLoading } = useQuery({
+    queryKey: ["userProfile", session?.user?.email],
+    queryFn: async () => {
       const res = await getUserProfile();
-      if (cancelled) return;
-
-      if (res.success && res.data) {
-        setProfile(res.data);
-
-        // Sync dynamic analytics counters safely
-        setModulesInProgressCount(res.data.in_progress_count ?? 0);
-        setModulesCompletedCount(res.data.completed_count ?? 0);
-
-        // Hydrate the active overview card using the latest live module payload
-        if (res.data.active_module) {
-          setActiveModule({
-            id: res.data.active_module.id,
-            title: res.data.active_module.title,
-            description: res.data.active_module.description,
-            progress: res.data.active_module.progress_percentage ?? 0,
-            href: `/learn/${res.data.active_module.id}`,
-          });
-        } else {
-          setActiveModule(null);
-        }
+      if (!res.success || !res.data) {
+        throw new Error("Failed to fetch profile data");
       }
-    }
+      return res.data;
+    },
+    // Only run query if session status is explicitly authenticated
+    enabled: status === "authenticated",
+    // Keep data fresh for 2 minutes before refetching in background
+    staleTime: 1000 * 60 * 2,
+  });
 
-    loadWorkspaceData();
+  // 3. Handle loading state (Combines auth checking and backend fetching)
+  const isAuthenticating = status === "loading";
+  const isFetchingData = status === "authenticated" && isProfileLoading;
 
-    return () => {
-      cancelled = true;
-    };
-  }, [status, router]);
-
-  // Keep the user on the loading screen until NextAuth is ready AND our DB profile is loaded
-  if (status === "loading" || (status === "authenticated" && !profile)) {
+  if (isAuthenticating || isFetchingData) {
     return <WorkspaceSkeleton />;
   }
 
+  // 4. Force unauthenticated redirect safely after loading checks
   if (status === "unauthenticated") {
+    router.replace("/auth/signin");
     return null;
   }
 
-  // Derive first name purely from the freshly fetched profile, or fall back to NextAuth session
+  // Extract variables directly from data without maintaining sync state
+  const profile = profileResponse ?? null;
+  const modulesInProgressCount = profile?.in_progress_count ?? 0;
+  const modulesCompletedCount = profile?.completed_count ?? 0;
+  const activeModule = profile?.active_module
+    ? {
+        id: profile.active_module.id,
+        title: profile.active_module.title,
+        description: profile.active_module.description,
+        progress: profile.active_module.progress_percentage ?? 0,
+        href: `/learn/${profile.active_module.id}`,
+      }
+    : null;
+
   const derivedFirstName =
     profile?.first_name || session?.user?.name?.split(" ")[0] || "User";
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-sans relative overflow-x-hidden">
       <main className="relative z-10 mx-auto max-w-7xl px-8 py-16 lg:px-12 lg:py-24">
-        {/* Full-width Responsive Header: Wraps beautifully on mobile, single line on desktop */}
+        {/* Full-width Responsive Header */}
         <header className="border-b border-zinc-200 pb-12 w-full">
           <h1 className="text-3xl font-light tracking-tight text-zinc-900 sm:text-5xl lg:whitespace-nowrap leading-tight sm:leading-none">
             Welcome to GADvance,{" "}
@@ -102,9 +74,9 @@ export default function WorkspacePage() {
           </h1>
         </header>
 
-        {/* Content Section: 2 Columns split where Analytics sits next to Recently Viewed */}
+        {/* Content Section */}
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-          {/* Left Side: Recently Viewed (Takes 2 columns on wide screens) */}
+          {/* Left Side: Recently Viewed */}
           <section className="lg:col-span-2 space-y-6">
             <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400">
               Recently Viewed
@@ -113,7 +85,6 @@ export default function WorkspacePage() {
             {activeModule ? (
               <div className="rounded-3xl border border-zinc-200 bg-zinc-50/30 p-8 relative overflow-hidden flex flex-col justify-between min-h-[280px]">
                 <div className="space-y-4 w-full">
-                  {/* Title */}
                   <h3 className="text-2xl font-semibold tracking-tight text-zinc-900">
                     {activeModule.title}
                   </h3>
@@ -128,19 +99,17 @@ export default function WorkspacePage() {
                     </div>
                     <div className="flex items-center text-[11px] font-medium text-zinc-400">
                       <span>Course Progress:&nbsp;</span>
-                      <span className="font-bold text-primary ">
+                      <span className="font-bold text-primary">
                         {activeModule.progress}% Completed
                       </span>
                     </div>
                   </div>
 
-                  {/* Description (Truncated cleanly at 3 lines) */}
                   <p className="text-xs text-zinc-400 font-light leading-relaxed pt-1 line-clamp-3">
                     {activeModule.description}
                   </p>
                 </div>
 
-                {/* Bottom Resume Trigger Row */}
                 <div className="pt-6 mt-auto">
                   <button
                     onClick={() => router.push(activeModule.href)}
@@ -160,7 +129,7 @@ export default function WorkspacePage() {
             )}
           </section>
 
-          {/* Right Side: Analytics Grid Stacked Vertically */}
+          {/* Right Side: Analytics Grid */}
           <section className="lg:col-span-1 space-y-6">
             <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400">
               Your Progress
@@ -200,6 +169,7 @@ export default function WorkspacePage() {
           </section>
         </div>
 
+        {/* Footer */}
         <footer className="mt-24 pt-6 border-t border-zinc-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] tracking-widest text-zinc-400 uppercase">
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
             <span>© 2026 protection active</span>
