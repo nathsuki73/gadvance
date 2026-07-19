@@ -13,6 +13,7 @@ const CoursesPageContent = () => {
     const fetchCourses = async () => {
       setLoading(true);
       const data = await getEnrolledCourses();
+      console.log("Enrolled Courses Data:", JSON.stringify(data));
       setEnrolledCourses(data);
       setLoading(false);
     };

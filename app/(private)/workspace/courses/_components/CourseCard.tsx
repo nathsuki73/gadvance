@@ -56,7 +56,7 @@ const CourseCard = ({ course }: CourseCardProps) => {
         <div className="flex items-center gap-2.5 sm:gap-3.5 text-[11px] sm:text-xs font-medium text-zinc-500">
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
             <Clock3 size={13} strokeWidth={2} className="text-primary/60" />
-            {course.duration || "0h"}
+            {course.duration || "12h"}
           </span>
           <span className="h-1 w-1 rounded-full bg-purple-300 shrink-0" />
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
