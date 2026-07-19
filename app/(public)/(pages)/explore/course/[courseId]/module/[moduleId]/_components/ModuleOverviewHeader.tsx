@@ -95,11 +95,6 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
           </h1>
 
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-zinc-500 font-light md:text-lg">
-            {module.about ||
-              "A focused learning path built to guide you through the core ideas and activities of this module."}
-          </p>
-
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400 font-light">
             {module.description ||
               "Move through the lessons at your own pace and keep track of your progress from one section to the next."}
           </p>
@@ -204,8 +199,26 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
                           </h3>
                         </div>
                         <p className="text-xs font-light leading-relaxed text-zinc-400 pr-4 mt-1">
-                          {stepsCount} learning{" "}
-                          {stepsCount === 1 ? "step" : "steps"}
+                          {(() => {
+                            if (!lesson.description) return "";
+
+                            // 1. Strip leading ## and trim surrounding spaces
+                            let cleaned = lesson.description
+                              .replace(/^##\s*/, "")
+                              .trim();
+
+                            // 2. Remove "Overview" (case-insensitive) from the very start if it exists
+                            cleaned = cleaned
+                              .replace(/^overview\s*/i, "")
+                              .trim();
+
+                            const maxLength = 80; // Adjust this number to fit your UI needs
+
+                            // 3. Truncate with ellipses if it's too long
+                            return cleaned.length > maxLength
+                              ? `${cleaned.substring(0, maxLength).trim()}...`
+                              : cleaned;
+                          })()}
                         </p>
                       </div>
                       <div className="shrink-0 self-center pl-2">
