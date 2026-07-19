@@ -16,6 +16,10 @@ import {
 import LessonContainer from "./_components/LessonContainer/LessonContainer";
 import { useScrollDirection } from "./_hooks/useScrollDirection";
 import AnalyticsDrawer from "./_components/Analytics/Analytics";
+import {
+  getLearningProgress,
+  saveLearningProgress,
+} from "./service-user-progress";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
@@ -48,33 +52,117 @@ const LearnPage = ({ params }: LearnPageProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
   const showHeader = useScrollDirection();
 
   useEffect(() => {
     if (!moduleId) return;
 
-    const loadModule = async () => {
+    const loadModuleAndProgress = async () => {
       try {
         setLoading(true);
         setError(false);
+        setIsInitialLoad(true);
 
-        const structure = await getModuleStructure(moduleId);
+        // 1. Fetch both the structure and user progress concurrently
+        const [structure, progressData] = await Promise.all([
+          getModuleStructure(moduleId),
+          getLearningProgress(moduleId),
+        ]);
+
+        console.log("=== RAW PROGRESS DATA FROM SERVER ===");
+        console.log(progressData);
+        console.log("=====================================");
+
         setModule(structure);
-        const first = structure.items[0] ?? null;
         setLessonItems(structure.items);
+
+        const first = structure.items[0] ?? null;
         setActiveItem(first);
         setActiveBlockId(undefined);
         if (first) setVisitedIds(new Set([first.id]));
+
+        // 2. Hydrate progress states if the server returned data
+        if (
+          progressData &&
+          progressData.success &&
+          Array.isArray(progressData.data)
+        ) {
+          const initialLessonProgress: Record<string, Set<string>> = {};
+          const initialQuizProgress: Record<
+            string,
+            { completedSteps: number; totalSteps: number }
+          > = {};
+
+          progressData.data.forEach((record: any) => {
+            const item = structure.items.find(
+              (i) => i.id === record.learning_item_id,
+            );
+            if (!item) return;
+
+            if (item.type === "lesson") {
+              // Reconstruct the Set of visited blocks based on percentage completion
+              const totalSteps = ((item as any).lesson_blocks?.length ?? 0) + 2;
+              const completedCount = Math.round(
+                (record.progress / 100) * totalSteps,
+              );
+
+              const dummySet = new Set<string>();
+              // Seed it with arbitrary keys matching the count so .size matches perfectly
+              for (let i = 0; i < completedCount; i++) {
+                dummySet.add(`restored-block-${i}`);
+              }
+              initialLessonProgress[item.id] = dummySet;
+            } else {
+              // For quizzes (pretest/posttest)
+              initialQuizProgress[item.id] = {
+                completedSteps: record.progress === 100 ? 1 : 0, // Customize based on your quiz logic
+                totalSteps: 1,
+              };
+            }
+          });
+
+          setLessonProgress(initialLessonProgress);
+          setQuizProgress(initialQuizProgress);
+        }
       } catch (err) {
         console.error(err);
         setError(true);
       } finally {
         setLoading(false);
+        // Allow syncing tracking back to DB now that hydration is complete
+        setIsInitialLoad(false);
       }
     };
 
-    loadModule();
+    loadModuleAndProgress();
   }, [moduleId]);
+
+  useEffect(() => {
+    // 💡 Skip saving if we are reading the initial data from the DB or missing parameters
+    if (isInitialLoad || !module || !moduleId) return;
+
+    Object.entries(lessonProgress).forEach(([lessonId, steps]) => {
+      const lesson = module?.items.find((i) => i.id === lessonId);
+      if (!lesson || lesson.type !== "lesson") return;
+
+      const totalSteps = (lesson.lesson_blocks?.length ?? 0) + 2;
+
+      // Prevent saving mock data structures populated from the initial load hydration
+      const containsRestoredKeys = Array.from(steps).some((k) =>
+        k.startsWith("restored-block-"),
+      );
+      if (containsRestoredKeys) return;
+
+      // 💡 Added module_id to the payload argument here
+      saveLearningProgress({
+        module_id: moduleId,
+        learning_item_id: lessonId,
+        progress: Math.round((steps.size / totalSteps) * 100),
+      });
+    });
+  }, [lessonProgress, isInitialLoad, module, moduleId]); // 💡 Added moduleId as a dependency
 
   // 💡 Added: Update callback handler passed into children question elements
   const handleBktUpdate = useCallback(
@@ -270,7 +358,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
                   activeBlockId={activeBlockId}
                   onContinue={handleNext}
                   handleNextSubRow={handleNextSubRow}
-                  onBktUpdate={handleBktUpdate} // 💡 Forward the BKT state interceptor hook down
+                  onBktUpdate={handleBktUpdate}
                 />
               )}
               {item.type === "posttest" && (
