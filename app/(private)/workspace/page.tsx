@@ -92,63 +92,26 @@ export default function WorkspacePage() {
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-sans relative overflow-x-hidden">
       <main className="relative z-10 mx-auto max-w-7xl px-8 py-16 lg:px-12 lg:py-24">
-        {/* Top Split Row */}
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 border-b border-zinc-200 pb-12">
-          <header className="max-w-2xl">
-            <h1 className="text-4xl font-light tracking-tight text-zinc-900 sm:text-5xl leading-tight">
-              Welcome to GADvance,{" "}
-              <span className="font-semibold italic font-serif text-primary">
-                {derivedFirstName}.
-              </span>
-            </h1>
-          </header>
+        {/* Full-width Responsive Header: Wraps beautifully on mobile, single line on desktop */}
+        <header className="border-b border-zinc-200 pb-12 w-full">
+          <h1 className="text-3xl font-light tracking-tight text-zinc-900 sm:text-5xl lg:whitespace-nowrap leading-tight sm:leading-none">
+            Welcome to GADvance,{" "}
+            <span className="font-semibold italic font-serif text-primary inline-block">
+              {derivedFirstName}.
+            </span>
+          </h1>
+        </header>
 
-          {/* Analytics Grid Panels */}
-          <section className="w-full sm:w-auto shrink-0 lg:ml-auto">
-            <div className="flex gap-3 w-full sm:w-64 max-w-70">
-              {/* Stat Block 01: In Progress */}
-              <div className="flex-1 border border-zinc-200 bg-zinc-50/20 rounded-xl p-3.5 transition-all duration-300 hover:border-zinc-200">
-                <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
-                  In Progress
-                </span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-light tracking-tight text-primary">
-                    {modulesInProgressCount}
-                  </span>
-                  <span className="text-[10px] text-zinc-400 font-light lowercase">
-                    {modulesInProgressCount === 1 ? "module" : "modules"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Stat Block 02: Completed */}
-              <div className="flex-1 border border-zinc-200 bg-zinc-50/20 rounded-xl p-3.5 transition-all duration-300 hover:border-zinc-200">
-                <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
-                  completed
-                </span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-light tracking-tight text-primary">
-                    {modulesCompletedCount}
-                  </span>
-                  <span className="text-[10px] text-zinc-400 font-light lowercase">
-                    {modulesCompletedCount === 1 ? "module" : "modules"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {/* Bottom Columns */}
-        <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-          {/* Left Column: Active Overview Container */}
-          <section className="space-y-6">
+        {/* Content Section: 2 Columns split where Analytics sits next to Recently Viewed */}
+        <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+          {/* Left Side: Recently Viewed (Takes 2 columns on wide screens) */}
+          <section className="lg:col-span-2 space-y-6">
             <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400">
-              active overview
+              Recently Viewed
             </h2>
 
             {activeModule ? (
-              <div className="rounded-3xl border border-zinc-200 bg-zinc-50/30 p-8 relative overflow-hidden flex flex-col justify-between min-h-70">
+              <div className="rounded-3xl border border-zinc-200 bg-zinc-50/30 p-8 relative overflow-hidden flex flex-col justify-between min-h-[280px]">
                 <div className="space-y-4 w-full">
                   {/* Title */}
                   <h3 className="text-2xl font-semibold tracking-tight text-zinc-900">
@@ -171,8 +134,8 @@ export default function WorkspacePage() {
                     </div>
                   </div>
 
-                  {/* Description */}
-                  <p className="text-sm text-zinc-400 font-light leading-relaxed pt-1">
+                  {/* Description (Truncated cleanly at 3 lines) */}
+                  <p className="text-xs text-zinc-400 font-light leading-relaxed pt-1 line-clamp-3">
                     {activeModule.description}
                   </p>
                 </div>
@@ -189,7 +152,7 @@ export default function WorkspacePage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-3xl border border-dashed border-zinc-200 p-8 text-center flex flex-col items-center justify-center min-h-70">
+              <div className="rounded-3xl border border-dashed border-zinc-200 p-8 text-center flex flex-col items-center justify-center min-h-[280px]">
                 <p className="text-sm text-zinc-400 font-light">
                   No modules currently assigned to your account.
                 </p>
@@ -197,55 +160,41 @@ export default function WorkspacePage() {
             )}
           </section>
 
-          {/* Right Column: Recent Timeline Block */}
-          <section className="space-y-6">
+          {/* Right Side: Analytics Grid Stacked Vertically */}
+          <section className="lg:col-span-1 space-y-6">
             <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400">
-              recent timeline
+              Your Progress
             </h2>
 
-            <div className="border border-zinc-200 rounded-3xl divide-y divide-zinc-100 bg-white overflow-hidden min-h-70">
-              <div className="p-6 flex items-center justify-between gap-4 group hover:bg-zinc-50/50 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 shrink-0">
-                    <CheckCircle2 size={18} />
-                  </div>
-                  <div>
-                    <h4 className="text-base font-semibold text-zinc-900 line-clamp-1">
-                      Safe Spaces Act Mandates (RA 11313)
-                    </h4>
-                    <p className="text-xs text-zinc-400 font-light mt-0.5">
-                      completed May 12, 2026 • scored 95% on metric
-                    </p>
-                  </div>
+            <div className="flex flex-col gap-4 w-full">
+              {/* Stat Block 01: In Progress */}
+              <div className="border border-zinc-200 bg-zinc-50/20 rounded-2xl p-5 transition-all duration-300 hover:border-zinc-300 flex flex-col justify-center min-h-[125px]">
+                <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
+                  In Progress
+                </span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-light tracking-tight text-primary">
+                    {modulesInProgressCount}
+                  </span>
+                  <span className="text-xs text-zinc-400 font-light lowercase">
+                    {modulesInProgressCount === 1 ? "module" : "modules"}
+                  </span>
                 </div>
-                <button
-                  onClick={() => router.push("/workspace/modules/ra11313")}
-                  className="text-zinc-300 group-hover:text-primary transition-colors shrink-0"
-                >
-                  <ArrowRight size={18} />
-                </button>
               </div>
 
-              <div className="p-6 flex items-center justify-between gap-4 group hover:bg-zinc-50/50 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 shrink-0">
-                    <CheckCircle2 size={18} />
-                  </div>
-                  <div>
-                    <h4 className="text-base font-semibold text-zinc-900 line-clamp-1">
-                      Foundations of GAD Frameworks
-                    </h4>
-                    <p className="text-xs text-zinc-400 font-light mt-0.5">
-                      completed April 28, 2026 • scored 100% on metric
-                    </p>
-                  </div>
+              {/* Stat Block 02: Completed */}
+              <div className="border border-zinc-200 bg-zinc-50/20 rounded-2xl p-5 transition-all duration-300 hover:border-zinc-300 flex flex-col justify-center min-h-[125px]">
+                <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
+                  Completed
+                </span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-light tracking-tight text-primary">
+                    {modulesCompletedCount}
+                  </span>
+                  <span className="text-xs text-zinc-400 font-light lowercase">
+                    {modulesCompletedCount === 1 ? "module" : "modules"}
+                  </span>
                 </div>
-                <button
-                  onClick={() => router.push("/workspace/modules/foundations")}
-                  className="text-zinc-300 group-hover:text-primary transition-colors shrink-0"
-                >
-                  <ArrowRight size={18} />
-                </button>
               </div>
             </div>
           </section>
