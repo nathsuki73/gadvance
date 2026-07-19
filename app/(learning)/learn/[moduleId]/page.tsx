@@ -19,6 +19,7 @@ import AnalyticsDrawer from "./_components/Analytics/Analytics";
 import {
   getLearningProgress,
   saveLearningProgress,
+  ProgressRecord,
 } from "./service-user-progress";
 
 type LearnPageProps = {
@@ -65,7 +66,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
         setError(false);
         setIsInitialLoad(true);
 
-        // 1. Fetch both the structure and user progress concurrently
         const [structure, progressData] = await Promise.all([
           getModuleStructure(moduleId),
           getLearningProgress(moduleId),
@@ -78,12 +78,12 @@ const LearnPage = ({ params }: LearnPageProps) => {
         setModule(structure);
         setLessonItems(structure.items);
 
-        const first = structure.items[0] ?? null;
+        // Safely assert the first item as LearningItem structure compatibility
+        const first = (structure.items[0] as LearningItem) ?? null;
         setActiveItem(first);
         setActiveBlockId(undefined);
         if (first) setVisitedIds(new Set([first.id]));
 
-        // 2. Hydrate progress states if the server returned data
         if (
           progressData &&
           progressData.success &&
@@ -95,29 +95,28 @@ const LearnPage = ({ params }: LearnPageProps) => {
             { completedSteps: number; totalSteps: number }
           > = {};
 
-          progressData.data.forEach((record: any) => {
+          progressData.data.forEach((record: ProgressRecord) => {
             const item = structure.items.find(
               (i) => i.id === record.learning_item_id,
             );
             if (!item) return;
 
+            // Safe downcasting/checking properties from ModuleStructureItem
             if (item.type === "lesson") {
-              // Reconstruct the Set of visited blocks based on percentage completion
-              const totalSteps = ((item as any).lesson_blocks?.length ?? 0) + 2;
+              const lessonBlocks = (item as LearningItem).lesson_blocks ?? [];
+              const totalSteps = lessonBlocks.length + 2;
               const completedCount = Math.round(
                 (record.progress / 100) * totalSteps,
               );
 
               const dummySet = new Set<string>();
-              // Seed it with arbitrary keys matching the count so .size matches perfectly
               for (let i = 0; i < completedCount; i++) {
                 dummySet.add(`restored-block-${i}`);
               }
               initialLessonProgress[item.id] = dummySet;
             } else {
-              // For quizzes (pretest/posttest)
               initialQuizProgress[item.id] = {
-                completedSteps: record.progress === 100 ? 1 : 0, // Customize based on your quiz logic
+                completedSteps: record.progress === 100 ? 1 : 0,
                 totalSteps: 1,
               };
             }
@@ -131,7 +130,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
         setError(true);
       } finally {
         setLoading(false);
-        // Allow syncing tracking back to DB now that hydration is complete
         setIsInitialLoad(false);
       }
     };
@@ -140,31 +138,28 @@ const LearnPage = ({ params }: LearnPageProps) => {
   }, [moduleId]);
 
   useEffect(() => {
-    // 💡 Skip saving if we are reading the initial data from the DB or missing parameters
     if (isInitialLoad || !module || !moduleId) return;
 
     Object.entries(lessonProgress).forEach(([lessonId, steps]) => {
-      const lesson = module?.items.find((i) => i.id === lessonId);
+      const lesson = module.items.find((i) => i.id === lessonId);
       if (!lesson || lesson.type !== "lesson") return;
 
-      const totalSteps = (lesson.lesson_blocks?.length ?? 0) + 2;
+      const lessonBlocks = (lesson as LearningItem).lesson_blocks ?? [];
+      const totalSteps = lessonBlocks.length + 2;
 
-      // Prevent saving mock data structures populated from the initial load hydration
       const containsRestoredKeys = Array.from(steps).some((k) =>
         k.startsWith("restored-block-"),
       );
       if (containsRestoredKeys) return;
 
-      // 💡 Added module_id to the payload argument here
       saveLearningProgress({
         module_id: moduleId,
         learning_item_id: lessonId,
         progress: Math.round((steps.size / totalSteps) * 100),
       });
     });
-  }, [lessonProgress, isInitialLoad, module, moduleId]); // 💡 Added moduleId as a dependency
+  }, [lessonProgress, isInitialLoad, module, moduleId]);
 
-  // 💡 Added: Update callback handler passed into children question elements
   const handleBktUpdate = useCallback(
     (lessonBlockId: string, currentPLt: number) => {
       setLiveBktMastery((prev) => ({
@@ -213,7 +208,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
     const currentIndex = module.items.findIndex(
       (item) => item.id === activeItem.id,
     );
-    const next = module.items[currentIndex + 1];
+    const next = module.items[currentIndex + 1] as LearningItem | undefined;
 
     if (next) {
       const initialBlockId = next.type === "lesson" ? "overview" : undefined;
@@ -257,7 +252,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
         currentItemIndex !== -1 &&
         currentItemIndex < module.items.length - 1
       ) {
-        const nextItem = module.items[currentItemIndex + 1];
+        const nextItem = module.items[currentItemIndex + 1] as LearningItem;
         goTo(nextItem, nextItem.type === "lesson" ? "overview" : undefined);
       }
     }
@@ -281,7 +276,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
     if (item.type === "lesson") {
       const blocks = learningItem.lesson_blocks ?? [];
       return {
-        ...item,
+        ...learningItem,
         totalSteps: blocks.length + 2,
         completedSteps: lessonProgress[item.id]?.size ?? 0,
       };
@@ -289,9 +284,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
     const progress = quizProgress[item.id];
     return {
-      ...item,
-      totalSteps: progress?.totalSteps,
-      completedSteps: progress?.completedSteps,
+      ...learningItem,
+      totalSteps: progress?.totalSteps ?? 0,
+      completedSteps: progress?.completedSteps ?? 0,
     };
   });
 
@@ -332,7 +327,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
       </div>
 
       <div
-        className={`h-screen max-h-screen transition-all duration-300 pt-14 lg:pt-0 ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}`}
+        className={`h-screen max-h-screen transition-all duration-300 pt-14 lg:pt-0 ${
+          isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"
+        }`}
       >
         {module.items.map((item) => {
           const isCurrentlyActive = item.id === activeItem.id;

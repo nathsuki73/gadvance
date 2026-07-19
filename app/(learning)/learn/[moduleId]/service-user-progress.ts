@@ -5,21 +5,29 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
-// 💡 Updated: Added module_id to the payload type requirements
 type SaveLearningProgressPayload = {
   module_id: string;
   learning_item_id: string;
   progress: number;
 };
 
-type ApiResponse = {
+// Represents a single progress record returned by the backend
+export type ProgressRecord = {
+  learning_item_id: string;
+  progress: number;
+};
+
+// Strongly typed the generic data object
+type ApiResponse<T = unknown> = {
   success: boolean;
   message?: string;
   error?: string;
-  data?: any;
+  data?: T;
 };
 
-export const getLearningProgress = async (moduleId: string) => {
+export const getLearningProgress = async (
+  moduleId: string,
+): Promise<ApiResponse<ProgressRecord[]>> => {
   const session = await getServerSession(authOptions);
 
   if (!session?.laravelJwt) {
@@ -51,7 +59,7 @@ export const getLearningProgress = async (moduleId: string) => {
       };
     }
 
-    return result;
+    return result as ApiResponse<ProgressRecord[]>;
   } catch (error) {
     console.error("Fetch learning progress error:", error);
     return {
@@ -81,7 +89,6 @@ export const saveLearningProgress = async (
         Accept: "application/json",
         Authorization: `Bearer ${session.laravelJwt}`,
       },
-      // 💡 Transmits the full object containing module_id, learning_item_id, and progress
       body: JSON.stringify(payload),
       cache: "no-store",
     });
