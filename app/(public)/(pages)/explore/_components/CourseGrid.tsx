@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import CourseCard from "./CourseCard";
-import CourseSearchBar from "./CourseSearchBar";
 import { searchContent } from "../service";
 import type { LearningPlan } from "../types";
 
@@ -12,8 +11,6 @@ const CourseGrid = () => {
   const [courses, setCourses] = useState<LearningPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // This effect runs on page load (activeSearch = "")
-  // and whenever the user submits a search.
   useEffect(() => {
     const fetchCourses = async () => {
       setIsLoading(true);
@@ -35,14 +32,14 @@ const CourseGrid = () => {
   };
 
   return (
-    <section>
-      <div>
+    <>
+      <div className="mb-10">
         <div className="flex items-start justify-between gap-4 max-w-full">
           <div className="flex-1">
             <h1 className="text-4xl font-bold tracking-tight text-zinc-900">
-              Explore Courses
+              Explore Available Courses
             </h1>
-            <p className="mt-2 text-md text-zinc-500">
+            <p className="mt-4 max-w-2xl text-zinc-500">
               Discover new modules, sharpen your skills, and advance your
               knowledge at your own pace.
             </p>
@@ -57,21 +54,17 @@ const CourseGrid = () => {
         </div>
       </div>
 
-      <div className="mt-14 grid grid-cols-1 gap-8 md:grid-cols-2">
-        {isLoading
-          ? [...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="h-64 animate-pulse rounded-3xl bg-zinc-100"
-              />
-            ))
-          : courses.map((module: LearningPlan) => (
-              <CourseCard key={module.id} module={module} />
-            ))}
-      </div>
-
-      {!isLoading && courses.length === 0 && (
-        <div className="mt-16 text-center py-20 bg-zinc-50 rounded-3xl border border-dashed border-zinc-200">
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {[...Array(3)].map((_, index) => (
+            <div
+              key={index}
+              className="h-64 w-full animate-pulse rounded-xl bg-zinc-100"
+            />
+          ))}
+        </div>
+      ) : courses.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-zinc-200 py-12 text-center">
           <h3 className="text-xl font-semibold text-zinc-900">
             No results for &quot;{activeSearch}&quot;
           </h3>
@@ -79,8 +72,16 @@ const CourseGrid = () => {
             Try checking your spelling or use different keywords.
           </p>
         </div>
+      ) : (
+        <section>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {courses.map((module: LearningPlan) => (
+              <CourseCard key={module.id} module={module} />
+            ))}
+          </div>
+        </section>
       )}
-    </section>
+    </>
   );
 };
 

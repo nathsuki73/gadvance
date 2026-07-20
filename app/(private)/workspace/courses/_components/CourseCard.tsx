@@ -44,7 +44,8 @@ const CourseCard = ({ course }: CourseCardProps) => {
         </h3>
 
         <p className="mt-2 text-xs sm:text-sm leading-relaxed text-zinc-600 line-clamp-2">
-          {course.about || "Structured learning modules and guided activities."}
+          {course.description ||
+            "Structured learning modules and guided activities."}
         </p>
       </div>
 
