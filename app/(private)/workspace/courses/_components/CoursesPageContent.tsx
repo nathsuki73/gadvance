@@ -1,25 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Course } from "../type";
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getEnrolledCourses } from "../service";
 import EnrolledCourses from "./EnrolledCourses";
 
 const CoursesPageContent = () => {
-  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCourses = async () => {
-      setLoading(true);
+  // 1. Replace useEffect & useState with TanStack Query
+  const { data: enrolledCourses = [], isLoading } = useQuery({
+    queryKey: ["enrolledCourses"],
+    queryFn: async () => {
       const data = await getEnrolledCourses();
       console.log("Enrolled Courses Data:", JSON.stringify(data));
-      setEnrolledCourses(data);
-      setLoading(false);
-    };
-
-    fetchCourses();
-  }, []);
+      return data;
+    },
+    // Inherits your 10-minute layout staleTime configuration.
+    // If a user leaves and returns within 10 minutes, it serves instantly from memory.
+  });
 
   return (
     <main className="min-h-screen bg-white px-6 py-10 md:px-12">
@@ -35,7 +32,8 @@ const CoursesPageContent = () => {
           </p>
         </div>
 
-        <EnrolledCourses courses={enrolledCourses} loading={loading} />
+        {/* 2. Pass down cached data and the loading state */}
+        <EnrolledCourses courses={enrolledCourses} loading={isLoading} />
       </div>
     </main>
   );
