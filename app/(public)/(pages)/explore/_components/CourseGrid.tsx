@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import CourseCard from "./CourseCard";
 import { searchContent } from "../service";
 import type { LearningPlan } from "../types";
@@ -8,24 +9,11 @@ import type { LearningPlan } from "../types";
 const CourseGrid = () => {
   const [query, setQuery] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
-  const [courses, setCourses] = useState<LearningPlan[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchCourses = async () => {
-      setIsLoading(true);
-      try {
-        const data = await searchContent(activeSearch);
-        setCourses(data);
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCourses();
-  }, [activeSearch]);
+  const { data: courses = [], isLoading } = useQuery({
+    queryKey: ["courses", activeSearch],
+    queryFn: () => searchContent(activeSearch),
+  });
 
   const handleSearch = () => {
     setActiveSearch(query);
@@ -34,7 +22,7 @@ const CourseGrid = () => {
   return (
     <>
       <div className="mb-10">
-        <div className="flex items-start justify-between gap-4 max-w-full">
+        <div className="flex max-w-full items-start justify-between gap-4">
           <div className="flex-1">
             <h1 className="text-4xl font-bold tracking-tight text-zinc-900">
               Explore Available Courses
