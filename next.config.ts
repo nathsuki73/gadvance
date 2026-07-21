@@ -8,10 +8,18 @@ const nextConfig: NextConfig = {
   images: {
     dangerouslyAllowLocalIP: true,
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**", // Allows images from ANY external https domain
+      },
       { protocol: "https", hostname: "images.unsplash.com" },
       {
         protocol: "https",
         hostname: "cdn.britannica.com",
+      },
+      {
+        protocol: "https",
+        hostname: "www.humana.org",
       },
       {
         protocol: "https",
