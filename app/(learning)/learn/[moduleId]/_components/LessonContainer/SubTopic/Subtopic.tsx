@@ -1,5 +1,6 @@
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import SubtopicSkeleton from "./SubtopicSkeleton";
 
 export type SubtopicItem = {
@@ -151,6 +152,7 @@ export default function Subtopic({ subtopics }: SubtopicProps) {
                   </blockquote>
                 ) : (
                   <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
                     components={{
                       hr: () => (
                         <div className="my-8 h-[1px] w-full bg-gradient-to-r from-transparent via-zinc-200/50 to-transparent" />
@@ -201,6 +203,41 @@ export default function Subtopic({ subtopics }: SubtopicProps) {
                         >
                           {children}
                         </code>
+                      ),
+                      table: ({ node, ...props }) => (
+                        <div className="my-6 w-full overflow-x-auto rounded-xl border border-zinc-100">
+                          <table
+                            className="w-full border-collapse text-left text-sm sm:text-base"
+                            {...props}
+                          />
+                        </div>
+                      ),
+                      thead: ({ node, ...props }) => (
+                        <thead className="bg-indigo-50/40" {...props} />
+                      ),
+                      tbody: ({ node, ...props }) => (
+                        <tbody
+                          className="divide-y divide-zinc-100"
+                          {...props}
+                        />
+                      ),
+                      tr: ({ node, ...props }) => (
+                        <tr
+                          className="even:bg-zinc-50/40 hover:bg-indigo-50/20 transition-colors"
+                          {...props}
+                        />
+                      ),
+                      th: ({ node, ...props }) => (
+                        <th
+                          className="px-4 py-3 font-semibold text-zinc-800 border-b border-zinc-200 whitespace-nowrap"
+                          {...props}
+                        />
+                      ),
+                      td: ({ node, ...props }) => (
+                        <td
+                          className="px-4 py-3 text-zinc-600 align-top"
+                          {...props}
+                        />
                       ),
                     }}
                   >
