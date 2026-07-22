@@ -188,8 +188,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
         return { ...prev, [item.id]: next };
       });
     }
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleQuizProgress = useCallback(
