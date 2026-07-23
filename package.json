@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "next build && rsync -avz -e 'ssh -p 65002' ./out/ u242590936@sg-nme-web613.main-hosting.eu:~/domains/gadvance-lspu.com/public_html/"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.2",
