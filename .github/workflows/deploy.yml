@@ -1,65 +1,69 @@
-name: Build & Deploy Next.js to Hostinger
+name: Deploy Next.js
 
 on:
   push:
-    branches: ["master", "main"]
+    branches:
+      - main
+      - master
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
 
-      - name: Install Dependencies
+      - name: Install dependencies locally
         run: npm ci
 
+      # 1. Build inside GitHub's free powerful runner (NO thread/process limits)
       - name: Build Next.js App
         run: npm run build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
-      - name: Deploy Files via Rsync over SSH
-        env:
-          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          HOST: ${{ secrets.SSH_HOST }}
-          USER: ${{ secrets.SSH_USER }}
-          PORT: ${{ secrets.SSH_PORT || 65002 }}
-          TARGET_PATH: ${{ secrets.DEPLOY_PATH || '/home/u242590936/domains/gadvance-lspu.com/public_html' }}
+      - name: Configure SSH Key
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p $PORT $HOST >> ~/.ssh/known_hosts 2>/dev/null
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${{ secrets.SSH_PORT || 65002 }}" \
+            "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
-          rsync -avz -e "ssh -p $PORT" \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='node_modules' \
-            ./ $USER@$HOST:$TARGET_PATH/
+      # 2. Upload source + compiled standalone app to Hostinger
+      - name: Upload compiled files via Rsync
+        run: |
+          rsync -az --delete \
+            --exclude ".git" \
+            --exclude ".github" \
+            --exclude "node_modules" \
+            --exclude ".env*" \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT || 65002 }}" \
+            ./ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/"
 
-      - name: Setup Standalone Assets & Restart Server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT || 65002 }}
-          script: |
-            source ~/.profile
-            cd ${{ secrets.DEPLOY_PATH || '/home/u242590936/domains/gadvance-lspu.com/public_html' }}
-
-            # Copy static files so standalone server can find images/CSS
-            cp -r public .next/standalone/ 2>/dev/null || true
-            mkdir -p .next/standalone/.next
-            cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
-
-            # Restart process
-            mkdir -p tmp && touch tmp/restart.txt
+      # 3. Copy assets into standalone & restart Passenger (NO build step on server)
+      - name: Setup Standalone Server & Restart
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -p "${{ secrets.SSH_PORT || 65002 }}" \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
+              cd ${{ secrets.DEPLOY_PATH }}
+              
+              # Install production-only dependencies
+              npm ci --omit=dev
+              
+              # Ensure static assets are copied to standalone directory
+              cp -r public .next/standalone/ 2>/dev/null || true
+              mkdir -p .next/standalone/.next
+              cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
+              cp -r node_modules .next/standalone/ 2>/dev/null || true
+              
+              # Trigger Hostinger Passenger restart
+              mkdir -p tmp && touch tmp/restart.txt
+          EOF
