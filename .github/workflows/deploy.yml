@@ -26,8 +26,8 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
-      - name: Deploy to Hostinger via Rsync / SSH
-        uses: appleboy/rsync-action@v0.1.10
+      - name: Copy files via SCP to Hostinger
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USERNAME }}
@@ -35,10 +35,7 @@ jobs:
           port: ${{ secrets.HOSTINGER_PORT || 65002 }}
           source: "."
           target: "/home/u242590936/domains/gadvance-lspu.com/public_html"
-          exclude: |
-            .git
-            .github
-            node_modules
+          rm: false
 
       - name: Install Production Dependencies & Restart Server
         uses: appleboy/ssh-action@v1.0.3
