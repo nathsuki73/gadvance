@@ -8,7 +8,7 @@ import React, {
   useRef,
 } from "react";
 
-type ToastType = "info" | "success" | "warning";
+export type ToastType = "info" | "success" | "warning" | "error";
 
 interface Toast {
   id: number;
@@ -54,43 +54,52 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ showToast, dismissToast }}>
       {children}
 
-      {/* Toast Container: Clean violet theme layout matching the Hero section */}
+      {/* Toast Container */}
       <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-full max-w-sm px-4 sm:px-0 pointer-events-none">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            onClick={() => dismissToast(toast.id)}
-            className="pointer-events-auto cursor-pointer flex items-center justify-between gap-3 rounded-lg border border-violet-100 bg-white/95 px-3.5 py-2.5 shadow-lg shadow-violet-500/10 backdrop-blur-md transition-all duration-200 animate-slide-up hover:border-violet-200"
-            role="alert"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <ToastIcon type={toast.type} />
-              <p className="text-xs sm:text-sm font-medium text-zinc-800 truncate">
-                {toast.message}
-              </p>
-            </div>
+        {toasts.map((toast) => {
+          const isError = toast.type === "error";
+          const borderClass = isError
+            ? "border-rose-200 hover:border-rose-300"
+            : toast.type === "warning"
+              ? "border-amber-200 hover:border-amber-300"
+              : "border-violet-100 hover:border-violet-200";
 
-            {/* Close Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                dismissToast(toast.id);
-              }}
-              className="text-zinc-400 hover:text-zinc-600 transition-colors p-0.5 rounded focus:outline-none shrink-0"
-              aria-label="Close notification"
+          return (
+            <div
+              key={toast.id}
+              onClick={() => dismissToast(toast.id)}
+              className={`pointer-events-auto cursor-pointer flex items-center justify-between gap-3 rounded-lg border bg-white/95 px-3.5 py-2.5 shadow-lg shadow-zinc-900/5 backdrop-blur-md transition-all duration-200 animate-slide-up ${borderClass}`}
+              role="alert"
             >
-              <svg
-                className="w-3.5 h-3.5"
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
+              <div className="flex items-center gap-2.5 min-w-0">
+                <ToastIcon type={toast.type} />
+                <p className="text-xs sm:text-sm font-medium text-zinc-800 truncate">
+                  {toast.message}
+                </p>
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  dismissToast(toast.id);
+                }}
+                className="text-zinc-400 hover:text-zinc-600 transition-colors p-0.5 rounded focus:outline-none shrink-0"
+                aria-label="Close notification"
               >
-                <path d="M4 4l8 8M12 4l-8 8" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
-        ))}
+                <svg
+                  className="w-3.5 h-3.5"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <path d="M4 4l8 8M12 4l-8 8" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+          );
+        })}
       </div>
     </ToastContext.Provider>
   );
@@ -129,6 +138,19 @@ function ToastIcon({ type }: { type: ToastType }) {
             strokeLinecap="round"
             strokeLinejoin="round"
           />
+        </svg>
+      );
+    case "error":
+      return (
+        <svg
+          className="w-4 h-4 text-rose-500 shrink-0"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <circle cx="8" cy="8" r="6" />
+          <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" strokeLinecap="round" />
         </svg>
       );
     case "info":

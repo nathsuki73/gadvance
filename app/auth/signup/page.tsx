@@ -10,6 +10,7 @@ import { handleRegistration } from "./actions";
 import { z } from "zod";
 import { useSession } from "next-auth/react";
 import logoIcon from "@/app/assets/logo.ico";
+import { useToast } from "@/app/components/context/ToastContext";
 
 const signUpSchema = z
   .object({
@@ -28,6 +29,7 @@ const signUpSchema = z
 
 const SignUp = () => {
   const router = useRouter();
+  const { showToast } = useToast();
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -62,10 +64,15 @@ const SignUp = () => {
     const result = signUpSchema.safeParse(formData);
     if (!result.success) {
       const formattedErrors: Record<string, string> = {};
+      const firstErrorMessage = result.error.issues[0]?.message;
+
       result.error.issues.forEach((issue) => {
         formattedErrors[String(issue.path[0])] = issue.message;
       });
+
       setErrors(formattedErrors);
+      // Trigger Toast for validation error
+      showToast(firstErrorMessage || "Please check the form inputs.", "error");
       return;
     }
 
@@ -77,8 +84,10 @@ const SignUp = () => {
         formData.password,
         formData.confirmPassword,
       );
-      if (response.success) {
+
+      if (response?.success) {
         setLoading(false);
+        showToast("Account created successfully!", "success");
         router.push(
           `/auth/verify-otp?context=signup&email=${encodeURIComponent(
             formData.email,
@@ -86,12 +95,19 @@ const SignUp = () => {
         );
       } else {
         setLoading(false);
-        setErrors({ form: response.error || "An error occurred" });
+        const errorMessage = response?.error || "Registration failed.";
+        setErrors({ form: errorMessage });
+        // Trigger Toast for backend error
+        showToast(errorMessage, "error");
       }
     } catch (err) {
       setLoading(false);
       console.error("Registration Error:", err);
-      setErrors({ form: "Connection failed. Check your network." });
+      const networkErrorMessage =
+        "Connection failed. Please check your network.";
+      setErrors({ form: networkErrorMessage });
+      // Trigger Toast for unexpected/network failures
+      showToast(networkErrorMessage, "error");
     }
   };
 
@@ -137,12 +153,6 @@ const SignUp = () => {
               <p className="text-zinc-400 mb-8 text-sm font-light">
                 Fill in the details to secure your account
               </p>
-
-              {errors.form && (
-                <div className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-red-600">
-                  {errors.form}
-                </div>
-              )}
 
               <form className="space-y-4" onSubmit={handleSubmit}>
                 {/* Email Address Input */}

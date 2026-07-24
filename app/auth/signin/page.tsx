@@ -2,80 +2,108 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { signIn as nextAuthSignIn, useSession } from "next-auth/react";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
-import { handleSignIn, handleSignOut } from "../../lib/auth";
-import ConfirmDialog from "@/app/components/ConfirmDialog";
+import { handleSignIn } from "../../lib/auth";
+import { z } from "zod";
+import { useSession } from "next-auth/react";
 import logoIcon from "@/app/assets/logo.ico";
+import { useToast } from "@/app/components/context/ToastContext";
+import { handleRegistration } from "../signup/actions";
 
-const SignIn = () => {
-  const { data: session, status } = useSession();
+const signUpSchema = z
+  .object({
+    email: z.string().email("Invalid email address"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+const SignUp = () => {
   const router = useRouter();
+  const { showToast } = useToast();
+  const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showSwitchAccountDialog, setShowSwitchAccountDialog] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
   useEffect(() => {
     if (status === "authenticated") {
-      const normalizedStatus = session?.user?.status?.trim().toLowerCase();
-      if (normalizedStatus === "onboarding") {
-        router.replace("/onboarding");
+      if (session?.user?.status === "onboarding") {
+        router.push("/onboarding");
       } else {
-        router.replace("/workspace");
+        router.push("/workspace");
       }
     }
   }, [status, session, router]);
 
-  const displayName = session?.user?.name?.trim() || "";
-
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    setFormData((current) => ({ ...current, [name]: value }));
-    if (error) {
-      setError(null);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (errors[e.target.name]) {
+      setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
     }
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
 
-    const email = formData.email.trim();
-    const password = formData.password;
-
-    if (!email || !password) {
-      setError("Email and password are required.");
+    const result = signUpSchema.safeParse(formData);
+    if (!result.success) {
+      const formattedErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        formattedErrors[String(issue.path[0])] = issue.message;
+      });
+      setErrors(formattedErrors);
       return;
     }
 
     setLoading(true);
 
     try {
-      const result = await nextAuthSignIn("credentials", {
-        email,
-        password,
-        redirect: false,
-        callbackUrl: "/workspace",
-      });
+      // Execute the server action safely
+      const response = await handleRegistration(
+        formData.email,
+        formData.password,
+        formData.confirmPassword,
+      );
 
-      if (!result || result.error) {
-        setError("Invalid email or password.");
-        return;
+      if (response?.success) {
+        setLoading(false);
+        showToast("Registration successful! Verify your OTP.", "success");
+        router.push(
+          `/auth/verify-otp?context=signup&email=${encodeURIComponent(
+            formData.email,
+          )}`,
+        );
+      } else {
+        setLoading(false);
+        const errorMessage =
+          response?.error ||
+          "Registration failed. Please check your credentials.";
+        showToast(errorMessage, "error");
       }
-
-      // Force a full navigation so the freshly written session cookie is
-      // available to the server on the first /workspace request.
-      window.location.assign(result.url || "/workspace");
-    } catch (submissionError) {
-      console.error("Sign-in error:", submissionError);
-      setError("Unable to sign in right now. Please try again.");
-    } finally {
+    } catch (err: unknown) {
+      // Trap server-side network fetch failures (e.g. backend server offline)
       setLoading(false);
+      console.error("Server Action Network Failure:", err);
+      showToast(
+        "Unable to connect to the backend server. Please check your network connection.",
+        "error",
+      );
     }
   };
 
@@ -83,11 +111,13 @@ const SignIn = () => {
     <div className="min-h-screen flex bg-white font-sans text-zinc-900 overflow-hidden">
       {/* Left Side: Form Section */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 md:px-24 lg:px-32 py-12 relative z-10 bg-white">
+        {/* Logo - Top Left */}
         <div className="absolute top-8 left-8 flex items-center gap-3">
           <div className="relative h-7 w-7">
-            <img
+            <Image
               src={logoIcon.src}
               alt="GADVance logo"
+              fill
               className="object-contain"
             />
           </div>
@@ -97,7 +127,7 @@ const SignIn = () => {
         <div className="w-full max-w-md mx-auto lg:mx-0">
           {status === "loading" ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin mb-4"></div>
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
               <p className="text-sm text-zinc-400 font-medium tracking-tight">
                 Verifying session...
               </p>
@@ -105,91 +135,97 @@ const SignIn = () => {
           ) : session ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-3xl font-bold text-zinc-900 mb-2 tracking-tight">
-                Welcome back
-                {displayName ? (
-                  <>
-                    ,{" "}
-                    <span className="text-[#8b5cf6] font-serif italic">
-                      {displayName}
-                    </span>
-                  </>
-                ) : (
-                  "!"
-                )}
+                Welcome back!
               </h1>
               <p className="text-zinc-400 mb-10 text-sm lowercase font-light">
                 Redirecting to your workspace...
               </p>
-              <button
-                onClick={() => setShowSwitchAccountDialog(true)}
-                className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest hover:text-red-500 transition-all border-b border-transparent hover:border-red-500"
-              >
-                switch account
-              </button>
             </div>
           ) : (
             <>
-              <h1 className="text-3xl font-bold text-zinc-900 mb-2 mt-20 tracking-tight">
-                Welcome Back!
+              <h1 className="text-3xl font-bold text-zinc-900 mb-2 mt-8 tracking-tight">
+                Create Account
               </h1>
-              <p className="text-zinc-400 mb-10 text-sm font-light">
-                Sign in to access your dashboard
+              <p className="text-zinc-400 mb-8 text-sm font-light">
+                Fill in the details to secure your account
               </p>
 
-              {error && (
-                <div className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-red-600">
-                  {error}
-                </div>
-              )}
-
-              <form className="space-y-5" onSubmit={handleSubmit}>
+              <form className="space-y-4" onSubmit={handleSubmit}>
+                {/* Email Address Input */}
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                     Email Address
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
                   <input
                     name="email"
                     type="email"
-                    required
                     placeholder="joe@example.com"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
+                    className={`w-full px-4 py-3 rounded-xl border ${
+                      errors.email ? "border-red-400" : "border-zinc-100"
+                    } focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
                   />
+                  {errors.email && (
+                    <p className="text-[9px] text-red-500 font-bold mt-1.5 uppercase tracking-wider">
+                      {errors.email}
+                    </p>
+                  )}
                 </div>
 
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                {/* Password Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                       Password
+                      <span className="text-red-500 ml-1">*</span>
                     </label>
+                    <input
+                      name="password"
+                      type="password"
+                      placeholder="Password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-3 rounded-xl border ${
+                        errors.password ? "border-red-400" : "border-zinc-100"
+                      } focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
+                    />
                   </div>
-                  <input
-                    name="password"
-                    type="password"
-                    required
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
-                  />
-                  <Link
-                    href="/auth/forgot-password"
-                    className="text-[10px] font-bold text-[#8b5cf6] hover:text-[#7c3aed] uppercase tracking-widest transition-colors mt-3 block text-right"
-                  >
-                    forgot password?
-                  </Link>
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+                      Confirm Password
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <input
+                      name="confirmPassword"
+                      type="password"
+                      placeholder="Confirm Password"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-3 rounded-xl border ${
+                        errors.confirmPassword
+                          ? "border-red-400"
+                          : "border-zinc-100"
+                      } focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
+                    />
+                  </div>
                 </div>
+                {(errors.password || errors.confirmPassword) && (
+                  <p className="text-[9px] text-red-500 font-bold uppercase tracking-wider">
+                    {errors.password || errors.confirmPassword}
+                  </p>
+                )}
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70"
+                  className="w-full bg-primary hover:bg-primary-hover text-white px-8 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-sky-100 active:scale-[0.98] disabled:opacity-70 mt-2"
                 >
-                  {loading ? "Signing In..." : "Sign In"}
+                  {loading ? "Creating Account..." : "Create account"}
                 </button>
 
-                <div className="relative flex items-center py-4">
+                <div className="relative flex items-center py-2">
                   <div className="grow border-t border-zinc-100"></div>
                   <span className="shrink mx-4 text-zinc-300 text-[12px] uppercase tracking-[0.2em] font-bold">
                     Or
@@ -203,60 +239,46 @@ const SignIn = () => {
           )}
 
           {!session && status !== "loading" && (
-            <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mt-10 text-center">
-              No account?{" "}
+            <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mt-8 text-center">
+              Already have an account?{" "}
               <Link
-                href="/auth/signup"
-                className="text-[#8b5cf6] hover:underline transition-colors"
+                href="/auth/signin"
+                className="text-primary hover:underline transition-colors"
               >
-                create account
+                sign in
               </Link>
             </p>
           )}
         </div>
       </div>
 
-      {/* Right Side: Decorative Panel with Half-Circle / Curved Edge */}
+      {/* Right Side: Decorative Panel */}
       <div
-        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
+        className="hidden lg:flex lg:w-1/2 bg-primary flex-col items-center justify-center p-12 text-white relative"
         style={{
           clipPath: "ellipse(100% 100% at 100% 50%)",
         }}
       >
-        {/* Main Content Container: Centered via Flexbox Parent */}
         <div className="text-center px-12 relative z-10">
           <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">
-            Continue the <br />
+            Become a part of the <br />
             <span className="font-semibold italic font-serif text-white">
-              evolution of your journey.
+              equitable future.
             </span>
           </h2>
           <p className="text-white/80 text-sm leading-relaxed max-w-sm mx-auto font-light">
-            Welcome back to your dashboard. pick up exactly where you left off
-            and keep driving the conversation toward a more equitable world.
+            Your journey starts here. join our community of leaders and learners
+            dedicated to reshaping the philippine workplace, one module at a
+            time.
           </p>
         </div>
 
-        {/* Footer Text: Absolute positioned at the bottom so it doesn't interfere with vertical centering */}
         <div className="absolute bottom-12 left-0 right-0 text-center text-[10px] tracking-[0.4em] text-white/40 uppercase">
-          © 2026 gadvance. all rights reserved.
+          © {new Date().getFullYear()} gadvance. all rights reserved.
         </div>
       </div>
-
-      <ConfirmDialog
-        open={showSwitchAccountDialog}
-        title="Switch accounts?"
-        description="This will sign you out of the current account so you can choose a different one."
-        confirmLabel="Switch account"
-        cancelLabel="Cancel"
-        onCancel={() => setShowSwitchAccountDialog(false)}
-        onConfirm={() => {
-          setShowSwitchAccountDialog(false);
-          handleSignOut();
-        }}
-      />
     </div>
   );
 };
 
-export default SignIn;
+export default SignUp;
