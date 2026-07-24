@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PlayCircle } from "lucide-react";
 import { getUserProfile } from "./service";
 import WorkspaceSkeleton from "./_components/WorkspaceSkeleton";
+import Footer from "@/app/components/Footer";
 
 export default function WorkspacePage() {
   const router = useRouter();
@@ -168,27 +169,6 @@ export default function WorkspacePage() {
             </div>
           </section>
         </div>
-
-        {/* Footer */}
-        <footer className="mt-24 pt-6 border-t border-zinc-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] tracking-widest text-zinc-400 uppercase">
-          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
-            <span>© 2026 protection active</span>
-            <span className="hidden sm:inline text-zinc-200">|</span>
-            <span className="text-zinc-300 font-medium">gadvance v3.0.4</span>
-          </div>
-
-          <div className="flex items-center gap-6 normal-case tracking-normal text-xs text-zinc-400">
-            <a href="/privacy" className="hover:text-primary transition-colors">
-              Privacy Policy
-            </a>
-            <a href="/terms" className="hover:text-primary transition-colors">
-              Terms of Service
-            </a>
-            <a href="/support" className="hover:text-primary transition-colors">
-              Help & Support
-            </a>
-          </div>
-        </footer>
       </main>
     </div>
   );

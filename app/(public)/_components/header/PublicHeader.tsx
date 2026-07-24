@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, X } from "lucide-react"; 
+import { Menu, X } from "lucide-react";
 
 import logoIcon from "@/app/assets/logo.ico";
 
@@ -14,23 +14,20 @@ import { SearchBar } from "./SearchBar";
 const PUBLIC_NAVS = [
   { href: "/about", label: "About" },
   { href: "/explore", label: "Explore" },
-  { href: "/community", label: "Community" },
+  { href: "/community-forum", label: "Community" },
   { href: "/support", label: "Support" },
 ];
 
 export default function PublicHeader() {
-  
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  
 
   const headerRef = useRef<HTMLElement>(null);
-
 
   const toggleSearch = () => {
     const willBeShown = !showSearch;
     setShowSearch(willBeShown);
-    
+
     // If opening search, close the burger menu
     if (willBeShown) {
       setShowMobileMenu(false);
@@ -40,40 +37,38 @@ export default function PublicHeader() {
   const toggleMobileMenu = () => {
     const willBeOpen = !showMobileMenu;
     setShowMobileMenu(willBeOpen);
-    
+
     if (willBeOpen) {
       setShowSearch(false);
     }
   };
-  
-  
 
   useEffect(() => {
-  const handleClickOutside = (e: PointerEvent) => {
-    if (
-      headerRef.current &&
-      !headerRef.current.contains(e.target as Node)
-    ) {
-      setShowSearch(false);
-      setShowMobileMenu(false);
-    }
-  };
+    const handleClickOutside = (e: PointerEvent) => {
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setShowSearch(false);
+        setShowMobileMenu(false);
+      }
+    };
 
-  document.addEventListener("pointerdown", handleClickOutside);
+    document.addEventListener("pointerdown", handleClickOutside);
 
-  return () => {
-    document.removeEventListener("pointerdown", handleClickOutside);
-  };
-}, []);
+    return () => {
+      document.removeEventListener("pointerdown", handleClickOutside);
+    };
+  }, []);
 
   return (
-    <header 
-    ref={headerRef} 
-    className="sticky top-0 z-50 border-b border-zinc-100 bg-white/80 px-4 py-3 backdrop-blur-md md:px-6">
+    <header
+      ref={headerRef}
+      className="sticky top-0 z-50 border-b border-zinc-100 bg-white/80 px-4 py-3 backdrop-blur-md md:px-6"
+    >
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-        
         {/* LEFT: Logo (Icon only on mobile, text added on sm+) */}
-        <Link href="/" className="flex shrink-0 items-center gap-2.5 transition-transform active:scale-95">
+        <Link
+          href="/"
+          className="flex shrink-0 items-center gap-2.5 transition-transform active:scale-95"
+        >
           <Image src={logoIcon} alt="Logo" width={32} height={32} />
           <span className=" text-xl font-bold tracking-tight text-zinc-900 block">
             GADvance
@@ -82,63 +77,69 @@ export default function PublicHeader() {
 
         {/* CENTER/RIGHT: Search & Navigation */}
         <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
-          
-
-
           {/* DESKTOP NAV (xl only) */}
-          
-            <nav className="hidden items-center gap-6 xl:flex">
-              {PUBLIC_NAVS.map((link) => (
-                <NavLink key={link.href} href={link.href}>{link.label}</NavLink>
-              ))}
-            </nav>
-          
+
+          <nav className="hidden items-center gap-6 xl:flex">
+            {PUBLIC_NAVS.map((link) => (
+              <NavLink key={link.href} href={link.href}>
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
 
           {/* AUTH ACTIONS */}
           <div className="flex items-center gap-2">
-            
-              <div className="hidden xl:flex items-center gap-2">
-                <Button href="/auth/signin" variant="ghost">Log In</Button>
-                <Button href="/auth/signup">Sign Up</Button>
-              </div>
+            <div className="hidden xl:flex items-center gap-2">
+              <Button href="/auth/signin" variant="ghost">
+                Log In
+              </Button>
+              <Button href="/auth/signup">Sign Up</Button>
+            </div>
 
             {/* BURGER MENU (Visible up to xl) */}
-            <button 
+            <button
               onClick={toggleMobileMenu} // Using the new handler
               className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-50 xl:hidden"
             >
-              {showMobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {showMobileMenu ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
       </div>
       {/* EXPANDABLE MOBILE/TABLET MENU */}
-      <div className={`
+      <div
+        className={`
         overflow-hidden transition-all duration-300 ease-in-out xl:hidden
         ${showMobileMenu ? "max-h-125 opacity-100 mt-4" : "max-h-0 opacity-0"}
-      `}>
+      `}
+      >
         <nav className="flex flex-col gap-2 border-t border-zinc-100 pt-4">
-         
-            <>
-              {PUBLIC_NAVS.map((link) => (
-                <Link 
-                  key={link.href} 
-                  href={link.href} 
-                  className="rounded-lg px-3 py-2 text-base font-medium text-zinc-600 hover:bg-zinc-50"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <div className="flex flex-col gap-2 mt-2 pt-2">
-                <Button href="/auth/signin" variant="ghost" className="justify-center">Log In</Button>
-                <Button href="/auth/signup">Sign Up</Button>
-              </div>
-            </>
-          
-          
-            
-          
+          <>
+            {PUBLIC_NAVS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="rounded-lg px-3 py-2 text-base font-medium text-zinc-600 hover:bg-zinc-50"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <div className="flex flex-col gap-2 mt-2 pt-2">
+              <Button
+                href="/auth/signin"
+                variant="ghost"
+                className="justify-center"
+              >
+                Log In
+              </Button>
+              <Button href="/auth/signup">Sign Up</Button>
+            </div>
+          </>
         </nav>
       </div>
     </header>
