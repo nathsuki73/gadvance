@@ -1,0 +1,17 @@
+# 1. Enable Phusion Passenger for Next.js
+PassengerAppRoot /home/u242590936/domains/gadvance-lspu.com/public_html/.next/standalone
+PassengerAppType node
+PassengerNodejs /opt/alt/alt-nodejs22/root/bin/node
+PassengerStartupFile server.js
+PassengerBaseURI /
+PassengerRestartDir /home/u242590936/domains/gadvance-lspu.com/public_html/tmp
+SetEnv PORT 3000
+
+# 2. Prevent Apache from overriding Node routes with local PHP / HTML fallbacks
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . - [L]
+</IfModule>

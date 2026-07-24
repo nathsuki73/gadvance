@@ -1,4 +1,4 @@
-name: Deploy Next.js
+name: Deploy Next.js to Hostinger
 
 on:
   push:
@@ -11,19 +11,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v5 # <-- Updated to v5 (fixes deprecation warning)
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5 # <-- Updated to v5
         with:
           node-version: 22
           cache: "npm"
 
-      - name: Install dependencies locally
+      - name: Install Dependencies
         run: npm ci
 
-      # 1. Build inside GitHub's free powerful runner (NO thread/process limits)
-      - name: Build Next.js App
+      - name: Build Standalone App
         run: npm run build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
@@ -36,10 +36,9 @@ jobs:
           ssh-keyscan -p "${{ secrets.SSH_PORT || 65002 }}" \
             "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      # 2. Upload source + compiled standalone app to Hostinger
-      - name: Upload compiled files via Rsync
+      - name: Sync Files to Hostinger via Rsync
         run: |
-          rsync -az --delete \
+          rsync -avz --checksum --delete \
             --exclude ".git" \
             --exclude ".github" \
             --exclude "node_modules" \
@@ -47,23 +46,22 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT || 65002 }}" \
             ./ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/"
 
-      # 3. Copy assets into standalone & restart Passenger (NO build step on server)
-      - name: Setup Standalone Server & Restart
+      - name: Setup Standalone Assets & Restart Passenger
         run: |
           ssh -i ~/.ssh/deploy_key \
             -p "${{ secrets.SSH_PORT || 65002 }}" \
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
               cd ${{ secrets.DEPLOY_PATH }}
               
-              # Install production-only dependencies
+              # 1. Install production dependencies
               npm ci --omit=dev
               
-              # Ensure static assets are copied to standalone directory
+              # 2. Mirror static assets & modules into .next/standalone
               cp -r public .next/standalone/ 2>/dev/null || true
               mkdir -p .next/standalone/.next
               cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
               cp -r node_modules .next/standalone/ 2>/dev/null || true
               
-              # Trigger Hostinger Passenger restart
+              # 3. Touch restart file to signal LiteSpeed/Passenger
               mkdir -p tmp && touch tmp/restart.txt
           EOF
