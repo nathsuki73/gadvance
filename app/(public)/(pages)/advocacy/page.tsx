@@ -53,13 +53,6 @@ export default function AdvocacyPage() {
       {/* ================= HERO SECTION ================= */}
       <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-white via-violet-50/50 to-white pt-24 pb-20">
         <div className="mx-auto max-w-7xl px-8 lg:px-12 w-full text-center">
-          <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white px-4 py-1.5 shadow-sm mb-8">
-            <Sparkles size={16} className="text-[#8b5cf6]" />
-            <span className="text-xs font-semibold uppercase tracking-widest text-[#8b5cf6]">
-              GADvance Social Advocacy
-            </span>
-          </div>
-
           <h1 className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-100 ease-out text-4xl font-light leading-[1.1] tracking-tight text-zinc-900 sm:text-6xl lg:text-7xl max-w-4xl mx-auto">
             Voices for equity. <br />
             Education for{" "}
