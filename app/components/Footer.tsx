@@ -112,7 +112,7 @@ const Footer = () => {
             <ul className="space-y-4 text-sm text-zinc-500 font-light lowercase">
               <li>
                 <Link
-                  href="/resources"
+                  href="/articles-and-news"
                   className="hover:text-[#8b5cf6] transition-colors"
                 >
                   articles & news
@@ -120,7 +120,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/community"
+                  href="/community-forum"
                   className="hover:text-[#8b5cf6] transition-colors"
                 >
                   community forum
@@ -183,13 +183,13 @@ const Footer = () => {
           </p>
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-[11px] font-bold uppercase tracking-widest text-zinc-400">
             <Link
-              href="/privacy"
+              href="/privacy-policy"
               className="hover:text-[#8b5cf6] transition-colors"
             >
               privacy policy
             </Link>
             <Link
-              href="/terms"
+              href="/terms-of-service"
               className="hover:text-[#8b5cf6] transition-colors"
             >
               terms of service
