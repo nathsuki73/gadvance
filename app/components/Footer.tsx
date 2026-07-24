@@ -119,7 +119,7 @@ const Footer = () => {
             <ul className="space-y-4 text-sm text-zinc-500 font-light lowercase">
               <li>
                 <Link
-                  href="/resources"
+                  href="/articles-and-news"
                   className="hover:text-[#8b5cf6] transition-colors"
                 >
                   articles & news
@@ -127,7 +127,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/community"
+                  href="/community-forum"
                   className="hover:text-[#8b5cf6] transition-colors"
                 >
                   community forum
