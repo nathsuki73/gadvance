@@ -1,4 +1,4 @@
-name: Deploy Next.js to Hostinger
+name: Build for Hostinger Manual Deploy
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,57 +23,23 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Build Standalone App (Webpack)
+      - name: Build (sanity check only)
         run: npm run build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
-      - name: Configure SSH Key
-        env:
-          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Create Deploy Zip
         run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "${{ secrets.SSH_PORT || 65002 }}" \
-            "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          zip -r deploy.zip . \
+            -x "node_modules/*" \
+            -x ".git/*" \
+            -x ".github/*" \
+            -x ".next/*" \
+            -x ".env*"
 
-      - name: Sync Files to Hostinger via Rsync
-        run: |
-          rsync -avz --checksum --delete \
-            --exclude ".git" \
-            --exclude ".github" \
-            --exclude "node_modules" \
-            --exclude ".env*" \
-            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT || 65002 }}" \
-            ./ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/"
-
-      - name: Setup Standalone Assets & Restart Passenger
-        run: |
-          ssh -i ~/.ssh/deploy_key \
-            -p "${{ secrets.SSH_PORT || 65002 }}" \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
-              cd ${{ secrets.DEPLOY_PATH }}
-              
-              # 1. Install production-only dependencies
-              npm ci --omit=dev
-              
-              # 2. Ensure assets are copied into standalone
-              mkdir -p .next/standalone/.next
-              cp -r public .next/standalone/ 2>/dev/null || true
-              cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
-              cp -r node_modules .next/standalone/ 2>/dev/null || true
-              
-              # 3. Maintain system symlinks for LiteSpeed direct access
-              rm -f _next
-              ln -s .next/standalone/.next _next 2>/dev/null || true
-              
-              rm -rf .next/static
-              ln -s ${{ secrets.DEPLOY_PATH }}/.next/standalone/.next/static .next/static 2>/dev/null || true
-              
-              # 4. Fix permissions
-              chmod -R 755 .next
-              
-              # 5. Restart Passenger
-              mkdir -p tmp && touch tmp/restart.txt
-          EOF
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-${{ github.sha }}
+          path: deploy.zip
+          retention-days: 14
