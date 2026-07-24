@@ -40,6 +40,8 @@ export default function NotFound() {
             src={image2}
             alt="404 illustration"
             priority
+            loading="eager"
+            unoptimized
             className="h-auto w-full max-w-xs object-contain pointer-events-none opacity-90 sm:max-w-md md:max-w-lg lg:max-w-xl"
           />
         </div>
