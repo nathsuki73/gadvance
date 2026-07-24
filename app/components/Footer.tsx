@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import logoIcon from "@/app/assets/logo.ico";
-import { Twitter, Linkedin, Instagram, Send } from "lucide-react";
+import { Twitter, Linkedin, Instagram, Send, ArrowUp } from "lucide-react";
 import { useToast } from "./context/ToastContext";
 
 const Footer = () => {
@@ -29,6 +29,13 @@ const Footer = () => {
     }
     showToast("Thank you for subscribing to GADvance updates!", "success");
     setNewsletterEmail("");
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   return (
@@ -112,7 +119,7 @@ const Footer = () => {
             <ul className="space-y-4 text-sm text-zinc-500 font-light lowercase">
               <li>
                 <Link
-                  href="/articles-and-news"
+                  href="/resources"
                   className="hover:text-[#8b5cf6] transition-colors"
                 >
                   articles & news
@@ -120,7 +127,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/community-forum"
+                  href="/community"
                   className="hover:text-[#8b5cf6] transition-colors"
                 >
                   community forum
@@ -181,25 +188,38 @@ const Footer = () => {
             © {new Date().getFullYear()} gadvance leadership. all rights
             reserved.
           </p>
-          <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-[11px] font-bold uppercase tracking-widest text-zinc-400">
-            <Link
-              href="/privacy-policy"
-              className="hover:text-[#8b5cf6] transition-colors"
+
+          <div className="flex items-center gap-6">
+            <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-[11px] font-bold uppercase tracking-widest text-zinc-400">
+              <Link
+                href="/privacy-policy"
+                className="hover:text-[#8b5cf6] transition-colors"
+              >
+                privacy policy
+              </Link>
+              <Link
+                href="/terms-of-service"
+                className="hover:text-[#8b5cf6] transition-colors"
+              >
+                terms of service
+              </Link>
+              <Link
+                href="/support"
+                className="hover:text-[#8b5cf6] transition-colors"
+              >
+                contact support
+              </Link>
+            </div>
+
+            {/* Back to Top Button */}
+            <button
+              onClick={scrollToTop}
+              className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-zinc-600 hover:border-violet-200 hover:bg-violet-50 hover:text-[#8b5cf6] transition-all active:scale-95 shrink-0"
+              aria-label="Back to top"
             >
-              privacy policy
-            </Link>
-            <Link
-              href="/terms-of-service"
-              className="hover:text-[#8b5cf6] transition-colors"
-            >
-              terms of service
-            </Link>
-            <Link
-              href="/support"
-              className="hover:text-[#8b5cf6] transition-colors"
-            >
-              contact support
-            </Link>
+              <span>Top</span>
+              <ArrowUp size={14} />
+            </button>
           </div>
         </div>
       </div>
