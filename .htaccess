@@ -7,18 +7,17 @@ PassengerBaseURI /
 PassengerRestartDir /home/u242590936/domains/gadvance-lspu.com/public_html/tmp
 SetEnv PORT 3000
 
-# 2. Force Direct Static Asset Serving via LiteSpeed
+# 2. Allow Direct Access to Next.js Static Chunks via Symlink
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # Directly serve static files from .next/static or standalone
-  RewriteCond %{DOCUMENT_ROOT}/.next/standalone/.next/static/$1 -f
-  RewriteRule ^_next/static/(.*)$ .next/standalone/.next/static/$1 [L]
+  # Directly serve files if they exist physically on disk (via symlink)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
 
-  RewriteCond %{DOCUMENT_ROOT}/.next/static/$1 -f
-  RewriteRule ^_next/static/(.*)$ .next/static/$1 [L]
-
+  # Fallback for Next.js client-side routes
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . - [L]
