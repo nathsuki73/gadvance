@@ -7,10 +7,14 @@ PassengerBaseURI /
 PassengerRestartDir /home/u242590936/domains/gadvance-lspu.com/public_html/tmp
 SetEnv PORT 3000
 
-# 2. Prevent Apache from overriding Node routes with local PHP / HTML fallbacks
+# 2. Allow Direct Access to Next.js Static Chunks
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+
+  # Serve Next.js static assets directly without passing to Node.js
+  RewriteRule ^_next/static/(.*)$ .next/static/$1 [L]
+
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . - [L]
