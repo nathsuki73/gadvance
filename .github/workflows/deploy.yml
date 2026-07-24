@@ -53,15 +53,18 @@ jobs:
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
               cd ${{ secrets.DEPLOY_PATH }}
               
-              # 1. Install production dependencies
+              # Install production-only dependencies
               npm ci --omit=dev
               
-              # 2. Mirror static assets & modules into .next/standalone
+              # Ensure static assets exist in BOTH root and standalone folders
               cp -r public .next/standalone/ 2>/dev/null || true
+              
               mkdir -p .next/standalone/.next
               cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
-              cp -r node_modules .next/standalone/ 2>/dev/null || true
               
-              # 3. Touch restart file to signal LiteSpeed/Passenger
+              # Ensure permissions allow web server access
+              chmod -R 755 .next
+              
+              # Trigger Passenger process reload
               mkdir -p tmp && touch tmp/restart.txt
           EOF
