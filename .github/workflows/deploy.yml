@@ -34,20 +34,18 @@ jobs:
           PORT: ${{ secrets.SSH_PORT || 65002 }}
           TARGET_PATH: ${{ secrets.DEPLOY_PATH || '/home/u242590936/domains/gadvance-lspu.com/public_html' }}
         run: |
-          # 1. Configure SSH Key
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -p $PORT $HOST >> ~/.ssh/known_hosts 2>/dev/null
 
-          # 2. Sync compiled app directly into Hostinger
           rsync -avz -e "ssh -p $PORT" \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='node_modules' \
             ./ $USER@$HOST:$TARGET_PATH/
 
-      - name: Install Production Dependencies & Restart Server
+      - name: Setup Standalone Assets & Restart Server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -57,5 +55,11 @@ jobs:
           script: |
             source ~/.profile
             cd ${{ secrets.DEPLOY_PATH || '/home/u242590936/domains/gadvance-lspu.com/public_html' }}
-            npm ci --omit=dev
+
+            # Copy static files so standalone server can find images/CSS
+            cp -r public .next/standalone/ 2>/dev/null || true
+            mkdir -p .next/standalone/.next
+            cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
+
+            # Restart process
             mkdir -p tmp && touch tmp/restart.txt
