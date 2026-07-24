@@ -6,6 +6,10 @@ export interface ModuleStructureItem {
   title: string;
   order: number;
   description?: string;
+  lesson_blocks?: {
+    id: string;
+    title: string;
+  }[];
 }
 
 export interface ModuleStructure {

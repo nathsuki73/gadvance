@@ -8,6 +8,7 @@ import { Lesson } from "./Overview/types";
 import Subtopic, { SubtopicItem } from "./SubTopic/Subtopic";
 import { LessonQuiz as MainLessonQuiz } from "./Quiz/LessonQuiz";
 import { LessonQuiz as MiniQuiz } from "./SubTopic/MiniQuiz/LessonQuiz";
+import { ArrowRight, PlayCircle, SkipForward } from "lucide-react";
 
 type LessonContainerProps = {
   lessonItems?: ModuleStructureItem[];
@@ -155,15 +156,24 @@ export default function LessonContainer({
         <MainLessonQuiz lessonBlockId={lessonId} isActive={isQuiz} />
       </div>
 
-      {/* Persistent Navigation Footer */}
-      <div className="mt-6 flex justify-center shrink-0">
-        <button
-          onClick={handleNextSubRow}
-          className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors shadow-sm"
-        >
-          {isQuiz ? "Next Lesson" : "Next Step"}
-        </button>
-      </div>
+      {/* Persistent Navigation Footer (Hidden during active Quiz to avoid duplicate next-buttons) */}
+      {!isQuiz && (
+        <div className="mt-6 flex justify-center shrink-0">
+          <button
+            onClick={isOverview ? onContinue : handleNextSubRow}
+            className="group inline-flex items-center gap-2 px-6 py-2.5 bg- text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            <span>{isOverview ? "Start Lesson" : "Next Step"}</span>
+
+            {/* Dynamic Icon with hover animation */}
+            {isOverview ? (
+              <PlayCircle className="w-4 h-4 transition-transform group-hover:scale-110" />
+            ) : (
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

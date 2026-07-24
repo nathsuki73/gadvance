@@ -16,6 +16,11 @@ import {
 import LessonContainer from "./_components/LessonContainer/LessonContainer";
 import { useScrollDirection } from "./_hooks/useScrollDirection";
 import AnalyticsDrawer from "./_components/Analytics/Analytics";
+import {
+  getLearningProgress,
+  saveLearningProgress,
+  ProgressRecord,
+} from "./service-user-progress";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
@@ -48,35 +53,113 @@ const LearnPage = ({ params }: LearnPageProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
   const showHeader = useScrollDirection();
 
   useEffect(() => {
     if (!moduleId) return;
 
-    const loadModule = async () => {
+    const loadModuleAndProgress = async () => {
       try {
         setLoading(true);
         setError(false);
+        setIsInitialLoad(true);
 
-        const structure = await getModuleStructure(moduleId);
+        const [structure, progressData] = await Promise.all([
+          getModuleStructure(moduleId),
+          getLearningProgress(moduleId),
+        ]);
+
+        console.log("=== RAW PROGRESS DATA FROM SERVER ===");
+        console.log(progressData);
+        console.log("=====================================");
+
         setModule(structure);
-        const first = structure.items[0] ?? null;
         setLessonItems(structure.items);
+
+        // Safely assert the first item as LearningItem structure compatibility
+        const first = (structure.items[0] as LearningItem) ?? null;
         setActiveItem(first);
         setActiveBlockId(undefined);
         if (first) setVisitedIds(new Set([first.id]));
+
+        if (
+          progressData &&
+          progressData.success &&
+          Array.isArray(progressData.data)
+        ) {
+          const initialLessonProgress: Record<string, Set<string>> = {};
+          const initialQuizProgress: Record<
+            string,
+            { completedSteps: number; totalSteps: number }
+          > = {};
+
+          progressData.data.forEach((record: ProgressRecord) => {
+            const item = structure.items.find(
+              (i) => i.id === record.learning_item_id,
+            );
+            if (!item) return;
+
+            // Safe downcasting/checking properties from ModuleStructureItem
+            if (item.type === "lesson") {
+              const lessonBlocks = (item as LearningItem).lesson_blocks ?? [];
+              const totalSteps = lessonBlocks.length + 2;
+              const completedCount = Math.round(
+                (record.progress / 100) * totalSteps,
+              );
+
+              const dummySet = new Set<string>();
+              for (let i = 0; i < completedCount; i++) {
+                dummySet.add(`restored-block-${i}`);
+              }
+              initialLessonProgress[item.id] = dummySet;
+            } else {
+              initialQuizProgress[item.id] = {
+                completedSteps: record.progress === 100 ? 1 : 0,
+                totalSteps: 1,
+              };
+            }
+          });
+
+          setLessonProgress(initialLessonProgress);
+          setQuizProgress(initialQuizProgress);
+        }
       } catch (err) {
         console.error(err);
         setError(true);
       } finally {
         setLoading(false);
+        setIsInitialLoad(false);
       }
     };
 
-    loadModule();
+    loadModuleAndProgress();
   }, [moduleId]);
 
-  // 💡 Added: Update callback handler passed into children question elements
+  useEffect(() => {
+    if (isInitialLoad || !module || !moduleId) return;
+
+    Object.entries(lessonProgress).forEach(([lessonId, steps]) => {
+      const lesson = module.items.find((i) => i.id === lessonId);
+      if (!lesson || lesson.type !== "lesson") return;
+
+      const lessonBlocks = (lesson as LearningItem).lesson_blocks ?? [];
+      const totalSteps = lessonBlocks.length + 2;
+
+      const containsRestoredKeys = Array.from(steps).some((k) =>
+        k.startsWith("restored-block-"),
+      );
+      if (containsRestoredKeys) return;
+
+      saveLearningProgress({
+        module_id: moduleId,
+        learning_item_id: lessonId,
+        progress: Math.round((steps.size / totalSteps) * 100),
+      });
+    });
+  }, [lessonProgress, isInitialLoad, module, moduleId]);
+
   const handleBktUpdate = useCallback(
     (lessonBlockId: string, currentPLt: number) => {
       setLiveBktMastery((prev) => ({
@@ -105,8 +188,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
         return { ...prev, [item.id]: next };
       });
     }
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleQuizProgress = useCallback(
@@ -125,7 +206,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
     const currentIndex = module.items.findIndex(
       (item) => item.id === activeItem.id,
     );
-    const next = module.items[currentIndex + 1];
+    const next = module.items[currentIndex + 1] as LearningItem | undefined;
 
     if (next) {
       const initialBlockId = next.type === "lesson" ? "overview" : undefined;
@@ -169,7 +250,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
         currentItemIndex !== -1 &&
         currentItemIndex < module.items.length - 1
       ) {
-        const nextItem = module.items[currentItemIndex + 1];
+        const nextItem = module.items[currentItemIndex + 1] as LearningItem;
         goTo(nextItem, nextItem.type === "lesson" ? "overview" : undefined);
       }
     }
@@ -193,7 +274,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
     if (item.type === "lesson") {
       const blocks = learningItem.lesson_blocks ?? [];
       return {
-        ...item,
+        ...learningItem,
         totalSteps: blocks.length + 2,
         completedSteps: lessonProgress[item.id]?.size ?? 0,
       };
@@ -201,9 +282,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
     const progress = quizProgress[item.id];
     return {
-      ...item,
-      totalSteps: progress?.totalSteps,
-      completedSteps: progress?.completedSteps,
+      ...learningItem,
+      totalSteps: progress?.totalSteps ?? 0,
+      completedSteps: progress?.completedSteps ?? 0,
     };
   });
 
@@ -244,7 +325,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
       </div>
 
       <div
-        className={`h-screen max-h-screen transition-all duration-300 pt-14 lg:pt-0 ${isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"}`}
+        className={`h-screen max-h-screen transition-all duration-300 pt-14 lg:pt-0 ${
+          isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"
+        }`}
       >
         {module.items.map((item) => {
           const isCurrentlyActive = item.id === activeItem.id;
@@ -270,7 +353,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
                   activeBlockId={activeBlockId}
                   onContinue={handleNext}
                   handleNextSubRow={handleNextSubRow}
-                  onBktUpdate={handleBktUpdate} // 💡 Forward the BKT state interceptor hook down
+                  onBktUpdate={handleBktUpdate}
                 />
               )}
               {item.type === "posttest" && (

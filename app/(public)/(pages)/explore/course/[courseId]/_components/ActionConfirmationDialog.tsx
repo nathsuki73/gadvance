@@ -30,14 +30,11 @@ const ActionConfirmationDialog = ({
   const isEnroll = variant === "enroll";
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-900/10 backdrop-blur-md p-4 animate-fade-in">
-
+    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-zinc-900/10 backdrop-blur-md p-4 animate-fade-in">
       {/* Dialog */}
-      <div className="w-full max-w-md rounded-[24px] border border-zinc-100 bg-white p-10 shadow-xl shadow-zinc-200/40 transition-all">
-
+      <div className="w-full max-w-md rounded-3xl border border-zinc-100 bg-white p-10 shadow-xl shadow-zinc-200/40 transition-all">
         {/* Content */}
         <div className="text-center mb-8">
-
           <h2 className="text-3xl font-light tracking-tight text-zinc-900 leading-tight lowercase">
             {isEnroll ? (
               <>
@@ -65,7 +62,6 @@ const ActionConfirmationDialog = ({
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
-
           {/* Cancel */}
           <button
             onClick={onClose}
@@ -93,8 +89,8 @@ const ActionConfirmationDialog = ({
                 ? "enrolling..."
                 : "removing..."
               : isEnroll
-              ? "enroll"
-              : "unenroll"}
+                ? "enroll"
+                : "unenroll"}
           </button>
         </div>
 

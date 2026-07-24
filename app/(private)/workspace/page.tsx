@@ -1,171 +1,90 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowRight, CheckCircle2, PlayCircle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { PlayCircle } from "lucide-react";
 import { getUserProfile } from "./service";
-import { UserProfile } from "./types";
+import WorkspaceSkeleton from "./_components/WorkspaceSkeleton";
 
 export default function WorkspacePage() {
   const router = useRouter();
-  const { status } = useSession();
-  const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
 
-  // Dynamic Metrics tracking states
-  const [modulesInProgressCount, setModulesInProgressCount] = useState<number>(0);
-  const [modulesCompletedCount, setModulesCompletedCount] = useState<number>(0);
+  // 1. Get auth status from NextAuth
+  const { data: session, status } = useSession();
 
-  // 🎯 LIVE DATABASE STATE: Safely holds the course module payload returned from the backend
-  const [activeModule, setActiveModule] = useState<{
-    id: string;
-    title: string;
-    description: string;
-    progress: number;
-    href: string;
-  } | null>(null);
-
-  const fetchProfileAndMetrics = useCallback(async () => {
-    if (status !== "authenticated") return;
-
-    const res = await getUserProfile();
-
-    if (res.success && res.data) {
-      setProfile(res.data);
-
-      // Sync dynamic analytics counters safely
-      const inProgress = res.data.in_progress_count ?? 0;
-      const completed = res.data.completed_count ?? 0;
-      setModulesInProgressCount(inProgress);
-      setModulesCompletedCount(completed);
-
-      // Hydrate the active overview card using the latest live module payload
-      if (res.data.active_module) {
-        setActiveModule({
-          id: res.data.active_module.id,
-          title: res.data.active_module.title,
-          description: res.data.active_module.description,
-          progress: res.data.active_module.progress_percentage ?? 0,
-          href: `/learn/${res.data.active_module.id}`,
-        });
-      } else {
-        setActiveModule(null);
+  // 2. Query hooks only executes once authenticated
+  const { data: profileResponse, isLoading: isProfileLoading } = useQuery({
+    queryKey: ["userProfile", session?.user?.email],
+    queryFn: async () => {
+      const res = await getUserProfile();
+      if (!res.success || !res.data) {
+        throw new Error("Failed to fetch profile data");
       }
-    }
-  }, [status]);
+      return res.data;
+    },
+    // Only run query if session status is explicitly authenticated
+    enabled: status === "authenticated",
+    // Keep data fresh for 2 minutes before refetching in background
+    staleTime: 1000 * 60 * 2,
+  });
 
-  useEffect(() => {
-    fetchProfileAndMetrics();
+  // 3. Handle loading state (Combines auth checking and backend fetching)
+  const isAuthenticating = status === "loading";
+  const isFetchingData = status === "authenticated" && isProfileLoading;
 
-    if (status !== "authenticated") {
-      return;
-    }
-
-    const handleRefresh = () => {
-      void fetchProfileAndMetrics();
-    };
-
-    const intervalId = window.setInterval(handleRefresh, 30000);
-
-    window.addEventListener("focus", handleRefresh);
-    document.addEventListener("visibilitychange", handleRefresh);
-
-    return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener("focus", handleRefresh);
-      document.removeEventListener("visibilitychange", handleRefresh);
-    };
-  }, [fetchProfileAndMetrics, status]);
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.replace("/auth/signin");
-    }
-  }, [status, router]);
-
-  if (status === "loading") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white font-sans overflow-hidden">
-        <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto mb-4" />
-          <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.3em]">
-            loading your environment
-          </p>
-        </div>
-      </div>
-    );
+  if (isAuthenticating || isFetchingData) {
+    return <WorkspaceSkeleton />;
   }
 
+  // 4. Force unauthenticated redirect safely after loading checks
   if (status === "unauthenticated") {
+    router.replace("/auth/signin");
     return null;
   }
+
+  // Extract variables directly from data without maintaining sync state
+  const profile = profileResponse ?? null;
+  const modulesInProgressCount = profile?.in_progress_count ?? 0;
+  const modulesCompletedCount = profile?.completed_count ?? 0;
+  const activeModule = profile?.active_module
+    ? {
+        id: profile.active_module.id,
+        title: profile.active_module.title,
+        description: profile.active_module.description,
+        progress: profile.active_module.progress_percentage ?? 0,
+        href: `/learn/${profile.active_module.id}`,
+      }
+    : null;
+
+  const derivedFirstName =
+    profile?.first_name || session?.user?.name?.split(" ")[0] || "User";
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-sans relative overflow-x-hidden">
       <main className="relative z-10 mx-auto max-w-7xl px-8 py-16 lg:px-12 lg:py-24">
-        {/* Top Split Row */}
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 border-b border-zinc-200 pb-12">
-          <header className="max-w-2xl">
-            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.4em] block mb-3">
-              philippine advocacy terminal
+        {/* Full-width Responsive Header */}
+        <header className="border-b border-zinc-200 pb-12 w-full">
+          <h1 className="text-3xl font-light tracking-tight text-zinc-900 sm:text-5xl lg:whitespace-nowrap leading-tight sm:leading-none">
+            Welcome to GADvance,{" "}
+            <span className="font-semibold italic font-serif text-primary inline-block">
+              {derivedFirstName}.
             </span>
-            <h1 className="text-4xl font-light tracking-tight text-zinc-900 sm:text-5xl leading-tight">
-              Welcome back,
-              <span className="font-semibold italic font-serif text-primary">
-                {" "}
-                {profile?.first_name || "User"}.
-              </span>
-            </h1>
-          </header>
+          </h1>
+        </header>
 
-          {/* Analytics Grid Panels */}
-          <section className="w-full sm:w-auto shrink-0 lg:ml-auto">
-            <div className="flex gap-3 w-full sm:w-64 max-w-70">
-              {/* Stat Block 01: In Progress */}
-              <div className="flex-1 border border-zinc-200 bg-zinc-50/20 rounded-xl p-3.5 transition-all duration-300 hover:border-zinc-200">
-                <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
-                  In Progress
-                </span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-light tracking-tight text-primary">
-                    {modulesInProgressCount < 10 ? `${modulesInProgressCount}` : modulesInProgressCount}
-                  </span>
-                  <span className="text-[10px] text-zinc-400 font-light lowercase">
-                    {modulesInProgressCount === 1 ? "module" : "modules"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Stat Block 02: Completed */}
-              <div className="flex-1 border border-zinc-200 bg-zinc-50/20 rounded-xl p-3.5 transition-all duration-300 hover:border-zinc-200">
-                <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
-                  completed
-                </span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-light tracking-tight text-primary">
-                    {modulesCompletedCount < 10 ? `${modulesCompletedCount}` : modulesCompletedCount}
-                  </span>
-                  <span className="text-[10px] text-zinc-400 font-light lowercase">
-                    {modulesCompletedCount === 1 ? "module" : "modules"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {/* Bottom Columns */}
-        <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-          {/* Left Column: Active Overview Container */}
-          <section className="space-y-6">
+        {/* Content Section */}
+        <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+          {/* Left Side: Recently Viewed */}
+          <section className="lg:col-span-2 space-y-6">
             <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400">
-              active overview
+              Recently Viewed
             </h2>
 
             {activeModule ? (
-              <div className="rounded-3xl border border-zinc-200 bg-zinc-50/30 p-8 relative overflow-hidden flex flex-col justify-between min-h-70">
+              <div className="rounded-3xl border border-zinc-200 bg-zinc-50/30 p-8 relative overflow-hidden flex flex-col justify-between min-h-[280px]">
                 <div className="space-y-4 w-full">
-                  {/* Title */}
                   <h3 className="text-2xl font-semibold tracking-tight text-zinc-900">
                     {activeModule.title}
                   </h3>
@@ -180,19 +99,17 @@ export default function WorkspacePage() {
                     </div>
                     <div className="flex items-center text-[11px] font-medium text-zinc-400">
                       <span>Course Progress:&nbsp;</span>
-                      <span className="font-bold text-primary ">
+                      <span className="font-bold text-primary">
                         {activeModule.progress}% Completed
                       </span>
                     </div>
                   </div>
 
-                  {/* Description */}
-                  <p className="text-sm text-zinc-400 font-light leading-relaxed pt-1">
+                  <p className="text-xs text-zinc-400 font-light leading-relaxed pt-1 line-clamp-3">
                     {activeModule.description}
                   </p>
                 </div>
 
-                {/* Bottom Resume Trigger Row */}
                 <div className="pt-6 mt-auto">
                   <button
                     onClick={() => router.push(activeModule.href)}
@@ -204,69 +121,73 @@ export default function WorkspacePage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-3xl border border-dashed border-zinc-200 p-8 text-center flex flex-col items-center justify-center min-h-70">
-                <p className="text-sm text-zinc-400 font-light">No modules currently assigned to your account.</p>
+              <div className="rounded-3xl border border-dashed border-zinc-200 p-8 text-center flex flex-col items-center justify-center min-h-[280px]">
+                <p className="text-sm text-zinc-400 font-light">
+                  No modules currently assigned to your account.
+                </p>
               </div>
             )}
           </section>
 
-          {/* Right Column: Recent Timeline Block */}
-          <section className="space-y-6">
+          {/* Right Side: Analytics Grid */}
+          <section className="lg:col-span-1 space-y-6">
             <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400">
-              recent timeline (just a template, not live data)
+              Your Progress
             </h2>
 
-            <div className="border border-zinc-200 rounded-3xl divide-y divide-zinc-100 bg-white overflow-hidden min-h-70">
-              <div className="p-6 flex items-center justify-between gap-4 group hover:bg-zinc-50/50 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 shrink-0">
-                    <CheckCircle2 size={18} />
-                  </div>
-                  <div>
-                    <h4 className="text-base font-semibold text-zinc-900 line-clamp-1">
-                      Safe Spaces Act Mandates (RA 11313)
-                    </h4>
-                    <p className="text-xs text-zinc-400 font-light mt-0.5">
-                      completed May 12, 2026 • scored 95% on metric
-                    </p>
-                  </div>
+            <div className="flex flex-col gap-4 w-full">
+              {/* Stat Block 01: In Progress */}
+              <div className="border border-zinc-200 bg-zinc-50/20 rounded-2xl p-5 transition-all duration-300 hover:border-zinc-300 flex flex-col justify-center min-h-[125px]">
+                <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
+                  In Progress
+                </span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-light tracking-tight text-primary">
+                    {modulesInProgressCount}
+                  </span>
+                  <span className="text-xs text-zinc-400 font-light lowercase">
+                    {modulesInProgressCount === 1 ? "module" : "modules"}
+                  </span>
                 </div>
-                <button
-                  onClick={() => router.push("/workspace/modules/ra11313")}
-                  className="text-zinc-300 group-hover:text-primary transition-colors shrink-0"
-                >
-                  <ArrowRight size={18} />
-                </button>
               </div>
 
-              <div className="p-6 flex items-center justify-between gap-4 group hover:bg-zinc-50/50 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 shrink-0">
-                    <CheckCircle2 size={18} />
-                  </div>
-                  <div>
-                    <h4 className="text-base font-semibold text-zinc-900 line-clamp-1">
-                      Foundations of GAD Frameworks
-                    </h4>
-                    <p className="text-xs text-zinc-400 font-light mt-0.5">
-                      completed April 28, 2026 • scored 100% on metric
-                    </p>
-                  </div>
+              {/* Stat Block 02: Completed */}
+              <div className="border border-zinc-200 bg-zinc-50/20 rounded-2xl p-5 transition-all duration-300 hover:border-zinc-300 flex flex-col justify-center min-h-[125px]">
+                <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
+                  Completed
+                </span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-light tracking-tight text-primary">
+                    {modulesCompletedCount}
+                  </span>
+                  <span className="text-xs text-zinc-400 font-light lowercase">
+                    {modulesCompletedCount === 1 ? "module" : "modules"}
+                  </span>
                 </div>
-                <button
-                  onClick={() => router.push("/workspace/modules/foundations")}
-                  className="text-zinc-300 group-hover:text-primary transition-colors shrink-0"
-                >
-                  <ArrowRight size={18} />
-                </button>
               </div>
             </div>
           </section>
         </div>
 
-        <footer className="mt-32 pt-8 border-t border-zinc-100 flex justify-between items-center text-[10px] tracking-widest text-zinc-300 uppercase">
-          <span>gadvance dashboard environment v3.0</span>
-          <span>© 2026 protection active</span>
+        {/* Footer */}
+        <footer className="mt-24 pt-6 border-t border-zinc-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] tracking-widest text-zinc-400 uppercase">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
+            <span>© 2026 protection active</span>
+            <span className="hidden sm:inline text-zinc-200">|</span>
+            <span className="text-zinc-300 font-medium">gadvance v3.0.4</span>
+          </div>
+
+          <div className="flex items-center gap-6 normal-case tracking-normal text-xs text-zinc-400">
+            <a href="/privacy" className="hover:text-primary transition-colors">
+              Privacy Policy
+            </a>
+            <a href="/terms" className="hover:text-primary transition-colors">
+              Terms of Service
+            </a>
+            <a href="/support" className="hover:text-primary transition-colors">
+              Help & Support
+            </a>
+          </div>
         </footer>
       </main>
     </div>

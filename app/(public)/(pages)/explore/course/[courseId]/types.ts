@@ -26,7 +26,7 @@ export type LearningPlan = {
   accent?: string;
   tag?: string;
   duration?: string;
-  enrolled?: number;
+  enrollments_count?: number;
 };
 
 export type CoursePageProps = {

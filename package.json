@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "next build && rsync -avz -e 'ssh -p 65002' ./out/ u242590936@sg-nme-web613.main-hosting.eu:~/domains/gadvance-lspu.com/public_html/"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.101.2",
     "@upstash/redis": "^1.37.0",
     "axios": "^1.16.0",
     "browser-image-compression": "^2.0.2",

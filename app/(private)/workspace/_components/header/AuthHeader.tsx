@@ -93,24 +93,42 @@ export default function AuthHeader() {
   const { data: session } = useSession();
 
   // 🎯 Search State Sub-Hook Management Arrays
-  const [searchResults, setSearchResults] = useState<{ title: string; type: string; url: string; description?: string }[]>([]);
+  const [searchResults, setSearchResults] = useState<
+    { title: string; type: string; url: string; description?: string }[]
+  >([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const displayName = useMemo(() => {
     const sUser: any = session?.user || {};
 
     const first =
-      sUser.firstName || sUser.first_name || profileInfo?.firstName || profileInfo?.first_name || "";
+      sUser.firstName ||
+      sUser.first_name ||
+      profileInfo?.firstName ||
+      profileInfo?.first_name ||
+      "";
     const middle =
-      sUser.middleName || sUser.middle_name || profileInfo?.middleName || profileInfo?.middle_name || "";
+      sUser.middleName ||
+      sUser.middle_name ||
+      profileInfo?.middleName ||
+      profileInfo?.middle_name ||
+      "";
     const last =
-      sUser.lastName || sUser.last_name || profileInfo?.lastName || profileInfo?.last_name || "";
+      sUser.lastName ||
+      sUser.last_name ||
+      profileInfo?.lastName ||
+      profileInfo?.last_name ||
+      "";
 
     const composed = [first, middle, last].filter(Boolean).join(" ").trim();
 
     // If composed name parts exist, prefer them. Otherwise fallback to session name only if it's not an email.
     if (composed.length > 0) return composed;
-    if (typeof sUser.name === "string" && !sUser.name.includes("@") && sUser.name.trim().length > 0) {
+    if (
+      typeof sUser.name === "string" &&
+      !sUser.name.includes("@") &&
+      sUser.name.trim().length > 0
+    ) {
       return sUser.name;
     }
 
@@ -143,12 +161,15 @@ export default function AuthHeader() {
       if (!apiBaseUrl) return;
 
       try {
-        const response = await fetch(`${apiBaseUrl}/api/global-search?q=${encodeURIComponent(searchQuery)}`, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${session?.laravelJwt}`,
+        const response = await fetch(
+          `${apiBaseUrl}/api/global-search?q=${encodeURIComponent(searchQuery)}`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${session?.laravelJwt}`,
+            },
           },
-        });
+        );
 
         if (response.ok) {
           const data = await response.json();
@@ -285,7 +306,9 @@ export default function AuthHeader() {
               </span>
             </div>
             {item.description && (
-              <p className="text-xs text-zinc-400 truncate w-full">{item.description}</p>
+              <p className="text-xs text-zinc-400 truncate w-full">
+                {item.description}
+              </p>
             )}
           </button>
         ))}
@@ -314,10 +337,7 @@ export default function AuthHeader() {
         <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
           {/* DESKTOP SEARCH COMPONENT WITH DROPDOWN */}
           <div className="hidden sm:block sm:flex-1 sm:max-w-md relative">
-            <SearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
-            />
+            <SearchBar value={searchQuery} onChange={setSearchQuery} />
             {renderSearchDropdown()}
           </div>
 
@@ -327,7 +347,11 @@ export default function AuthHeader() {
             onClick={toggleSearch}
             className="rounded-full p-2 text-zinc-600 hover:bg-zinc-100 sm:hidden"
           >
-            {showSearch ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+            {showSearch ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Search className="h-5 w-5" />
+            )}
           </button>
 
           {/* DESKTOP NAV */}
@@ -340,7 +364,7 @@ export default function AuthHeader() {
           </nav>
 
           {/* AUTHENTICATED USER ACTIONS */}
-          <div className="flex items-center gap-2 border-l border-zinc-100 pl-2 md:pl-4">
+          <div className="flex items-center gap-2 border-l border-zinc-100 pl-4 md:pl-4">
             {/* Notifications Bell */}
             <div className="relative">
               <button
@@ -385,34 +409,34 @@ export default function AuthHeader() {
 
               {/* Profile Dropdown Menu */}
               <div
-                className={`absolute right-0 mt-3 w-56 z-50 origin-top-right rounded-2xl border border-primary-hover/20 bg-white p-2 flex flex-col gap-0.5 shadow-xl transition-all duration-200 ease-in-out transform ${
+                className={`absolute right-0 mt-3 w-56 z-60 origin-top-right rounded-2xl border border-primary-hover/20 bg-white p-2 flex flex-col gap-0.5 shadow-xl transition-all duration-200 ease-in-out transform ${
                   showProfileDropdown
                     ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
                     : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
                 }`}
               >
-                  <div className="px-3 py-2.5 border-b border-zinc-200 mb-1">
-                    <p className="text-xs font-bold text-zinc-800 ">
-                      {currentUser.name}
-                    </p>
-                    <p className="text-[10px] text-zinc-400 font-light truncate mt-0.5">
-                      {currentUser.email}
-                    </p>
-                  </div>
+                <div className="px-3 py-2.5 border-b border-zinc-200 mb-1">
+                  <p className="text-xs font-bold text-zinc-800 ">
+                    {currentUser.name}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 font-light truncate mt-0.5">
+                    {currentUser.email}
+                  </p>
+                </div>
 
-                  <DropdownLink
-                    href="/workspace/profile"
-                    icon={<User2Icon size={14} />}
-                    label="profile"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowLogoutDialog(true)}
-                    className="w-full flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-red-500 font-medium hover:bg-red-50 transition-colors lowercase"
-                  >
-                    <LogOut size={14} />
-                    sign out
-                  </button>
+                <DropdownLink
+                  href="/workspace/profile"
+                  icon={<User2Icon size={14} />}
+                  label="profile"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutDialog(true)}
+                  className="w-full flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-red-500 font-medium hover:bg-red-50 transition-colors lowercase"
+                >
+                  <LogOut size={14} />
+                  sign out
+                </button>
               </div>
               <LogoutConfirmationDialog
                 open={showLogoutDialog}
@@ -426,7 +450,11 @@ export default function AuthHeader() {
               onClick={toggleMobileMenu}
               className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-50 xl:hidden"
             >
-              {showMobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {showMobileMenu ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
@@ -438,10 +466,7 @@ export default function AuthHeader() {
       >
         <div className="border-t border-zinc-100 pt-3 flex justify-center">
           <div className="relative w-full max-w-md">
-            <SearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
-            />
+            <SearchBar value={searchQuery} onChange={setSearchQuery} />
             {renderSearchDropdown()}
           </div>
         </div>
@@ -484,14 +509,6 @@ export default function AuthHeader() {
 
           {/* User Direct Workspace Links */}
           <div className="border-t border-zinc-50 mt-2 pt-3 flex flex-col gap-1">
-            <Link
-              href="/workspace"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 font-medium"
-              onClick={() => setShowMobileMenu(false)}
-            >
-              <BookOpen size={16} className="text-[#a78bfa]" />
-              My learning dashboard
-            </Link>
             <Link
               href="/workspace/profile"
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 font-medium"

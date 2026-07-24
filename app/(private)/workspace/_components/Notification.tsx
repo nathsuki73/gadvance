@@ -20,16 +20,17 @@ const notificationsEndpoint = apiBaseUrl
   : null;
 
 function normalizeNotifications(payload: unknown): NotificationItem[] {
-  const source =
-    Array.isArray(payload)
-      ? payload
-      : payload && typeof payload === "object" &&
-          Array.isArray((payload as { data?: unknown }).data)
-        ? (payload as { data: unknown[] }).data
-        : payload && typeof payload === "object" &&
-            Array.isArray((payload as { notifications?: unknown }).notifications)
-          ? (payload as { notifications: unknown[] }).notifications
-          : [];
+  const source = Array.isArray(payload)
+    ? payload
+    : payload &&
+        typeof payload === "object" &&
+        Array.isArray((payload as { data?: unknown }).data)
+      ? (payload as { data: unknown[] }).data
+      : payload &&
+          typeof payload === "object" &&
+          Array.isArray((payload as { notifications?: unknown }).notifications)
+        ? (payload as { notifications: unknown[] }).notifications
+        : [];
 
   const items: NotificationItem[] = [];
 
@@ -138,8 +139,8 @@ export default function Notification({ open, onCloseAction }: Props) {
         if (!response.ok) {
           const message =
             payload && typeof payload === "object"
-              ? ((payload as Record<string, unknown>).message ||
-                  (payload as Record<string, unknown>).error)
+              ? (payload as Record<string, unknown>).message ||
+                (payload as Record<string, unknown>).error
               : undefined;
 
           setNotifications([]);
@@ -173,7 +174,7 @@ export default function Notification({ open, onCloseAction }: Props) {
   return (
     <div
       aria-hidden={!open}
-      className={`absolute right-0 mt-3 w-80 max-w-[calc(100vw-2rem)] origin-top-right rounded-2xl border border-zinc-100 bg-white p-2 shadow-xl transition-all duration-200 ease-in-out transform ${
+      className={`absolute -right-10 mt-3 w-80 max-w-[calc(100vw-2rem)] origin-top-right rounded-2xl border border-zinc-100 bg-white p-2 shadow-xl transition-all duration-200 ease-in-out transform ${
         open
           ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
           : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
@@ -222,9 +223,7 @@ export default function Notification({ open, onCloseAction }: Props) {
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-zinc-900">
-                    {n.title}
-                  </p>
+                  <p className="text-sm font-medium text-zinc-900">{n.title}</p>
                   <span className="text-xs text-zinc-400">{n.time}</span>
                 </div>
                 <p className="mt-1 text-xs text-zinc-500">{n.body}</p>
