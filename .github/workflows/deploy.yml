@@ -3,7 +3,7 @@ name: Deploy Next.js App to Hostinger
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
