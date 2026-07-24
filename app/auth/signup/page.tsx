@@ -154,7 +154,7 @@ const SignUp = () => {
                   <input
                     name="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="joe@example.com"
                     value={formData.email}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 rounded-xl border ${

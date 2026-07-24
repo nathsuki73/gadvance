@@ -151,7 +151,7 @@ const SignIn = () => {
                     name="email"
                     type="email"
                     required
-                    placeholder="you@example.com"
+                    placeholder="joe@example.com"
                     value={formData.email}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
