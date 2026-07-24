@@ -183,13 +183,13 @@ const Footer = () => {
           </p>
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-[11px] font-bold uppercase tracking-widest text-zinc-400">
             <Link
-              href="/support"
+              href="/privacy"
               className="hover:text-[#8b5cf6] transition-colors"
             >
               privacy policy
             </Link>
             <Link
-              href="/support"
+              href="/terms"
               className="hover:text-[#8b5cf6] transition-colors"
             >
               terms of service
