@@ -12,8 +12,13 @@ SetEnv PORT 3000
   RewriteEngine On
   RewriteBase /
 
-  # Serve Next.js static assets directly without passing to Node.js
+  # Serve Next.js static assets directly from root .next/static
+  RewriteCond %{REQUEST_FILENAME} !-f
   RewriteRule ^_next/static/(.*)$ .next/static/$1 [L]
+
+  # Fallback: Check inside standalone/.next/static
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^_next/static/(.*)$ .next/standalone/.next/static/$1 [L]
 
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
