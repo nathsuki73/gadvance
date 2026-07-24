@@ -1,0 +1,157 @@
+"use client";
+
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
+
+type ToastType = "info" | "success" | "warning";
+
+interface Toast {
+  id: number;
+  message: string;
+  type: ToastType;
+}
+
+interface ToastContextType {
+  showToast: (message: string, type?: ToastType, duration?: number) => void;
+  dismissToast: (id: number) => void;
+}
+
+const ToastContext = createContext<ToastContextType | undefined>(undefined);
+
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const timersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+
+  const dismissToast = useCallback((id: number) => {
+    if (timersRef.current.has(id)) {
+      clearTimeout(timersRef.current.get(id));
+      timersRef.current.delete(id);
+    }
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }, []);
+
+  const showToast = useCallback(
+    (message: string, type: ToastType = "info", duration = 3000) => {
+      const id = Date.now();
+
+      setToasts((prev) => [...prev, { id, message, type }]);
+
+      const timer = setTimeout(() => {
+        dismissToast(id);
+      }, duration);
+
+      timersRef.current.set(id, timer);
+    },
+    [dismissToast],
+  );
+
+  return (
+    <ToastContext.Provider value={{ showToast, dismissToast }}>
+      {children}
+
+      {/* Toast Container: Clean violet theme layout matching the Hero section */}
+      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-full max-w-sm px-4 sm:px-0 pointer-events-none">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            onClick={() => dismissToast(toast.id)}
+            className="pointer-events-auto cursor-pointer flex items-center justify-between gap-3 rounded-lg border border-violet-100 bg-white/95 px-3.5 py-2.5 shadow-lg shadow-violet-500/10 backdrop-blur-md transition-all duration-200 animate-slide-up hover:border-violet-200"
+            role="alert"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <ToastIcon type={toast.type} />
+              <p className="text-xs sm:text-sm font-medium text-zinc-800 truncate">
+                {toast.message}
+              </p>
+            </div>
+
+            {/* Close Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                dismissToast(toast.id);
+              }}
+              className="text-zinc-400 hover:text-zinc-600 transition-colors p-0.5 rounded focus:outline-none shrink-0"
+              aria-label="Close notification"
+            >
+              <svg
+                className="w-3.5 h-3.5"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path d="M4 4l8 8M12 4l-8 8" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        ))}
+      </div>
+    </ToastContext.Provider>
+  );
+}
+
+function ToastIcon({ type }: { type: ToastType }) {
+  switch (type) {
+    case "success":
+      return (
+        <svg
+          className="w-4 h-4 text-[#8b5cf6] shrink-0"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path
+            d="M3.5 8.5l3 3 6-6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "warning":
+      return (
+        <svg
+          className="w-4 h-4 text-amber-500 shrink-0"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path d="M8 3v5m0 3h.01" strokeLinecap="round" />
+          <path
+            d="M1.5 13.5l6.5-11 6.5 11z"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "info":
+    default:
+      return (
+        <svg
+          className="w-4 h-4 text-[#8b5cf6] shrink-0"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <circle cx="8" cy="8" r="6" />
+          <path d="M8 7.5v4.5m0-3h.01" strokeLinecap="round" />
+        </svg>
+      );
+  }
+}
+
+export function useToast() {
+  const context = useContext(ToastContext);
+  if (!context) {
+    throw new Error("useToast must be used within a ToastProvider");
+  }
+  return context;
+}
