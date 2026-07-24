@@ -1,40 +1,54 @@
-name: Deploy Next.js App to Hostinger
+name: Build & Deploy Next.js to Hostinger
 
 on:
   push:
-    branches:
-      - master
+    branches: ["master", "main"]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Configure SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
 
-      - name: Sync files to Hostinger via Rsync
-        run: |
-          rsync -az \
-            --exclude ".git" \
-            --exclude "node_modules" \
-            --exclude ".next" \
-            --exclude ".env*" \
-            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }}" \
-            ./ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Install dependencies, build, and restart app
-        run: |
-          ssh -i ~/.ssh/deploy_key -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "
-            cd '${{ secrets.DEPLOY_PATH }}' && \
-            npm ci && \
-            npm run build && \
+      - name: Build Next.js App
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+
+      - name: Deploy to Hostinger via Rsync / SSH
+        uses: appleboy/rsync-action@v0.1.10
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: ${{ secrets.HOSTINGER_PORT || 65002 }}
+          source: "."
+          target: "/home/u242590936/domains/gadvance-lspu.com/public_html"
+          exclude: |
+            .git
+            .github
+            node_modules
+
+      - name: Install Production Dependencies & Restart Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: ${{ secrets.HOSTINGER_PORT || 65002 }}
+          script: |
+            source ~/.profile
+            cd /home/u242590936/domains/gadvance-lspu.com/public_html
+            npm ci --omit=dev
             mkdir -p tmp && touch tmp/restart.txt
-          "
