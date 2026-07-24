@@ -29,9 +29,10 @@ jobs:
       - name: Deploy Files via Rsync over SSH
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          HOST: ${{ secrets.HOSTINGER_HOST }}
-          USER: ${{ secrets.HOSTINGER_USERNAME }}
-          PORT: ${{ secrets.HOSTINGER_PORT || 65002 }}
+          HOST: ${{ secrets.SSH_HOST }}
+          USER: ${{ secrets.SSH_USER }}
+          PORT: ${{ secrets.SSH_PORT || 65002 }}
+          TARGET_PATH: ${{ secrets.DEPLOY_PATH || '/home/u242590936/domains/gadvance-lspu.com/public_html' }}
         run: |
           # 1. Configure SSH Key
           mkdir -p ~/.ssh
@@ -44,17 +45,17 @@ jobs:
             --exclude='.git' \
             --exclude='.github' \
             --exclude='node_modules' \
-            ./ $USER@$HOST:/home/u242590936/domains/gadvance-lspu.com/public_html/
+            ./ $USER@$HOST:$TARGET_PATH/
 
       - name: Install Production Dependencies & Restart Server
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.HOSTINGER_HOST }}
-          username: ${{ secrets.HOSTINGER_USERNAME }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.HOSTINGER_PORT || 65002 }}
+          port: ${{ secrets.SSH_PORT || 65002 }}
           script: |
             source ~/.profile
-            cd /home/u242590936/domains/gadvance-lspu.com/public_html
+            cd ${{ secrets.DEPLOY_PATH || '/home/u242590936/domains/gadvance-lspu.com/public_html' }}
             npm ci --omit=dev
             mkdir -p tmp && touch tmp/restart.txt
