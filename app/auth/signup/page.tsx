@@ -70,8 +70,7 @@ const SignUp = () => {
         formattedErrors[String(issue.path[0])] = issue.message;
       });
 
-      setErrors(formattedErrors);
-      // Trigger Toast for validation error
+      // setErrors(formattedErrors);
       showToast(firstErrorMessage || "Please check the form inputs.", "error");
       return;
     }
@@ -87,17 +86,21 @@ const SignUp = () => {
 
       if (response?.success) {
         setLoading(false);
-        showToast("Account created successfully!", "success");
+        showToast(
+          "Verification link sent! Please check your inbox.",
+          "success",
+        );
+        // Redirect to the Magic Link status page instead of OTP page
         router.push(
-          `/auth/verify-otp?context=signup&email=${encodeURIComponent(
+          `/auth/verify-link?context=signup&email=${encodeURIComponent(
             formData.email,
           )}`,
         );
       } else {
         setLoading(false);
         const errorMessage = response?.error || "Registration failed.";
+        // console.error(errorMessage);
         setErrors({ form: errorMessage });
-        // Trigger Toast for backend error
         showToast(errorMessage, "error");
       }
     } catch (err) {
@@ -106,7 +109,6 @@ const SignUp = () => {
       const networkErrorMessage =
         "Connection failed. Please check your network.";
       setErrors({ form: networkErrorMessage });
-      // Trigger Toast for unexpected/network failures
       showToast(networkErrorMessage, "error");
     }
   };
@@ -131,7 +133,7 @@ const SignUp = () => {
         <div className="w-full max-w-md mx-auto lg:mx-0">
           {status === "loading" ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+              <div className="w-6 h-6 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin mb-4"></div>
               <p className="text-sm text-zinc-400 font-medium tracking-tight">
                 Verifying session...
               </p>
@@ -169,7 +171,7 @@ const SignUp = () => {
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 rounded-xl border ${
                       errors.email ? "border-red-400" : "border-zinc-100"
-                    } focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
+                    } focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
                   />
                   {errors.email && (
                     <p className="text-[9px] text-red-500 font-bold mt-1.5 uppercase tracking-wider">
@@ -193,7 +195,7 @@ const SignUp = () => {
                       onChange={handleInputChange}
                       className={`w-full px-4 py-3 rounded-xl border ${
                         errors.password ? "border-red-400" : "border-zinc-100"
-                      } focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
+                      } focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
                     />
                   </div>
                   <div>
@@ -211,7 +213,7 @@ const SignUp = () => {
                         errors.confirmPassword
                           ? "border-red-400"
                           : "border-zinc-100"
-                      } focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
+                      } focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
                     />
                   </div>
                 </div>
@@ -224,7 +226,7 @@ const SignUp = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-primary hover:bg-primary-hover text-white px-8 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-sky-100 active:scale-[0.98] disabled:opacity-70 mt-2"
+                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 mt-2"
                 >
                   {loading ? "Creating Account..." : "Create account"}
                 </button>
@@ -247,7 +249,7 @@ const SignUp = () => {
               Already have an account?{" "}
               <Link
                 href="/auth/signin"
-                className="text-primary hover:underline transition-colors"
+                className="text-[#8b5cf6] hover:underline transition-colors"
               >
                 sign in
               </Link>
@@ -258,7 +260,7 @@ const SignUp = () => {
 
       {/* Right Side: Decorative Panel */}
       <div
-        className="hidden lg:flex lg:w-1/2 bg-primary flex-col items-center justify-center p-12 text-white relative"
+        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
         style={{
           clipPath: "ellipse(100% 100% at 100% 50%)",
         }}
