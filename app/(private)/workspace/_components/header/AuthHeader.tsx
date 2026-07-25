@@ -4,152 +4,161 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation"; // 🎯 Added for programmatic navigation on item select
+import { useRouter } from "next/navigation";
 import {
   Menu,
   Search,
   X,
   Bell,
   LogOut,
-  BookOpen,
   Settings,
   User2Icon,
 } from "lucide-react";
 
 import Notification from "../Notification";
-
 import logoIcon from "@/app/assets/logo.ico";
-
 import { NavLink } from "./NavLink";
 import SearchBar from "./SearchBar";
 import LogoutConfirmationDialog from "./LogoutConfirmation";
 import { getUserProfile } from "../../service";
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
-
-function resolveAvatarSrc(avatar?: string | null) {
-  if (!avatar) {
-    return null;
-  }
-
-  const trimmedAvatar = avatar.trim();
-
-  if (
-    trimmedAvatar.startsWith("http://") ||
-    trimmedAvatar.startsWith("https://") ||
-    trimmedAvatar.startsWith("data:")
-  ) {
-    return trimmedAvatar;
-  }
-
-  const storagePath = trimmedAvatar.startsWith("/")
-    ? trimmedAvatar
-    : `/${trimmedAvatar}`;
-
-  if (apiBaseUrl) {
-    return `${apiBaseUrl}${storagePath}`;
-  }
-
-  return storagePath;
-}
-
-function getInitials(name?: string | null) {
-  const trimmedName = name?.trim();
-
-  if (!trimmedName) {
-    return "U";
-  }
-
-  // Build initials from up to two name parts (first + last)
-  const parts = trimmedName.split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-}
-
-const mockUser = {
-  name: "Learner",
-  email: "gadvanceproject@gmail.com",
-  avatar: null,
-};
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+const SEARCH_DEBOUNCE_MS = 250;
 
 const AUTH_NAVS = [
   { href: "/workspace", label: "Workspace" },
   { href: "/workspace/courses", label: "My Courses" },
   { href: "/explore", label: "Explore" },
-];
+] as const;
+
+const FALLBACK_USER = {
+  name: "Learner",
+  email: "gadvanceproject@gmail.com",
+};
+
+type ProfileInfo = {
+  firstName?: string;
+  first_name?: string;
+  middleName?: string;
+  middle_name?: string;
+  lastName?: string;
+  last_name?: string;
+  avatar?: string | null;
+};
+
+type SearchResult = {
+  title: string;
+  type: string;
+  url: string;
+  description?: string;
+};
+
+function resolveAvatarSrc(avatar?: string | null): string | null {
+  if (!avatar) return null;
+
+  const trimmed = avatar.trim();
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:")
+  ) {
+    return trimmed;
+  }
+
+  const storagePath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  return API_BASE_URL ? `${API_BASE_URL}${storagePath}` : storagePath;
+}
+
+function getInitials(name?: string | null): string {
+  const trimmed = name?.trim();
+  if (!trimmed) return "U";
+
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
 
 export default function AuthHeader() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Overlay visibility — only one should be open at a time
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const headerRef = useRef<HTMLElement>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [avatarFallbackIndex, setAvatarFallbackIndex] = useState(0);
-  const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
-  const [profileInfo, setProfileInfo] = useState<any | null>(null);
-  const { data: session } = useSession();
 
-  // 🎯 Search State Sub-Hook Management Arrays
-  const [searchResults, setSearchResults] = useState<
-    { title: string; type: string; url: string; description?: string }[]
-  >([]);
+  // Profile data
+  const [profileInfo, setProfileInfo] = useState<ProfileInfo | null>(null);
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
+  const [avatarFallbackIndex, setAvatarFallbackIndex] = useState(0);
+
+  // Search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+  const closeAllOverlays = () => {
+    setShowMobileMenu(false);
+    setShowSearch(false);
+    setShowProfileDropdown(false);
+    setShowNotifications(false);
+    setIsSearchOpen(false);
+  };
+
   const displayName = useMemo(() => {
-    const sUser: any = session?.user || {};
+    const sessionUser = session?.user as
+      | (typeof session.user & Partial<ProfileInfo>)
+      | undefined;
 
     const first =
-      sUser.firstName ||
-      sUser.first_name ||
+      sessionUser?.firstName ||
+      sessionUser?.first_name ||
       profileInfo?.firstName ||
       profileInfo?.first_name ||
       "";
     const middle =
-      sUser.middleName ||
-      sUser.middle_name ||
+      sessionUser?.middleName ||
+      sessionUser?.middle_name ||
       profileInfo?.middleName ||
       profileInfo?.middle_name ||
       "";
     const last =
-      sUser.lastName ||
-      sUser.last_name ||
+      sessionUser?.lastName ||
+      sessionUser?.last_name ||
       profileInfo?.lastName ||
       profileInfo?.last_name ||
       "";
 
     const composed = [first, middle, last].filter(Boolean).join(" ").trim();
+    if (composed) return composed;
 
-    // If composed name parts exist, prefer them. Otherwise fallback to session name only if it's not an email.
-    if (composed.length > 0) return composed;
-    if (
-      typeof sUser.name === "string" &&
-      !sUser.name.includes("@") &&
-      sUser.name.trim().length > 0
-    ) {
-      return sUser.name;
-    }
+    const sessionName = session?.user?.name;
+    if (sessionName && !sessionName.includes("@")) return sessionName;
 
-    return mockUser.name;
+    return FALLBACK_USER.name;
   }, [session?.user, profileInfo]);
 
-  const currentUser = {
-    name: displayName,
-    email: session?.user?.email || mockUser.email,
-    avatarSources: [
-      resolveAvatarSrc(profileAvatar || session?.user?.image),
-      resolveAvatarSrc((session?.user as any)?.googleImage),
-      null,
-    ],
-  };
+  const currentUser = useMemo(
+    () => ({
+      name: displayName,
+      email: session?.user?.email || FALLBACK_USER.email,
+      avatarSources: [
+        resolveAvatarSrc(profileAvatar || session?.user?.image),
+        resolveAvatarSrc(
+          (session?.user as { googleImage?: string })?.googleImage,
+        ),
+      ].filter((src): src is string => Boolean(src)),
+    }),
+    [displayName, profileAvatar, session?.user],
+  );
 
-  const activeAvatarSource = useMemo(() => {
-    return currentUser.avatarSources[avatarFallbackIndex] || null;
-  }, [avatarFallbackIndex, currentUser.avatarSources]);
+  const activeAvatarSource =
+    currentUser.avatarSources[avatarFallbackIndex] ?? null;
 
-  // 🎯 Instant Search Auto-fetching Pipeline with 250ms Debounce Protection
+  // Debounced global search
   useEffect(() => {
     if (searchQuery.trim().length === 0) {
       setSearchResults([]);
@@ -157,154 +166,157 @@ export default function AuthHeader() {
       return;
     }
 
-    const delayDebounceFn = setTimeout(async () => {
-      if (!apiBaseUrl) return;
+    const timeoutId = setTimeout(async () => {
+      if (!API_BASE_URL || !session?.laravelJwt) return;
 
       try {
         const response = await fetch(
-          `${apiBaseUrl}/api/global-search?q=${encodeURIComponent(searchQuery)}`,
+          `${API_BASE_URL}/api/global-search?q=${encodeURIComponent(searchQuery)}`,
           {
             headers: {
               Accept: "application/json",
-              Authorization: `Bearer ${session?.laravelJwt}`,
+              Authorization: `Bearer ${session.laravelJwt}`,
             },
           },
         );
 
-        if (response.ok) {
-          const data = await response.json();
-          setSearchResults(data);
-          setIsSearchOpen(true);
-        }
+        if (!response.ok) return;
+
+        const payload = await response.json();
+        const results = Array.isArray(payload) ? payload : payload?.data;
+
+        setSearchResults(Array.isArray(results) ? results : []);
+        setIsSearchOpen(true);
       } catch (error) {
-        console.error("Global search fetch execution failed:", error);
+        console.error("Global search fetch failed:", error);
       }
-    }, 250);
+    }, SEARCH_DEBOUNCE_MS);
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, session, apiBaseUrl]);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, session]);
 
+  // Load extended profile (name parts + avatar) once per session
   useEffect(() => {
+    if (profileAvatar || !session?.user) return;
+
     let isMounted = true;
 
-    const loadProfileAvatar = async () => {
-      if (profileAvatar || !session?.user) {
-        return;
-      }
-
+    (async () => {
       const response = await getUserProfile();
-      if (!isMounted || !response.success) {
-        return;
-      }
+      if (!isMounted || !response.success) return;
 
-      // Store the whole profile payload for name parts and avatar
-      setProfileInfo(response.data || null);
+      setProfileInfo(response.data ?? null);
 
-      const resolvedAvatar = resolveAvatarSrc(response.data.avatar ?? null);
-      if (resolvedAvatar) {
-        setProfileAvatar(resolvedAvatar);
-      }
-    };
-
-    loadProfileAvatar();
+      const avatar = resolveAvatarSrc(response.data?.avatar ?? null);
+      if (avatar) setProfileAvatar(avatar);
+    })();
 
     return () => {
       isMounted = false;
     };
   }, [profileAvatar, session?.user]);
 
-  const toggleSearch = () => {
-    const willBeShown = !showSearch;
-    setShowSearch(willBeShown);
-    if (!willBeShown) {
-      setSearchQuery("");
-      setIsSearchOpen(false);
-    }
-    if (willBeShown) {
-      setShowMobileMenu(false);
-      setShowProfileDropdown(false);
-    }
-  };
-
-  const toggleMobileMenu = () => {
-    const willBeOpen = !showMobileMenu;
-    setShowMobileMenu(willBeOpen);
-    if (willBeOpen) {
-      setShowSearch(false);
-      setShowProfileDropdown(false);
-    }
-  };
-
+  // Close all overlays on outside click
   useEffect(() => {
     const handleClickOutside = (e: PointerEvent) => {
       if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
-        setShowSearch(false);
-        setShowMobileMenu(false);
-        setShowProfileDropdown(false);
-        setShowNotifications(false);
-        setIsSearchOpen(false); // Closes spotlight wrapper when clicking canvas body
+        closeAllOverlays();
       }
     };
 
     document.addEventListener("pointerdown", handleClickOutside);
-    return () => {
+    return () =>
       document.removeEventListener("pointerdown", handleClickOutside);
-    };
   }, []);
 
-  // Shared result click handler to perform seamless route redirect cleanups
+  const toggleSearch = () => {
+    setShowSearch((current) => {
+      const next = !current;
+      if (next) {
+        setShowMobileMenu(false);
+        setShowProfileDropdown(false);
+      } else {
+        setSearchQuery("");
+        setIsSearchOpen(false);
+      }
+      return next;
+    });
+  };
+
+  const toggleMobileMenu = () => {
+    setShowMobileMenu((current) => {
+      const next = !current;
+      if (next) {
+        setShowSearch(false);
+        setShowProfileDropdown(false);
+      }
+      return next;
+    });
+  };
+
+  const toggleNotifications = () => {
+    setShowNotifications((current) => {
+      const next = !current;
+      if (next) {
+        setShowProfileDropdown(false);
+        setShowMobileMenu(false);
+        setShowSearch(false);
+      }
+      return next;
+    });
+  };
+
+  const toggleProfileDropdown = () => {
+    setShowNotifications(false);
+    setShowProfileDropdown((current) => !current);
+  };
+
   const handleResultClick = (url: string) => {
-    setIsSearchOpen(false);
-    setShowSearch(false);
+    closeAllOverlays();
     setSearchQuery("");
     router.push(url);
   };
 
-  const userAvatarKey = `${session?.user?.image || ""}-${session?.user?.googleImage || ""}-${session?.user?.name || ""}`;
+  const avatarKey = `${session?.user?.image ?? ""}-${
+    (session?.user as { googleImage?: string })?.googleImage ?? ""
+  }-${session?.user?.name ?? ""}`;
 
-  const renderAvatar = (sizeClassName: string, textClassName: string) => {
-    if (activeAvatarSource) {
-      return (
-        <Image
-          key={userAvatarKey}
-          src={activeAvatarSource}
-          alt={`${currentUser.name} avatar`}
-          width={40}
-          height={40}
-          sizes="40px"
-          unoptimized={activeAvatarSource.startsWith("data:")}
-          className={sizeClassName}
-          onError={() =>
-            setAvatarFallbackIndex((currentIndex) =>
-              Math.min(currentIndex + 1, currentUser.avatarSources.length - 1),
-            )
-          }
-        />
-      );
-    }
-
-    return (
+  const renderAvatar = (sizeClassName: string, textClassName: string) =>
+    activeAvatarSource ? (
+      <Image
+        key={avatarKey}
+        src={activeAvatarSource}
+        alt={`${currentUser.name} avatar`}
+        width={40}
+        height={40}
+        sizes="40px"
+        unoptimized={activeAvatarSource.startsWith("data:")}
+        className={sizeClassName}
+        onError={() =>
+          setAvatarFallbackIndex((i) =>
+            Math.min(i + 1, currentUser.avatarSources.length - 1),
+          )
+        }
+      />
+    ) : (
       <span className={textClassName}>{getInitials(currentUser.name)}</span>
     );
-  };
 
-  // Shared Sub-component template for Search Dropdown Layouts
   const renderSearchDropdown = () => {
     if (!isSearchOpen || searchResults.length === 0) return null;
+
     return (
       <div className="absolute top-full left-0 mt-2 w-full max-w-[400px] rounded-2xl border border-zinc-100 bg-white p-2 shadow-2xl z-50 max-h-[350px] overflow-y-auto">
         {searchResults.map((item, index) => (
           <button
-            key={index}
+            key={`${item.url}-${index}`}
             type="button"
             onClick={() => handleResultClick(item.url)}
             className="flex w-full flex-col gap-0.5 rounded-xl px-4 py-2 text-left text-sm hover:bg-zinc-50 transition-all group"
           >
-            <div className="flex justify-between items-center w-full">
-              <span className="font-semibold text-zinc-800 group-hover:text-primary transition-colors">
-                {item.title}
-              </span>
-            </div>
+            <span className="font-semibold text-zinc-800 group-hover:text-primary transition-colors">
+              {item.title}
+            </span>
             {item.description && (
               <p className="text-xs text-zinc-400 truncate w-full">
                 {item.description}
@@ -322,7 +334,7 @@ export default function AuthHeader() {
       className="sticky top-0 z-50 border-b border-zinc-100 bg-white/80 px-4 py-3 backdrop-blur-md md:px-6"
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-        {/* LEFT: Logo */}
+        {/* Logo */}
         <Link
           href="/"
           className="flex shrink-0 items-center gap-2.5 transition-transform"
@@ -333,15 +345,14 @@ export default function AuthHeader() {
           </span>
         </Link>
 
-        {/* CENTER/RIGHT: Search & Navigation */}
         <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
-          {/* DESKTOP SEARCH COMPONENT WITH DROPDOWN */}
+          {/* Desktop search */}
           <div className="hidden sm:block sm:flex-1 sm:max-w-md relative">
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
             {renderSearchDropdown()}
           </div>
 
-          {/* MOBILE SEARCH TOGGLE */}
+          {/* Mobile search toggle */}
           <button
             type="button"
             onClick={toggleSearch}
@@ -354,7 +365,7 @@ export default function AuthHeader() {
             )}
           </button>
 
-          {/* DESKTOP NAV */}
+          {/* Desktop nav */}
           <nav className="hidden items-center gap-6 xl:flex">
             {AUTH_NAVS.map((link) => (
               <NavLink key={link.href} href={link.href}>
@@ -363,21 +374,12 @@ export default function AuthHeader() {
             ))}
           </nav>
 
-          {/* AUTHENTICATED USER ACTIONS */}
           <div className="flex items-center gap-2 border-l border-zinc-100 pl-4 md:pl-4">
-            {/* Notifications Bell */}
+            {/* Notifications */}
             <div className="relative">
               <button
                 type="button"
-                onClick={() => {
-                  const next = !showNotifications;
-                  setShowNotifications(next);
-                  if (next) {
-                    setShowProfileDropdown(false);
-                    setShowMobileMenu(false);
-                    setShowSearch(false);
-                  }
-                }}
+                onClick={toggleNotifications}
                 aria-expanded={showNotifications}
                 className="relative rounded-full p-2 text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
               >
@@ -391,14 +393,11 @@ export default function AuthHeader() {
               />
             </div>
 
-            {/* User Dropdown Trigger */}
+            {/* Profile dropdown */}
             <div className="relative hidden xl:block">
               <button
                 type="button"
-                onClick={() => {
-                  setShowNotifications(false);
-                  setShowProfileDropdown((current) => !current);
-                }}
+                onClick={toggleProfileDropdown}
                 className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-100 bg-zinc-50 p-0 hover:border-[#a78bfa]/30 transition-all"
               >
                 {renderAvatar(
@@ -407,16 +406,15 @@ export default function AuthHeader() {
                 )}
               </button>
 
-              {/* Profile Dropdown Menu */}
               <div
-                className={`absolute right-0 mt-3 w-56 z-60 origin-top-right rounded-2xl border border-primary-hover/20 bg-white p-2 flex flex-col gap-0.5 shadow-xl transition-all duration-200 ease-in-out transform ${
+                className={`absolute right-0 mt-3 w-56 z-50 origin-top-right rounded-2xl border border-primary-hover/20 bg-white p-2 flex flex-col gap-0.5 shadow-xl transition-all duration-200 ease-in-out transform ${
                   showProfileDropdown
                     ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
                     : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
                 }`}
               >
                 <div className="px-3 py-2.5 border-b border-zinc-200 mb-1">
-                  <p className="text-xs font-bold text-zinc-800 ">
+                  <p className="text-xs font-bold text-zinc-800">
                     {currentUser.name}
                   </p>
                   <p className="text-[10px] text-zinc-400 font-light truncate mt-0.5">
@@ -438,13 +436,14 @@ export default function AuthHeader() {
                   sign out
                 </button>
               </div>
+
               <LogoutConfirmationDialog
                 open={showLogoutDialog}
                 onClose={() => setShowLogoutDialog(false)}
               />
             </div>
 
-            {/* BURGER MENU */}
+            {/* Burger menu */}
             <button
               type="button"
               onClick={toggleMobileMenu}
@@ -460,9 +459,13 @@ export default function AuthHeader() {
         </div>
       </div>
 
-      {/* MOBILE SEARCH DRAWER WITH DROPDOWN */}
+      {/* Mobile search drawer */}
       <div
-        className={`transition-all duration-300 ease-in-out md:hidden relative ${showSearch ? "max-h-24 opacity-100 mt-3" : "max-h-0 opacity-0 overflow-hidden"}`}
+        className={`transition-all duration-300 ease-in-out md:hidden relative ${
+          showSearch
+            ? "max-h-24 opacity-100 mt-3"
+            : "max-h-0 opacity-0 overflow-hidden"
+        }`}
       >
         <div className="border-t border-zinc-100 pt-3 flex justify-center">
           <div className="relative w-full max-w-md">
@@ -472,12 +475,13 @@ export default function AuthHeader() {
         </div>
       </div>
 
-      {/* EXPANDABLE MOBILE MENU WITH LOGGED IN METRICS */}
+      {/* Mobile menu */}
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out xl:hidden ${showMobileMenu ? "max-h-150 opacity-100 mt-4" : "max-h-0 opacity-0"}`}
+        className={`overflow-hidden transition-all duration-300 ease-in-out xl:hidden ${
+          showMobileMenu ? "max-h-150 opacity-100 mt-4" : "max-h-0 opacity-0"
+        }`}
       >
         <nav className="flex flex-col gap-1 border-t border-zinc-100 pt-4">
-          {/* User Mobile Info Card */}
           <div className="flex items-center gap-3 px-3 py-3 bg-zinc-50 rounded-2xl mb-3">
             <div className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-xl bg-[#c4b5fd]">
               {renderAvatar(
@@ -495,7 +499,6 @@ export default function AuthHeader() {
             </div>
           </div>
 
-          {/* Standard Navigation Links */}
           {AUTH_NAVS.map((link) => (
             <Link
               key={link.href}
@@ -507,7 +510,6 @@ export default function AuthHeader() {
             </Link>
           ))}
 
-          {/* User Direct Workspace Links */}
           <div className="border-t border-zinc-50 mt-2 pt-3 flex flex-col gap-1">
             <Link
               href="/workspace/profile"
@@ -535,8 +537,7 @@ export default function AuthHeader() {
   );
 }
 
-/* Helper Inner Component for Dropdown Links */
-const DropdownLink = ({
+function DropdownLink({
   href,
   icon,
   label,
@@ -544,12 +545,14 @@ const DropdownLink = ({
   href: string;
   icon: React.ReactNode;
   label: string;
-}) => (
-  <Link
-    href={href}
-    className="flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-zinc-600 font-medium hover:bg-zinc-50 transition-colors lowercase"
-  >
-    <span className="text-zinc-400">{icon}</span>
-    {label}
-  </Link>
-);
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-zinc-600 font-medium hover:bg-zinc-50 transition-colors lowercase"
+    >
+      <span className="text-zinc-400">{icon}</span>
+      {label}
+    </Link>
+  );
+}
