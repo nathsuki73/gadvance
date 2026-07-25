@@ -33,7 +33,7 @@ export async function handleRegistration(
   email: string,
   password: string,
   passwordConfirmation: string,
-  birthday?: string, // 🎯 Captures the string parameter safely from SignUp.tsx
+  birthday?: string,
 ): Promise<RegistrationResult> {
   try {
     const baseUrl = getRequiredApiBaseUrl();
@@ -47,7 +47,7 @@ export async function handleRegistration(
         email,
         password,
         password_confirmation: passwordConfirmation,
-        birthday: birthday || null, // 🎯 FIX: Changed 'date_of_birth' to 'birthday' to pass Laravel Request validation rules!
+        birthday: birthday || null,
       }),
       cache: "no-store",
     });
