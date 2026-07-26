@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
@@ -8,6 +8,7 @@ import { PlayCircle } from "lucide-react";
 import { getUserProfile } from "./service";
 import WorkspaceSkeleton from "./_components/WorkspaceSkeleton";
 import Footer from "@/app/components/Footer";
+import { forceSignOut } from "@/app/lib/api-client";
 
 export default function WorkspacePage() {
   const router = useRouter();
@@ -37,12 +38,6 @@ export default function WorkspacePage() {
 
   if (isAuthenticating || isFetchingData) {
     return <WorkspaceSkeleton />;
-  }
-
-  // 4. Force unauthenticated redirect safely after loading checks
-  if (status === "unauthenticated") {
-    router.replace("/auth/signin");
-    return null;
   }
 
   // Extract variables directly from data without maintaining sync state
