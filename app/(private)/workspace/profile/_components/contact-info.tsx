@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Save, Loader2 } from "lucide-react";
 import { ProfileData } from "../types";
-import { ProfileAlert } from "./profile-alert";
 import { apiFetch } from "@/app/lib/api-client";
 import { useToast } from "@/app/components/context/ToastContext";
 
