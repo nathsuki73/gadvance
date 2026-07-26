@@ -11,12 +11,6 @@ export async function forceSignOut() {
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
   const session = await getSession();
-  console.log(
-    "[apiFetch] laravelJwt present?",
-    !!session?.laravelJwt,
-    "path:",
-    path,
-  );
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
   const isFormData = options.body instanceof FormData;
