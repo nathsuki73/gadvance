@@ -1,6 +1,7 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { getJwtExpiration, shouldRefreshLaravelToken } from "../jwt-helpers";
 
 const googleClientId =
   process.env.GOOGLE_CLIENT_ID ?? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -11,7 +12,11 @@ const laravelAuthExchangeUrl =
   (process.env.NEXT_PUBLIC_API_URL
     ? `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")}/api/auth/google/exchange`
     : undefined);
-const laravelAuthRefreshUrl = process.env.LARAVEL_AUTH_REFRESH_URL;
+const laravelAuthRefreshUrl =
+  process.env.LARAVEL_AUTH_REFRESH_URL ??
+  (process.env.NEXT_PUBLIC_API_URL
+    ? `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")}/api/auth/refresh`
+    : undefined);
 const jwtSharedSecret = process.env.LARAVEL_SSO_SECRET?.trim();
 const laravelApiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -268,40 +273,72 @@ async function exchangeGoogleForLaravelToken(params: {
   }
 }
 
-async function refreshLaravelIdentity(laravelToken: string) {
+async function refreshLaravelToken(laravelToken: string) {
   if (!laravelAuthRefreshUrl) {
+    console.warn(
+      "Missing Laravel refresh URL. Set LARAVEL_AUTH_REFRESH_URL or NEXT_PUBLIC_API_URL.",
+    );
     return null;
   }
 
-  const response = await fetch(laravelAuthRefreshUrl, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${laravelToken}`,
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    return null;
-  }
-
-  let rawData: unknown = {};
   try {
-    rawData = await response.json();
-  } catch {
-    rawData = {};
-  }
+    const response = await fetch(laravelAuthRefreshUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${laravelToken}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
 
-  return mapLaravelIdentityResponse(rawData);
+    let rawData: unknown = {};
+
+    try {
+      rawData = await response.json();
+    } catch {
+      rawData = {};
+    }
+
+    if (!response.ok) {
+      console.warn("Laravel JWT refresh failed.", {
+        status: response.status,
+        response: rawData,
+      });
+
+      return null;
+    }
+
+    const data = mapLaravelIdentityResponse(rawData);
+
+    if (!data.token) {
+      console.error(
+        "Laravel JWT refresh response did not contain a new token.",
+      );
+
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Laravel JWT refresh request error:", error);
+    return null;
+  }
 }
 
-async function completeSignupOtp(params: { email: string; otp: string; dateOfBirth?: string }) {
+async function completeSignupOtp(params: {
+  email: string;
+  otp: string;
+  dateOfBirth?: string;
+}) {
   if (!laravelApiBaseUrl) {
     console.warn("Missing API URL. Set NEXT_PUBLIC_API_URL.");
     return null;
   }
 
-  const endpoint = `${laravelApiBaseUrl.replace(/\/$/, "")}/api/auth/signup/complete`;
+  const endpoint = `${laravelApiBaseUrl.replace(
+    /\/$/,
+    "",
+  )}/api/auth/signup/complete`;
 
   const response = await fetch(endpoint, {
     method: "POST",
@@ -317,6 +354,7 @@ async function completeSignupOtp(params: { email: string; otp: string; dateOfBir
   });
 
   let rawData: unknown = {};
+
   try {
     rawData = await response.json();
   } catch {
@@ -329,17 +367,12 @@ async function completeSignupOtp(params: { email: string; otp: string; dateOfBir
     return null;
   }
 
-  const latestIdentity = await refreshLaravelIdentity(mapped.token);
-
   return {
     token: mapped.token,
-    status:
-      normalizeStatus(latestIdentity?.status) ||
-      normalizeStatus(mapped.status) ||
-      "onboarding",
-    name: latestIdentity?.name || mapped.name,
-    email: latestIdentity?.email || mapped.email,
-    sessionToken: latestIdentity?.sessionToken || mapped.sessionToken,
+    status: normalizeStatus(mapped.status) || "onboarding",
+    name: mapped.name,
+    email: mapped.email || params.email,
+    sessionToken: mapped.sessionToken,
   };
 }
 
@@ -364,7 +397,11 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (otp) {
-          const completed = await completeSignupOtp({ email, otp, dateOfBirth });
+          const completed = await completeSignupOtp({
+            email,
+            otp,
+            dateOfBirth,
+          });
           if (!completed) {
             return null;
           }
@@ -424,9 +461,14 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
+    // maxAge: 14 * 24 * 60 * 60,
+    maxAge: 120,
   },
   callbacks: {
     async jwt({ token, user, trigger, session }) {
+      /*
+       * Initial sign-in
+       */
       if (user) {
         const authBridge = (
           user as typeof user & {
@@ -436,12 +478,6 @@ export const authOptions: NextAuthOptions = {
 
         if (authBridge?.token) {
           const normalizedStatus = normalizeStatus(authBridge.status);
-          if (!normalizedStatus) {
-            console.warn(
-              "Laravel auth bridge did not include a valid status; defaulting to onboarding.",
-            );
-          }
-
           token.laravelJwt = authBridge.token;
           token.status = normalizedStatus || "onboarding";
           token.email = authBridge.email || token.email;
@@ -452,22 +488,14 @@ export const authOptions: NextAuthOptions = {
         if (typeof user.name === "string" && user.name.trim().length > 0) {
           token.name = user.name;
         }
+
+        delete token.laravelJwtError;
+        return token; // skip refresh check on the very first pass
       }
 
-      if (trigger === "update" && token.laravelJwt) {
-        const latestIdentity = await refreshLaravelIdentity(token.laravelJwt);
-        if (latestIdentity) {
-          token.status =
-            normalizeStatus(latestIdentity.status) ||
-            normalizeStatus(token.status) ||
-            "onboarding";
-          token.name = latestIdentity.name || token.name;
-          token.email = latestIdentity.email || token.email;
-          token.sessionToken =
-            latestIdentity.sessionToken || token.sessionToken;
-        }
-      }
-
+      /*
+       * Manually triggered session update
+       */
       if (trigger === "update") {
         const sessionUser = session?.user;
 
@@ -492,6 +520,35 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
+      if (typeof token.laravelJwt === "string") {
+        const expiration = getJwtExpiration(token.laravelJwt);
+        const currentTime = Math.floor(Date.now() / 1000);
+
+        console.log("[Laravel JWT]", {
+          expiration,
+          currentTime,
+          secondsRemaining: expiration ? expiration - currentTime : null,
+        });
+
+        if (shouldRefreshLaravelToken(token.laravelJwt)) {
+          console.log("[Laravel JWT] Refreshing token...");
+
+          const refreshed = await refreshLaravelToken(token.laravelJwt);
+
+          if (refreshed?.token) {
+            console.log("[Laravel JWT] Token refreshed successfully.");
+
+            token.laravelJwt = refreshed.token;
+
+            delete token.laravelJwtError;
+          } else {
+            console.error("[Laravel JWT] Token refresh failed.");
+
+            token.laravelJwtError = "RefreshAccessTokenError";
+          }
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
@@ -505,6 +562,7 @@ export const authOptions: NextAuthOptions = {
 
       session.laravelJwt = token.laravelJwt;
       session.sessionToken = token.sessionToken;
+      session.error = token.laravelJwtError; // NEW: surface to client
 
       return session;
     },
@@ -521,15 +579,14 @@ export const authOptions: NextAuthOptions = {
           console.error(
             "Blocked Google sign-in because Laravel handshake did not return a valid token.",
           );
+
           return false;
         }
-
-        const latestIdentity = await refreshLaravelIdentity(exchanged.token);
 
         const mutableUser = user as typeof user & {
           laravelAuth?: {
             token: string;
-            status?: string;
+            status?: SupportedStatus;
             name?: string;
             email?: string;
             sessionToken?: string;
@@ -538,19 +595,11 @@ export const authOptions: NextAuthOptions = {
 
         mutableUser.laravelAuth = {
           token: exchanged.token,
-          status:
-            normalizeStatus(latestIdentity?.status) ||
-            normalizeStatus(exchanged.status),
-          name: latestIdentity?.name || exchanged.name,
-          email: latestIdentity?.email || exchanged.email,
-          sessionToken: latestIdentity?.sessionToken || exchanged.sessionToken,
+          status: normalizeStatus(exchanged.status),
+          name: exchanged.name || user.name || undefined,
+          email: exchanged.email || user.email || undefined,
+          sessionToken: exchanged.sessionToken,
         };
-
-        if (!mutableUser.laravelAuth.status) {
-          console.warn(
-            "Laravel handshake/refresh response did not return a usable status field.",
-          );
-        }
 
         return true;
       }
