@@ -3,12 +3,12 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import { handleSignIn } from "../../lib/auth";
 import { handleRegistration } from "./actions";
 import { z } from "zod";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import logoIcon from "@/app/assets/logo.ico";
 import { useToast } from "@/app/components/context/ToastContext";
 
@@ -29,6 +29,8 @@ const signUpSchema = z
 
 const SignUp = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const { showToast } = useToast();
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
@@ -42,13 +44,20 @@ const SignUp = () => {
 
   useEffect(() => {
     if (status === "authenticated") {
+      const justLoggedOut = searchParams.get("loggedOut") === "1"; // add useSearchParams import
+      if (justLoggedOut) {
+        signOut({ redirect: false }).finally(() => {
+          window.location.href = "/auth/signin";
+        });
+        return;
+      }
       if (session?.user?.status === "onboarding") {
         router.push("/onboarding");
       } else {
         router.push("/workspace");
       }
     }
-  }, [status, session, router]);
+  }, [status, session, router, searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
