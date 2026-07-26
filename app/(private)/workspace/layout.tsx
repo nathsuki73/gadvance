@@ -17,15 +17,24 @@ export default function WorkspaceLayout({
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  const normalizedStatus = session?.user?.status?.trim().toLowerCase();
+
   useEffect(() => {
-    const checkTokenExpiry = () => {
+    const checkAuthAndTokenExpiry = () => {
+      // 1. Unauthenticated users -> redirect to signin
       if (status === "unauthenticated") {
         router.replace("/auth/signin");
         return;
       }
 
       if (status === "authenticated") {
-        // Read the actual exp claim directly from the Laravel JWT
+        // 2. ABSOLUTE ONBOARDING GUARD: If status is onboarding, block workspace access
+        if (normalizedStatus === "onboarding") {
+          router.replace("/onboarding");
+          return;
+        }
+
+        // 3. Read the actual exp claim directly from the Laravel JWT
         let isLaravelTokenExpired = false;
         if (session?.laravelJwt) {
           try {
@@ -48,13 +57,13 @@ export default function WorkspaceLayout({
       }
     };
 
-    // 1. Run immediately on mount
-    checkTokenExpiry();
+    // Run immediately on mount
+    checkAuthAndTokenExpiry();
 
-    // 2. Run whenever user clicks back onto this browser tab
+    // Run whenever user switches back onto this browser tab
     const onFocus = () => {
       if (document.visibilityState === "visible") {
-        checkTokenExpiry();
+        checkAuthAndTokenExpiry();
       }
     };
 
@@ -65,9 +74,16 @@ export default function WorkspaceLayout({
       document.removeEventListener("visibilitychange", onFocus);
       window.removeEventListener("focus", onFocus);
     };
-  }, [status, session, router]);
+  }, [status, session, normalizedStatus, router]);
 
-  if (status === "unauthenticated") return null;
+  // Block rendering workspace layout if unauthenticated, onboarding, or session invalid
+  const isInvalid =
+    status === "unauthenticated" ||
+    normalizedStatus === "onboarding" ||
+    (status === "authenticated" &&
+      (session?.error === "RefreshAccessTokenError" || !session?.laravelJwt));
+
+  if (isInvalid) return null;
 
   return (
     <ToastProvider>

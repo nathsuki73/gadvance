@@ -1,10 +1,12 @@
+// app/onboarding/layout.tsx
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import logoIcon from "@/app/assets/logo.ico";
+import { forceSignOut } from "@/app/lib/api-client";
 
 const STEP_CONTENT: Record<
   string,
@@ -53,19 +55,94 @@ export default function OnboardingLayout({
 
   const normalizedStatus = session?.user?.status?.trim().toLowerCase();
 
-  useEffect(() => {
+  const checkAuthAndTokenExpiry = useCallback(() => {
     if (status === "unauthenticated") {
       router.replace("/auth/signin");
-    } else if (status === "authenticated" && normalizedStatus === "active") {
-      router.replace("/workspace");
+      return true;
     }
-  }, [status, normalizedStatus, router]);
 
-  if (
+    if (status === "authenticated") {
+      // 1. If user is already active, bounce to workspace
+      if (normalizedStatus === "active") {
+        router.replace("/workspace");
+        return true;
+      }
+
+      // 2. Decode & check JWT expiration directly
+      let isLaravelTokenExpired = false;
+      if (session?.laravelJwt) {
+        try {
+          const payload = JSON.parse(atob(session.laravelJwt.split(".")[1]));
+          if (payload.exp && payload.exp * 1000 <= Date.now()) {
+            isLaravelTokenExpired = true;
+          }
+        } catch {
+          isLaravelTokenExpired = true;
+        }
+      }
+
+      if (
+        session?.error === "RefreshAccessTokenError" ||
+        !session?.laravelJwt ||
+        isLaravelTokenExpired
+      ) {
+        forceSignOut();
+        return true;
+      }
+    }
+    return false;
+  }, [status, session, normalizedStatus, router]);
+
+  // Check 1: On mount & on pathname change (Step transition)
+  useEffect(() => {
+    checkAuthAndTokenExpiry();
+  }, [pathname, checkAuthAndTokenExpiry]);
+
+  // Check 2: On user interaction (click, keypress) & tab focus
+  useEffect(() => {
+    const handleUserActivity = () => {
+      checkAuthAndTokenExpiry();
+    };
+
+    window.addEventListener("focus", handleUserActivity);
+    document.addEventListener("visibilitychange", handleUserActivity);
+    document.addEventListener("click", handleUserActivity, { capture: true });
+    document.addEventListener("keydown", handleUserActivity, { capture: true });
+
+    return () => {
+      window.removeEventListener("focus", handleUserActivity);
+      document.removeEventListener("visibilitychange", handleUserActivity);
+      document.removeEventListener("click", handleUserActivity, {
+        capture: true,
+      });
+      document.removeEventListener("keydown", handleUserActivity, {
+        capture: true,
+      });
+    };
+  }, [checkAuthAndTokenExpiry]);
+
+  // Check 3: Is token or session invalid? Block rendering
+  let isTokenExpired = false;
+  if (session?.laravelJwt) {
+    try {
+      const payload = JSON.parse(atob(session.laravelJwt.split(".")[1]));
+      if (payload.exp && payload.exp * 1000 <= Date.now()) {
+        isTokenExpired = true;
+      }
+    } catch {
+      isTokenExpired = true;
+    }
+  }
+
+  const isInvalid =
     status === "loading" ||
     status === "unauthenticated" ||
-    normalizedStatus === "active"
-  ) {
+    normalizedStatus === "active" ||
+    session?.error === "RefreshAccessTokenError" ||
+    !session?.laravelJwt ||
+    isTokenExpired;
+
+  if (isInvalid) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-6 font-sans overflow-hidden">
         <div className="text-center">
