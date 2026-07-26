@@ -37,12 +37,12 @@ const FALLBACK_USER = {
 };
 
 type ProfileInfo = {
-  firstName?: string;
-  first_name?: string;
-  middleName?: string;
-  middle_name?: string;
-  lastName?: string;
-  last_name?: string;
+  firstName?: string | null;
+  first_name?: string | null;
+  middleName?: string | null;
+  middle_name?: string | null;
+  lastName?: string | null;
+  last_name?: string | null;
   avatar?: string | null;
 };
 
@@ -110,25 +110,21 @@ export default function AuthHeader() {
   };
 
   const displayName = useMemo(() => {
-    const sessionUser = session?.user as
-      | (typeof session.user & Partial<ProfileInfo>)
-      | undefined;
-
     const first =
-      sessionUser?.firstName ||
-      sessionUser?.first_name ||
+      session?.user?.firstName ||
+      session?.user?.first_name ||
       profileInfo?.firstName ||
       profileInfo?.first_name ||
       "";
     const middle =
-      sessionUser?.middleName ||
-      sessionUser?.middle_name ||
+      session?.user?.middleName ||
+      session?.user?.middle_name ||
       profileInfo?.middleName ||
       profileInfo?.middle_name ||
       "";
     const last =
-      sessionUser?.lastName ||
-      sessionUser?.last_name ||
+      session?.user?.lastName ||
+      session?.user?.last_name ||
       profileInfo?.lastName ||
       profileInfo?.last_name ||
       "";
@@ -162,8 +158,8 @@ export default function AuthHeader() {
   // Debounced global search
   useEffect(() => {
     if (searchQuery.trim().length === 0) {
-      setSearchResults([]);
-      setIsSearchOpen(false);
+      // setSearchResults([]);
+      // setIsSearchOpen(false);
       return;
     }
 

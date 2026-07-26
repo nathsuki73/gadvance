@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { signIn as nextAuthSignIn, signOut, useSession } from "next-auth/react";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import { handleSignIn, handleSignOut } from "../../lib/auth";
@@ -11,7 +11,6 @@ import logoIcon from "@/app/assets/logo.ico";
 import { useToast } from "@/app/components/context/ToastContext";
 
 const SignIn = () => {
-  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const { showToast } = useToast();
   const router = useRouter();

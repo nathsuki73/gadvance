@@ -11,16 +11,28 @@ declare module "next-auth" {
       role: string;
       status: "onboarding" | "active" | "suspended";
       googleImage?: string | null;
+      // Profile name extensions
+      firstName?: string;
+      first_name?: string;
+      middleName?: string;
+      middle_name?: string;
+      lastName?: string;
+      last_name?: string;
     } & DefaultSession["user"];
 
     laravelJwt?: string;
-
     sessionToken?: string;
     error?: string;
   }
 
   interface User {
     status: string;
+    firstName?: string;
+    first_name?: string;
+    middleName?: string;
+    middle_name?: string;
+    lastName?: string;
+    last_name?: string;
     laravelAuth?: {
       token: string;
       status?: string;
@@ -38,5 +50,11 @@ declare module "next-auth/jwt" {
     laravelJwt?: string;
     laravelJwtError?: string;
     sessionToken?: string;
+    firstName?: string;
+    first_name?: string;
+    middleName?: string;
+    middle_name?: string;
+    lastName?: string;
+    last_name?: string;
   }
 }
