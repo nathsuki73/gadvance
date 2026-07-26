@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { signIn as nextAuthSignIn, useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn as nextAuthSignIn, signOut, useSession } from "next-auth/react";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import { handleSignIn, handleSignOut } from "../../lib/auth";
 import ConfirmDialog from "@/app/components/ConfirmDialog";
@@ -11,18 +11,31 @@ import logoIcon from "@/app/assets/logo.ico";
 import { useToast } from "@/app/components/context/ToastContext";
 
 const SignIn = () => {
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const { showToast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showSwitchAccountDialog, setShowSwitchAccountDialog] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
+
+  // A session is only genuinely valid if it exists, has no errors, and has a laravelJwt
+  const isSessionValid = Boolean(
+    session && !session?.error && session?.laravelJwt,
+  );
 
   useEffect(() => {
     if (status === "authenticated") {
+      // 1. If session carries an error or lacks token, clear NextAuth memory completely
+      if (
+        session?.error === "RefreshAccessTokenError" ||
+        !session?.laravelJwt
+      ) {
+        signOut({ redirect: false });
+        return;
+      }
+
+      // 2. Normal redirect for active users
       const normalizedStatus = session?.user?.status?.trim().toLowerCase();
       if (normalizedStatus === "onboarding") {
         router.replace("/onboarding");
@@ -67,8 +80,6 @@ const SignIn = () => {
 
       showToast("Signed in successfully!", "success");
 
-      // Force a full navigation so the freshly written session cookie is
-      // available to the server on the first /workspace request.
       const sessionRes = await fetch("/api/auth/session");
       const freshSession = await sessionRes.json();
       const normalizedStatus = freshSession?.user?.status?.trim().toLowerCase();
@@ -106,7 +117,7 @@ const SignIn = () => {
                 Verifying session...
               </p>
             </div>
-          ) : session ? (
+          ) : isSessionValid ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-3xl font-bold text-zinc-900 mb-2 tracking-tight">
                 Welcome back
@@ -124,12 +135,6 @@ const SignIn = () => {
               <p className="text-zinc-400 mb-10 text-sm lowercase font-light">
                 Redirecting to your workspace...
               </p>
-              <button
-                onClick={() => setShowSwitchAccountDialog(true)}
-                className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest hover:text-red-500 transition-all border-b border-transparent hover:border-red-500"
-              >
-                switch account
-              </button>
             </div>
           ) : (
             <>
@@ -200,7 +205,8 @@ const SignIn = () => {
             </>
           )}
 
-          {!session && status !== "loading" && (
+          {/* Show "Create Account" footer whenever the user is NOT in a valid active session */}
+          {!isSessionValid && status !== "loading" && (
             <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mt-10 text-center">
               No account?{" "}
               <Link
