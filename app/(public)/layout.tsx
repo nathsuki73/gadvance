@@ -1,9 +1,10 @@
 "use client";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import AuthHeader from "../(private)/workspace/_components/header/AuthHeader";
 import Header from "./_components/header/PublicHeader";
 import Footer from "@/app/components/Footer";
 import { ToastProvider } from "../components/context/ToastContext";
+import { useEffect } from "react";
 
 export default function PublicLayout({
   children,
