@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import imageCompression from "browser-image-compression";
 import { finishOnBoarding } from "@/app/(public)/actions/onboarding";
+import { forceSignOut } from "@/app/lib/api-client";
 
 const IconBio = () => {
   const { data: session, update } = useSession();
@@ -128,6 +129,16 @@ const IconBio = () => {
       const result = await finishOnBoarding(finalPayload);
 
       if (!result.success) {
+        // 🚨 IF TOKEN EXPIRED OR UNAUTHORIZED -> FORCE SIGN OUT IMMEDIATELY
+        if (
+          result.error?.toLowerCase().includes("unauthorized") ||
+          result.error?.toLowerCase().includes("token") ||
+          result.error?.toLowerCase().includes("expired")
+        ) {
+          await forceSignOut();
+          return;
+        }
+
         alert(result.error || "Failed to save profile");
         setLoading(false);
         return;
@@ -151,7 +162,8 @@ const IconBio = () => {
       }, 200);
     } catch (error) {
       console.error("Onboarding Finalize Error:", error);
-      alert("Something went wrong. Please try again.");
+      // If backend throws network or auth error, verify token & redirect
+      await forceSignOut();
     } finally {
       setLoading(false);
     }

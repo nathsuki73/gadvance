@@ -58,47 +58,47 @@ export default function OnboardingLayout({
   const checkAuthAndTokenExpiry = useCallback(() => {
     if (status === "unauthenticated") {
       router.replace("/auth/signin");
-      return true;
+      return;
     }
 
     if (status === "authenticated") {
       // 1. If user is already active, bounce to workspace
       if (normalizedStatus === "active") {
         router.replace("/workspace");
-        return true;
+        return;
       }
 
-      // 2. Decode & check JWT expiration directly
-      let isLaravelTokenExpired = false;
+      // 2. Decode & check JWT expiration directly inside handler
+      let expired = false;
       if (session?.laravelJwt) {
         try {
           const payload = JSON.parse(atob(session.laravelJwt.split(".")[1]));
           if (payload.exp && payload.exp * 1000 <= Date.now()) {
-            isLaravelTokenExpired = true;
+            expired = true;
           }
         } catch {
-          isLaravelTokenExpired = true;
+          expired = true;
         }
+      } else {
+        expired = true;
       }
 
       if (
         session?.error === "RefreshAccessTokenError" ||
         !session?.laravelJwt ||
-        isLaravelTokenExpired
+        expired
       ) {
         forceSignOut();
-        return true;
       }
     }
-    return false;
   }, [status, session, normalizedStatus, router]);
 
-  // Check 1: On mount & on pathname change (Step transition)
+  // Check 1: On mount & step transition
   useEffect(() => {
     checkAuthAndTokenExpiry();
   }, [pathname, checkAuthAndTokenExpiry]);
 
-  // Check 2: On user interaction (click, keypress) & tab focus
+  // Check 2: On user interactions (click, keydown) & tab focus
   useEffect(() => {
     const handleUserActivity = () => {
       checkAuthAndTokenExpiry();
@@ -121,26 +121,13 @@ export default function OnboardingLayout({
     };
   }, [checkAuthAndTokenExpiry]);
 
-  // Check 3: Is token or session invalid? Block rendering
-  let isTokenExpired = false;
-  if (session?.laravelJwt) {
-    try {
-      const payload = JSON.parse(atob(session.laravelJwt.split(".")[1]));
-      if (payload.exp && payload.exp * 1000 <= Date.now()) {
-        isTokenExpired = true;
-      }
-    } catch {
-      isTokenExpired = true;
-    }
-  }
-
+  // Pure validation check for initial render shield
   const isInvalid =
     status === "loading" ||
     status === "unauthenticated" ||
     normalizedStatus === "active" ||
     session?.error === "RefreshAccessTokenError" ||
-    !session?.laravelJwt ||
-    isTokenExpired;
+    !session?.laravelJwt;
 
   if (isInvalid) {
     return (
