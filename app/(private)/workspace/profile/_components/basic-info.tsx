@@ -18,10 +18,6 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
   const { showToast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const queryClient = useQueryClient();
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
 
   const [formData, setFormData] = useState<ProfileFormData>({
     firstName: "",
@@ -54,7 +50,6 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    setMessage(null);
 
     try {
       const response = await apiFetch("/api/user/profile/update", {
@@ -72,21 +67,19 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
         );
       }
 
-      setMessage({
-        type: "success",
-        text: "Profile details updated successfully!",
-      });
       showToast("Profile updated successfully!", "success");
       queryClient.invalidateQueries({
         queryKey: ["userProfile", session?.user?.email],
       });
 
       if (onSuccess) onSuccess();
-    } catch (error: any) {
-      setMessage({
-        type: "error",
-        text: error.message || "Something went wrong.",
-      });
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.";
+
+      showToast(errorMessage, "error");
     } finally {
       setIsSaving(false);
     }
@@ -203,7 +196,6 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
         </div>
       </div>
 
-      {/* Button matches Contact & Personality forms */}
       <div className="mt-8 flex items-center justify-end border-t border-zinc-100 pt-5">
         <button
           type="submit"

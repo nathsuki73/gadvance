@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { Save, Loader2, User, Upload } from "lucide-react";
 import { ProfileData } from "../types";
 import { apiFetch } from "@/app/lib/api-client";
@@ -17,11 +18,6 @@ export default function PersonalityInfo({ initialData }: PersonalityInfoProps) {
   const { showToast } = useToast();
 
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
-
   const [bio, setBio] = useState("");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -54,7 +50,6 @@ export default function PersonalityInfo({ initialData }: PersonalityInfoProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    setMessage(null);
 
     try {
       const dataPayload = new FormData();
@@ -76,16 +71,14 @@ export default function PersonalityInfo({ initialData }: PersonalityInfoProps) {
         );
       }
 
-      setMessage({
-        type: "success",
-        text: "Personality details updated successfully!",
-      });
       showToast("Profile updated successfully!", "success");
-    } catch (error: any) {
-      setMessage({
-        type: "error",
-        text: error.message || "Something went wrong.",
-      });
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.";
+
+      showToast(errorMessage, "error");
     } finally {
       setIsSaving(false);
     }
@@ -96,10 +89,13 @@ export default function PersonalityInfo({ initialData }: PersonalityInfoProps) {
       <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
         <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-zinc-100 border border-zinc-200 overflow-hidden">
           {avatarPreview ? (
-            <img
+            <Image
               src={avatarPreview}
               alt="Avatar profile"
-              className="h-full w-full object-cover"
+              fill
+              sizes="96px"
+              className="object-cover"
+              unoptimized={avatarPreview.startsWith("blob:")}
             />
           ) : (
             <User className="h-10 w-10 text-zinc-300" />

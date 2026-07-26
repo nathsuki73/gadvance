@@ -18,7 +18,6 @@ const NAV_ITEMS = [
 ] as const;
 
 export default function ProfilePage() {
-  const router = useRouter();
   const { status, data: session } = useSession();
 
   const [activeTab, setActiveTab] = useState<string>("basic-info");

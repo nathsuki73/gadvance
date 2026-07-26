@@ -14,11 +14,6 @@ export default function ContactInfo({ initialData }: ContactInfoProps) {
   const [isSaving, setIsSaving] = useState(false);
   const { showToast } = useToast();
 
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
-
   const [formData, setFormData] = useState({
     phone: "",
     address_line: "",
@@ -48,7 +43,6 @@ export default function ContactInfo({ initialData }: ContactInfoProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    setMessage(null);
 
     try {
       const response = await apiFetch("/api/user/profile/contact-update", {
@@ -64,16 +58,14 @@ export default function ContactInfo({ initialData }: ContactInfoProps) {
         throw new Error(result.message || "Failed to update contact details.");
       }
 
-      setMessage({
-        type: "success",
-        text: "Contact information saved successfully!",
-      });
-      showToast("Profile updated successfully!", "success");
-    } catch (error: any) {
-      setMessage({
-        type: "error",
-        text: error.message || "Something went wrong.",
-      });
+      showToast("Contact information saved successfully!", "success");
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.";
+
+      showToast(errorMessage, "error");
     } finally {
       setIsSaving(false);
     }
