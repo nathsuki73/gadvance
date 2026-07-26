@@ -20,13 +20,15 @@ type CourseOverviewHeaderProps = {
   isLoggedIn: boolean;
   initialEnrollment: Enrollment | null;
   onEnrollSuccess?: () => void;
+  onRequireAuth?: () => Promise<boolean>; // 👈 Pre-action session guard callback
 };
 
 const CourseOverviewHeader = ({
   course,
   isLoggedIn,
-  initialEnrollment, // <-- Destructure it here
+  initialEnrollment,
   onEnrollSuccess,
+  onRequireAuth,
 }: CourseOverviewHeaderProps) => {
   const {
     enrolledCount,
@@ -46,6 +48,15 @@ const CourseOverviewHeader = ({
     initialEnrollment,
     onEnrollSuccess,
   });
+
+  // Guard wrapper for actions (Enroll / Unenroll)
+  const executeGuardedAction = async (action: () => void) => {
+    if (onRequireAuth) {
+      const isValid = await onRequireAuth();
+      if (!isValid) return; // Token expired -> forceSignOut automatically triggered
+    }
+    action();
+  };
 
   return (
     <>
@@ -73,8 +84,8 @@ const CourseOverviewHeader = ({
             <div className="mt-8 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={handlePrimaryAction}
-                className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-hover active:scale-[0.98]"
+                onClick={() => executeGuardedAction(handlePrimaryAction)}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-hover active:scale-[0.98] cursor-pointer"
               >
                 {isEnrolled ? "View Modules" : "Enroll Now"}
               </button>
@@ -82,8 +93,8 @@ const CourseOverviewHeader = ({
               {isEnrolled ? (
                 <button
                   type="button"
-                  onClick={handleUnenrollClick}
-                  className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-zinc-500 transition-all hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98]"
+                  onClick={() => executeGuardedAction(handleUnenrollClick)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-zinc-500 transition-all hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98] cursor-pointer"
                 >
                   Unenroll
                 </button>
@@ -177,6 +188,13 @@ const CourseOverviewHeader = ({
                       <Link
                         key={module.id}
                         href={`/explore/course/${course.id}/module/${module.id}`}
+                        onClick={(e) => {
+                          if (onRequireAuth) {
+                            onRequireAuth().then((isValid) => {
+                              if (!isValid) e.preventDefault();
+                            });
+                          }
+                        }}
                         className="group flex w-full border-b border-zinc-100 py-6 text-left transition-all hover:bg-zinc-50/50 rounded-xl px-2 -mx-2"
                       >
                         {moduleRow}
@@ -185,8 +203,10 @@ const CourseOverviewHeader = ({
                       <button
                         key={module.id}
                         type="button"
-                        onClick={handlePrimaryAction}
-                        className="group flex w-full border-b border-zinc-100 py-6 text-left transition-all hover:bg-zinc-50/50 rounded-xl px-2 -mx-2"
+                        onClick={() =>
+                          executeGuardedAction(handlePrimaryAction)
+                        }
+                        className="group flex w-full border-b border-zinc-100 py-6 text-left transition-all hover:bg-zinc-50/50 rounded-xl px-2 -mx-2 cursor-pointer"
                       >
                         {moduleRow}
                       </button>
@@ -208,7 +228,7 @@ const CourseOverviewHeader = ({
         loading={isSubmitting}
         variant={dialogVariant}
         onClose={() => setShowActionDialog(false)}
-        onConfirm={handleConfirmAction}
+        onConfirm={() => executeGuardedAction(handleConfirmAction)}
       />
 
       <EnrollmentRequiredDialog

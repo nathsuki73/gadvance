@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import React, { useEffect, useState, use, useCallback } from "react";
 import { notFound, usePathname, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import CourseOverviewHeader from "./_components/CourseOverviewHeader";
@@ -8,12 +8,12 @@ import { getLearningPlanDetails } from "../../service";
 
 import type { LearningPlan, CoursePageProps, Enrollment } from "./types";
 import { useSession } from "next-auth/react";
-import { getMyEnrollment } from "./service";
 import CoursePageSkeleton from "./_components/CoursePageSkeleton";
+import { forceSignOut } from "@/app/lib/api-client";
+import { getMyEnrollment } from "./service";
 
-const CoursePage = ({ params }: CoursePageProps) => {
-  const { status } = useSession();
-  const isLoggedIn = status === "authenticated";
+export default function CoursePage({ params }: CoursePageProps) {
+  const { status, data: session } = useSession();
 
   const resolvedParams = use(params);
   const courseId = resolvedParams.courseId;
@@ -21,12 +21,54 @@ const CoursePage = ({ params }: CoursePageProps) => {
   const [learningPlan, setLearningPlan] = useState<LearningPlan | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(false);
-
-  // 1. Store the full enrollment object here instead of just a boolean
   const [enrollmentData, setEnrollmentData] = useState<Enrollment | null>(null);
 
   const router = useRouter();
   const pathname = usePathname();
+
+  // Pure helper to verify if the Laravel JWT token is still fresh
+  const isTokenFresh = useCallback(() => {
+    if (status !== "authenticated" || !session?.laravelJwt || session?.error) {
+      return false;
+    }
+    try {
+      const payload = JSON.parse(atob(session.laravelJwt.split(".")[1]));
+      if (payload.exp && payload.exp * 1000 <= Date.now()) {
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }, [status, session]);
+
+  const isFullyAuthenticated = isTokenFresh();
+
+  // Centralized guard function: purges session if token is dead
+  const ensureValidSession = useCallback(async (): Promise<boolean> => {
+    if (!isTokenFresh()) {
+      await forceSignOut();
+      return false;
+    }
+    return true;
+  }, [isTokenFresh]);
+
+  // 1. Light Tab Focus Listener: Runs ONLY when user switches back to this tab
+  useEffect(() => {
+    const handleTabFocus = () => {
+      if (document.visibilityState === "visible") {
+        ensureValidSession();
+      }
+    };
+
+    window.addEventListener("focus", handleTabFocus);
+    document.addEventListener("visibilitychange", handleTabFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleTabFocus);
+      document.removeEventListener("visibilitychange", handleTabFocus);
+    };
+  }, [ensureValidSession]);
 
   const handleBackToCourse = () => {
     const courseLink = pathname.split("/course")[0];
@@ -39,15 +81,10 @@ const CoursePage = ({ params }: CoursePageProps) => {
     const fetchCourseAndEnrollment = async () => {
       try {
         setDataLoading(true);
-
-        // 1. If your service already returns the model data, 'res' IS the course structure!
         const courseData = await getLearningPlanDetails(courseId);
-        console.log("Course Data:", courseData);
-
-        // 2. Direct assignment works perfectly without checking for data wrappers
         setLearningPlan(courseData);
 
-        if (isLoggedIn) {
+        if (isFullyAuthenticated) {
           const enrollmentResult = await getMyEnrollment(courseId);
           if (enrollmentResult.success && enrollmentResult.data) {
             setEnrollmentData(enrollmentResult.data as Enrollment);
@@ -64,7 +101,7 @@ const CoursePage = ({ params }: CoursePageProps) => {
     if (courseId) {
       fetchCourseAndEnrollment();
     }
-  }, [courseId, status, isLoggedIn]);
+  }, [courseId, status, isFullyAuthenticated]);
 
   if (status === "loading" || dataLoading) {
     return <CoursePageSkeleton />;
@@ -76,8 +113,7 @@ const CoursePage = ({ params }: CoursePageProps) => {
 
   return (
     <main className="min-h-screen bg-white text-zinc-900 selection:bg-sky-100 selection:text-primary">
-      {/* Navigation Header */}
-      <nav className="sticky top-0 z40 border-b border-zinc-50 bg-white/80 backdrop-blur-md">
+      <nav className="sticky top-0 z-40 border-b border-zinc-50 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
           <button
             onClick={handleBackToCourse}
@@ -93,15 +129,12 @@ const CoursePage = ({ params }: CoursePageProps) => {
         </div>
       </nav>
 
-      {/* Hero Header Section */}
-      {/* 2. Pass the parsed enrollment down as a prop */}
       <CourseOverviewHeader
         course={learningPlan}
-        isLoggedIn={isLoggedIn}
-        initialEnrollment={enrollmentData}
+        isLoggedIn={isFullyAuthenticated}
+        initialEnrollment={isFullyAuthenticated ? enrollmentData : null}
+        onRequireAuth={ensureValidSession}
       />
     </main>
   );
-};
-
-export default CoursePage;
+}
