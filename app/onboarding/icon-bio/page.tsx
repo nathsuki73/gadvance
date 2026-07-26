@@ -1,14 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { finishOnBoarding } from "../../(public)/actions/onboarding"; // Ensure path is correct
-import logoIcon from "@/app/assets/logo.ico";
 import imageCompression from "browser-image-compression";
-import Image from "next/image";
-
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+import { finishOnBoarding } from "@/app/(public)/actions/onboarding";
 
 const IconBio = () => {
   const { data: session, update } = useSession();
@@ -42,7 +39,7 @@ const IconBio = () => {
         setAvatarBase64(parsed.avatarBase64 || null);
         setBio(parsed.bio || "");
       } catch (e) {
-        /* ignore */
+        console.error("Failed to parse onboarding_p3 cache:", e);
       }
     }
   }, []);
@@ -102,7 +99,6 @@ const IconBio = () => {
     setLoading(true);
 
     try {
-      // 1. GATHER DATA FROM ALL PAGES
       const p1 = JSON.parse(localStorage.getItem("onboarding_p1") || "{}");
       const p2 = JSON.parse(localStorage.getItem("onboarding_p2") || "{}");
 
@@ -110,7 +106,6 @@ const IconBio = () => {
         p1.birthday || p1.date_of_birth || p1.dob || "",
       ).trim();
 
-      // 2. CONSTRUCT COMPLETE PAYLOAD
       const finalPayload = {
         firstName: String(p1.firstName || ""),
         middleName: String(p1.middleName || ""),
@@ -130,7 +125,6 @@ const IconBio = () => {
         avatar: avatarBase64,
       };
 
-      // 3. CALL SERVER ACTION
       const result = await finishOnBoarding(finalPayload);
 
       if (!result.success) {
@@ -139,13 +133,10 @@ const IconBio = () => {
         return;
       }
 
-      // Clear local storage completely
       localStorage.removeItem("onboarding_p1");
       localStorage.removeItem("onboarding_p2");
       localStorage.removeItem("onboarding_p3");
 
-      // 4. UPDATE SESSION ENGINE
-      // Force NextAuth to inject 'active' status and preserve credentials structures
       const nextStatus = (result.user?.status ?? "active").trim().toLowerCase();
       await update({
         user: {
@@ -155,13 +146,9 @@ const IconBio = () => {
         },
       });
 
-      // 5. BREAK OUT OF LOGIC LOOP
-      // Give the encrypted session state cookies 200ms to settle,
-      // then force an absolute browser refresh directly into your workspace layout.
       setTimeout(() => {
         window.location.href = "/workspace";
       }, 200);
-
     } catch (error) {
       console.error("Onboarding Finalize Error:", error);
       alert("Something went wrong. Please try again.");
@@ -171,126 +158,88 @@ const IconBio = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-white font-sans text-zinc-900 overflow-hidden">
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 md:px-24 lg:px-32 py-12 relative z-10 bg-white">
-        <div className="absolute top-8 left-8 flex items-center gap-3">
-          <div className="relative h-7 w-7">
-            <Image
-              width={100}
-              height={100}
-              src={logoIcon.src}
-              alt="GADvance"
-              className="object-contain"
-            />
-          </div>
-          <span className="text-lg font-semibold tracking-tight">GADvance</span>
-        </div>
+    <>
+      <div className="mb-10">
+        <span className="text-[10px] font-bold text-[#8b5cf6] uppercase tracking-[0.4em]">
+          step 03 / 03
+        </span>
+        <h1 className="text-3xl font-bold text-zinc-900 mt-2 tracking-tight">
+          Avatar & Bio
+        </h1>
+        <p className="text-zinc-400 text-sm font-light mt-2">
+          Finalize your profile setup.
+        </p>
+      </div>
 
-        <div className="w-full max-w-md mx-auto lg:mx-0">
-          <div className="mb-10">
-            <span className="text-[10px] font-bold text-[#8b5cf6] uppercase tracking-[0.4em]">
-              step 03 / 03
-            </span>
-            <h1 className="text-3xl font-bold text-zinc-900 mt-2 tracking-tight">
-              Avatar & Bio
-            </h1>
-            <p className="text-zinc-400 text-sm font-light mt-2">
-              Finalize your profile setup.
-            </p>
-          </div>
-
-          <form className="space-y-6" onSubmit={handleFinalSubmit}>
-            <div>
-              <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
-                Profile Photo
-              </label>
-              <div className="flex items-center gap-4">
-                <div className="h-20 w-20 rounded-full bg-zinc-50 border border-zinc-100 overflow-hidden flex items-center justify-center relative">
-                  {avatarPreview ? (
-                    <Image
-                      width={100}
-                      height={100}
-                      src={avatarPreview}
-                      alt="avatar"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-zinc-300 text-[10px] uppercase font-bold tracking-tighter">
-                      No photo
-                    </span>
-                  )}
-                </div>
-                <div className="grow">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-violet-50 file:text-[#8b5cf6] hover:file:bg-violet-100 cursor-pointer"
-                  />
-                  <p className="text-[11px] text-zinc-400 mt-2">
-                    JPG or PNG accepted.
-                  </p>
-                </div>
-              </div>
+      <form className="space-y-6" onSubmit={handleFinalSubmit}>
+        <div>
+          <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+            Profile Photo
+          </label>
+          <div className="flex items-center gap-4">
+            <div className="h-20 w-20 rounded-full bg-zinc-50 border border-zinc-100 overflow-hidden flex items-center justify-center relative">
+              {avatarPreview ? (
+                <Image
+                  width={100}
+                  height={100}
+                  src={avatarPreview}
+                  alt="avatar"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="text-zinc-300 text-[10px] uppercase font-bold tracking-tighter">
+                  No photo
+                </span>
+              )}
             </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
-                Short Bio
-                <span className="text-red-500 ml-1">*</span>
-              </label>
-              <textarea
-                name="bio"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                required
-                placeholder="Tell us a bit about yourself..."
-                className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50 text-sm h-28 resize-none"
+            <div className="grow">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-violet-50 file:text-[#8b5cf6] hover:file:bg-violet-100 cursor-pointer"
               />
+              <p className="text-[11px] text-zinc-400 mt-2">
+                JPG or PNG accepted.
+              </p>
             </div>
+          </div>
+        </div>
 
-            <div className="flex gap-4 mt-4">
-              <button
-                type="button"
-                onClick={handleBack}
-                disabled={loading}
-                className="w-1/3 border border-zinc-100 text-zinc-400 px-6 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-zinc-50 transition-all disabled:opacity-50"
-              >
-                Back
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-2/3 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70"
-              >
-                {loading ? "Saving..." : "Finish Profile Setup"}
-              </button>
-            </div>
-          </form>
+        <div>
+          <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+            Short Bio
+            <span className="text-red-500 ml-1">*</span>
+          </label>
+          <textarea
+            name="bio"
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            required
+            placeholder="Tell us a bit about yourself..."
+            className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50 text-sm h-28 resize-none"
+          />
         </div>
-      </div>
 
-      <div
-        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
-        style={{ clipPath: "ellipse(100% 100% at 100% 50%)" }}
-      >
-        <div className="text-center px-12 relative z-10">
-          <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">
-            Ready to <br />
-            <span className="font-semibold italic font-serif">
-              get started?
-            </span>
-          </h2>
-          <p className="text-white/80 text-sm leading-relaxed max-w-sm mx-auto font-light lowercase">
-            Once you finish, you will have full access to our workspace and
-            learning modules.
-          </p>
+        <div className="flex gap-4 mt-4">
+          <button
+            type="button"
+            onClick={handleBack}
+            disabled={loading}
+            className="w-1/3 border border-zinc-100 text-zinc-400 px-6 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-zinc-50 transition-all disabled:opacity-50"
+          >
+            Back
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-2/3 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70"
+          >
+            {loading ? "Saving..." : "Finish Profile Setup"}
+          </button>
         </div>
-        <div className="absolute bottom-12 text-center text-[10px] tracking-[0.4em] text-white/40 uppercase">
-          © 2026 gadvance
-        </div>
-      </div>
-    </div>
+      </form>
+    </>
   );
 };
 
