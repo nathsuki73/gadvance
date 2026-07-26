@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   Menu,
@@ -81,6 +81,7 @@ function getInitials(name?: string | null): string {
 export default function AuthHeader() {
   const router = useRouter();
   const { data: session } = useSession();
+
   const headerRef = useRef<HTMLElement>(null);
 
   // Overlay visibility — only one should be open at a time
