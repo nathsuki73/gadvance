@@ -16,12 +16,12 @@ export function getJwtExpiration(token: string): number | null {
 }
 
 export function shouldRefreshLaravelToken(token: string): boolean {
-  const expiration = getJwtExpiration(token);
+  const expiration = getJwtExpiration(token); // exp in seconds
   if (!expiration) return false;
 
   const currentTime = Math.floor(Date.now() / 1000);
-  //   const refreshThreshold = 5 * 60;
-  const refreshThreshold = 20;
+  const timeRemaining = expiration - currentTime;
+  const refreshThreshold = 15 * 60; // 15 minutes buffer
 
-  return expiration - currentTime <= refreshThreshold;
+  return timeRemaining > 0 && timeRemaining <= refreshThreshold;
 }
