@@ -16,6 +16,7 @@ declare module "next-auth" {
     laravelJwt?: string;
 
     sessionToken?: string;
+    error?: string;
   }
 
   interface User {
@@ -35,6 +36,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     status: "onboarding" | "active" | "suspended";
     laravelJwt?: string;
+    laravelJwtError?: string;
     sessionToken?: string;
   }
 }
