@@ -1,3 +1,21 @@
+export interface ProfileData {
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
+  age?: number | string;
+  gender?: string;
+  date_of_birth?: string;
+  birthday?: string;
+  phone?: string;
+  address_line?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postal_code?: string;
+  bio?: string;
+  avatar?: string;
+}
+
 export interface ProfileFormData {
   firstName: string;
   middleName: string;
@@ -6,13 +24,3 @@ export interface ProfileFormData {
   gender: string;
   birthday: string;
 }
-
-export type ProfileApiData = {
-  first_name?: string | null;
-  middle_name?: string | null;
-  last_name?: string | null;
-  age?: number | string | null;
-  gender?: string | null;
-  birthday?: string | null;
-  date_of_birth?: string | null;
-};
