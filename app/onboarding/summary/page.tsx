@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { finishOnBoarding } from "@/app/(public)/actions/onboarding";
 import { apiFetch, forceSignOut } from "@/app/lib/api-client";
 
 interface OnboardingP1 {
