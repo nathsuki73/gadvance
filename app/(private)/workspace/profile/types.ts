@@ -1,4 +1,5 @@
 export interface ProfileData {
+  // Personal Identity
   first_name?: string;
   middle_name?: string;
   last_name?: string;
@@ -6,14 +7,12 @@ export interface ProfileData {
   gender?: string;
   date_of_birth?: string;
   birthday?: string;
-  phone?: string;
-  address_line?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  postal_code?: string;
-  bio?: string;
-  avatar?: string;
+
+  // Academic Profile
+  college?: string;
+  program?: string;
+  yearLevel?: string;
+  year_level?: string;
 }
 
 export interface ProfileFormData {
@@ -23,4 +22,10 @@ export interface ProfileFormData {
   age: string;
   gender: string;
   birthday: string;
+}
+
+export interface AcademicFormData {
+  college: string;
+  program: string;
+  yearLevel: string;
 }
