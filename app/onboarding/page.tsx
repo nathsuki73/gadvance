@@ -14,6 +14,8 @@ interface OnboardingPageOneData {
   birthday?: string;
 }
 
+const PREDEFINED_GENDERS = ["Male", "Female", "Prefer not to specify"];
+
 export default function OnboardingPageOne() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -35,13 +37,13 @@ export default function OnboardingPageOne() {
   const [selectedGender, setSelectedGender] = useState<string>(() => {
     const gender = persistedData?.gender;
     if (!gender) return "";
-    return gender === "Male" || gender === "Female" ? gender : "Other";
+    return PREDEFINED_GENDERS.includes(gender) ? gender : "Other";
   });
 
   const [customGender, setCustomGender] = useState<string>(() => {
     const gender = persistedData?.gender;
     if (!gender) return "";
-    return gender === "Male" || gender === "Female" ? "" : gender;
+    return PREDEFINED_GENDERS.includes(gender) ? "" : gender;
   });
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -95,7 +97,7 @@ export default function OnboardingPageOne() {
     };
 
     localStorage.setItem("onboarding_p1", JSON.stringify(pageOneData));
-    router.push("/onboarding/contact-location");
+    router.push("/onboarding/academic-profile");
   };
 
   return (
@@ -211,6 +213,16 @@ export default function OnboardingPageOne() {
                 >
                   Other (please specify)
                 </div>
+                <div
+                  onClick={() => {
+                    setSelectedGender("Prefer not to specify");
+                    setCustomGender("");
+                    setIsDropdownOpen(false);
+                  }}
+                  className="px-4 py-3 text-sm text-zinc-600 border-t border-zinc-50 hover:bg-violet-50/60 hover:text-[#8b5cf6] cursor-pointer transition-colors"
+                >
+                  Prefer not to specify
+                </div>
               </div>
             )}
 
@@ -247,7 +259,7 @@ export default function OnboardingPageOne() {
           type="submit"
           className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] mt-4"
         >
-          Continue to Address
+          Continue to Academic Profile
         </button>
       </form>
     </>
