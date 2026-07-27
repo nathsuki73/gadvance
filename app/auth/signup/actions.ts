@@ -1,18 +1,6 @@
-"use server";
-
 type RegistrationResult =
   | { success: true; message?: string }
   | { success: false; error: string; statusCode?: number; debug?: string };
-
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
-
-function getRequiredApiBaseUrl() {
-  if (!apiBaseUrl) {
-    throw new Error("Missing API URL. Set NEXT_PUBLIC_API_URL.");
-  }
-
-  return apiBaseUrl;
-}
 
 export async function handleRegistration(
   email: string,
@@ -20,8 +8,14 @@ export async function handleRegistration(
   passwordConfirmation: string,
   birthday?: string,
 ): Promise<RegistrationResult> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  if (!baseUrl) {
+    throw new Error("Missing API URL. Set NEXT_PUBLIC_API_URL.");
+  }
+
   try {
-    const baseUrl = getRequiredApiBaseUrl();
+    console.log("Target API URL:", `${baseUrl}/api/auth/signup`);
     const response = await fetch(`${baseUrl}/api/auth/signup`, {
       method: "POST",
       headers: {
@@ -34,7 +28,6 @@ export async function handleRegistration(
         password_confirmation: passwordConfirmation,
         birthday: birthday || null,
       }),
-      cache: "no-store",
     });
 
     type RegistrationPayload = {
@@ -79,9 +72,7 @@ export async function handleRegistration(
     return {
       success: false,
       error:
-        error instanceof Error
-          ? error.stack || error.message
-          : JSON.stringify(error),
+        error instanceof Error ? error.message : "Network connection failed.",
     };
   }
 }
