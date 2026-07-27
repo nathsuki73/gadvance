@@ -1,20 +1,5 @@
 "use server";
 
-type VerifyOtpResult =
-  | {
-      success: true;
-      token?: string | null;
-      user?: unknown;
-      user_profile?: unknown;
-      message?: string;
-    }
-  | {
-      success: false;
-      error: string;
-      attemptsLeft?: number;
-      blockSecondsRemaining?: number;
-    };
-
 type RegistrationResult =
   | { success: true; message?: string }
   | { success: false; error: string; statusCode?: number; debug?: string };
