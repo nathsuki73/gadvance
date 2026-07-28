@@ -22,17 +22,15 @@ const STEP_CONTENT: Record<
     description:
       "Your identity is the foundation of your journey here. We use this to personalize your curriculum and verify your certifications.",
   },
-  "/onboarding/academic-profile": {
+  "/onboarding/contact-location": {
     title: (
       <>
-        Confirm your <br />
-        <span className="font-semibold italic font-serif">
-          academic details.
-        </span>
+        Connecting you to <br />
+        <span className="font-semibold italic font-serif">the network.</span>
       </>
     ),
     description:
-      "Help us tailor your workspace modules to your degree program and academic track.",
+      "Providing your location helps us connect you with local partners and nearby community events in your region.",
   },
   "/onboarding/summary": {
     title: (
