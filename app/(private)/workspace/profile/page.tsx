@@ -2,16 +2,18 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { User, GraduationCap } from "lucide-react";
+import { User, MapPin, Image as ImageIcon } from "lucide-react";
 
 import { ProfileData } from "./types";
 import { apiFetch } from "@/app/lib/api-client";
 import BasicInfo from "./_components/basic-info";
-import AcademicInfo from "./_components/academic-info";
+import ContactLocationInfo from "./_components/contact-location-info";
+import AvatarBioInfo from "./_components/avatar-bio-info";
 
 const NAV_ITEMS = [
   { id: "personal-identity", label: "Personal Identity", icon: User },
-  { id: "academic-profile", label: "Academic Profile", icon: GraduationCap },
+  { id: "contact-location", label: "Contact & Location", icon: MapPin },
+  { id: "avatar-bio", label: "Avatar & Bio", icon: ImageIcon },
 ] as const;
 
 export default function ProfilePage() {
@@ -25,7 +27,7 @@ export default function ProfilePage() {
     if (status !== "authenticated" || !session?.laravelJwt) return;
 
     try {
-      const response = await apiFetch("/api/profile", { method: "GET" });
+      const response = await apiFetch("/api/user/profile", { method: "GET" });
       if (response && response.ok) {
         const payload = await response.json();
         setProfileData(payload.data ?? payload);
@@ -59,7 +61,6 @@ export default function ProfilePage() {
   if (status === "unauthenticated") return null;
 
   return (
-    /* Overflow protection added to main wrapper */
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-zinc-50/50 py-6 text-zinc-900 md:py-12">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <header className="mb-6 md:mb-8">
@@ -67,12 +68,12 @@ export default function ProfilePage() {
             Account Settings
           </h1>
           <p className="mt-1 text-xs text-zinc-500 sm:text-sm">
-            View and manage your student profile and institutional details.
+            View and manage your student profile and contact details.
           </p>
         </header>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-[240px_1fr] md:gap-8 items-start">
-          {/* Navigation Container */}
+          {/* Navigation Sidebar */}
           <aside className="w-full min-w-0 rounded-2xl border border-zinc-200/80 bg-white p-2 sm:p-3 shadow-sm">
             <div className="hidden md:block mb-2 px-3 py-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
@@ -111,13 +112,16 @@ export default function ProfilePage() {
             <div className="border-b border-zinc-100 pb-4 sm:pb-5">
               <h2 className="text-base font-bold tracking-tight text-zinc-900 sm:text-lg">
                 {activeTab === "personal-identity" && "Personal Identity"}
-                {activeTab === "academic-profile" && "Academic Profile"}
+                {activeTab === "contact-location" && "Contact & Location"}
+                {activeTab === "avatar-bio" && "Avatar & Bio"}
               </h2>
               <p className="mt-1 text-xs text-zinc-500">
                 {activeTab === "personal-identity" &&
                   "Update your full legal name, age, gender, and date of birth."}
-                {activeTab === "academic-profile" &&
-                  "Update your college department, degree program, and year level."}
+                {activeTab === "contact-location" &&
+                  "Update your address, location, and phone number details."}
+                {activeTab === "avatar-bio" &&
+                  "Update your profile picture and short personal bio."}
               </p>
             </div>
 
@@ -125,8 +129,14 @@ export default function ProfilePage() {
               {activeTab === "personal-identity" && (
                 <BasicInfo initialData={profileData} onSuccess={fetchProfile} />
               )}
-              {activeTab === "academic-profile" && (
-                <AcademicInfo
+              {activeTab === "contact-location" && (
+                <ContactLocationInfo
+                  initialData={profileData}
+                  onSuccess={fetchProfile}
+                />
+              )}
+              {activeTab === "avatar-bio" && (
+                <AvatarBioInfo
                   initialData={profileData}
                   onSuccess={fetchProfile}
                 />

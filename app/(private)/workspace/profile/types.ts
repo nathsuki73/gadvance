@@ -8,14 +8,20 @@ export interface ProfileData {
   date_of_birth?: string;
   birthday?: string;
 
-  // Academic Profile
-  college?: string;
-  program?: string;
-  yearLevel?: string;
-  year_level?: string;
+  // Contact & Location
+  phone?: string;
+  address_line?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postal_code?: string;
+
+  // Avatar & Bio
+  avatar?: string;
+  bio?: string;
 }
 
-export interface ProfileFormData {
+export interface BasicInfoFormData {
   firstName: string;
   middleName: string;
   lastName: string;
@@ -24,8 +30,16 @@ export interface ProfileFormData {
   birthday: string;
 }
 
-export interface AcademicFormData {
-  college: string;
-  program: string;
-  yearLevel: string;
+export interface ContactLocationFormData {
+  phone: string;
+  address_line: string;
+  city: string;
+  state: string;
+  country: string;
+  postal_code: string;
+}
+
+export interface AvatarBioFormData {
+  bio: string;
+  avatarFile: File | null;
 }

@@ -140,7 +140,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             value={formData.firstName}
             onChange={handleChange}
             required
-            className="w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-[#00a9d1]/10"
+            className="w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50"
           />
         </div>
 
@@ -158,7 +158,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             value={formData.middleName}
             onChange={handleChange}
             placeholder="Optional"
-            className="w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-[#00a9d1]/10"
+            className="w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50"
           />
         </div>
 
@@ -176,7 +176,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             value={formData.lastName}
             onChange={handleChange}
             required
-            className="w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-[#00a9d1]/10"
+            className="w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50"
           />
         </div>
 
@@ -192,7 +192,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             value={formData.age}
             onChange={handleChange}
             required
-            className="w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-[#00a9d1]/10"
+            className="w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50"
           />
         </div>
 
@@ -209,7 +209,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             value={selectedGender}
             onChange={handleGenderChange}
             required
-            className="w-full min-w-0 rounded-xl border border-zinc-200 bg-white px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-[#00a9d1]/10"
+            className="w-full min-w-0 rounded-xl border border-zinc-200 bg-white px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50"
           >
             <option value="">Select Gender</option>
             <option value="Male">Male</option>
@@ -225,7 +225,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
               onChange={(e) => setCustomGender(e.target.value)}
               placeholder="Please specify gender"
               required
-              className="mt-1.5 w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-[#00a9d1]/10 bg-zinc-50/50"
+              className="mt-1.5 w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50 bg-zinc-50/50"
             />
           )}
         </div>
@@ -244,7 +244,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             value={formData.birthday}
             onChange={handleChange}
             required
-            className="w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-[#00a9d1]/10"
+            className="w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50"
           />
         </div>
       </div>
@@ -253,7 +253,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
         <button
           type="submit"
           disabled={isSaving}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md transition-all hover:bg-primary-hover disabled:opacity-70"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all disabled:opacity-70"
         >
           {isSaving ? (
             <>
