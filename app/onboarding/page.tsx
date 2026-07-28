@@ -97,7 +97,7 @@ export default function OnboardingPageOne() {
     };
 
     localStorage.setItem("onboarding_p1", JSON.stringify(pageOneData));
-    router.push("/onboarding/academic-profile");
+    router.push("/onboarding/contact-location");
   };
 
   return (
@@ -259,7 +259,7 @@ export default function OnboardingPageOne() {
           type="submit"
           className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] mt-4"
         >
-          Continue to Academic Profile
+          Continue to Location
         </button>
       </form>
     </>
