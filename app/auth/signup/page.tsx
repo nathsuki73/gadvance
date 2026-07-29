@@ -11,6 +11,7 @@ import { z } from "zod";
 import { signOut, useSession } from "next-auth/react";
 import logoIcon from "@/app/assets/logo.ico";
 import { useToast } from "@/app/components/context/ToastContext";
+import { OnboardingLogo } from "@/app/onboarding/_components/OnboardingLogo";
 
 const signUpSchema = z
   .object({
@@ -128,15 +129,7 @@ const SignUp = () => {
       <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 md:px-24 lg:px-32 py-12 relative z-10 bg-white">
         {/* Logo - Top Left */}
         <div className="absolute top-8 left-8 flex items-center gap-3">
-          <div className="relative h-7 w-7">
-            <Image
-              src={logoIcon.src}
-              alt="GADVance logo"
-              fill
-              className="object-contain"
-            />
-          </div>
-          <span className="text-lg font-semibold tracking-tight">GADvance</span>
+          <OnboardingLogo />
         </div>
 
         <div className="w-full max-w-md mx-auto lg:mx-0">
