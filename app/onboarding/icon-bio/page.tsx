@@ -29,18 +29,23 @@ export default function AvatarAndBio() {
   const { showToast } = useToast();
 
   const [loading, setLoading] = useState<boolean>(false);
-  const [bio, setBio] = useState<string>("");
+
+  // Restore cached bio & avatar preview directly on initial state creation
+  const [bio, setBio] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    const p3 = getOnboardingCache<OnboardingP3>(ONBOARDING_CACHE_KEYS.p3);
+    return p3?.bio || "";
+  });
+
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const p3 = getOnboardingCache<OnboardingP3>(ONBOARDING_CACHE_KEYS.p3);
+    return p3?.avatarPreviewUrl || null;
+  });
+
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Restore cached bio & avatar preview on mount
-  useEffect(() => {
-    const p3 = getOnboardingCache<OnboardingP3>(ONBOARDING_CACHE_KEYS.p3);
-    if (p3?.bio) setBio(p3.bio);
-    if (p3?.avatarPreviewUrl) setAvatarPreview(p3.avatarPreviewUrl);
-  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0];
@@ -84,18 +89,19 @@ export default function AvatarAndBio() {
       showToast("Profile set up successfully!", "success");
       clearOnboardingCache();
 
-      // Update NextAuth session status to active
+      // 1. Update NextAuth session status
       const updatedUser: CustomSessionUser = {
         ...(session?.user as CustomSessionUser),
         status: "active",
       };
       await update({ user: updatedUser });
 
-      window.location.href = "/workspace";
+      // 2. Refresh router cache & navigate
+      router.refresh();
+      router.push("/workspace");
     } catch (error: unknown) {
       console.error("Onboarding Submit Error:", error);
       showToast("Something went wrong. Please try again.", "error");
-    } finally {
       setLoading(false);
     }
   };
@@ -122,6 +128,7 @@ export default function AvatarAndBio() {
                   src={avatarPreview}
                   alt="Profile Avatar Preview"
                   fill
+                  sizes="96px"
                   className="object-cover"
                 />
               ) : (

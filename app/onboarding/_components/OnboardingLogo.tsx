@@ -13,17 +13,16 @@ export function OnboardingLogo() {
   return (
     <Link
       href="/"
-      className="absolute top-8 left-8 flex items-center gap-3 group"
+      className="flex shrink-0 items-center gap-2.5 transition-transform active:scale-95"
     >
-      <div className="relative h-7 w-7">
-        <Image
-          src={logoIcon.src}
-          alt="GADvance Logo"
-          fill
-          className="object-contain"
-        />
-      </div>
-      <span className="text-lg font-semibold tracking-tight text-zinc-900 group-hover:text-[#8b5cf6] transition-colors">
+      <Image
+        src={logoIcon}
+        alt="GADvance Logo"
+        width={32}
+        height={32}
+        priority
+      />
+      <span className="text-xl font-bold tracking-tight text-zinc-900 block">
         GADvance
       </span>
     </Link>
