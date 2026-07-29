@@ -11,6 +11,7 @@
     "deploy": "next build && rsync -avz -e 'ssh -p 65002' ./out/ u242590936@sg-nme-web613.main-hosting.eu:~/domains/gadvance-lspu.com/public_html/"
   },
   "dependencies": {
+    "@jobuntux/psgc": "^0.2.1",
     "@tanstack/react-query": "^5.101.2",
     "@upstash/redis": "^1.37.0",
     "axios": "^1.16.0",
@@ -21,7 +22,6 @@
     "next": "16.1.6",
     "next-auth": "^4.24.13",
     "nodemailer": "^7.0.13",
-    "psgc": "^2.2.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
