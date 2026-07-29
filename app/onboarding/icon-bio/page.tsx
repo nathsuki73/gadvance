@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { apiFetch } from "@/app/lib/api-client";
 import Image from "next/image";
+import { useToast } from "@/app/components/context/ToastContext";
 
 // --- TypeScript Interfaces ---
 
@@ -19,8 +20,14 @@ interface OnboardingP1 {
 
 interface OnboardingP2 {
   country?: string;
-  stateProvince?: string;
-  city?: string;
+  regionCode?: string;
+  regionName?: string;
+  provinceCode?: string;
+  provinceName?: string;
+  munCityCode?: string;
+  munCityName?: string;
+  barangayCode?: string;
+  barangayName?: string;
   address?: string;
   postalCode?: string;
   phoneDialCode?: string;
@@ -66,8 +73,14 @@ async function saveOnboardingProfile(
   formData.append("birthday", p1.birthday || "");
 
   formData.append("country", p2.country || "Philippines");
-  formData.append("stateProvince", p2.stateProvince || "");
-  formData.append("city", p2.city || "");
+  formData.append("regionCode", p2.regionCode || "");
+  formData.append("regionName", p2.regionName || "");
+  formData.append("provinceCode", p2.provinceCode || "");
+  formData.append("provinceName", p2.provinceName || "");
+  formData.append("munCityCode", p2.munCityCode || "");
+  formData.append("munCityName", p2.munCityName || "");
+  formData.append("barangayCode", p2.barangayCode || "");
+  formData.append("barangayName", p2.barangayName || "");
   formData.append("address", p2.address || "");
   formData.append("postalCode", p2.postalCode || "");
   formData.append(
@@ -110,6 +123,7 @@ async function saveOnboardingProfile(
 export default function AvatarAndBio() {
   const { data: session, update } = useSession();
   const router = useRouter();
+  const { showToast } = useToast();
 
   const [loading, setLoading] = useState<boolean>(false);
   const [bio, setBio] = useState<string>("");
@@ -140,7 +154,7 @@ export default function AvatarAndBio() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Please upload a valid image file (JPG or PNG).");
+      showToast("Please upload a valid image file (JPG or PNG).", "warning");
       return;
     }
 
@@ -161,18 +175,21 @@ export default function AvatarAndBio() {
     e: React.FormEvent<HTMLFormElement>,
   ): Promise<void> => {
     e.preventDefault();
-
-    // REMOVED: Frontend bio validation check so empty bio is accepted
     setLoading(true);
 
     try {
       const response = await saveOnboardingProfile(bio, avatarFile);
 
       if (!response.success) {
-        alert(response.message || "Failed to finalize profile setup.");
+        showToast(
+          response.message || "Failed to finalize profile setup.",
+          "error",
+        );
         setLoading(false);
         return;
       }
+
+      showToast("Profile set up successfully!", "success");
 
       // Cleanup LocalStorage on success
       localStorage.removeItem("onboarding_p1");
@@ -190,7 +207,7 @@ export default function AvatarAndBio() {
       window.location.href = "/workspace";
     } catch (error: unknown) {
       console.error("Onboarding Submit Error:", error);
-      alert("Something went wrong. Please try again.");
+      showToast("Something went wrong. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -288,7 +305,7 @@ export default function AvatarAndBio() {
             type="button"
             onClick={handleBack}
             disabled={loading}
-            className="w-full sm:w-1/3 border border-zinc-100 text-zinc-400 py-3.5 sm:py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-zinc-50 transition-all disabled:opacity-50"
+            className="w-full sm:w-1/3 border border-zinc-100 text-zinc-400 py-3.5 sm:py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-violet-50 hover:text-[#8b5cf6] transition-all disabled:opacity-50"
           >
             Back
           </button>

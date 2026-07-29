@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import logoIcon from "@/app/assets/logo.ico";
 import { forceSignOut } from "@/app/lib/api-client";
+import { ToastProvider } from "@/app/components/context/ToastContext";
 
 const STEP_CONTENT: Record<
   string,
@@ -44,11 +45,7 @@ const STEP_CONTENT: Record<
   },
 };
 
-export default function OnboardingLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function OnboardingContent({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -182,5 +179,17 @@ export default function OnboardingLayout({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OnboardingLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <ToastProvider>
+      <OnboardingContent>{children}</OnboardingContent>
+    </ToastProvider>
   );
 }

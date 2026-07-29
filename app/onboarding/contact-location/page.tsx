@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Globe, ChevronDown, AlertCircle } from "lucide-react";
+import { Globe, ChevronDown } from "lucide-react";
+import { useToast } from "@/app/components/context/ToastContext";
 import {
   ContactLocationData,
   getInitialContactData,
@@ -22,6 +23,7 @@ const DIAL_CODES = ["+63"];
 
 export default function ContactLocation() {
   const router = useRouter();
+  const { showToast } = useToast();
 
   const [formData, setFormData] = useState<ContactLocationData>(() =>
     getInitialContactData(),
@@ -149,19 +151,23 @@ export default function ContactLocation() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.regionCode) return alert("Please select a Region.");
-    if (!formData.provinceCode) return alert("Please select a Province.");
+    if (!formData.regionCode)
+      return showToast("Please select a Region.", "warning");
+    if (!formData.provinceCode)
+      return showToast("Please select a Province.", "warning");
     if (!isHUC && !formData.munCityCode)
-      return alert("Please select a Municipality / City.");
-    if (!formData.barangayCode) return alert("Please select a Barangay.");
+      return showToast("Please select a Municipality / City.", "warning");
+    if (!formData.barangayCode)
+      return showToast("Please select a Barangay.", "warning");
     if (!formData.address.trim())
-      return alert("Please enter your Address Line.");
+      return showToast("Please enter your Address Line.", "warning");
     if (!formData.postalCode.trim())
-      return alert("Please enter your Postal Code.");
+      return showToast("Please enter your Postal Code.", "warning");
     if (!formData.phoneNumber.trim())
-      return alert("Please enter your Phone Number.");
+      return showToast("Please enter your Phone Number.", "warning");
 
     saveContactData(formData);
+    showToast("Contact information saved!", "success");
     router.push("/onboarding/icon-bio");
   };
 
@@ -247,7 +253,6 @@ export default function ContactLocation() {
                         ...prev,
                         regionCode: reg.regCode,
                         regionName: reg.regionName,
-                        // Reset Children
                         provinceCode: "",
                         provinceName: "",
                         munCityCode: "",
@@ -308,7 +313,6 @@ export default function ContactLocation() {
                         ...prev,
                         provinceCode: prov.provCode,
                         provinceName: prov.provName,
-                        // Reset Children
                         munCityCode: "",
                         munCityName: "",
                         barangayCode: "",
@@ -374,7 +378,6 @@ export default function ContactLocation() {
                         ...prev,
                         munCityCode: mun.munCityCode,
                         munCityName: mun.munCityName,
-                        // Reset Barangay
                         barangayCode: "",
                         barangayName: "",
                       }));
@@ -454,7 +457,7 @@ export default function ContactLocation() {
 
         {/* Address Line */}
         <div>
-          <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+          <label className="block text-[10px] font-bold text-zinc-400 mb-1.5 uppercase tracking-widest">
             Address Line <span className="text-red-500">*</span>
           </label>
           <input
@@ -463,14 +466,14 @@ export default function ContactLocation() {
             value={formData.address}
             onChange={handleChange}
             placeholder="House No., Street Name, Subdivision"
-            className="w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 text-sm text-zinc-800 focus:border-[#8b5cf6] focus:bg-white focus:outline-none"
+            className="w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#8b5cf6] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all"
           />
         </div>
 
-        {/* Postal Code & Phone */}
+        {/* Postal Code & Phone Number */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+            <label className="block text-[10px] font-bold text-zinc-400 mb-1.5 uppercase tracking-widest">
               Postal Code <span className="text-red-500">*</span>
             </label>
             <input
@@ -478,27 +481,33 @@ export default function ContactLocation() {
               name="postalCode"
               value={formData.postalCode}
               onChange={handleChange}
-              placeholder="e.g. 4000"
-              className="w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 text-sm text-zinc-800 focus:border-[#8b5cf6] focus:bg-white focus:outline-none"
+              placeholder="4000"
+              maxLength={4}
+              className="w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#8b5cf6] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
-              Phone Number <span className="text-red-500">*</span>
+            <label className="block text-[10px] font-bold text-zinc-400 mb-1.5 uppercase tracking-widest">
+              Mobile Number <span className="text-red-500">*</span>
             </label>
-            <div className="flex w-full items-center rounded-xl border border-zinc-100 bg-zinc-50/50 focus-within:border-[#8b5cf6] focus-within:bg-white overflow-hidden">
+            <div className="flex w-full items-center rounded-xl border border-zinc-100 bg-zinc-50/50 focus-within:border-[#8b5cf6] focus-within:bg-white focus-within:ring-4 focus-within:ring-violet-50/50 overflow-hidden transition-all">
               <div className="relative shrink-0" ref={dialCodeRef}>
                 <button
                   type="button"
                   onClick={() => setIsDialCodeOpen(!isDialCodeOpen)}
-                  className="flex items-center gap-1.5 border-r border-zinc-200 px-3 py-3.5 sm:py-4 text-sm font-medium text-zinc-700"
+                  className="flex items-center gap-1.5 border-r border-zinc-200/80 px-2.5 sm:px-3 py-3.5 sm:py-4 text-sm font-medium text-zinc-700 hover:bg-zinc-100/60 transition-all"
                 >
                   <span>{formData.phoneDialCode}</span>
-                  <ChevronDown className="h-3.5 w-3.5 text-zinc-400" />
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${
+                      isDialCodeOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
+
                 {isDialCodeOpen && (
-                  <div className="absolute z-50 mt-2 w-20 rounded-xl border border-zinc-100 bg-white p-1 shadow-2xl">
+                  <div className="absolute z-50 mt-2 w-20 rounded-xl border border-zinc-100 bg-white p-1 shadow-2xl shadow-zinc-200/40 animate-in fade-in slide-in-from-top-1 duration-150">
                     {DIAL_CODES.map((code) => (
                       <button
                         key={code}
@@ -510,7 +519,7 @@ export default function ContactLocation() {
                           }));
                           setIsDialCodeOpen(false);
                         }}
-                        className="w-full py-2 text-xs font-semibold text-[#8b5cf6] bg-violet-50/70"
+                        className="flex w-full items-center justify-center rounded-lg py-2 text-xs font-semibold bg-violet-50/70 text-[#8b5cf6] hover:bg-violet-100 hover:text-[#8b5cf6] transition-colors"
                       >
                         {code}
                       </button>
@@ -518,6 +527,7 @@ export default function ContactLocation() {
                   </div>
                 )}
               </div>
+
               <input
                 type="tel"
                 name="phoneNumber"
@@ -526,15 +536,15 @@ export default function ContactLocation() {
                   const cleaned = e.target.value.replace(/\D/g, "");
                   setFormData((prev) => ({ ...prev, phoneNumber: cleaned }));
                 }}
-                placeholder="9xx xxx xxxx"
+                placeholder="917 123 4567"
                 maxLength={10}
-                className="w-full bg-transparent px-3.5 py-3.5 sm:py-4 text-sm text-zinc-800 focus:outline-none"
+                className="w-full bg-transparent px-3.5 py-3.5 sm:py-4 text-sm text-zinc-800 placeholder-zinc-300 focus:outline-none"
               />
             </div>
           </div>
         </div>
 
-        {/* Form Controls */}
+        {/* Actions */}
         <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 pt-4">
           <button
             type="button"
@@ -542,13 +552,13 @@ export default function ContactLocation() {
               saveContactData(formData);
               router.back();
             }}
-            className="w-full sm:w-1/3 border border-zinc-100 text-zinc-400 py-3.5 sm:py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-violet-50 hover:text-[#8b5cf6]"
+            className="w-full sm:w-1/3 border border-zinc-100 text-zinc-400 py-3.5 sm:py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-violet-50 hover:text-[#8b5cf6] transition-all"
           >
             Back
           </button>
           <button
             type="submit"
-            className="w-full sm:w-2/3 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-3.5 sm:py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest shadow-lg shadow-violet-100"
+            className="w-full sm:w-2/3 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-3.5 sm:py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98]"
           >
             Continue to Bio
           </button>
