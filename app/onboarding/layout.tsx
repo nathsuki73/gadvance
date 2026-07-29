@@ -2,12 +2,11 @@
 "use client";
 
 import React, { useEffect, useCallback } from "react";
-import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
-import logoIcon from "@/app/assets/logo.ico";
 import { forceSignOut } from "@/app/lib/api-client";
 import { ToastProvider } from "@/app/components/context/ToastContext";
+import { OnboardingLogo } from "./_components/OnboardingLogo";
 
 const STEP_CONTENT: Record<
   string,
@@ -33,7 +32,7 @@ const STEP_CONTENT: Record<
     description:
       "Providing your location helps us connect you with local partners and nearby community events in your region.",
   },
-  "/onboarding/summary": {
+  "/onboarding/icon-bio": {
     title: (
       <>
         Ready to <br />
@@ -145,17 +144,7 @@ function OnboardingContent({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex bg-white font-sans text-zinc-900 overflow-hidden">
       {/* Left Side: Form Container */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 md:px-24 lg:px-32 py-12 relative z-10 bg-white">
-        <div className="absolute top-8 left-8 flex items-center gap-3">
-          <div className="relative h-7 w-7">
-            <Image
-              src={logoIcon.src}
-              alt="GADvance Logo"
-              fill
-              className="object-contain"
-            />
-          </div>
-          <span className="text-lg font-semibold tracking-tight">GADvance</span>
-        </div>
+        <OnboardingLogo />
 
         <div className="w-full max-w-md mx-auto lg:mx-0">{children}</div>
       </div>

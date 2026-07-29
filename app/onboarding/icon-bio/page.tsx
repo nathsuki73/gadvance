@@ -1,43 +1,20 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { apiFetch } from "@/app/lib/api-client";
 import Image from "next/image";
 import { useToast } from "@/app/components/context/ToastContext";
-
-// --- TypeScript Interfaces ---
-
-interface OnboardingP1 {
-  firstName?: string;
-  middleName?: string;
-  lastName?: string;
-  age?: string;
-  gender?: string;
-  birthday?: string;
-}
-
-interface OnboardingP2 {
-  country?: string;
-  regionCode?: string;
-  regionName?: string;
-  provinceCode?: string;
-  provinceName?: string;
-  munCityCode?: string;
-  munCityName?: string;
-  barangayCode?: string;
-  barangayName?: string;
-  address?: string;
-  postalCode?: string;
-  phoneDialCode?: string;
-  phoneNumber?: string;
-}
-
-interface OnboardingP3Cache {
-  bio?: string;
-  avatarPreviewUrl?: string;
-}
+import { StepHeader } from "../_components/StepHeader";
+import { OnboardingActions } from "../_components/OnboardingActions";
+import {
+  OnboardingP3,
+  ONBOARDING_CACHE_KEYS,
+  getOnboardingCache,
+  setOnboardingCache,
+  clearOnboardingCache,
+  saveOnboardingProfile,
+} from "../service";
 
 interface CustomSessionUser {
   name?: string | null;
@@ -45,80 +22,6 @@ interface CustomSessionUser {
   image?: string | null;
   status?: string;
 }
-
-interface ApiResponse {
-  message?: string;
-  [key: string]: unknown;
-}
-
-// --- Onboarding Service Helper ---
-
-async function saveOnboardingProfile(
-  bio: string,
-  avatarFile: File | null,
-): Promise<{ success: boolean; message?: string }> {
-  const savedP1 = localStorage.getItem("onboarding_p1");
-  const savedP2 = localStorage.getItem("onboarding_p2");
-
-  const p1: OnboardingP1 = savedP1 ? (JSON.parse(savedP1) as OnboardingP1) : {};
-  const p2: OnboardingP2 = savedP2 ? (JSON.parse(savedP2) as OnboardingP2) : {};
-
-  // Construct FormData for multipart API submission
-  const formData = new FormData();
-  formData.append("firstName", p1.firstName || "");
-  formData.append("middleName", p1.middleName || "");
-  formData.append("lastName", p1.lastName || "");
-  formData.append("age", p1.age || "");
-  formData.append("gender", p1.gender || "");
-  formData.append("birthday", p1.birthday || "");
-
-  formData.append("country", p2.country || "Philippines");
-  formData.append("regionCode", p2.regionCode || "");
-  formData.append("regionName", p2.regionName || "");
-  formData.append("provinceCode", p2.provinceCode || "");
-  formData.append("provinceName", p2.provinceName || "");
-  formData.append("munCityCode", p2.munCityCode || "");
-  formData.append("munCityName", p2.munCityName || "");
-  formData.append("barangayCode", p2.barangayCode || "");
-  formData.append("barangayName", p2.barangayName || "");
-  formData.append("address", p2.address || "");
-  formData.append("postalCode", p2.postalCode || "");
-  formData.append(
-    "phone",
-    `${p2.phoneDialCode || "+63"}${p2.phoneNumber || ""}`,
-  );
-
-  formData.append("bio", bio);
-
-  if (avatarFile) {
-    formData.append("avatar", avatarFile);
-  }
-
-  const res = await apiFetch("/api/onboarding", {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!res) {
-    return {
-      success: false,
-      message: "Authentication required or request canceled.",
-    };
-  }
-
-  const result = (await res.json()) as ApiResponse;
-
-  if (!res.ok) {
-    return {
-      success: false,
-      message: result.message || "Failed to finalize profile setup.",
-    };
-  }
-
-  return { success: true };
-}
-
-// --- Main UI Component ---
 
 export default function AvatarAndBio() {
   const { data: session, update } = useSession();
@@ -132,23 +35,13 @@ export default function AvatarAndBio() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Restore cached bio & avatar state on mount
+  // Restore cached bio & avatar preview on mount
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const savedP3 = localStorage.getItem("onboarding_p3");
-    if (savedP3) {
-      try {
-        const p3 = JSON.parse(savedP3) as OnboardingP3Cache;
-        if (p3.bio) setBio(p3.bio);
-        if (p3.avatarPreviewUrl) setAvatarPreview(p3.avatarPreviewUrl);
-      } catch (e) {
-        console.error("Failed to parse onboarding_p3 cache:", e);
-      }
-    }
+    const p3 = getOnboardingCache<OnboardingP3>(ONBOARDING_CACHE_KEYS.p3);
+    if (p3?.bio) setBio(p3.bio);
+    if (p3?.avatarPreviewUrl) setAvatarPreview(p3.avatarPreviewUrl);
   }, []);
 
-  // Handle avatar file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -159,15 +52,14 @@ export default function AvatarAndBio() {
     }
 
     setAvatarFile(file);
-    const previewUrl = URL.createObjectURL(file);
-    setAvatarPreview(previewUrl);
+    setAvatarPreview(URL.createObjectURL(file));
   };
 
   const handleBack = (): void => {
-    localStorage.setItem(
-      "onboarding_p3",
-      JSON.stringify({ bio, avatarPreviewUrl: avatarPreview }),
-    );
+    setOnboardingCache<OnboardingP3>(ONBOARDING_CACHE_KEYS.p3, {
+      bio,
+      avatarPreviewUrl: avatarPreview || undefined,
+    });
     router.back();
   };
 
@@ -190,18 +82,13 @@ export default function AvatarAndBio() {
       }
 
       showToast("Profile set up successfully!", "success");
-
-      // Cleanup LocalStorage on success
-      localStorage.removeItem("onboarding_p1");
-      localStorage.removeItem("onboarding_p2");
-      localStorage.removeItem("onboarding_p3");
+      clearOnboardingCache();
 
       // Update NextAuth session status to active
       const updatedUser: CustomSessionUser = {
         ...(session?.user as CustomSessionUser),
         status: "active",
       };
-
       await update({ user: updatedUser });
 
       window.location.href = "/workspace";
@@ -215,21 +102,11 @@ export default function AvatarAndBio() {
 
   return (
     <>
-      <div className="mb-6 sm:mb-8">
-        <span className="text-[10px] font-bold text-[#8b5cf6] uppercase tracking-[0.4em]">
-          step 03 / 03
-        </span>
-
-        <div className="flex items-center gap-3 mt-2">
-          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
-            Avatar & Bio
-          </h1>
-        </div>
-
-        <p className="text-zinc-400 text-xs sm:text-sm font-light mt-1">
-          Finalize your profile setup.
-        </p>
-      </div>
+      <StepHeader
+        step={3}
+        title="Avatar & Bio"
+        subtitle="Finalize your profile setup."
+      />
 
       <form className="space-y-6" onSubmit={handleFinalSubmit}>
         {/* Profile Photo Section */}
@@ -239,7 +116,6 @@ export default function AvatarAndBio() {
           </label>
 
           <div className="flex items-center gap-5">
-            {/* Circle Avatar Preview */}
             <div className="relative h-24 w-24 rounded-full bg-zinc-100 border border-zinc-200/60 flex items-center justify-center overflow-hidden shrink-0">
               {avatarPreview ? (
                 <Image
@@ -255,7 +131,6 @@ export default function AvatarAndBio() {
               )}
             </div>
 
-            {/* Custom Upload Button & Hint */}
             <div className="space-y-2">
               <div className="flex items-center gap-3">
                 <input
@@ -299,24 +174,12 @@ export default function AvatarAndBio() {
           />
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 pt-2">
-          <button
-            type="button"
-            onClick={handleBack}
-            disabled={loading}
-            className="w-full sm:w-1/3 border border-zinc-100 text-zinc-400 py-3.5 sm:py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-violet-50 hover:text-[#8b5cf6] transition-all disabled:opacity-50"
-          >
-            Back
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full sm:w-2/3 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-3.5 sm:py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70"
-          >
-            {loading ? "Saving Profile..." : "Finish Profile Setup"}
-          </button>
-        </div>
+        <OnboardingActions
+          onBack={handleBack}
+          nextLabel="Finish Profile Setup"
+          loading={loading}
+          loadingLabel="Saving Profile..."
+        />
       </form>
     </>
   );

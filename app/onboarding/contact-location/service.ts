@@ -4,6 +4,11 @@ import {
   listMuncities,
   listBarangays,
 } from "@jobuntux/psgc";
+import {
+  ONBOARDING_CACHE_KEYS,
+  getOnboardingCache,
+  setOnboardingCache,
+} from "../service";
 
 // Types matching official @jobuntux/psgc structure
 export interface RegionItem {
@@ -48,40 +53,6 @@ export interface ContactLocationData {
   phoneNumber: string;
 }
 
-/**
- * Loads initial onboarding contact data safely from LocalStorage.
- */
-export function getInitialContactData(): ContactLocationData {
-  if (typeof window === "undefined") {
-    return createEmptyData();
-  }
-
-  const saved = localStorage.getItem("onboarding_p2");
-  if (!saved) return createEmptyData();
-
-  try {
-    const parsed = JSON.parse(saved) as Partial<ContactLocationData>;
-    return {
-      country: parsed.country || "Philippines",
-      regionCode: parsed.regionCode || "",
-      regionName: parsed.regionName || "",
-      provinceCode: parsed.provinceCode || "",
-      provinceName: parsed.provinceName || "",
-      munCityCode: parsed.munCityCode || "",
-      munCityName: parsed.munCityName || "",
-      barangayCode: parsed.barangayCode || "",
-      barangayName: parsed.barangayName || "",
-      address: parsed.address || "",
-      postalCode: parsed.postalCode || "",
-      phoneDialCode: parsed.phoneDialCode || "+63",
-      phoneNumber: parsed.phoneNumber || "",
-    };
-  } catch (e) {
-    console.error("Failed to parse onboarding_p2 cache:", e);
-    return createEmptyData();
-  }
-}
-
 function createEmptyData(): ContactLocationData {
   return {
     country: "Philippines",
@@ -101,12 +72,21 @@ function createEmptyData(): ContactLocationData {
 }
 
 /**
+ * Loads initial onboarding contact data safely from LocalStorage.
+ */
+export function getInitialContactData(): ContactLocationData {
+  const cached = getOnboardingCache<Partial<ContactLocationData>>(
+    ONBOARDING_CACHE_KEYS.p2,
+  );
+  if (!cached) return createEmptyData();
+  return { ...createEmptyData(), ...cached };
+}
+
+/**
  * Persists Contact & Location data to LocalStorage.
  */
 export function saveContactData(data: ContactLocationData): void {
-  if (typeof window !== "undefined") {
-    localStorage.setItem("onboarding_p2", JSON.stringify(data));
-  }
+  setOnboardingCache(ONBOARDING_CACHE_KEYS.p2, data);
 }
 
 // PSGC Helper Fetchers
