@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Mail, ArrowLeft, GraduationCap, CheckCircle2 } from "lucide-react";
+import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/app/components/context/ToastContext";
 
@@ -11,7 +11,6 @@ const MagicLinkContent = () => {
   const { showToast } = useToast();
 
   const email = searchParams.get("email") || "";
-  const isInstitutional = email.toLowerCase().endsWith("@lspu.edu.ph");
 
   // Timer & Resend State
   const [timer, setTimer] = useState(60);
@@ -76,9 +75,9 @@ const MagicLinkContent = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans text-zinc-900">
       <div className="bg-white w-full max-w-[22rem] md:max-w-md rounded-[2.5rem] shadow-sm p-6 sm:p-8 md:p-12 border border-zinc-100 text-center">
-        {/* Dynamic Header Icon */}
+        {/* Header Icon */}
         <div className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-violet-50 text-[#8b5cf6] rounded-2xl mb-6">
-          {isInstitutional ? <GraduationCap size={32} /> : <Mail size={32} />}
+          <Mail size={32} />
         </div>
 
         <h2 className="text-2xl font-black tracking-tight">Magic Link Sent!</h2>
@@ -87,16 +86,8 @@ const MagicLinkContent = () => {
           the email to activate your account.
         </p>
 
-        {/* Institutional Badge / Email Display */}
+        {/* Email Display */}
         <div className="flex flex-col items-center gap-3 mb-8 bg-zinc-50/80 p-4 rounded-2xl border border-zinc-100">
-          {isInstitutional && (
-            <div className="py-1 px-3 bg-violet-50 border border-violet-100 rounded-full inline-flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-[#8b5cf6] rounded-full animate-pulse" />
-              <span className="text-[9px] font-bold text-[#6d28d9] uppercase tracking-widest">
-                LSPU Verified Domain
-              </span>
-            </div>
-          )}
           <div className="flex items-center gap-2 text-xs font-bold text-zinc-700">
             <Mail size={14} className="text-[#8b5cf6]" />
             <span>{maskedEmail}</span>
