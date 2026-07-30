@@ -7,8 +7,17 @@ const API_BASE_URL = "/api-backend/api";
 
 export const searchContent = async (query: string = "") => {
   try {
+    const cleanQuery = query.trim();
+    const params: Record<string, string | number | null> = {};
+
+    if (cleanQuery) {
+      params.search = cleanQuery;
+    } else {
+      params.limit = 4;
+    }
+
     const response = await axios.get(`${API_BASE_URL}/learning-plans`, {
-      params: { search: query, limit: query ? null : 4 },
+      params,
     });
 
     const normalizeLesson = (item: Record<string, unknown>) => ({
