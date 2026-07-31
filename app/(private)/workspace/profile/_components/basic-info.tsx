@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { Save, Loader2 } from "lucide-react";
+import { Save, Loader2, ChevronDown } from "lucide-react";
 import { ProfileData } from "../types";
 import { apiFetch } from "@/app/lib/api-client";
 import { useToast } from "@/app/components/context/ToastContext";
 import { useQueryClient } from "@tanstack/react-query";
+
 
 const PREDEFINED_GENDERS = ["Male", "Female", "Prefer not to specify"];
 
@@ -203,32 +204,38 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
           >
             Gender 
           </label>
-          <select
-            id="gender"
-            name="gender"
-            value={selectedGender}
-            onChange={handleGenderChange}
-            required
-            className="w-full min-w-0 rounded-xl border border-zinc-200 bg-white px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50"
-          >
-            <option value="">Select Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other (please specify)</option>
-            <option value="Prefer not to specify">Prefer not to specify</option>
-          </select>
-
-          {selectedGender === "Other" && (
-            <input
-              type="text"
-              value={customGender}
-              onChange={(e) => setCustomGender(e.target.value)}
-              placeholder="Please specify gender"
+          
+          {/* Wrap in a relative container */}
+          <div className="relative w-full">
+            <select
+              id="gender"
+              name="gender"
+              value={selectedGender}
+              onChange={handleGenderChange}
               required
-              className="mt-1.5 w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50 bg-zinc-50/50"
-            />
-          )}
+              className="w-full appearance-none rounded-xl border border-zinc-200 bg-white px-3.5 pr-10 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50"
+            >
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other (please specify)</option>
+              <option value="Prefer not to specify">Prefer not to specify</option>
+            </select>
+
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
         </div>
+
+  {selectedGender === "Other" && (
+    <input
+      type="text"
+      value={customGender}
+      onChange={(e) => setCustomGender(e.target.value)}
+      placeholder="Please specify gender"
+      required
+      className="mt-1.5 w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50 bg-zinc-50/50"
+    />
+  )}
+</div>
 
         <div className="flex min-w-0 flex-col gap-1.5">
           <label
