@@ -4,7 +4,13 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
-import { PlayCircle, Building2, ArrowRight, BookOpen } from "lucide-react";
+import {
+  PlayCircle,
+  Building2,
+  ArrowRight,
+  BookOpen,
+  Loader2,
+} from "lucide-react";
 import { getUserProfile } from "./service";
 import WorkspaceSkeleton from "./_components/WorkspaceSkeleton";
 import Footer from "@/app/components/Footer";
@@ -12,11 +18,13 @@ import Footer from "@/app/components/Footer";
 export default function WorkspacePage() {
   const router = useRouter();
 
-  // 1. Get auth status from NextAuth
   const { data: session, status } = useSession();
 
-  // 2. Query hooks only executes once authenticated
-  const { data: profileResponse, isLoading: isProfileLoading } = useQuery({
+  const {
+    data: profileResponse,
+    isLoading: isProfileInitialLoading, // True ONLY on first query load without cached data
+    isFetching: isProfileFetching, // True whenever refetching/invalidating
+  } = useQuery({
     queryKey: ["userProfile", session?.user?.email],
     queryFn: async () => {
       const res = await getUserProfile();
@@ -26,23 +34,23 @@ export default function WorkspacePage() {
       return res.data;
     },
     enabled: status === "authenticated",
-    staleTime: 1000 * 60 * 2, // ⚡ Cached for 2 min, but gets invalidated instantly on join
+    staleTime: 1000 * 60 * 2,
   });
 
-  // 3. Handle loading state (Combines auth checking and backend fetching)
+  // 1. Only show full-page skeleton on INITIAL load when there's no cached data yet
   const isAuthenticating = status === "loading";
-  const isFetchingData = status === "authenticated" && isProfileLoading;
-
-  if (isAuthenticating || isFetchingData) {
+  if (
+    isAuthenticating ||
+    (status === "authenticated" && isProfileInitialLoading)
+  ) {
     return <WorkspaceSkeleton />;
   }
 
-  // Extract variables directly from data without maintaining sync state
+  // Extract variables
   const profile = profileResponse ?? null;
   const modulesInProgressCount = profile?.in_progress_count ?? 0;
   const modulesCompletedCount = profile?.completed_count ?? 0;
 
-  // Check if user belongs to an organization
   const hasOrganization = Boolean(
     profile?.organization_id || profile?.organization,
   );
@@ -74,71 +82,88 @@ export default function WorkspacePage() {
           </h1>
         </header>
 
-        {/* Dynamic Organization / Courses Banner */}
-        {hasOrganization ? (
-          /* STATE A: User IS in an Organization -> Point to Courses */
-          <div className="mt-8 w-full rounded-2xl border border-zinc-200 bg-zinc-50/50 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-300 hover:border-zinc-300">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-primary/10 text-primary shrink-0">
-                <BookOpen size={22} />
+        {/* Dynamic Organization Banner Section */}
+        <div className="mt-8 w-full rounded-2xl border border-zinc-200 bg-zinc-50/50 p-6 transition-all duration-300">
+          {isProfileFetching ? (
+            /* LOCAL LOADING STATE: Displays only inside the banner during refetch/invalidation */
+            <div className="flex items-center justify-between min-h-[64px]">
+              <div className="flex items-center gap-4 animate-pulse">
+                <div className="p-3 rounded-xl bg-zinc-200 shrink-0 h-11 w-11" />
+                <div className="space-y-2">
+                  <div className="h-4 w-48 bg-zinc-200 rounded" />
+                  <div className="h-3 w-64 bg-zinc-200 rounded" />
+                </div>
               </div>
-              <div>
-                <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
-                  Member of{" "}
-                  <span className="text-primary font-bold">
-                    {organizationName}
-                  </span>
-                </h2>
-                <p className="text-xs text-zinc-500 font-normal leading-relaxed mt-1">
-                  Access modules and learning tracks curated specifically for
-                  your institution.
-                </p>
+              <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium">
+                <Loader2 size={16} className="animate-spin text-primary" />
+                <span>Updating organization...</span>
               </div>
             </div>
+          ) : hasOrganization ? (
+            /* STATE A: User IS in an Organization */
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-primary/10 text-primary shrink-0">
+                  <BookOpen size={22} />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
+                    Member of{" "}
+                    <span className="text-primary font-bold">
+                      {organizationName}
+                    </span>
+                  </h2>
+                  <p className="text-xs text-zinc-500 font-normal leading-relaxed mt-1">
+                    Access modules and learning tracks curated specifically for
+                    your institution.
+                  </p>
+                </div>
+              </div>
 
-            <button
-              onClick={() => router.push("/explore")}
-              className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all active:scale-[0.98] shrink-0 shadow-sm shadow-violet-100 group"
-            >
-              <span>Explore Courses</span>
-              <ArrowRight
-                size={14}
-                className="transition-transform group-hover:translate-x-0.5"
-              />
-            </button>
-          </div>
-        ) : (
-          /* STATE B: User is NOT in an Organization -> Point to Join Org */
-          <div className="mt-8 w-full rounded-2xl border border-zinc-200 bg-zinc-50/50 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-300 hover:border-zinc-300">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-primary/10 text-primary shrink-0">
-                <Building2 size={22} />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
-                  Are you part of an institution?
-                </h2>
-                <p className="text-xs text-zinc-400 font-light leading-relaxed mt-0.5">
-                  Join your organization using an invite code to access team
-                  modules and shared learning progress.
-                </p>
-              </div>
+              <button
+                onClick={() => router.push("/explore")}
+                className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all active:scale-[0.98] shrink-0 shadow-sm shadow-violet-100 group"
+              >
+                <span>Explore Courses</span>
+                <ArrowRight
+                  size={14}
+                  className="transition-transform group-hover:translate-x-0.5"
+                />
+              </button>
             </div>
+          ) : (
+            /* STATE B: User is NOT in an Organization */
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-primary/10 text-primary shrink-0">
+                  <Building2 size={22} />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
+                    Are you part of an institution?
+                  </h2>
+                  <p className="text-xs text-zinc-400 font-light leading-relaxed mt-0.5">
+                    Join your organization using an invite code to access team
+                    modules and shared learning progress.
+                  </p>
+                </div>
+              </div>
 
-            <button
-              onClick={() => router.push("/workspace/organization")}
-              className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all active:scale-[0.98] shrink-0 shadow-sm shadow-violet-100 group"
-            >
-              <span>Join Organization</span>
-              <ArrowRight
-                size={14}
-                className="transition-transform group-hover:translate-x-0.5"
-              />
-            </button>
-          </div>
-        )}
+              <button
+                onClick={() => router.push("/workspace/organization")}
+                className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all active:scale-[0.98] shrink-0 shadow-sm shadow-violet-100 group"
+              >
+                <span>Join Organization</span>
+                <ArrowRight
+                  size={14}
+                  className="transition-transform group-hover:translate-x-0.5"
+                />
+              </button>
+            </div>
+          )}
+        </div>
 
-        {/* Content Section */}
+        {/* Content Section (Remains visible and interactive) */}
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
           {/* Left Side: Recently Viewed */}
           <section className="lg:col-span-2 space-y-6">
@@ -153,7 +178,6 @@ export default function WorkspacePage() {
                     {activeModule.title}
                   </h3>
 
-                  {/* Progress Track Section */}
                   <div className="py-1 max-w-md space-y-2">
                     <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
                       <div
@@ -200,7 +224,6 @@ export default function WorkspacePage() {
             </h2>
 
             <div className="flex flex-col gap-4 w-full">
-              {/* Stat Block 01: In Progress */}
               <div className="border border-zinc-200 bg-zinc-50/20 rounded-2xl p-5 transition-all duration-300 hover:border-zinc-300 flex flex-col justify-center min-h-[125px]">
                 <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
                   In Progress
@@ -215,7 +238,6 @@ export default function WorkspacePage() {
                 </div>
               </div>
 
-              {/* Stat Block 02: Completed */}
               <div className="border border-zinc-200 bg-zinc-50/20 rounded-2xl p-5 transition-all duration-300 hover:border-zinc-300 flex flex-col justify-center min-h-[125px]">
                 <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
                   Completed
