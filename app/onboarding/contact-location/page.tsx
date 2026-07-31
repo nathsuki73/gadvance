@@ -44,33 +44,37 @@ export default function ContactLocation() {
     formData.barangayName || "",
   );
 
-  // Cascading PSGC data
+  // 1. Fetch Regions
   const regions = useMemo<RegionItem[]>(() => fetchRegions(), []);
 
+  // 2. Cascading Provinces based on selected Region
   const provinces = useMemo<ProvinceItem[]>(
-    () => fetchProvinces(formData.regionCode),
-    [formData.regionCode],
+    () => (formData.regionCode ? fetchProvinces(formData.regionCode) : []),
+    [formData.regionCode]
   );
 
-  const muncities = useMemo<MunCityItem[]>(
-    () => fetchMunCities(formData.provinceCode),
-    [formData.provinceCode],
-  );
-
+  // 3. Find selected province object to check if it's an HUC (Highly Urbanized City)
   const selectedProvince = useMemo(
     () => provinces.find((p) => p.provCode === formData.provinceCode),
-    [provinces, formData.provinceCode],
+    [provinces, formData.provinceCode]
   );
 
   const isHUC = selectedProvince?.cityClass === "HUC";
+
+  // 4. Cascading Municipalities/Cities based on selected Province
+  const muncities = useMemo<MunCityItem[]>(
+    () => (formData.provinceCode ? fetchMunCities(formData.provinceCode) : []),
+    [formData.provinceCode]
+  );
 
   const effectiveMunCityCode = isHUC
     ? muncities[0]?.munCityCode
     : formData.munCityCode;
 
+  // 5. Cascading Barangays based on selected City
   const barangays = useMemo<BarangayItem[]>(
-    () => fetchBarangays(effectiveMunCityCode),
-    [effectiveMunCityCode],
+    () => (effectiveMunCityCode ? fetchBarangays(effectiveMunCityCode) : []),
+    [effectiveMunCityCode]
   );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
