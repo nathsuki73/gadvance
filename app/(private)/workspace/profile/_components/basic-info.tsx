@@ -131,7 +131,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             htmlFor="firstName"
             className="text-xs font-semibold text-zinc-700"
           >
-            First Name <span className="text-red-500">*</span>
+            First Name
           </label>
           <input
             id="firstName"
@@ -167,7 +167,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             htmlFor="lastName"
             className="text-xs font-semibold text-zinc-700"
           >
-            Last Name <span className="text-red-500">*</span>
+            Last Name 
           </label>
           <input
             id="lastName"
@@ -182,7 +182,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
 
         <div className="flex min-w-0 flex-col gap-1.5">
           <label htmlFor="age" className="text-xs font-semibold text-zinc-700">
-            Age <span className="text-red-500">*</span>
+            Age 
           </label>
           <input
             id="age"
@@ -201,7 +201,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             htmlFor="gender"
             className="text-xs font-semibold text-zinc-700"
           >
-            Gender <span className="text-red-500">*</span>
+            Gender 
           </label>
           <select
             id="gender"
@@ -235,7 +235,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             htmlFor="birthday"
             className="text-xs font-semibold text-zinc-700"
           >
-            Birthday <span className="text-red-500">*</span>
+            Birthday 
           </label>
           <input
             id="birthday"

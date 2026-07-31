@@ -9,6 +9,8 @@ interface PhoneInputProps {
   onDialCodeChange: (code: string) => void;
   phoneNumber: string;
   onPhoneNumberChange: (value: string) => void;
+  /** When true, formats the label and inputs to match profile settings (no red asterisk, standard text) */
+  isProfileUpdate?: boolean;
 }
 
 export function PhoneInput({
@@ -17,6 +19,7 @@ export function PhoneInput({
   onDialCodeChange,
   phoneNumber,
   onPhoneNumberChange,
+  isProfileUpdate = false,
 }: PhoneInputProps) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -33,15 +36,30 @@ export function PhoneInput({
 
   return (
     <div>
-      <label className="block text-[10px] font-bold text-zinc-400 mb-1.5 uppercase tracking-widest">
-        Mobile Number <span className="text-red-500">*</span>
+      {/* Dynamic Label Styling */}
+      <label
+        className={
+          isProfileUpdate
+            ? "block text-xs font-semibold text-zinc-700 mb-1.5"
+            : "block text-[10px] font-bold text-zinc-400 mb-1.5 uppercase tracking-widest"
+        }
+      >
+        Mobile Number{!isProfileUpdate && <span className="text-red-500"> *</span>}
       </label>
-      <div className="flex w-full items-center rounded-xl border border-zinc-100 bg-zinc-50/50 focus-within:border-[#8b5cf6] focus-within:bg-white focus-within:ring-4 focus-within:ring-violet-50/50 overflow-hidden transition-all">
+
+      {/* Dynamic Outer Container Styling */}
+      <div
+        className={
+          isProfileUpdate
+            ? "flex w-full items-center rounded-xl border border-zinc-200 bg-white focus-within:border-[#8b5cf6] focus-within:ring-2 focus-within:ring-violet-50 transition-all overflow-hidden"
+            : "flex w-full items-center rounded-xl border border-zinc-100 bg-zinc-50/50 focus-within:border-[#8b5cf6] focus-within:bg-white focus-within:ring-4 focus-within:ring-violet-50/50 overflow-hidden transition-all"
+        }
+      >
         <div className="relative shrink-0" ref={ref}>
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-1.5 border-r border-zinc-200/80 px-2.5 sm:px-3 py-3.5 sm:py-4 text-sm font-medium text-zinc-700 hover:bg-zinc-100/60 transition-all"
+            className="flex items-center gap-1.5 border-r border-zinc-200/80 px-2.5 sm:px-3 py-3.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100/60 transition-all"
           >
             <span>{dialCode}</span>
             <ChevronDown
@@ -78,7 +96,11 @@ export function PhoneInput({
           }
           placeholder="917 123 4567"
           maxLength={10}
-          className="w-full bg-transparent px-3.5 py-3.5 sm:py-4 text-sm text-zinc-800 placeholder-zinc-300 focus:outline-none"
+          className={
+            isProfileUpdate
+              ? "w-full bg-transparent px-3.5 py-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none"
+              : "w-full bg-transparent px-3.5 py-3.5 sm:py-4 text-sm text-zinc-800 placeholder-zinc-300 focus:outline-none"
+          }
         />
       </div>
     </div>

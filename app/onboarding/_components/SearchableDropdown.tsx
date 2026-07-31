@@ -21,6 +21,8 @@ interface SearchableDropdownProps<T> {
    * Municipality/City field when the province is a Highly Urbanized City).
    */
   displayOverride?: string;
+  /** When true, formats the label and input styling to match profile settings (no red asterisk, standard text) */
+  isProfileUpdate?: boolean;
 }
 
 /**
@@ -38,6 +40,7 @@ export function SearchableDropdown<T>({
   getLabel,
   onSelect,
   displayOverride,
+  isProfileUpdate = false,
 }: SearchableDropdownProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -61,8 +64,15 @@ export function SearchableDropdown<T>({
 
   return (
     <div className="relative text-left" ref={ref}>
-      <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
-        {label} {required && <span className="text-red-500">*</span>}
+      {/* Dynamic Label Styling */}
+      <label
+        className={
+          isProfileUpdate
+            ? "block text-xs font-semibold text-zinc-700 mb-1.5"
+            : "block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest"
+        }
+      >
+        {label} {!isProfileUpdate && required && <span className="text-red-500">*</span>}
       </label>
       
       {/* Clickable trigger container */}
@@ -77,7 +87,11 @@ export function SearchableDropdown<T>({
           disabled={disabled || isLocked}
           value={isLocked ? displayOverride : query}
           placeholder={disabled ? disabledPlaceholder : placeholder}
-          className="w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 pr-10 text-sm text-zinc-800 placeholder-zinc-300 cursor-pointer select-none disabled:bg-zinc-100/50 disabled:cursor-not-allowed focus:border-[#8b5cf6] focus:bg-white focus:outline-none transition-colors"
+          className={
+            isProfileUpdate
+              ? "w-full rounded-xl border border-zinc-200 bg-white p-3.5 pr-10 text-sm text-zinc-800 placeholder-zinc-400 cursor-pointer select-none disabled:bg-zinc-100/50 disabled:cursor-not-allowed focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+              : "w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 pr-10 text-sm text-zinc-800 placeholder-zinc-300 cursor-pointer select-none disabled:bg-zinc-100/50 disabled:cursor-not-allowed focus:border-[#8b5cf6] focus:bg-white focus:outline-none transition-colors"
+          }
         />
         <ChevronDown 
           className={`absolute right-3.5 h-4 w-4 text-zinc-400 pointer-events-none transition-transform duration-200 ${

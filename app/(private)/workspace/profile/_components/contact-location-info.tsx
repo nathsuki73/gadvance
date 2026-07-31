@@ -35,7 +35,6 @@ export default function ContactLocationInfo({
   initialData,
   onSuccess,
 }: ContactLocationInfoProps) {
-  console.log("=== PROFILE INITIAL DATA ===", initialData);
   const { data: session } = useSession();
   const { showToast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -331,19 +330,18 @@ export default function ContactLocationInfo({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <SimpleDropdown
           label="Country"
-          required
           value={formData.country}
           options={COUNTRIES}
           onChange={(country) =>
             setFormData((prev) => ({ ...prev, country }))
           }
           icon={Globe}
+          isProfileUpdate={true}
         />
 
         <SearchableDropdown
           label="Region"
-          required
-          placeholder="Search Region"
+          placeholder="Select Region"
           query={regionQuery}
           onQueryChange={setRegionQuery}
           items={regions}
@@ -366,6 +364,7 @@ export default function ContactLocationInfo({
             setMunCityQuery("");
             setBarangayQuery("");
           }}
+          isProfileUpdate={true}
         />
       </div>
 
@@ -375,7 +374,7 @@ export default function ContactLocationInfo({
           label="Province / HUC"
           required
           disabled={!formData.regionCode}
-          placeholder="Search Province"
+          placeholder="Select Province"
           disabledPlaceholder="Select Region first"
           query={provinceQuery}
           onQueryChange={setProvinceQuery}
@@ -396,13 +395,14 @@ export default function ContactLocationInfo({
             setMunCityQuery("");
             setBarangayQuery("");
           }}
+          isProfileUpdate={true}
         />
 
         <SearchableDropdown
           label="Municipality / City"
           required
           disabled={!formData.provinceCode || isHUC || muncities.length === 1}
-          placeholder="Search Municipality/City"
+          placeholder="Select Municipality/City"
           disabledPlaceholder={
             !formData.provinceCode
               ? "Select Province first"
@@ -429,6 +429,7 @@ export default function ContactLocationInfo({
             setMunCityQuery(mun.munCityName);
             setBarangayQuery("");
           }}
+          isProfileUpdate={true}
         />
       </div>
 
@@ -437,7 +438,7 @@ export default function ContactLocationInfo({
         label="Barangay"
         required
         disabled={!formData.provinceCode || (!isHUC && !formData.munCityCode)}
-        placeholder="Search Barangay"
+        placeholder="Select Barangay"
         disabledPlaceholder="Select Location first"
         query={barangayQuery}
         onQueryChange={setBarangayQuery}
@@ -457,12 +458,13 @@ export default function ContactLocationInfo({
           }));
           setBarangayQuery(fullName);
         }}
+        isProfileUpdate={true}
       />
 
       {/* 4. Address Line */}
       <div>
-        <label className="block text-[10px] font-bold text-zinc-400 mb-1.5 uppercase tracking-wider">
-          Address Line <span className="text-red-500">*</span>
+        <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+          Address Line
         </label>
         <input
           type="text"
@@ -470,15 +472,15 @@ export default function ContactLocationInfo({
           value={formData.address}
           onChange={handleChange}
           placeholder="House No., Street Name, Subdivision"
-          className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-xs text-zinc-800 placeholder-zinc-300 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+          className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
         />
       </div>
 
       {/* 5. Postal Code & Mobile Number */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-[10px] font-bold text-zinc-400 mb-1.5 uppercase tracking-wider">
-            Postal Code <span className="text-red-500">*</span>
+          <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+            Postal Code
           </label>
           <input
             type="text"
@@ -487,7 +489,7 @@ export default function ContactLocationInfo({
             onChange={handleChange}
             placeholder="4000"
             maxLength={4}
-            className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-xs text-zinc-800 placeholder-zinc-300 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+            className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
           />
         </div>
 
@@ -501,6 +503,7 @@ export default function ContactLocationInfo({
           onPhoneNumberChange={(value) =>
             setFormData((prev) => ({ ...prev, phoneNumber: value }))
           }
+          isProfileUpdate={true}
         />
       </div>
 
@@ -509,7 +512,7 @@ export default function ContactLocationInfo({
         <button
           type="submit"
           disabled={isSaving}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all disabled:opacity-70 active:scale-[0.98]"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-70 active:scale-[0.98]"
         >
           {isSaving ? (
             <>
@@ -519,7 +522,7 @@ export default function ContactLocationInfo({
           ) : (
             <>
               <Save className="h-4 w-4" />
-              Save Location Details
+              SAVE LOCATION DETAILS
             </>
           )}
         </button>
