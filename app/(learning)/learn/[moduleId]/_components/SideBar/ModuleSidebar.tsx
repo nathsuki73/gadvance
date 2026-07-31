@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Lock } from "lucide-react";
 import SideBarNavItem from "./_components/SideBarNavItem";
 import { useRouter } from "next/navigation";
 import { DonutProgress } from "./_components/DonutProgress";
@@ -17,6 +17,7 @@ export type LearningItem = {
   // progress
   totalSteps?: number;
   completedSteps?: number;
+  isCompleted?: boolean; // 💡 Optional explicit completion flag
 };
 
 type Props = {
@@ -74,7 +75,9 @@ export default function ModuleSidebar({
     onNavigate(item, blockId);
   };
 
-  const openLesson = (item: LearningItem) => {
+  const openLesson = (item: LearningItem, isUnlocked: boolean) => {
+    if (!isUnlocked) return; // Prevent expanding or navigating if locked
+
     const alreadyOpen = expanded.has(item.id);
     if (!alreadyOpen) {
       setExpanded((prev) => new Set(prev).add(item.id));
@@ -86,6 +89,24 @@ export default function ModuleSidebar({
         return next;
       });
     }
+  };
+
+  /**
+   * Helper to check if a specific LearningItem is unlocked.
+   * Item 0 is always unlocked. Subsequent items require the previous item to be complete.
+   */
+  const checkIsItemUnlocked = (index: number): boolean => {
+    if (index === 0) return true;
+    const prevItem = items[index - 1];
+
+    // Check if previous item is finished via explicit flag or completedSteps match
+    const isPrevCompleted =
+      prevItem?.isCompleted ||
+      (prevItem?.totalSteps !== undefined &&
+        prevItem?.completedSteps !== undefined &&
+        prevItem.completedSteps >= prevItem.totalSteps);
+
+    return Boolean(isPrevCompleted);
   };
 
   return (
@@ -129,7 +150,9 @@ export default function ModuleSidebar({
             )}
             <button
               onClick={onToggleCollapse}
-              className={`flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-500 ${isCollapsed ? "mx-auto" : ""}`}
+              className={`flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-500 ${
+                isCollapsed ? "mx-auto" : ""
+              }`}
               aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {isCollapsed ? "›" : "‹"}
@@ -144,8 +167,14 @@ export default function ModuleSidebar({
             const hasBlocks = item.type === "lesson";
             const isOpen = expanded.has(item.id);
 
+            // 💡 1. Determine if this main item is unlocked
+            const isUnlocked = checkIsItemUnlocked(i);
+
             return (
-              <div key={item.id}>
+              <div
+                key={item.id}
+                className={!isUnlocked ? "opacity-50" : ""}
+              >
                 <SideBarNavItem
                   index={i}
                   label={item.title}
@@ -157,11 +186,15 @@ export default function ModuleSidebar({
                   active={item.id === activeItem.id && !activeBlockId}
                   collapsed={collapsedView}
                   trailing={
-                    hasBlocks && !collapsedView
-                      ? isOpen
-                        ? "▾"
-                        : "▸"
-                      : undefined
+                    !isUnlocked ? (
+                      "🔒"
+                    ) : hasBlocks && !collapsedView ? (
+                      isOpen ? (
+                        "▾"
+                      ) : (
+                        "▸"
+                      )
+                    ) : undefined
                   }
                   icon={
                     item.totalSteps ? (
@@ -173,13 +206,18 @@ export default function ModuleSidebar({
                       />
                     ) : undefined
                   }
-                  onClick={() => (hasBlocks ? openLesson(item) : go(item))}
+                  onClick={() => {
+                    if (!isUnlocked) return;
+                    hasBlocks ? openLesson(item, isUnlocked) : go(item);
+                  }}
                 />
 
-                {hasBlocks && isOpen && !collapsedView && (
+                {/* Sub-block items */}
+                {hasBlocks && isOpen && isUnlocked && !collapsedView && (
                   <div className="ml-4 mt-1 space-y-1 border-l border-zinc-200 pl-3">
                     <SubRow
                       label="Overview"
+                      isUnlocked={true} // Overview is always unlocked if the parent item is unlocked
                       active={
                         item.id === activeItem.id &&
                         activeBlockId === "overview"
@@ -187,24 +225,38 @@ export default function ModuleSidebar({
                       onClick={() => go(item, "overview")}
                     />
 
-                    {blocks.map((block) => (
-                      <SubRow
-                        key={block.id}
-                        label={block.title}
-                        active={
-                          item.id === activeItem.id &&
-                          activeBlockId === block.id
-                        }
-                        onClick={() => go(item, block.id)}
-                      />
-                    ))}
+                    {blocks.map((block, blockIdx) => {
+                      // 💡 2. Check internal block progress sequence
+                      const isBlockUnlocked =
+                        (item.completedSteps ?? 0) >= blockIdx;
+
+                      return (
+                        <SubRow
+                          key={block.id}
+                          label={block.title}
+                          isUnlocked={isBlockUnlocked}
+                          active={
+                            item.id === activeItem.id &&
+                            activeBlockId === block.id
+                          }
+                          onClick={() => {
+                            if (isBlockUnlocked) go(item, block.id);
+                          }}
+                        />
+                      );
+                    })}
 
                     <SubRow
                       label="Quiz"
+                      isUnlocked={(item.completedSteps ?? 0) >= blocks.length}
                       active={
                         item.id === activeItem.id && activeBlockId === "quiz"
                       }
-                      onClick={() => go(item, "quiz")}
+                      onClick={() => {
+                        if ((item.completedSteps ?? 0) >= blocks.length) {
+                          go(item, "quiz");
+                        }
+                      }}
                     />
                   </div>
                 )}
@@ -239,29 +291,42 @@ export default function ModuleSidebar({
 function SubRow({
   label,
   active,
+  isUnlocked = true,
   onClick,
 }: {
   label: string;
   active: boolean;
+  isUnlocked?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors ${
-        active
+      disabled={!isUnlocked}
+      className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors ${
+        !isUnlocked
+          ? "cursor-not-allowed text-zinc-300"
+          : active
           ? "bg-purple-50/70 text-[#8b5cf6]"
-          : "text-zinc-500 hover:bg-zinc-200/40 hover:text-zinc-800"
+          : "text-zinc-500 hover:bg-zinc-200/40 hover:text-zinc-800 cursor-pointer"
       }`}
     >
-      <span
-        className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? "bg-[#8b5cf6]" : "bg-zinc-300"}`}
-      />
-      <span
-        className={`truncate text-[11.5px] ${active ? "font-semibold" : "font-normal"}`}
-      >
-        {label}
-      </span>
+      <div className="flex items-center gap-2.5 truncate">
+        <span
+          className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+            active ? "bg-[#8b5cf6]" : "bg-zinc-300"
+          }`}
+        />
+        <span
+          className={`truncate text-[11.5px] ${
+            active ? "font-semibold" : "font-normal"
+          }`}
+        >
+          {label}
+        </span>
+      </div>
+
+      {!isUnlocked && <Lock size={10} className="text-zinc-300 shrink-0 ml-1" />}
     </button>
   );
 }

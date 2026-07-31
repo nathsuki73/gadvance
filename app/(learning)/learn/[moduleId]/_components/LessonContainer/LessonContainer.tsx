@@ -8,7 +8,7 @@ import { Lesson } from "./Overview/types";
 import Subtopic, { SubtopicItem } from "./SubTopic/Subtopic";
 import { LessonQuiz as MainLessonQuiz } from "./Quiz/LessonQuiz";
 import { LessonQuiz as MiniQuiz } from "./SubTopic/MiniQuiz/LessonQuiz";
-import { ArrowRight, PlayCircle, SkipForward } from "lucide-react";
+import { ArrowRight, PlayCircle } from "lucide-react";
 
 type LessonContainerProps = {
   lessonItems?: ModuleStructureItem[];
@@ -16,7 +16,6 @@ type LessonContainerProps = {
   activeBlockId: string | undefined;
   onContinue: () => void;
   handleNextSubRow: () => void;
-  // 💡 Added: Callback prop to bubble up live BKT updates to the main page shell
   onBktUpdate?: (lessonBlockId: string, currentPLt: number) => void;
 };
 
@@ -26,7 +25,7 @@ export default function LessonContainer({
   activeBlockId,
   handleNextSubRow,
   onContinue,
-  onBktUpdate, // 💡 Accept it here
+  onBktUpdate,
 }: LessonContainerProps) {
   // Cache the overviews in an object keyed by lessonId
   const [overviewsCache, setOverviewsCache] = useState<
@@ -76,7 +75,6 @@ export default function LessonContainer({
   }, [lessonId, lessonItems, overviewsCache]);
 
   useEffect(() => {
-    // Only run if we have a valid activeBlockId, and it's not a generic view or already cached
     if (
       !activeBlockId ||
       activeBlockId === "overview" ||
@@ -88,11 +86,7 @@ export default function LessonContainer({
 
     const fetchLessonSubtopics = async () => {
       try {
-        console.log("ACTIVE BLOCK ID:" + activeBlockId);
-        console.log("LESSON ID:" + lessonId);
-        // Fetch subtopics specific to this active block item
         const data: SubtopicItem[] = await fetchSubtopics(activeBlockId);
-        console.log("DATA: a" + data);
         setSubtopicsCache((prev) => ({
           ...prev,
           [activeBlockId]: data,
@@ -117,11 +111,18 @@ export default function LessonContainer({
 
   const knownBlockIds = Object.keys(subtopicsCache);
 
+  // 💡 Updated Next Action Handler:
+  // - Clicking "Start Lesson" now correctly moves down into the subtopic sequence (`handleNextSubRow`).
+  // - Only when reaching the end of the subtopics/materials will it call `onContinue` (or move to the next lesson/quiz).
+  const handleNextAction = () => {
+    handleNextSubRow();
+  };
+
   return (
     <div className="flex flex-col min-h-full w-full justify-between p-6">
       {/* 1. Overview View */}
       <div className={`flex-1 w-full ${isOverview ? "" : "hidden"}`}>
-        <TopicOverview overview={currentOverview} onContinue={onContinue} />
+        <TopicOverview overview={currentOverview} onContinue={handleNextAction} />
       </div>
 
       {/* 2. Subtopic View */}
@@ -143,7 +144,6 @@ export default function LessonContainer({
                 key={blockId}
                 className={currentEffectiveBlock === blockId ? "" : "hidden"}
               >
-                {/* 💡 Forward the onBktUpdate listener straight into the MiniQuiz component */}
                 <MiniQuiz lessonBlockId={blockId} onBktUpdate={onBktUpdate} />
               </div>
             ))}
@@ -151,21 +151,20 @@ export default function LessonContainer({
         </div>
       </div>
 
-      {/* 3. Quiz View (Stays mounted, retains state) */}
+      {/* 3. Quiz View */}
       <div className={`flex-1 w-full ${isQuiz ? "" : "hidden"}`}>
         <MainLessonQuiz lessonBlockId={lessonId} isActive={isQuiz} />
       </div>
 
-      {/* Persistent Navigation Footer (Hidden during active Quiz to avoid duplicate next-buttons) */}
+      {/* Persistent Navigation Footer */}
       {!isQuiz && (
         <div className="mt-6 flex justify-center shrink-0">
           <button
-            onClick={isOverview ? onContinue : handleNextSubRow}
-            className="group inline-flex items-center gap-2 px-6 py-2.5 bg-[#8b5cf6] text-white rounded-lg hover:bg-[#7c3aed] font-medium text-sm transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:ring-offset-2"
+            onClick={handleNextAction}
+            className="group inline-flex items-center gap-2 px-6 py-2.5 bg-[#8b5cf6] text-white rounded-lg hover:bg-[#7c3aed] font-medium text-sm transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:ring-offset-2 cursor-pointer"
           >
             <span>{isOverview ? "Start Lesson" : "Next Step"}</span>
 
-            {/* Dynamic Icon with hover animation */}
             {isOverview ? (
               <PlayCircle className="w-4 h-4 transition-transform group-hover:scale-110" />
             ) : (
