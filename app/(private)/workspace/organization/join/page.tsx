@@ -3,7 +3,15 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Building2, ArrowLeft, Loader2, SearchX, Sparkles } from "lucide-react";
+import { Building2, ArrowLeft, Loader2, SearchX } from "lucide-react";
+import { apiFetch } from "@/app/lib/api-client";
+
+interface Organization {
+  id: number | string;
+  name: string;
+  slug?: string;
+  description?: string;
+}
 
 export default function JoinOrganizationPage() {
   const router = useRouter();
@@ -13,50 +21,69 @@ export default function JoinOrganizationPage() {
   const urlCode = searchParams.get("code") || "";
   const [isSearching, setIsSearching] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
-  const [orgData, setOrgData] = useState<{
-    id: string;
-    name: string;
-    description: string;
-  } | null>(null);
+  const [orgData, setOrgData] = useState<Organization | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (urlCode && urlCode.length === 6) {
-      handleFetchOrgByCode(urlCode);
-    } else {
-      setIsSearching(false);
-      setError("Invalid or missing invitation code.");
+    if (status === "authenticated") {
+      if (urlCode && urlCode.trim().length === 6) {
+        handleFetchOrgByCode(urlCode.trim());
+      } else {
+        setIsSearching(false);
+        setError("Invalid or missing invitation code.");
+      }
     }
-  }, [urlCode]);
+  }, [urlCode, status]);
 
   const handleFetchOrgByCode = async (targetCode: string) => {
     setIsSearching(true);
     setError(null);
     try {
-      // Replace with your API endpoint
-      if (targetCode === "123456") {
-        setOrgData({
-          id: "org-123",
-          name: "GADvance Academy",
-          description:
-            "Official organization for gender and development advancement training.",
-        });
+      // Lookup endpoint via apiFetch
+      const res = await apiFetch(
+        `/api/organizations/lookup?code=${encodeURIComponent(targetCode)}`,
+      );
+
+      if (!res) return; // Unauthenticated - forceSignOut handles redirect
+
+      if (res.ok) {
+        const data = await res.json();
+        setOrgData(data);
       } else {
-        throw new Error("Invalid or expired invitation code.");
+        const errData = await res.json().catch(() => ({}));
+        setError(errData.message || "Invalid or expired invitation code.");
+        setOrgData(null);
       }
     } catch (err: any) {
-      setError(err.message || "Failed to find organization.");
+      setError("Failed to find organization.");
+      setOrgData(null);
     } finally {
       setIsSearching(false);
     }
   };
 
   const handleConfirmJoin = async () => {
-    if (!orgData) return;
+    if (!urlCode) return;
     setIsJoining(true);
+    setError(null);
     try {
-      router.push("/workspace");
-    } catch (err) {
+      // Execute join: POST /api/organizations/join
+      const res = await apiFetch("/api/organizations/join", {
+        method: "POST",
+        body: JSON.stringify({ code: urlCode }),
+      });
+
+      if (!res) return; // Unauthenticated - forceSignOut handles redirect
+
+      if (res.ok) {
+        router.push("/workspace");
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setError(
+          errData.message || "Failed to join organization. Please try again.",
+        );
+      }
+    } catch (err: any) {
       setError("Failed to join organization. Please try again.");
     } finally {
       setIsJoining(false);
@@ -109,7 +136,8 @@ export default function JoinOrganizationPage() {
                   </h1>
 
                   <p className="text-xs text-zinc-400 font-light leading-relaxed max-w-md mx-auto">
-                    {orgData.description}
+                    {orgData.description ||
+                      "Official institution workspace for gender and development advancement training."}
                   </p>
                 </div>
 
@@ -119,7 +147,7 @@ export default function JoinOrganizationPage() {
 
                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full pt-2">
                   <button
-                    onClick={() => router.push("/organization")}
+                    onClick={() => router.push("/workspace/organization")}
                     className="w-full sm:w-1/2 border border-zinc-200 hover:bg-zinc-50 text-zinc-700 py-3.5 rounded-xl text-xs font-semibold transition-all"
                   >
                     Use Different Code
