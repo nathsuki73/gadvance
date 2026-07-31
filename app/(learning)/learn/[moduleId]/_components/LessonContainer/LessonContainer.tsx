@@ -161,7 +161,7 @@ export default function LessonContainer({
         <div className="mt-6 flex justify-center shrink-0">
           <button
             onClick={isOverview ? onContinue : handleNextSubRow}
-            className="group inline-flex items-center gap-2 px-6 py-2.5 bg- text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="group inline-flex items-center gap-2 px-6 py-2.5 bg-[#8b5cf6] text-white rounded-lg hover:bg-[#7c3aed] font-medium text-sm transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:ring-offset-2"
           >
             <span>{isOverview ? "Start Lesson" : "Next Step"}</span>
 

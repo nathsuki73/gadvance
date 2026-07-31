@@ -255,7 +255,7 @@ function SubRow({
       }`}
     >
       <span
-        className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? "bg-blue-500" : "bg-zinc-300"}`}
+        className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? "bg-[#8b5cf6]" : "bg-zinc-300"}`}
       />
       <span
         className={`truncate text-[11.5px] ${active ? "font-semibold" : "font-normal"}`}
