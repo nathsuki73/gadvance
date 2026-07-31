@@ -10,9 +10,16 @@ import { apiFetch } from "@/app/lib/api-client";
 // Service fetch function using apiFetch
 async function getUserOrganization() {
   const res = await apiFetch("/api/organizations");
-  if (!res) return null;
-  if (!res.ok) return null;
-  return await res.json();
+  if (!res || !res.ok) return null;
+
+  const data = await res.json();
+
+  // 🎯 Explicitly verify that data exists AND has an id
+  if (!data || !data.id) {
+    return null;
+  }
+
+  return data;
 }
 
 export default function OrganizationPage() {

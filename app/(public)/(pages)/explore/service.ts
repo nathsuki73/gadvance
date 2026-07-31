@@ -1,24 +1,55 @@
-import axios from "axios";
+import { apiFetch } from "@/app/lib/api-client";
 import type { LearningPlan } from "./course/[courseId]/types";
 
-// Force client-side Axios requests through the secure Next.js Rewrite Tunnel
-// to bypass browser Mixed Content security restrictions.
-const API_BASE_URL = "/api-backend/api";
-
 export const searchContent = async (query: string = "") => {
-  try {
-    const cleanQuery = query.trim();
-    const params: Record<string, string | number | null> = {};
+  const cleanQuery = query.trim();
+  const searchParams = new URLSearchParams();
 
-    if (cleanQuery) {
-      params.search = cleanQuery;
-    } else {
-      params.limit = 4;
+  if (cleanQuery) {
+    searchParams.append("search", cleanQuery);
+  } else {
+    searchParams.append("limit", "4");
+  }
+
+  // Prepended with /api for Laravel api.php route matching
+  const endpoint = `/api/learning-plans?${searchParams.toString()}`;
+  console.log("🔍 [searchContent] Calling endpoint:", endpoint);
+
+  try {
+    const res = await apiFetch(endpoint);
+
+    if (!res) {
+      console.error(
+        "❌ [searchContent] apiFetch returned null/undefined (likely 401 unauthenticated redirect)",
+      );
+      return [];
     }
 
-    const response = await axios.get(`${API_BASE_URL}/learning-plans`, {
-      params,
-    });
+    console.log(
+      `📡 [searchContent] Response status: ${res.status} (${res.statusText})`,
+    );
+
+    if (!res.ok) {
+      const errorText = await res
+        .text()
+        .catch(() => "Unable to parse error text");
+      console.error(
+        `❌ [searchContent] Request failed with status ${res.status}:`,
+        errorText,
+      );
+      return [];
+    }
+
+    const responseData = await res.json();
+    console.log("📦 [searchContent] Raw Response JSON:", responseData);
+
+    const rawData = Array.isArray(responseData)
+      ? responseData
+      : responseData.data || [];
+
+    console.log(
+      `📊 [searchContent] Parsed ${rawData.length} items from response`,
+    );
 
     const normalizeLesson = (item: Record<string, unknown>) => ({
       id: String(item.id ?? item.lesson_id ?? ""),
@@ -45,9 +76,7 @@ export const searchContent = async (query: string = "") => {
       });
     };
 
-    return (
-      Array.isArray(response.data) ? response.data : response.data.data || []
-    ).map((item: Record<string, unknown>) => ({
+    const normalizedData = rawData.map((item: Record<string, unknown>) => ({
       ...item,
       id: String(item.id ?? item.course_id ?? item.learning_plan_id ?? ""),
       description:
@@ -61,8 +90,17 @@ export const searchContent = async (query: string = "") => {
         ? item.lessons.map(normalizeLesson)
         : normalizeLessonsFromGroups(item),
     })) as LearningPlan[];
+
+    console.log(
+      "✅ [searchContent] Final Normalized Learning Plans:",
+      normalizedData,
+    );
+    return normalizedData;
   } catch (error) {
-    console.error("Error fetching Learning Plans:", error);
+    console.error(
+      "💥 [searchContent] Exception caught during fetch/parse:",
+      error,
+    );
     return [];
   }
 };
@@ -70,6 +108,11 @@ export const searchContent = async (query: string = "") => {
 export const getLearningPlanDetails = async (
   courseId: string,
 ): Promise<LearningPlan> => {
+  console.log(
+    "🔍 [getLearningPlanDetails] Fetching details for courseId:",
+    courseId,
+  );
+
   try {
     const normalizeLesson = (item: Record<string, unknown>) => ({
       id: String(item.id ?? item.lesson_id ?? ""),
@@ -114,26 +157,61 @@ export const getLearningPlanDetails = async (
           : normalizeLessonsFromGroups(data),
     });
 
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/learning-plans/${courseId}/details`,
-      );
+    const detailsEndpoint = `/api/learning-plans/${courseId}/details`;
+    console.log(
+      "📡 [getLearningPlanDetails] Attempting details endpoint:",
+      detailsEndpoint,
+    );
 
-      return normalize(response.data as Record<string, unknown>);
-    } catch (detailsError) {
-      console.warn(
-        "Details endpoint failed, falling back to base course endpoint:",
-        detailsError,
-      );
+    let res = await apiFetch(detailsEndpoint);
 
-      const fallbackResponse = await axios.get(
-        `${API_BASE_URL}/learning-plans/${courseId}`,
+    if (res) {
+      console.log(
+        `📡 [getLearningPlanDetails] Details endpoint status: ${res.status}`,
       );
-
-      return normalize(fallbackResponse.data as Record<string, unknown>);
     }
+
+    if (!res || !res.ok) {
+      const fallbackEndpoint = `/api/learning-plans/${courseId}`;
+      console.warn(
+        `⚠️ [getLearningPlanDetails] Details endpoint failed (${res?.status ?? "no response"}). Trying fallback:`,
+        fallbackEndpoint,
+      );
+
+      res = await apiFetch(fallbackEndpoint);
+
+      if (res) {
+        console.log(
+          `📡 [getLearningPlanDetails] Fallback endpoint status: ${res.status}`,
+        );
+      }
+    }
+
+    if (!res || !res.ok) {
+      const errText = res
+        ? await res.text().catch(() => "")
+        : "No response object";
+      console.error(
+        `❌ [getLearningPlanDetails] Both details and fallback endpoints failed:`,
+        errText,
+      );
+      throw new Error(
+        `Failed to fetch learning plan details (Status: ${res?.status ?? "Unknown"}).`,
+      );
+    }
+
+    const data = await res.json();
+    console.log("📦 [getLearningPlanDetails] Raw Details JSON:", data);
+
+    const normalizedResult = normalize(data as Record<string, unknown>);
+    console.log(
+      "✅ [getLearningPlanDetails] Final Normalized Result:",
+      normalizedResult,
+    );
+
+    return normalizedResult;
   } catch (error) {
-    console.error("Error fetching Learning Plan Details:", error);
+    console.error("💥 [getLearningPlanDetails] Exception caught:", error);
     throw error;
   }
 };

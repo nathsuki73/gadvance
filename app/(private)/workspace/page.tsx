@@ -25,10 +25,8 @@ export default function WorkspacePage() {
       }
       return res.data;
     },
-    // Only run query if session status is explicitly authenticated
     enabled: status === "authenticated",
-    // Keep data fresh for 2 minutes before refetching in background
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 2, // ⚡ Cached for 2 min, but gets invalidated instantly on join
   });
 
   // 3. Handle loading state (Combines auth checking and backend fetching)
@@ -86,11 +84,14 @@ export default function WorkspacePage() {
               </div>
               <div>
                 <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
-                  {organizationName} Workspace
+                  Member of{" "}
+                  <span className="text-primary font-bold">
+                    {organizationName}
+                  </span>
                 </h2>
-                <p className="text-xs text-zinc-400 font-light leading-relaxed mt-0.5">
-                  Browse assigned modules and learning tracks curated for your
-                  institution.
+                <p className="text-xs text-zinc-500 font-normal leading-relaxed mt-1">
+                  Access modules and learning tracks curated specifically for
+                  your institution.
                 </p>
               </div>
             </div>

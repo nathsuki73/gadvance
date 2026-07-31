@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Building2, ArrowLeft, Loader2, SearchX } from "lucide-react";
 import { apiFetch } from "@/app/lib/api-client";
 
@@ -16,7 +17,8 @@ interface Organization {
 export default function JoinOrganizationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { status } = useSession({ required: true });
+  const { status, update: updateSession } = useSession({ required: true });
+  const queryClient = useQueryClient();
 
   const urlCode = searchParams.get("code") || "";
   const [isSearching, setIsSearching] = useState(true);
@@ -76,6 +78,14 @@ export default function JoinOrganizationPage() {
       if (!res) return; // Unauthenticated - forceSignOut handles redirect
 
       if (res.ok) {
+        // 🎯 1. Clear stale cache for user profile and organization queries
+        await queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+        await queryClient.invalidateQueries({ queryKey: ["userOrganization"] });
+
+        // 🎯 2. Force NextAuth client session to re-sync JWT claims
+        await updateSession();
+
+        // 🎯 3. Navigate back to workspace with fresh state ready
         router.push("/workspace");
       } else {
         const errData = await res.json().catch(() => ({}));
