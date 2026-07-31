@@ -151,12 +151,14 @@ export default function WorkspacePage() {
 
               <button
                 onClick={() => router.push("/workspace/organization")}
-                className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all active:scale-[0.98] shrink-0 shadow-sm shadow-violet-100 group"
+                className="group inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold tracking-wide text-white shadow-sm shadow-violet-100 transition-all active:scale-[0.98] hover:bg-primary-hover"
               >
-                <span>Join Organization</span>
+                <span className="transition-transform duration-200 group-hover:-translate-x-0.5">
+                  Join Organization
+                </span>
                 <ArrowRight
                   size={14}
-                  className="transition-transform group-hover:translate-x-0.5"
+                  className="transition-transform duration-200 group-hover:translate-x-1"
                 />
               </button>
             </div>
@@ -233,7 +235,7 @@ export default function WorkspacePage() {
                     {modulesInProgressCount}
                   </span>
                   <span className="text-xs text-zinc-400 font-light lowercase">
-                    {modulesInProgressCount === 1 ? "module" : "modules"}
+                    {modulesInProgressCount === 1 || modulesInProgressCount === 0 ? "module" : "modules"}
                   </span>
                 </div>
               </div>
@@ -247,7 +249,7 @@ export default function WorkspacePage() {
                     {modulesCompletedCount}
                   </span>
                   <span className="text-xs text-zinc-400 font-light lowercase">
-                    {modulesCompletedCount === 1 ? "module" : "modules"}
+                    {modulesCompletedCount === 1 || modulesCompletedCount === 0 ? "module" : "modules"}
                   </span>
                 </div>
               </div>
