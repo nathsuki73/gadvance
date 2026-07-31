@@ -131,7 +131,7 @@ export default function ProfilePage() {
               )}
               {activeTab === "contact-location" && (
                 <ContactLocationInfo
-                  initialData={profileData}
+                  initialData={profileData?.profile || profileData?.user_profile || profileData}
                   onSuccess={fetchProfile}
                 />
               )}

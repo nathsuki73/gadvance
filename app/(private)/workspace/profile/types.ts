@@ -16,9 +16,23 @@ export interface ProfileData {
   country?: string;
   postal_code?: string;
 
+  // PSGC Database Columns
+  region_name?: string;
+  region_code?: string;
+  province_name?: string;
+  province_code?: string;
+  mun_city_name?: string;
+  mun_city_code?: string;
+  barangay_name?: string;
+  barangay_code?: string;
+
   // Avatar & Bio
   avatar?: string;
   bio?: string;
+
+  // Nested Profile Relations (for API responses)
+  profile?: ProfileData;
+  user_profile?: ProfileData;
 }
 
 export interface BasicInfoFormData {
@@ -37,6 +51,14 @@ export interface ContactLocationFormData {
   state: string;
   country: string;
   postal_code: string;
+  region_name?: string;
+  region_code?: string;
+  province_name?: string;
+  province_code?: string;
+  mun_city_name?: string;
+  mun_city_code?: string;
+  barangay_name?: string;
+  barangay_code?: string;
 }
 
 export interface AvatarBioFormData {
