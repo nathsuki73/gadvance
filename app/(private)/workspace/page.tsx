@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
-import { PlayCircle, Building2, ArrowRight } from "lucide-react";
+import { PlayCircle, Building2, ArrowRight, BookOpen } from "lucide-react";
 import { getUserProfile } from "./service";
 import WorkspaceSkeleton from "./_components/WorkspaceSkeleton";
 import Footer from "@/app/components/Footer";
-import { forceSignOut } from "@/app/lib/api-client";
 
 export default function WorkspacePage() {
   const router = useRouter();
@@ -44,6 +43,13 @@ export default function WorkspacePage() {
   const profile = profileResponse ?? null;
   const modulesInProgressCount = profile?.in_progress_count ?? 0;
   const modulesCompletedCount = profile?.completed_count ?? 0;
+
+  // Check if user belongs to an organization
+  const hasOrganization = Boolean(
+    profile?.organization_id || profile?.organization,
+  );
+  const organizationName = profile?.organization?.name || "Your Organization";
+
   const activeModule = profile?.active_module
     ? {
         id: profile.active_module.id,
@@ -70,34 +76,66 @@ export default function WorkspacePage() {
           </h1>
         </header>
 
-        {/* Join Organization Banner */}
-        <div className="mt-8 w-full rounded-2xl border border-zinc-200 bg-zinc-50/50 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-300 hover:border-zinc-300">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-primary/10 text-primary shrink-0">
-              <Building2 size={22} />
+        {/* Dynamic Organization / Courses Banner */}
+        {hasOrganization ? (
+          /* STATE A: User IS in an Organization -> Point to Courses */
+          <div className="mt-8 w-full rounded-2xl border border-zinc-200 bg-zinc-50/50 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-300 hover:border-zinc-300">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-primary/10 text-primary shrink-0">
+                <BookOpen size={22} />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
+                  {organizationName} Workspace
+                </h2>
+                <p className="text-xs text-zinc-400 font-light leading-relaxed mt-0.5">
+                  Browse assigned modules and learning tracks curated for your
+                  institution.
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
-                Are you part of an institution?
-              </h2>
-              <p className="text-xs text-zinc-400 font-light leading-relaxed mt-0.5">
-                Join your organization using an invite code to access team
-                modules and shared learning progress.
-              </p>
-            </div>
-          </div>
 
-          <button
-            onClick={() => router.push("workspace/organization")}
-            className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all active:scale-[0.98] shrink-0 shadow-sm shadow-violet-100 group"
-          >
-            <span>Join Organization</span>
-            <ArrowRight
-              size={14}
-              className="transition-transform group-hover:translate-x-0.5"
-            />
-          </button>
-        </div>
+            <button
+              onClick={() => router.push("/explore")}
+              className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all active:scale-[0.98] shrink-0 shadow-sm shadow-violet-100 group"
+            >
+              <span>Explore Courses</span>
+              <ArrowRight
+                size={14}
+                className="transition-transform group-hover:translate-x-0.5"
+              />
+            </button>
+          </div>
+        ) : (
+          /* STATE B: User is NOT in an Organization -> Point to Join Org */
+          <div className="mt-8 w-full rounded-2xl border border-zinc-200 bg-zinc-50/50 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-300 hover:border-zinc-300">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-primary/10 text-primary shrink-0">
+                <Building2 size={22} />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
+                  Are you part of an institution?
+                </h2>
+                <p className="text-xs text-zinc-400 font-light leading-relaxed mt-0.5">
+                  Join your organization using an invite code to access team
+                  modules and shared learning progress.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => router.push("/workspace/organization")}
+              className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all active:scale-[0.98] shrink-0 shadow-sm shadow-violet-100 group"
+            >
+              <span>Join Organization</span>
+              <ArrowRight
+                size={14}
+                className="transition-transform group-hover:translate-x-0.5"
+              />
+            </button>
+          </div>
+        )}
 
         {/* Content Section */}
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
