@@ -6,12 +6,11 @@ import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import {
   PlayCircle,
-  Building2,
   ArrowRight,
-  BookOpen,
-  Loader2,
   CheckCircle2,
   Clock,
+  LogOut,
+  Loader2,
 } from "lucide-react";
 import { getUserProfile } from "./service";
 import WorkspaceSkeleton from "./_components/WorkspaceSkeleton";
@@ -65,17 +64,26 @@ export default function WorkspacePage() {
       }
     : null;
 
+  const handleLeaveOrganization = () => {
+    if (confirm("Are you sure you want to leave this organization?")) {
+      console.log("Leaving organization...");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white text-zinc-900 font-sans relative overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50/40 via-zinc-50/50 to-white text-zinc-900 font-sans relative overflow-x-hidden">
+      {/* Background Ambient Glow Accent */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-purple-500/5 blur-3xl pointer-events-none -z-10" />
+
       <main className="relative z-10 mx-auto max-w-7xl px-6 py-12 lg:px-12 lg:py-16 space-y-10">
         {/* Header Section */}
         <header className="space-y-1">
-          <p className="text-xs font-semibold tracking-wider text-zinc-400 uppercase">
+          <p className="text-xs font-semibold tracking-wider text-purple-600/70 uppercase">
             Workspace Overview
           </p>
           <h1 className="text-3xl font-light tracking-tight text-zinc-900 sm:text-4xl lg:text-5xl">
             Welcome to GADvance,{" "}
-            <span className="font-semibold italic font-serif text-primary inline-block">
+            <span className="font-semibold italic font-serif text-purple-700 inline-block">
               {firstName}.
             </span>
           </h1>
@@ -91,13 +99,14 @@ export default function WorkspacePage() {
               hasOrganization ? "/explore" : "/workspace/organization",
             )
           }
+          onLeave={handleLeaveOrganization}
         />
 
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Main Column: Recently Viewed */}
           <section className="lg:col-span-2 space-y-4">
-            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">
+            <h2 className="text-xs font-semibold tracking-wider text-purple-600/70 uppercase">
               Recently Viewed Module
             </h2>
             <ActiveModuleCard
@@ -108,17 +117,17 @@ export default function WorkspacePage() {
 
           {/* Side Column: Analytics Grid */}
           <section className="lg:col-span-1 space-y-4">
-            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">
+            <h2 className="text-xs font-semibold tracking-wider text-purple-600/70 uppercase">
               Your Learning Stats
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
               <StatCard
-                icon={<Clock className="size-4 text-primary" />}
+                icon={<Clock className="size-4 text-purple-600" />}
                 label="In Progress"
                 count={profile?.in_progress_count ?? 0}
               />
               <StatCard
-                icon={<CheckCircle2 className="size-4 text-primary" />}
+                icon={<CheckCircle2 className="size-4 text-purple-600" />}
                 label="Completed"
                 count={profile?.completed_count ?? 0}
               />
@@ -136,39 +145,45 @@ export default function WorkspacePage() {
 
 interface OrganizationBannerProps {
   hasOrganization: boolean;
-  organizationName: string;
-  isFetching: boolean;
+  organizationName?: string;
+  isFetching?: boolean;
   onAction: () => void;
+  onLeave?: () => void;
 }
 
 export function InstitutionBanner({
   hasOrganization,
   organizationName,
+  isFetching,
   onAction,
-}: {
-  hasOrganization: boolean;
-  organizationName?: string;
-  onAction: () => void;
-}) {
+  onLeave,
+}: OrganizationBannerProps) {
   return (
-    <div
-      className={`relative w-full py-5 px-6 transition-colors duration-300 ${
-        hasOrganization
-          ? "bg-gradient-to-r from-primary/5 via-zinc-50/50 to-transparent border-l-4 border-l-primary"
-          : "bg-gradient-to-r from-amber-500/10 via-amber-50/20 to-transparent border-l-4 border-l-amber-500"
-      }`}
-    >
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        {/* Left Content Section */}
-        <div className="flex items-start md:items-center gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2"></div>
+    <div className="relative w-full py-8 px-6 bg-gradient-to-b from-purple-50/60 to-white border border-purple-200/60 rounded-2xl flex flex-col items-center text-center overflow-hidden transition-all duration-300">
+      {/* Loading Skeleton Overlay for Institution Banner */}
+      {isFetching ? (
+        <div className="w-full max-w-xl mx-auto flex flex-col items-center space-y-4 animate-pulse py-1">
+          {/* Header Title Skeleton */}
+          <div className="h-5 w-3/4 bg-purple-200/60 rounded-md" />
 
-            <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
+          {/* Subtitle Description Skeleton */}
+          <div className="space-y-2 w-full flex flex-col items-center">
+            <div className="h-3 w-5/6 bg-purple-100 rounded" />
+            <div className="h-3 w-2/3 bg-purple-100 rounded" />
+          </div>
+
+          {/* Button Skeleton */}
+          <div className="mt-4 h-9 w-36 bg-purple-200/80 rounded-xl" />
+        </div>
+      ) : (
+        <>
+          {/* Header & Description */}
+          <div className="space-y-2 max-w-xl mx-auto">
+            <h2 className="text-lg font-semibold text-zinc-900 tracking-tight">
               {hasOrganization ? (
                 <>
                   You are a member of{" "}
-                  <span className="text-primary font-bold">
+                  <span className="text-purple-700 font-bold">
                     {organizationName}
                   </span>
                 </>
@@ -177,84 +192,85 @@ export function InstitutionBanner({
               )}
             </h2>
 
-            <p className="text-xs text-zinc-500 max-w-xl leading-relaxed">
+            <p className="text-xs text-zinc-500 leading-relaxed">
               {hasOrganization
                 ? "Access custom modules and learning tracks curated specifically for your team."
                 : "Join your team using an invite code to unlock shared pathways and learning progress."}
             </p>
           </div>
-        </div>
 
+          {/* Primary Encouragement CTA (Bottom Middle) */}
+          <div className="mt-6 flex flex-col items-center gap-3 w-full">
+            <button
+              onClick={onAction}
+              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-semibold tracking-wide bg-purple-600 hover:bg-purple-700 text-white transition-all active:scale-[0.98] group"
+            >
+              <span>
+                {hasOrganization ? "Explore Courses" : "Join Organization"}
+              </span>
+              <ArrowRight
+                size={14}
+                className="transition-transform group-hover:translate-x-1"
+              />
+            </button>
+
+            {/* Secondary Action: Leave Organization */}
+            {hasOrganization && (
               <button
-                onClick={() => router.push("/explore")}
-                className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all active:scale-[0.98] shrink-0 shadow-sm shadow-violet-100 group"
+                onClick={onLeave}
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium text-zinc-400 hover:text-red-600 transition-colors duration-200 px-3 py-1 rounded-md hover:bg-red-50 mt-1"
+                title="Leave Organization"
               >
-                <span>Explore Courses</span>
-                <ArrowRight
-                  size={14}
-                  className="transition-transform group-hover:translate-x-0.5"
-                />
+                <LogOut size={12} />
+                <span>Leave Organization</span>
               </button>
-            </div>
-          ) : (
-            /* STATE B: User is NOT in an Organization */
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-primary/10 text-primary shrink-0">
-                  <Building2 size={22} />
-                </div>
-                <div>
-                  <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
-                    Are you part of an institution?
-                  </h2>
-                  <p className="text-xs text-zinc-400 font-light leading-relaxed mt-0.5">
-                    Join your organization using an invite code to access team
-                    modules and shared learning progress.
-                  </p>
-                </div>
-              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
-              <button
-                onClick={() => router.push("/workspace/organization")}
-                className="group inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold tracking-wide text-white shadow-sm shadow-violet-100 transition-all active:scale-[0.98] hover:bg-primary-hover"
-              >
-                <span className="transition-transform duration-200 group-hover:-translate-x-0.5">
-                  Join Organization
-                </span>
-                <ArrowRight
-                  size={14}
-                  className="transition-transform duration-200 group-hover:translate-x-1"
-                />
-              </button>
-            </div>
-          )}
-        </div>
+interface ActiveModuleProps {
+  module: {
+    id: string;
+    title: string;
+    description: string;
+    progress: number;
+    href: string;
+  } | null;
+  onNavigate: (href: string) => void;
+}
 
-        {/* Content Section (Remains visible and interactive) */}
-        <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-          {/* Left Side: Recently Viewed */}
-          <section className="lg:col-span-2 space-y-6">
-            <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400">
-              Recently Viewed
-            </h2>
+function ActiveModuleCard({ module, onNavigate }: ActiveModuleProps) {
+  if (!module) {
+    return (
+      <div className="rounded-2xl border border-dashed border-purple-200/60 bg-white/80 p-8 text-center flex flex-col items-center justify-center min-h-[260px]">
+        <p className="text-sm text-zinc-400 font-light">
+          No active modules assigned to your account yet.
+        </p>
+      </div>
+    );
+  }
 
-            {activeModule ? (
-              <div className="rounded-3xl border border-zinc-200 bg-zinc-50/30 p-8 relative overflow-hidden flex flex-col justify-between min-h-[280px]">
-                <div className="space-y-4 w-full">
-                  <h3 className="text-2xl font-semibold tracking-tight text-zinc-900">
-                    {activeModule.title}
-                  </h3>
+  return (
+    <div className="rounded-2xl border border-purple-200/50 bg-white/90 p-8 relative overflow-hidden flex flex-col justify-between min-h-[260px]">
+      <div className="space-y-4 w-full">
+        <h3 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          {module.title}
+        </h3>
 
         <div className="py-1 max-w-md space-y-2">
-          <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden">
+          <div className="h-2 w-full bg-purple-100/60 rounded-full overflow-hidden">
             <div
-              className="h-full bg-primary rounded-full transition-all duration-500"
+              className="h-full bg-purple-600 rounded-full transition-all duration-500"
               style={{ width: `${module.progress}%` }}
             />
           </div>
           <div className="flex items-center text-[11px] font-medium text-zinc-400">
             <span>Course Progress:&nbsp;</span>
-            <span className="font-bold text-primary">
+            <span className="font-bold text-purple-700">
               {module.progress}% Completed
             </span>
           </div>
@@ -265,63 +281,42 @@ export function InstitutionBanner({
         </p>
       </div>
 
-                <div className="pt-6 mt-auto">
-                  <button
-                    onClick={() => router.push(activeModule.href)}
-                    className="inline-flex items-center justify-center gap-1.5 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all active:scale-[0.98] shadow-sm shadow-violet-100"
-                  >
-                    <PlayCircle size={12} />
-                    resume
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-3xl border border-dashed border-zinc-200 p-8 text-center flex flex-col items-center justify-center min-h-[280px]">
-                <p className="text-sm text-zinc-400 font-light">
-                  No modules currently assigned to your account.
-                </p>
-              </div>
-            )}
-          </section>
+      <div className="pt-6 mt-auto">
+        <button
+          onClick={() => onNavigate(module.href)}
+          className="inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98]"
+        >
+          <PlayCircle size={14} />
+          <span>Resume Module</span>
+        </button>
+      </div>
+    </div>
+  );
+}
 
-          {/* Right Side: Analytics Grid */}
-          <section className="lg:col-span-1 space-y-6">
-            <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400">
-              Your Progress
-            </h2>
+interface StatCardProps {
+  icon: React.ReactNode;
+  label: string;
+  count: number;
+}
 
-            <div className="flex flex-col gap-4 w-full">
-              <div className="border border-zinc-200 bg-zinc-50/20 rounded-2xl p-5 transition-all duration-300 hover:border-zinc-300 flex flex-col justify-center min-h-[125px]">
-                <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
-                  In Progress
-                </span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-light tracking-tight text-primary">
-                    {modulesInProgressCount}
-                  </span>
-                  <span className="text-xs text-zinc-400 font-light lowercase">
-                    {modulesInProgressCount === 1 || modulesInProgressCount === 0 ? "module" : "modules"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="border border-zinc-200 bg-zinc-50/20 rounded-2xl p-5 transition-all duration-300 hover:border-zinc-300 flex flex-col justify-center min-h-[125px]">
-                <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
-                  Completed
-                </span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-light tracking-tight text-primary">
-                    {modulesCompletedCount}
-                  </span>
-                  <span className="text-xs text-zinc-400 font-light lowercase">
-                    {modulesCompletedCount === 1 || modulesCompletedCount === 0 ? "module" : "modules"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-      </main>
+function StatCard({ icon, label, count }: StatCardProps) {
+  return (
+    <div className="border border-purple-200/50 bg-white/90 rounded-2xl p-5 transition-all duration-300 flex flex-col justify-between min-h-[120px]">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase">
+          {label}
+        </span>
+        {icon}
+      </div>
+      <div className="flex items-baseline gap-2 mt-2">
+        <span className="text-4xl font-light tracking-tight text-purple-700">
+          {count}
+        </span>
+        <span className="text-xs text-zinc-400 font-light lowercase">
+          {count === 1 ? "module" : "modules"}
+        </span>
+      </div>
     </div>
   );
 }
