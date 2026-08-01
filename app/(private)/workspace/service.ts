@@ -28,3 +28,29 @@ export const getUserProfile = async (): Promise<ApiResponse<UserProfile>> => {
     return { success: false, error: "Network error" };
   }
 };
+
+export const leaveOrganization = async (): Promise<ApiResponse<null>> => {
+  try {
+    const response = await apiFetch("/api/organizations/leave", {
+      method: "POST",
+    });
+
+    if (!response) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: result.message || "Failed to leave organization",
+      };
+    }
+
+    return { success: true, data: null };
+  } catch (error) {
+    console.error("Leave organization error:", error);
+    return { success: false, error: "Network error" };
+  }
+};

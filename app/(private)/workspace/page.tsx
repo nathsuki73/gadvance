@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   PlayCircle,
   ArrowRight,
@@ -12,19 +12,23 @@ import {
   LogOut,
   Loader2,
 } from "lucide-react";
-import { getUserProfile } from "./service";
+import { getUserProfile, leaveOrganization } from "./service";
 import WorkspaceSkeleton from "./_components/WorkspaceSkeleton";
 
 export default function WorkspacePage() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const queryClient = useQueryClient();
 
+  const userEmail = session?.user?.email;
+
+  // 1. Fetch User Profile Query
   const {
     data: profileResponse,
     isLoading: isProfileInitialLoading,
     isFetching: isProfileFetching,
   } = useQuery({
-    queryKey: ["userProfile", session?.user?.email],
+    queryKey: ["userProfile", userEmail],
     queryFn: async () => {
       const res = await getUserProfile();
       if (!res.success || !res.data) {
@@ -36,7 +40,23 @@ export default function WorkspacePage() {
     staleTime: 1000 * 60 * 2,
   });
 
-  // 1. Initial Page Skeleton Loading State
+  // 2. Mutation for Leaving Organization
+  const leaveOrgMutation = useMutation({
+    mutationFn: leaveOrganization,
+    onSuccess: (res) => {
+      if (res.success) {
+        // Force refetch profile query to trigger local state and banner transition
+        queryClient.invalidateQueries({ queryKey: ["userProfile", userEmail] });
+      } else {
+        alert(res.error || "Could not leave organization. Please try again.");
+      }
+    },
+    onError: () => {
+      alert("An unexpected error occurred. Please try again.");
+    },
+  });
+
+  // 3. Initial Page Skeleton Loading State
   const isAuthenticating = status === "loading";
   if (
     isAuthenticating ||
@@ -45,7 +65,7 @@ export default function WorkspacePage() {
     return <WorkspaceSkeleton />;
   }
 
-  // 2. Data Mapping
+  // 4. Data Mapping
   const profile = profileResponse ?? null;
   const firstName =
     profile?.first_name || session?.user?.name?.split(" ")[0] || "User";
@@ -66,9 +86,12 @@ export default function WorkspacePage() {
 
   const handleLeaveOrganization = () => {
     if (confirm("Are you sure you want to leave this organization?")) {
-      console.log("Leaving organization...");
+      leaveOrgMutation.mutate();
     }
   };
+
+  // Combine background profile refetching and active leave mutation for local loading state
+  const isBannerLoading = isProfileFetching || leaveOrgMutation.isPending;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50/40 via-zinc-50/50 to-white text-zinc-900 font-sans relative overflow-x-hidden">
@@ -93,7 +116,7 @@ export default function WorkspacePage() {
         <InstitutionBanner
           hasOrganization={hasOrganization}
           organizationName={organizationName}
-          isFetching={isProfileFetching}
+          isFetching={isBannerLoading}
           onAction={() =>
             router.push(
               hasOrganization ? "/explore" : "/workspace/organization",
