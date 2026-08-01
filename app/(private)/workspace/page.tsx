@@ -337,7 +337,7 @@ function StatCard({ icon, label, count }: StatCardProps) {
           {count}
         </span>
         <span className="text-xs text-zinc-400 font-light lowercase">
-          {count === 1 ? "module" : "modules"}
+          {count === 1 || count === 0 ? "module" : "modules"}
         </span>
       </div>
     </div>
