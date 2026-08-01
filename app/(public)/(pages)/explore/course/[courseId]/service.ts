@@ -1,45 +1,29 @@
-"use server";
+import { apiFetch } from "@/app/lib/api-client";
+import { EnrollmentResponse } from "./types";
 
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { getServerSession } from "next-auth";
-import { ApiOptions, EnrollmentResponse } from "./types";
-
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
-
-// Added a configuration option to flag whether an endpoint requires authentication
-interface ExtendedApiOptions extends ApiOptions {
-  requiresAuth?: boolean;
+/**
+ * Standardized response contract returned by the client functions
+ */
+interface ServiceResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
 }
 
-async function request<T>(endpoint: string, options: ExtendedApiOptions = {}) {
-  // Default endpoints to require authentication unless explicitly turned off
-  const requiresAuth = options.requiresAuth ?? true;
-  const session = await getServerSession(authOptions);
-
-  // Guard protected endpoints safely
-  if (requiresAuth && !session?.laravelJwt) {
-    return {
-      success: false,
-      error: "Unauthorized",
-    };
-  }
-
-  // Construct headers dynamically depending on authentication requirements
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
-
-  if (session?.laravelJwt) {
-    headers["Authorization"] = `Bearer ${session.laravelJwt}`;
-  }
-
+/**
+ * Helper wrapper to handle apiFetch execution and JSON parsing
+ */
+async function clientRequest<T>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<ServiceResponse<T>> {
   try {
-    const res = await fetch(`${API_URL}${endpoint}`, {
-      method: options.method || "GET",
-      headers,
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
+    const res = await apiFetch(endpoint, options);
+
+    if (!res) {
+      // apiFetch returns null on 401 unauthenticated redirect
+      return { success: false, error: "Unauthorized" };
+    }
 
     const result = await res.json();
 
@@ -52,9 +36,9 @@ async function request<T>(endpoint: string, options: ExtendedApiOptions = {}) {
 
     return {
       success: true,
-      data: result.data as T,
+      data: (result.data ?? result) as T,
     };
-  } catch (error: unknown) {
+  } catch (error) {
     console.error(`Fetch error at ${endpoint}:`, error);
     return {
       success: false,
@@ -62,12 +46,13 @@ async function request<T>(endpoint: string, options: ExtendedApiOptions = {}) {
     };
   }
 }
+
 /**
  * Protected: Get current user's enrollment for a specific learning plan
  */
 export async function getMyEnrollment(learningPlanId: string) {
-  return request<EnrollmentResponse>(
-    `/learning-plans/${learningPlanId}/enrollment`,
+  return clientRequest<EnrollmentResponse>(
+    `/api/learning-plans/${learningPlanId}/enrollment`,
   );
 }
 
@@ -75,11 +60,11 @@ export async function getMyEnrollment(learningPlanId: string) {
  * Protected: Create enrollment
  */
 export async function enrollLearningPlan(learningPlanId: string) {
-  return request<EnrollmentResponse>("/enrollments", {
+  return clientRequest<EnrollmentResponse>("/api/enrollments", {
     method: "POST",
-    body: {
+    body: JSON.stringify({
       learning_plan_id: learningPlanId,
-    },
+    }),
   });
 }
 
@@ -87,14 +72,14 @@ export async function enrollLearningPlan(learningPlanId: string) {
  * Protected: Get all enrollments
  */
 export async function getEnrollments() {
-  return request<EnrollmentResponse[]>("/enrollments");
+  return clientRequest<EnrollmentResponse[]>("/api/enrollments");
 }
 
 /**
  * Protected: Get single enrollment
  */
 export async function getEnrollment(id: string) {
-  return request<EnrollmentResponse>(`/enrollments/${id}`);
+  return clientRequest<EnrollmentResponse>(`/api/enrollments/${id}`);
 }
 
 /**
@@ -107,9 +92,9 @@ export async function updateEnrollment(
     progress_percentage?: number;
   },
 ) {
-  return request<EnrollmentResponse>(`/enrollments/${id}`, {
+  return clientRequest<EnrollmentResponse>(`/api/enrollments/${id}`, {
     method: "PATCH",
-    body: payload,
+    body: JSON.stringify(payload),
   });
 }
 
@@ -117,7 +102,7 @@ export async function updateEnrollment(
  * Protected: Delete enrollment
  */
 export async function deleteEnrollment(id: string) {
-  return request<EnrollmentResponse>(`/enrollments/${id}`, {
+  return clientRequest<EnrollmentResponse>(`/api/enrollments/${id}`, {
     method: "DELETE",
   });
 }
@@ -126,7 +111,7 @@ export async function deleteEnrollment(id: string) {
  * Protected: Unenroll learning plan
  */
 export async function unenrollLearningPlan(enrollmentId: string) {
-  return request<EnrollmentResponse>(`/enrollments/${enrollmentId}`, {
+  return clientRequest<EnrollmentResponse>(`/api/enrollments/${enrollmentId}`, {
     method: "DELETE",
   });
 }

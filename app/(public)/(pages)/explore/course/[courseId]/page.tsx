@@ -86,8 +86,17 @@ export default function CoursePage({ params }: CoursePageProps) {
 
         if (isFullyAuthenticated) {
           const enrollmentResult = await getMyEnrollment(courseId);
-          if (enrollmentResult.success && enrollmentResult.data) {
+
+          // 💡 Ensure enrollmentData is ONLY set if valid enrollment object with an ID exists
+          if (
+            enrollmentResult.success &&
+            enrollmentResult.data &&
+            (enrollmentResult.data.id ||
+              (enrollmentResult.data as any).enrollment_id)
+          ) {
             setEnrollmentData(enrollmentResult.data as Enrollment);
+          } else {
+            setEnrollmentData(null); // 👈 Force null if not enrolled or failed
           }
         }
       } catch (err) {

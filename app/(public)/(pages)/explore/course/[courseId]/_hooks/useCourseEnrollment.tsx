@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { LearningPlan, Enrollment } from "../types";
 import { deleteEnrollment, enrollLearningPlan } from "../service";
@@ -26,7 +26,7 @@ export const useCourseEnrollment = ({
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 1. Seed values directly using props from the parent data query context
+  // 1. Local state for enrollment & count
   const [enrollment, setEnrollment] = useState<Enrollment | null>(
     initialEnrollment,
   );
@@ -34,11 +34,12 @@ export const useCourseEnrollment = ({
     course.enrollments_count || 0,
   );
 
-  /**
-   * NOTE: All local loading state indicators, separate backend fetchers (loadEnrollment, loadEnrollmentCount),
-   * and all mounting useEffect triggers have been completely deleted from here.
-   * This completely prevents the UI text and metric flashes!
-   */
+  // 💡 FIX 1: Sync local state whenever parent finishes fetching initialEnrollment
+  useEffect(() => {
+    if (initialEnrollment) {
+      setEnrollment(initialEnrollment);
+    }
+  }, [initialEnrollment]);
 
   /**
    * Primary Button CTA handler
@@ -83,12 +84,12 @@ export const useCourseEnrollment = ({
       if (dialogVariant === "enroll") {
         const result = await enrollLearningPlan(course.id);
 
-        if (!result.success) {
-          console.error(result.error);
+        if (!result.success || !result.data) {
+          console.error(result.error || "Failed to enroll");
           return;
         }
 
-        // 2. Optimistically update states locally so changes reflect on screen instantly
+        // Optimistically update states locally
         setEnrollment(result.data as Enrollment);
         setEnrolledCount((prev) => prev + 1);
 
@@ -97,8 +98,23 @@ export const useCourseEnrollment = ({
         }
       }
 
-      if (dialogVariant === "unenroll" && enrollment) {
-        const result = await deleteEnrollment(enrollment.id);
+      if (dialogVariant === "unenroll") {
+        // 💡 FIX 2: Safely extract ID (handles both 'id' and 'enrollment_id' keys)
+        // Fallback to initialEnrollment if local state is missing
+        const activeEnrollment = enrollment || initialEnrollment;
+        const targetId =
+          activeEnrollment?.id ||
+          (activeEnrollment as Record<string, unknown>)?.enrollment_id;
+
+        if (!targetId) {
+          console.error(
+            "❌ Cannot unenroll: Enrollment ID is missing.",
+            activeEnrollment,
+          );
+          return;
+        }
+
+        const result = await deleteEnrollment(String(targetId));
 
         if (!result.success) {
           console.error(result.error);
@@ -111,7 +127,7 @@ export const useCourseEnrollment = ({
 
       setShowActionDialog(false);
 
-      // 3. Clear router cache tree and prompt updates seamlessly
+      // Clear router cache tree and prompt updates seamlessly
       router.refresh();
     } catch (error) {
       console.error("Action failed:", error);

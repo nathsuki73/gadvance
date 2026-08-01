@@ -14,6 +14,7 @@ import ActionConfirmationDialog from "./ActionConfirmationDialog";
 import EnrollmentRequiredDialog from "./EnrollmentRequiredDialog";
 import { useCourseEnrollment } from "../_hooks/useCourseEnrollment";
 import type { Enrollment, LearningPlan } from "../types";
+import { useQueryClient } from "@tanstack/react-query";
 
 type CourseOverviewHeaderProps = {
   course: LearningPlan;
@@ -46,8 +47,12 @@ const CourseOverviewHeader = ({
     course,
     isLoggedIn,
     initialEnrollment,
-    onEnrollSuccess,
+    onEnrollSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["enrolledCourses"] });
+      if (onEnrollSuccess) onEnrollSuccess();
+    },
   });
+  const queryClient = useQueryClient();
 
   // Guard wrapper for actions (Enroll / Unenroll)
   const executeGuardedAction = async (action: () => void) => {
@@ -56,6 +61,12 @@ const CourseOverviewHeader = ({
       if (!isValid) return; // Token expired -> forceSignOut automatically triggered
     }
     action();
+  };
+
+  const onConfirmWithInvalidation = async () => {
+    await handleConfirmAction();
+    // 👈 4. Invalidate cache after enrollment / unenrollment confirmation
+    queryClient.invalidateQueries({ queryKey: ["enrolledCourses"] });
   };
 
   return (
@@ -228,7 +239,7 @@ const CourseOverviewHeader = ({
         loading={isSubmitting}
         variant={dialogVariant}
         onClose={() => setShowActionDialog(false)}
-        onConfirm={() => executeGuardedAction(handleConfirmAction)}
+        onConfirm={() => executeGuardedAction(onConfirmWithInvalidation)}
       />
 
       <EnrollmentRequiredDialog
