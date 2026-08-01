@@ -184,6 +184,7 @@ export default function ModuleSidebar({
                   dotColor={colors.active}
                   dotColorInactive={colors.inactive}
                   active={item.id === activeItem.id && !activeBlockId}
+                  locked={!isUnlocked}
                   collapsed={collapsedView}
                   trailing={
                     !isUnlocked ? (
@@ -228,7 +229,7 @@ export default function ModuleSidebar({
                     {blocks.map((block, blockIdx) => {
                       // 💡 2. Check internal block progress sequence
                       const isBlockUnlocked =
-                        (item.completedSteps ?? 0) >= blockIdx;
+                        (item.completedSteps ?? 0) >= blockIdx + 1;
 
                       return (
                         <SubRow
@@ -248,12 +249,12 @@ export default function ModuleSidebar({
 
                     <SubRow
                       label="Quiz"
-                      isUnlocked={(item.completedSteps ?? 0) >= blocks.length}
+                      isUnlocked={(item.completedSteps ?? 0) >= blocks.length + 1}
                       active={
                         item.id === activeItem.id && activeBlockId === "quiz"
                       }
                       onClick={() => {
-                        if ((item.completedSteps ?? 0) >= blocks.length) {
+                        if ((item.completedSteps ?? 0) >= blocks.length + 1) {
                           go(item, "quiz");
                         }
                       }}

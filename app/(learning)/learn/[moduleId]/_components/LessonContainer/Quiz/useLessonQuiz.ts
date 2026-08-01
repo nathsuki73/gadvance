@@ -1,10 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchLessonQuiz, saveLessonQuizProgress } from "./service";
 import { BackendOptionResponse, BackendQuestionResponse, Quiz } from "./types";
 
 export type QuizState = "loading" | "ready" | "started" | "completed" | "error";
 
-export function useLessonQuiz(lessonBlockId: string, isActive: boolean) {
+export function useLessonQuiz(
+  lessonBlockId: string,
+  isActive: boolean,
+  onCompleted?: () => void,
+) {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [quizState, setQuizState] = useState<QuizState>("ready");
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -12,6 +16,11 @@ export function useLessonQuiz(lessonBlockId: string, isActive: boolean) {
   const [submitted, setSubmitted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasNotifiedCompletedRef = useRef(false);
+
+  useEffect(() => {
+    hasNotifiedCompletedRef.current = false;
+  }, [lessonBlockId]);
 
   useEffect(() => {
     // 🌟 1. Safe early return: If it's not active, do ABSOLUTELY NOTHING.
@@ -65,6 +74,14 @@ export function useLessonQuiz(lessonBlockId: string, isActive: boolean) {
   // Use state variables derived directly during render phase if not active
   // This effectively mocks the "ready" state safely without using setState!
   const effectiveQuizState = isActive ? quizState : "ready";
+
+  useEffect(() => {
+    if (!isActive || quizState !== "completed") return;
+    if (hasNotifiedCompletedRef.current) return;
+
+    hasNotifiedCompletedRef.current = true;
+    onCompleted?.();
+  }, [isActive, onCompleted, quizState]);
 
   const score = useMemo(() => {
     if (!quiz) return 0;

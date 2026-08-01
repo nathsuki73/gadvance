@@ -176,19 +176,22 @@ const LearnPage = ({ params }: LearnPageProps) => {
     setVisitedIds((prev) =>
       prev.has(item.id) ? prev : new Set(prev).add(item.id),
     );
+  };
 
-    if (item.type === "lesson" && blockId) {
+  const markLessonStepComplete = useCallback(
+    (lessonId: string, stepId: string) => {
       setLessonProgress((prev) => {
-        const current = prev[item.id] ?? new Set<string>();
-        if (current.has(blockId)) return prev;
+        const current = prev[lessonId] ?? new Set<string>();
+        if (current.has(stepId)) return prev;
 
         const next = new Set(current);
-        next.add(blockId);
+        next.add(stepId);
 
-        return { ...prev, [item.id]: next };
+        return { ...prev, [lessonId]: next };
       });
-    }
-  };
+    },
+    [],
+  );
 
   const handleQuizProgress = useCallback(
     (itemId: string, completedSteps: number, totalSteps: number) => {
@@ -351,9 +354,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
                   lessonItems={lessonItems}
                   lessonId={item.id}
                   activeBlockId={activeBlockId}
-                  onContinue={handleNext}
-                  handleNextSubRow={handleNextSubRow}
-                  onBktUpdate={handleBktUpdate}
+                  handleNextSubRowAction={handleNextSubRow}
+                  onLessonStepCompleteAction={markLessonStepComplete}
+                  onBktUpdateAction={handleBktUpdate}
                 />
               )}
               {item.type === "posttest" && (

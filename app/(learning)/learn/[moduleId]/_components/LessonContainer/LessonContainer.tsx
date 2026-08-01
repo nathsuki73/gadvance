@@ -14,18 +14,18 @@ type LessonContainerProps = {
   lessonItems?: ModuleStructureItem[];
   lessonId: string;
   activeBlockId: string | undefined;
-  onContinue: () => void;
-  handleNextSubRow: () => void;
-  onBktUpdate?: (lessonBlockId: string, currentPLt: number) => void;
+  handleNextSubRowAction: () => void;
+  onLessonStepCompleteAction?: (lessonId: string, stepId: string) => void;
+  onBktUpdateAction?: (lessonBlockId: string, currentPLt: number) => void;
 };
 
 export default function LessonContainer({
   lessonItems,
   lessonId,
   activeBlockId,
-  handleNextSubRow,
-  onContinue,
-  onBktUpdate,
+  handleNextSubRowAction,
+  onLessonStepCompleteAction,
+  onBktUpdateAction,
 }: LessonContainerProps) {
   // Cache the overviews in an object keyed by lessonId
   const [overviewsCache, setOverviewsCache] = useState<
@@ -115,7 +115,11 @@ export default function LessonContainer({
   // - Clicking "Start Lesson" now correctly moves down into the subtopic sequence (`handleNextSubRow`).
   // - Only when reaching the end of the subtopics/materials will it call `onContinue` (or move to the next lesson/quiz).
   const handleNextAction = () => {
-    handleNextSubRow();
+    const currentStepId = currentEffectiveBlock || "overview";
+    if (currentStepId !== "quiz") {
+      onLessonStepCompleteAction?.(lessonId, currentStepId);
+    }
+    handleNextSubRowAction();
   };
 
   return (
@@ -144,7 +148,7 @@ export default function LessonContainer({
                 key={blockId}
                 className={currentEffectiveBlock === blockId ? "" : "hidden"}
               >
-                <MiniQuiz lessonBlockId={blockId} onBktUpdate={onBktUpdate} />
+                <MiniQuiz lessonBlockId={blockId} onBktUpdate={onBktUpdateAction} />
               </div>
             ))}
           </div>
@@ -153,7 +157,11 @@ export default function LessonContainer({
 
       {/* 3. Quiz View */}
       <div className={`flex-1 w-full ${isQuiz ? "" : "hidden"}`}>
-        <MainLessonQuiz lessonBlockId={lessonId} isActive={isQuiz} />
+        <MainLessonQuiz
+          lessonBlockId={lessonId}
+          isActive={isQuiz}
+          onCompleted={() => onLessonStepCompleteAction?.(lessonId, "quiz")}
+        />
       </div>
 
       {/* Persistent Navigation Footer */}

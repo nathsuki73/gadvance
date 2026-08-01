@@ -10,9 +10,10 @@ import { QuizCompleted } from "./_components/QuizCompleted";
 type Props = {
   lessonBlockId: string;
   isActive: boolean;
+  onCompleted?: () => void;
 };
 
-export function LessonQuiz({ lessonBlockId, isActive }: Props) {
+export function LessonQuiz({ lessonBlockId, isActive, onCompleted }: Props) {
   const {
     quiz,
     quizState,
@@ -25,7 +26,7 @@ export function LessonQuiz({ lessonBlockId, isActive }: Props) {
     answers,
     handleNextQuestion,
     handleSelectAnswer,
-  } = useLessonQuiz(lessonBlockId, isActive);
+  } = useLessonQuiz(lessonBlockId, isActive, onCompleted);
 
   switch (quizState) {
     case "loading":
