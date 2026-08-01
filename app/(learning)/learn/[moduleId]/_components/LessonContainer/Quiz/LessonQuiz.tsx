@@ -10,10 +10,17 @@ import { QuizCompleted } from "./_components/QuizCompleted";
 type Props = {
   lessonBlockId: string;
   isActive: boolean;
-  onCompleted?: () => void;
+  action?: unknown;
 };
 
-export function LessonQuiz({ lessonBlockId, isActive, onCompleted }: Props) {
+export function LessonQuiz({
+  lessonBlockId,
+  isActive,
+  action,
+}: Props) {
+  const completedCallback =
+    typeof action === "function" ? (action as () => void) : undefined;
+
   const {
     quiz,
     quizState,
@@ -26,7 +33,7 @@ export function LessonQuiz({ lessonBlockId, isActive, onCompleted }: Props) {
     answers,
     handleNextQuestion,
     handleSelectAnswer,
-  } = useLessonQuiz(lessonBlockId, isActive, onCompleted);
+  } = useLessonQuiz(lessonBlockId, isActive, completedCallback);
 
   switch (quizState) {
     case "loading":

@@ -10,9 +10,14 @@ import { QuizQuestionState } from "./QuizQuestionState";
 type Props = {
   lessonBlockId: string;
   onBktUpdate?: (lessonBlockId: string, currentPLt: number) => void;
+  completedAction?: () => void;
 };
 
-export function LessonQuiz({ lessonBlockId, onBktUpdate }: Props) {
+export function LessonQuiz({
+  lessonBlockId,
+  onBktUpdate,
+  completedAction,
+}: Props) {
   const {
     quiz,
     quizState,
@@ -25,7 +30,7 @@ export function LessonQuiz({ lessonBlockId, onBktUpdate }: Props) {
     startQuiz,
     selectAnswer,
     goToNextQuestion,
-  } = useLessonQuiz(lessonBlockId, onBktUpdate);
+  } = useLessonQuiz(lessonBlockId, onBktUpdate, completedAction);
 
   if (quizState === "loading") {
     return <QuizLoadingState />;

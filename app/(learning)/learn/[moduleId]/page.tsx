@@ -354,6 +354,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
                   lessonItems={lessonItems}
                   lessonId={item.id}
                   activeBlockId={activeBlockId}
+                  onContinueAction={handleNext}
                   handleNextSubRowAction={handleNextSubRow}
                   onLessonStepCompleteAction={markLessonStepComplete}
                   onBktUpdateAction={handleBktUpdate}

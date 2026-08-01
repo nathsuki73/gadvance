@@ -12,8 +12,36 @@ export function QuizCompleted({
 
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center py-16 text-center">
-      <div className="flex h-40 w-40 items-center justify-center rounded-full border border-zinc-200">
-        <Check size={52} strokeWidth={1.5} className="text-primary" />
+      <div className="relative h-40 w-40">
+        <svg viewBox="0 0 120 120" className="h-full w-full rotate-90">
+          <circle
+            cx="60"
+            cy="60"
+            r="52"
+            strokeWidth="1"
+            className="fill-none stroke-zinc-200"
+          />
+          <circle
+            cx="60"
+            cy="60"
+            r="52"
+            strokeWidth="4"
+            strokeLinecap="square"
+            pathLength="100"
+            strokeDasharray="100"
+            strokeDashoffset="100"
+            className="fill-none stroke-primary animate-circle-progress"
+            style={{ "--progress": 100 - percentage } as React.CSSProperties}
+          />
+        </svg>
+
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Check
+            className="animate-[fade-in_.3s_ease_.8s_forwards] opacity-0 text-primary"
+            size={48}
+            strokeWidth={1.5}
+          />
+        </div>
       </div>
 
       <span className="mt-10 text-[10px] font-bold uppercase tracking-[0.4em] text-primary">
