@@ -32,7 +32,7 @@ const CourseCard = ({ course }: CourseCardProps) => {
         <div className="flex h-8 w-8 items-center justify-center rounded-full border border-purple-200 bg-white/60 text-zinc-400 transition-all duration-300 group-hover:border-primary/40 group-hover:bg-primary group-hover:text-white">
           <ArrowUpRight
             size={15}
-            className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            className="transition-transform duration-300"
           />
         </div>
       </div>

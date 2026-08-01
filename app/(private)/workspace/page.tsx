@@ -185,56 +185,65 @@ export function InstitutionBanner({
           </div>
         </div>
 
-        {/* Action Button */}
-        <button
-          onClick={onAction}
-          className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all active:scale-[0.98] shrink-0 group ${
-            hasOrganization
-              ? "bg-primary text-white hover:bg-primary/90 shadow-sm"
-              : "bg-zinc-900 text-white hover:bg-zinc-800 shadow-sm"
-          }`}
-        >
-          <span>
-            {hasOrganization ? "Explore Courses" : "Join Organization"}
-          </span>
-          <ArrowRight
-            size={14}
-            className="transition-transform group-hover:translate-x-1"
-          />
-        </button>
-      </div>
-    </div>
-  );
-}
+              <button
+                onClick={() => router.push("/explore")}
+                className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all active:scale-[0.98] shrink-0 shadow-sm shadow-violet-100 group"
+              >
+                <span>Explore Courses</span>
+                <ArrowRight
+                  size={14}
+                  className="transition-transform group-hover:translate-x-0.5"
+                />
+              </button>
+            </div>
+          ) : (
+            /* STATE B: User is NOT in an Organization */
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-primary/10 text-primary shrink-0">
+                  <Building2 size={22} />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
+                    Are you part of an institution?
+                  </h2>
+                  <p className="text-xs text-zinc-400 font-light leading-relaxed mt-0.5">
+                    Join your organization using an invite code to access team
+                    modules and shared learning progress.
+                  </p>
+                </div>
+              </div>
 
-interface ActiveModuleProps {
-  module: {
-    id: string;
-    title: string;
-    description: string;
-    progress: number;
-    href: string;
-  } | null;
-  onNavigate: (href: string) => void;
-}
+              <button
+                onClick={() => router.push("/workspace/organization")}
+                className="group inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold tracking-wide text-white shadow-sm shadow-violet-100 transition-all active:scale-[0.98] hover:bg-primary-hover"
+              >
+                <span className="transition-transform duration-200 group-hover:-translate-x-0.5">
+                  Join Organization
+                </span>
+                <ArrowRight
+                  size={14}
+                  className="transition-transform duration-200 group-hover:translate-x-1"
+                />
+              </button>
+            </div>
+          )}
+        </div>
 
-function ActiveModuleCard({ module, onNavigate }: ActiveModuleProps) {
-  if (!module) {
-    return (
-      <div className="rounded-3xl border border-dashed border-zinc-200 p-8 text-center flex flex-col items-center justify-center min-h-[260px] bg-zinc-50/20">
-        <p className="text-sm text-zinc-400 font-light">
-          No active modules assigned to your account yet.
-        </p>
-      </div>
-    );
-  }
+        {/* Content Section (Remains visible and interactive) */}
+        <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+          {/* Left Side: Recently Viewed */}
+          <section className="lg:col-span-2 space-y-6">
+            <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400">
+              Recently Viewed
+            </h2>
 
-  return (
-    <div className="rounded-3xl border border-zinc-200 bg-zinc-50/30 p-8 relative overflow-hidden flex flex-col justify-between min-h-[260px]">
-      <div className="space-y-4 w-full">
-        <h3 className="text-2xl font-semibold tracking-tight text-zinc-900">
-          {module.title}
-        </h3>
+            {activeModule ? (
+              <div className="rounded-3xl border border-zinc-200 bg-zinc-50/30 p-8 relative overflow-hidden flex flex-col justify-between min-h-[280px]">
+                <div className="space-y-4 w-full">
+                  <h3 className="text-2xl font-semibold tracking-tight text-zinc-900">
+                    {activeModule.title}
+                  </h3>
 
         <div className="py-1 max-w-md space-y-2">
           <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden">
@@ -256,42 +265,63 @@ function ActiveModuleCard({ module, onNavigate }: ActiveModuleProps) {
         </p>
       </div>
 
-      <div className="pt-6 mt-auto">
-        <button
-          onClick={() => onNavigate(module.href)}
-          className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] shadow-sm shadow-violet-100"
-        >
-          <PlayCircle size={14} />
-          <span>Resume Module</span>
-        </button>
-      </div>
-    </div>
-  );
-}
+                <div className="pt-6 mt-auto">
+                  <button
+                    onClick={() => router.push(activeModule.href)}
+                    className="inline-flex items-center justify-center gap-1.5 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all active:scale-[0.98] shadow-sm shadow-violet-100"
+                  >
+                    <PlayCircle size={12} />
+                    resume
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-dashed border-zinc-200 p-8 text-center flex flex-col items-center justify-center min-h-[280px]">
+                <p className="text-sm text-zinc-400 font-light">
+                  No modules currently assigned to your account.
+                </p>
+              </div>
+            )}
+          </section>
 
-interface StatCardProps {
-  icon: React.ReactNode;
-  label: string;
-  count: number;
-}
+          {/* Right Side: Analytics Grid */}
+          <section className="lg:col-span-1 space-y-6">
+            <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400">
+              Your Progress
+            </h2>
 
-function StatCard({ icon, label, count }: StatCardProps) {
-  return (
-    <div className="border border-zinc-200 bg-zinc-50/20 rounded-2xl p-5 transition-all duration-300 hover:border-zinc-300 flex flex-col justify-between min-h-[120px]">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase">
-          {label}
-        </span>
-        {icon}
-      </div>
-      <div className="flex items-baseline gap-2 mt-2">
-        <span className="text-4xl font-light tracking-tight text-primary">
-          {count}
-        </span>
-        <span className="text-xs text-zinc-400 font-light lowercase">
-          {count === 1 ? "module" : "modules"}
-        </span>
-      </div>
+            <div className="flex flex-col gap-4 w-full">
+              <div className="border border-zinc-200 bg-zinc-50/20 rounded-2xl p-5 transition-all duration-300 hover:border-zinc-300 flex flex-col justify-center min-h-[125px]">
+                <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
+                  In Progress
+                </span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-light tracking-tight text-primary">
+                    {modulesInProgressCount}
+                  </span>
+                  <span className="text-xs text-zinc-400 font-light lowercase">
+                    {modulesInProgressCount === 1 || modulesInProgressCount === 0 ? "module" : "modules"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="border border-zinc-200 bg-zinc-50/20 rounded-2xl p-5 transition-all duration-300 hover:border-zinc-300 flex flex-col justify-center min-h-[125px]">
+                <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase block mb-1">
+                  Completed
+                </span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-light tracking-tight text-primary">
+                    {modulesCompletedCount}
+                  </span>
+                  <span className="text-xs text-zinc-400 font-light lowercase">
+                    {modulesCompletedCount === 1 || modulesCompletedCount === 0 ? "module" : "modules"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
     </div>
   );
 }
