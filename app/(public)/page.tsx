@@ -15,7 +15,7 @@ export default function Home() {
       <TheChallengeSection />
       <TheVisionSection />
       <WhyItMattersSection />
-      <CurriculumAccess />
+      {/* <CurriculumAccess /> */}
       <FinalCTA />
     </main>
   );

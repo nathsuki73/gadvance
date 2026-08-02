@@ -48,7 +48,7 @@ const TheVisionSection = () => {
               </h2>
               <h3 className="mt-10 text-4xl font-light leading-[1.1] tracking-tight text-zinc-900 sm:text-6xl">
                 Moving from <span className="italic">awareness</span> <br />
-                <span className="font-semibold">to action.</span>
+                <span className="font-semibold text-primary">to action.</span>
               </h3>
 
               <p className="mt-12 text-xl font-light leading-9 text-zinc-500">
