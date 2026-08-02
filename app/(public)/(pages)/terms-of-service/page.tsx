@@ -13,6 +13,7 @@ import {
   Scale,
   Mail,
   BookOpen,
+  BarChart3,
 } from "lucide-react";
 import ProtectedButton from "@/app/components/ProtectedButton";
 
@@ -84,7 +85,7 @@ export default function TermsOfServicePage() {
           </div>
         </section>
 
-        {/* ================= QUICK HIGHLIGHTS ================= */}
+{/* ================= QUICK HIGHLIGHTS ================= */}
         <section className="py-16 bg-zinc-50/70 border-y border-zinc-100">
           <div className="mx-auto max-w-7xl px-8 lg:px-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -115,17 +116,17 @@ export default function TermsOfServicePage() {
                 </p>
               </div>
 
+              {/* REPLACED CARD: Adaptive Mastery Tracking */}
               <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 delay-300 ease-out bg-white p-8 rounded-3xl border border-zinc-200/80 shadow-sm">
                 <div className="h-12 w-12 rounded-2xl bg-violet-50 text-[#8b5cf6] flex items-center justify-center mb-6">
-                  <CheckCircle2 size={24} />
+                  <BarChart3 size={24} />
                 </div>
                 <h3 className="text-lg font-medium text-zinc-900">
-                  Certified Integrity
+                  Adaptive Mastery
                 </h3>
                 <p className="mt-3 text-xs sm:text-sm font-light leading-relaxed text-zinc-500">
-                  Verified certificates are issued exclusively to registered
-                  learners who independently complete required module
-                  assessments.
+                  Intelligent progress tracking analyzes learning patterns and 
+                  assessment responses to measure genuine concept mastery.
                 </p>
               </div>
             </div>
@@ -168,7 +169,7 @@ export default function TermsOfServicePage() {
               <p className="text-sm font-light text-zinc-600 leading-relaxed">
                 Users are responsible for maintaining the confidentiality of
                 their login credentials. When interacting within community
-                forums and learning spaces, users must adhere to the following
+                forums and learning spaces, users must follow the following
                 rules:
               </p>
               <ul className="list-disc pl-6 text-sm font-light text-zinc-600 space-y-2">
@@ -208,7 +209,7 @@ export default function TermsOfServicePage() {
                 </h2>
               </div>
               <p className="text-sm font-light text-zinc-600 leading-relaxed">
-                All educational curricula, software code, design assets,
+                All learning materials and programs, software code, design assets,
                 research papers, and media provided on GADvance are protected by
                 intellectual property laws and remain the property of GADvance
                 and Laguna State Polytechnic University – San Pablo City Campus
@@ -216,29 +217,10 @@ export default function TermsOfServicePage() {
               </p>
               <p className="text-sm font-light text-zinc-600 leading-relaxed">
                 You are granted a limited, revocable, non-exclusive license to
-                view and download materials solely for personal learning or
+                view materials solely for personal learning or
                 internal organizational GAD planning. Reproduction or
                 redistribution for commercial sale without prior written consent
                 is strictly prohibited.
-              </p>
-            </div>
-
-            {/* 04. Certificates & Assessment Integrity */}
-            <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out border-b border-zinc-100 pb-12 space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-bold font-mono text-[#8b5cf6] bg-violet-50 px-2.5 py-1 rounded-md">
-                  04
-                </span>
-                <h2 className="text-xl sm:text-2xl font-medium text-zinc-900">
-                  Certificate Issuance & Academic Integrity
-                </h2>
-              </div>
-              <p className="text-sm font-light text-zinc-600 leading-relaxed">
-                GADvance issues digital completion certificates for designated
-                learning tracks. Certificates are valid only when earned through
-                personal, non-cheating completion of required quizzes and
-                evaluations. GADvance reserves the right to revoke certificates
-                if fraud or account sharing is detected.
               </p>
             </div>
 
@@ -246,7 +228,7 @@ export default function TermsOfServicePage() {
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out border-b border-zinc-100 pb-12 space-y-4">
               <div className="flex items-center gap-3">
                 <span className="text-xs font-bold font-mono text-[#8b5cf6] bg-violet-50 px-2.5 py-1 rounded-md">
-                  05
+                  04
                 </span>
                 <h2 className="text-xl sm:text-2xl font-medium text-zinc-900">
                   Disclaimer of Warranties & Limitation of Liability
@@ -267,16 +249,16 @@ export default function TermsOfServicePage() {
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out space-y-4">
               <div className="flex items-center gap-3">
                 <span className="text-xs font-bold font-mono text-[#8b5cf6] bg-violet-50 px-2.5 py-1 rounded-md">
-                  06
+                  05
                 </span>
                 <h2 className="text-xl sm:text-2xl font-medium text-zinc-900">
                   Modifications & Inquiries
                 </h2>
               </div>
               <p className="text-sm font-light text-zinc-600 leading-relaxed">
-                We reserve the right to modify these Terms as our platform
+                We reserve the right to modify these terms as our platform
                 evolves. Continued use of the platform after updates constitutes
-                acceptance of the new Terms. For legal or policy inquiries,
+                acceptance of the new terms. For legal or policy inquiries,
                 contact our administrative desk:
               </p>
 

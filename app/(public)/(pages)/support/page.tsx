@@ -31,12 +31,6 @@ const FAQS: FAQItem[] = [
       "GADvance is an e-learning and gender advancement platform tailored for students, educators, public servants, and private institutions in the Philippines. It provides self-paced learning tracks, policy frameworks, and interactive community spaces.",
   },
   {
-    category: "Account & Modules",
-    question: "How do I enroll in a learning track or access my certificate?",
-    answer:
-      "Simply create an account or sign in to your GADvance workspace. Once logged in, you can browse available modules under your workspace dashboard. Certificates are automatically generated upon completing all module requirements and assessments.",
-  },
-  {
     category: "Partnerships",
     question: "How can my university or organization integrate GADvance?",
     answer:

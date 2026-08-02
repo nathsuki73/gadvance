@@ -70,7 +70,7 @@ export default function PrivacyPolicyPage() {
               </h1>
 
               <p className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-200 ease-out mt-6 text-lg sm:text-xl text-zinc-500 font-light leading-relaxed">
-                At GADvance, we are committed to safeguarding your personal
+                At GADvance, we are committed on safeguarding your personal
                 information, maintaining research integrity, and upholding your
                 rights under the Data Privacy Act of 2012 (RA 10173).
               </p>
@@ -109,7 +109,7 @@ export default function PrivacyPolicyPage() {
                   Full Transparency
                 </h3>
                 <p className="mt-3 text-xs sm:text-sm font-light leading-relaxed text-zinc-500">
-                  We collect only necessary information to facilitate learning
+                  The website collects only necessary information to facilitate learning
                   modules, certifications, and institutional engagement.
                 </p>
               </div>
@@ -122,7 +122,7 @@ export default function PrivacyPolicyPage() {
                   User Control
                 </h3>
                 <p className="mt-3 text-xs sm:text-sm font-light leading-relaxed text-zinc-500">
-                  You retain complete control over your user profile, learning
+                  Users retain complete control over their personal data, including user profile, learning
                   history, and communication preferences.
                 </p>
               </div>
@@ -166,8 +166,7 @@ export default function PrivacyPolicyPage() {
                   <strong className="font-medium text-zinc-800">
                     Learning Progress:
                   </strong>{" "}
-                  Module completion status, assessment results, and certificate
-                  histories.
+                  Module completion status and assessment results
                 </li>
                 <li>
                   <strong className="font-medium text-zinc-800">
@@ -195,18 +194,16 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="list-disc pl-6 text-sm font-light text-zinc-600 space-y-2">
                 <li>
-                  Providing workspace access, generating verified certificates,
-                  and tracking coursework completion.
+                  Providing workspace access and tracking coursework completion.
                 </li>
                 <li>
                   Communicating critical policy updates, workspace notices, and
                   platform improvements.
                 </li>
                 <li>
-                  Aggregating anonymized data for research on gender advancement
-                  and digital educational effectiveness conducted at Laguna
-                  State Polytechnic University – San Pablo City Campus (LSPU
-                  CCS).
+                  Gathering anonymized student data for research on gender development
+                  and digital learning conducted at Laguna
+                  State Polytechnic University – San Pablo City Campus.
                 </li>
                 <li>
                   Ensuring technical stability, preventing fraudulent activity,
@@ -257,15 +254,6 @@ export default function PrivacyPolicyPage() {
                     our servers.
                   </p>
                 </div>
-                <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100 text-xs font-light text-zinc-600 space-y-1">
-                  <p className="font-semibold text-zinc-800">
-                    Right to File a Complaint
-                  </p>
-                  <p>
-                    Lodge concerns with our research desk or the National
-                    Privacy Commission (NPC).
-                  </p>
-                </div>
               </div>
             </div>
 
@@ -282,7 +270,7 @@ export default function PrivacyPolicyPage() {
               <p className="text-sm font-light text-zinc-600 leading-relaxed">
                 GADvance uses essential cookies and session storage to keep you
                 authenticated across learning sessions and save your module
-                preferences. We do not use intrusive third-party ad-tracking
+                preferences. The website does not use intrusive third-party ad-tracking
                 cookies.
               </p>
             </div>
