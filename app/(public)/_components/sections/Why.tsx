@@ -56,7 +56,7 @@ const WhyItMattersSection = () => {
           <div className="lg:col-span-7">
             <h2 className="text-4xl font-light leading-[1.1] tracking-tight text-zinc-900 md:text-6xl">
               Equity is not just a <br />
-              <span className="font-serif italic text-primary">
+              <span className="font-serif italic font-bold text-primary">
                 social goal.
               </span>
             </h2>
@@ -127,7 +127,7 @@ const WhyItMattersSection = () => {
             <p className="text-3xl font-light italic leading-[1.2] tracking-tight text-zinc-800 md:text-5xl">
               &quot;when we advance gender equity, we don&apos;t just fix a
               workplace—we{" "}
-              <span className="font-semibold not-italic text-primary">
+              <span className="font-semibold italic font-serif text-primary">
                 modernize the philippine economy
               </span>{" "}
               for the next generation of leaders.&quot;

@@ -130,11 +130,11 @@ export default function CommunityPage() {
             <div className="lg:col-span-6 text-left space-y-6 order-1 lg:order-2">
               <h1 className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-100 ease-out text-4xl font-light leading-[1.1] tracking-tight text-zinc-900 sm:text-6xl">
                 Growing <br />
-                <span className="font-semibold text-[#8b5cf6]">
+                <span className="">
                   together
                 </span>{" "}
                 in <br />
-                <span className="font-serif italic text-zinc-800">
+                <span className="font-serif italic font-bold text-primary">
                   shared purpose.
                 </span>
               </h1>

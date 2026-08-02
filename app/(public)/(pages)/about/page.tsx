@@ -187,7 +187,7 @@ export default function AboutPage() {
               />
               <RoadmapItem
                 phase="02"
-                title="empowerment curricula"
+                title="empowerment modules"
                 desc="delivering targeted e-learning modules designed to build negotiation skills, advocacy, and leadership readiness."
               />
               <RoadmapItem
@@ -197,7 +197,7 @@ export default function AboutPage() {
               />
               <RoadmapItem
                 phase="04"
-                title="sustained equity"
+                title="sustainable progress"
                 desc="monitoring long-term learning outcomes to ensure gender advancement remains a permanent organizational priority."
               />
             </div>
@@ -216,8 +216,8 @@ export default function AboutPage() {
 
               <h2 className="text-2xl sm:text-4xl font-light tracking-tight text-zinc-900 lowercase mb-6">
                 engineered at{" "}
-                <span className="text-[#8b5cf6] font-medium">
-                  lspu san pablo ccs
+                <span className="text-[#8b5cf6] font-semibold italic font-serif">
+                  lspu-spcc ccs department
                 </span>
               </h2>
 

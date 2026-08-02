@@ -44,7 +44,7 @@ const TheChallengeSection = () => {
           </h2>
           <h3 className="mt-10 text-4xl font-light leading-[1.1] tracking-tight text-zinc-900 sm:text-6xl">
             The gender gap in leadership <br className="hidden md:block" />
-            <span className="font-semibold text-[#8b5cf6]">still exists.</span>
+            <span className="font-semibold italic font-serif text-[#8b5cf6]">still exists.</span>
           </h3>
           <p className="mt-12 max-w-2xl text-xl font-light leading-9 text-zinc-500">
             Despite progress, structural barriers continue to limit workplace
