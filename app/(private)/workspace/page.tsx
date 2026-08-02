@@ -101,12 +101,12 @@ export default function WorkspacePage() {
       <main className="relative z-10 mx-auto max-w-7xl px-6 py-12 lg:px-12 lg:py-16 space-y-10">
         {/* Header Section */}
         <header className="space-y-1">
-          <p className="text-xs font-semibold tracking-wider text-purple-600/70 uppercase">
+          <p className="text-xs font-semibold tracking-wider text-primary uppercase">
             Workspace Overview
           </p>
           <h1 className="text-3xl font-light tracking-tight text-zinc-900 sm:text-4xl lg:text-5xl">
             Welcome to GADvance,{" "}
-            <span className="font-semibold italic font-serif text-purple-700 inline-block">
+            <span className="font-semibold italic font-serif text-primary inline-block">
               {firstName}.
             </span>
           </h1>
@@ -129,7 +129,7 @@ export default function WorkspacePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Main Column: Recently Viewed */}
           <section className="lg:col-span-2 space-y-4">
-            <h2 className="text-xs font-semibold tracking-wider text-purple-600/70 uppercase">
+            <h2 className="text-xs font-semibold tracking-wider text-primary uppercase">
               Recently Viewed Module
             </h2>
             <ActiveModuleCard
@@ -140,17 +140,17 @@ export default function WorkspacePage() {
 
           {/* Side Column: Analytics Grid */}
           <section className="lg:col-span-1 space-y-4">
-            <h2 className="text-xs font-semibold tracking-wider text-purple-600/70 uppercase">
+            <h2 className="text-xs font-semibold tracking-wider text-primary uppercase">
               Your Learning Stats
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
               <StatCard
-                icon={<Clock className="size-4 text-purple-600" />}
+                icon={<Clock className="size-4 text-primary" />}
                 label="In Progress"
                 count={profile?.in_progress_count ?? 0}
               />
               <StatCard
-                icon={<CheckCircle2 className="size-4 text-purple-600" />}
+                icon={<CheckCircle2 className="size-4 text-primary" />}
                 label="Completed"
                 count={profile?.completed_count ?? 0}
               />
@@ -206,7 +206,7 @@ export function InstitutionBanner({
               {hasOrganization ? (
                 <>
                   You are a member of{" "}
-                  <span className="text-purple-700 font-bold">
+                  <span className="text-primary font-bold">
                     {organizationName}
                   </span>
                 </>
@@ -226,7 +226,7 @@ export function InstitutionBanner({
           <div className="mt-6 flex flex-col items-center gap-3 w-full">
             <button
               onClick={onAction}
-              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-semibold tracking-wide bg-purple-600 hover:bg-purple-700 text-white transition-all active:scale-[0.98] group"
+              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-semibold tracking-wide bg-primary hover:bg-primary-hover text-white transition-all active:scale-[0.98] group"
             >
               <span>
                 {hasOrganization ? "Explore Courses" : "Join Organization"}
@@ -287,13 +287,13 @@ function ActiveModuleCard({ module, onNavigate }: ActiveModuleProps) {
         <div className="py-1 max-w-md space-y-2">
           <div className="h-2 w-full bg-purple-100/60 rounded-full overflow-hidden">
             <div
-              className="h-full bg-purple-600 rounded-full transition-all duration-500"
+              className="h-full bg-primary rounded-full transition-all duration-500"
               style={{ width: `${module.progress}%` }}
             />
           </div>
           <div className="flex items-center text-[11px] font-medium text-zinc-400">
             <span>Course Progress:&nbsp;</span>
-            <span className="font-bold text-purple-700">
+            <span className="font-bold text-primary">
               {module.progress}% Completed
             </span>
           </div>
@@ -307,7 +307,7 @@ function ActiveModuleCard({ module, onNavigate }: ActiveModuleProps) {
       <div className="pt-6 mt-auto">
         <button
           onClick={() => onNavigate(module.href)}
-          className="inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98]"
+          className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98]"
         >
           <PlayCircle size={14} />
           <span>Resume Module</span>

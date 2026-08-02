@@ -84,7 +84,7 @@ const CourseGrid = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search courses..."
-              className="w-full rounded-xl border border-zinc-200/80 bg-zinc-50/50 pl-10 pr-9 py-2 text-xs font-medium text-zinc-800 placeholder:text-zinc-400 focus:bg-white focus:border-purple-500 focus:outline-none transition-all shadow-xs"
+              className="w-full rounded-xl border border-zinc-200/80 bg-zinc-50/50 pl-10 pr-9 py-2 text-xs font-medium text-zinc-800 placeholder:text-zinc-400 focus:bg-white focus:border-primary focus:outline-none transition-all shadow-xs"
             />
             {query && (
               <button
@@ -110,7 +110,7 @@ const CourseGrid = () => {
               onClick={() => setFilter("all")}
               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filter === "all"
-                  ? "bg-purple-600 text-white shadow-xs"
+                  ? "bg-primary text-white shadow-xs"
                   : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/80"
               }`}
             >
@@ -123,7 +123,7 @@ const CourseGrid = () => {
               onClick={() => setFilter("public")}
               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filter === "public"
-                  ? "bg-purple-600 text-white shadow-xs"
+                  ? "bg-primary text-white shadow-xs"
                   : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/80"
               }`}
             >
@@ -136,7 +136,7 @@ const CourseGrid = () => {
               onClick={() => setFilter("organization")}
               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filter === "organization"
-                  ? "bg-purple-600 text-white shadow-xs"
+                  ? "bg-primary text-white shadow-xs"
                   : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/80"
               }`}
             >
@@ -150,7 +150,7 @@ const CourseGrid = () => {
             <button
               type="button"
               onClick={handleReset}
-              className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-purple-600 transition-colors font-medium px-2 py-1 rounded-md hover:bg-purple-50"
+              className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-primary-hover transition-colors font-medium px-2 py-1 rounded-md hover:bg-purple-50"
             >
               <RotateCcw size={12} />
               <span>Reset Filters</span>
@@ -163,7 +163,7 @@ const CourseGrid = () => {
           <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-purple-50/60 border border-purple-100/80 text-xs">
             <span className="text-zinc-600 font-medium">
               Search results for:{" "}
-              <span className="font-semibold text-purple-700">
+              <span className="font-semibold text-primary">
                 &quot;{activeSearch}&quot;
               </span>
             </span>
@@ -173,7 +173,7 @@ const CourseGrid = () => {
                 setQuery("");
                 setActiveSearch("");
               }}
-              className="text-zinc-400 hover:text-purple-700 transition-colors"
+              className="text-zinc-400 hover:text-primary-hover transition-colors"
               title="Clear search"
             >
               <X size={14} />
@@ -206,7 +206,7 @@ const CourseGrid = () => {
             <button
               type="button"
               onClick={handleReset}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all"
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold bg-primary text-white rounded-xl hover:bg-primary-hover transition-all"
             >
               <RotateCcw size={12} />
               <span>Reset All Filters</span>
