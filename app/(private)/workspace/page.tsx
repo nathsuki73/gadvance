@@ -117,11 +117,18 @@ export default function WorkspacePage() {
           hasOrganization={hasOrganization}
           organizationName={organizationName}
           isFetching={isBannerLoading}
-          onAction={() =>
-            router.push(
-              hasOrganization ? "/explore" : "/workspace/organization",
-            )
-          }
+          /* 
+            ========================================================================
+            REDIRECTION LOGIC CHANGE:
+            Original:
+            onAction={() =>
+              router.push(
+                hasOrganization ? "/explore" : "/workspace/organization",
+              )
+            }
+            ========================================================================
+          */
+          onAction={() => router.push("/organization")} // Update path to match your folder structure (e.g., "/workspace/organization" or "/organization")
           onLeave={handleLeaveOrganization}
         />
 
@@ -161,10 +168,6 @@ export default function WorkspacePage() {
     </div>
   );
 }
-
-/* ============================================================================
-   SUB-COMPONENTS (Clean Structure & Reusability)
-   ============================================================================ */
 
 interface OrganizationBannerProps {
   hasOrganization: boolean;
@@ -211,14 +214,14 @@ export function InstitutionBanner({
                   </span>
                 </>
               ) : (
-                "Are you affiliated with an institution?"
+                "Discover Organizations"
               )}
             </h2>
 
             <p className="text-xs text-zinc-500 leading-relaxed">
               {hasOrganization
                 ? "Access custom modules and learning tracks curated specifically for your team."
-                : "Join your team using an invite code to unlock shared pathways and learning progress."}
+                : "Connect with your school, company, or study group to access certain learning content."}
             </p>
           </div>
 
@@ -226,10 +229,17 @@ export function InstitutionBanner({
           <div className="mt-6 flex flex-col items-center gap-3 w-full">
             <button
               onClick={onAction}
-              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-semibold tracking-wide bg-primary hover:bg-primary-hover text-white transition-all active:scale-[0.98] group"
+              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-semibold tracking-wide bg-primary hover:bg-primary-hover text-white transition-all active:scale-[0.98] group cursor-pointer"
             >
               <span>
-                {hasOrganization ? "Explore Courses" : "Join Organization"}
+                {/* 
+                  ========================================================================
+                  BUTTON TEXT LOGIC CHANGE:
+                  Original:
+                  {hasOrganization ? "Explore Courses" : "View Organization"}
+                  ========================================================================
+                */}
+                View Organizations
               </span>
               <ArrowRight
                 size={14}
@@ -241,7 +251,7 @@ export function InstitutionBanner({
             {hasOrganization && (
               <button
                 onClick={onLeave}
-                className="inline-flex items-center gap-1.5 text-[11px] font-medium text-zinc-400 hover:text-red-600 transition-colors duration-200 px-3 py-1 rounded-md hover:bg-red-50 mt-1"
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium text-zinc-400 hover:text-red-600 transition-colors duration-200 px-3 py-1 rounded-md hover:bg-red-50 mt-1 cursor-pointer"
                 title="Leave Organization"
               >
                 <LogOut size={12} />
@@ -307,7 +317,7 @@ function ActiveModuleCard({ module, onNavigate }: ActiveModuleProps) {
       <div className="pt-6 mt-auto">
         <button
           onClick={() => onNavigate(module.href)}
-          className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98]"
+          className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] cursor-pointer"
         >
           <PlayCircle size={14} />
           <span>Resume Module</span>

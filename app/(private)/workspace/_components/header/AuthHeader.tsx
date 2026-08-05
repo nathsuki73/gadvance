@@ -29,6 +29,7 @@ const AUTH_NAVS = [
   { href: "/workspace", label: "Workspace" },
   { href: "/workspace/courses", label: "My Courses" },
   { href: "/explore", label: "Explore" },
+  { href: "/organization", label: "Organizations" },
 ] as const;
 
 const FALLBACK_USER = {

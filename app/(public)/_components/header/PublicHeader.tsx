@@ -16,6 +16,7 @@ const PUBLIC_NAVS = [
   { href: "/explore", label: "Explore" },
   { href: "/community-forum", label: "Community" },
   { href: "/support", label: "Support" },
+  { href: "/organization", label: "Organizations" },
 ];
 
 export default function PublicHeader() {

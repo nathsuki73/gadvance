@@ -84,7 +84,7 @@ const CourseGrid = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search courses..."
-              className="w-full rounded-xl border border-zinc-200/80 bg-zinc-50/50 pl-10 pr-9 py-2 text-xs font-medium text-zinc-800 placeholder:text-zinc-400 focus:bg-white focus:border-primary focus:outline-none transition-all shadow-xs"
+              className="w-full pl-10 pr-4 py-2 rounded-full border border-zinc-200 text-sm bg-zinc-50/50 text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:border-transparent transition-all"
             />
             {query && (
               <button
