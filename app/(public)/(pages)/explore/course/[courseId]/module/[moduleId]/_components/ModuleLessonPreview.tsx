@@ -74,7 +74,7 @@ const ModuleLessonPreview = ({ module }: ModuleLessonPreviewProps) => {
         {/* Module Header Elements */}
         <div className="mb-12 border-l-4 border-purple-600 pl-6">
           <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400 mb-1">
-            Module Curriculum
+            Module
           </h2>
           <h3 className="text-2xl font-semibold text-zinc-900 tracking-tight">
             Sections & Content Outline

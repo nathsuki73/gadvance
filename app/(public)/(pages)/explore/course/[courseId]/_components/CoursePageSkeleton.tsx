@@ -48,7 +48,6 @@ export default function CoursePageSkeleton() {
       {/* Mocking CourseModulePreview Content Container */}
       <section className="mx-auto max-w-7xl px-6 py-16 md:px-12 space-y-8">
         <div className="h-5 w-48 bg-zinc-200 rounded" />{" "}
-        {/* "Course Curriculum" Header Label */}
         {/* Modules Grid / Stack */}
         <div className="space-y-4">
           {[1, 2, 3].map((index) => (

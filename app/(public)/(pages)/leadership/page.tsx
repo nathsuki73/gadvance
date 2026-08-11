@@ -143,7 +143,7 @@ export default function WomenInLeadershipPage() {
             </h3>
             <p className="mt-6 max-w-3xl text-lg font-light leading-relaxed text-zinc-500">
               Systemic obstacles and workplace biases often hinder career
-              growth. Our curriculum focuses on practical skills and
+              growth. Our learning plans focuses on practical skills and
               organizational frameworks that support equitable advancement.
             </p>
           </div>
@@ -192,7 +192,7 @@ export default function WomenInLeadershipPage() {
         </div>
       </section>
 
-      {/* ================= CURRICULUM / MODULES ================= */}
+      {/* =================  MODULES ================= */}
       <section id="modules" className="py-32 bg-white">
         <div className="mx-auto max-w-7xl px-8 lg:px-12">
           <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out text-center max-w-3xl mx-auto">
@@ -200,7 +200,7 @@ export default function WomenInLeadershipPage() {
               Structured Learning
             </h2>
             <h3 className="mt-4 text-3xl font-light tracking-tight text-zinc-900 sm:text-5xl">
-              Curriculum Roadmap for <br />
+              Roadmap for <br />
               <span className="font-serif italic font-semibold">
                 Women Leaders
               </span>

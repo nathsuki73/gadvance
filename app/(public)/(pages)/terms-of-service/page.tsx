@@ -85,7 +85,7 @@ export default function TermsOfServicePage() {
           </div>
         </section>
 
-{/* ================= QUICK HIGHLIGHTS ================= */}
+        {/* ================= QUICK HIGHLIGHTS ================= */}
         <section className="py-16 bg-zinc-50/70 border-y border-zinc-100">
           <div className="mx-auto max-w-7xl px-8 lg:px-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -97,9 +97,8 @@ export default function TermsOfServicePage() {
                   Educational Use
                 </h3>
                 <p className="mt-3 text-xs sm:text-sm font-light leading-relaxed text-zinc-500">
-                  Curriculum materials and toolkits are provided for
-                  non-commercial educational, research, and institutional
-                  development purposes.
+                  Materials and toolkits are provided for non-commercial
+                  educational, research, and institutional development purposes.
                 </p>
               </div>
 
@@ -125,7 +124,7 @@ export default function TermsOfServicePage() {
                   Adaptive Mastery
                 </h3>
                 <p className="mt-3 text-xs sm:text-sm font-light leading-relaxed text-zinc-500">
-                  Intelligent progress tracking analyzes learning patterns and 
+                  Intelligent progress tracking analyzes learning patterns and
                   assessment responses to measure genuine concept mastery.
                 </p>
               </div>
@@ -209,18 +208,18 @@ export default function TermsOfServicePage() {
                 </h2>
               </div>
               <p className="text-sm font-light text-zinc-600 leading-relaxed">
-                All learning materials and programs, software code, design assets,
-                research papers, and media provided on GADvance are protected by
-                intellectual property laws and remain the property of GADvance
-                and Laguna State Polytechnic University – San Pablo City Campus
-                (LSPU CCS).
+                All learning materials and programs, software code, design
+                assets, research papers, and media provided on GADvance are
+                protected by intellectual property laws and remain the property
+                of GADvance and Laguna State Polytechnic University – San Pablo
+                City Campus (LSPU CCS).
               </p>
               <p className="text-sm font-light text-zinc-600 leading-relaxed">
                 You are granted a limited, revocable, non-exclusive license to
-                view materials solely for personal learning or
-                internal organizational GAD planning. Reproduction or
-                redistribution for commercial sale without prior written consent
-                is strictly prohibited.
+                view materials solely for personal learning or internal
+                organizational GAD planning. Reproduction or redistribution for
+                commercial sale without prior written consent is strictly
+                prohibited.
               </p>
             </div>
 

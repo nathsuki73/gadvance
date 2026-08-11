@@ -98,9 +98,6 @@ export default function ModuleSidebar({
           <div className="hidden w-full items-center justify-between lg:flex">
             {!isCollapsed && (
               <div className="min-w-0 pr-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-600">
-                  curriculum
-                </p>
                 <h2 className="truncate text-sm font-semibold leading-snug text-zinc-800">
                   {structureTitle}
                 </h2>

@@ -198,7 +198,7 @@ const CourseOverviewHeader = ({
                 </div>
               ) : (
                 <div className="py-12 text-center text-xs font-light tracking-wide text-zinc-400">
-                  No curriculum modules found for this learning plan.
+                  No modules found for this learning plan.
                 </div>
               )}
             </div>

@@ -130,7 +130,7 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
           </div>
         </div>
 
-        {/* RIGHT PANEL: GROUPED SECTIONS CURRICULUM */}
+        {/* RIGHT PANEL: GROUPED SECTIONS */}
         <div className="min-w-0 lg:border-l lg:border-zinc-100 lg:pl-12">
           <div className="flex items-start gap-4">
             <div className="mt-1 h-12 w-0.5 rounded-full bg-purple-600" />

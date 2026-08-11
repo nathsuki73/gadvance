@@ -130,7 +130,7 @@ export default function SupportPage() {
               icon={<Mail size={24} strokeWidth={1.5} />}
               title="general inquiries"
               detail="gadvanceproject@gmail.com"
-              desc="For students and individual learners seeking guidance on curriculum access and enrollment."
+              desc="For students and individual learners seeking guidance on access and enrollment."
             />
             <ContactCard
               icon={<MessageCircle size={24} strokeWidth={1.5} />}

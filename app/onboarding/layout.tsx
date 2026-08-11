@@ -20,7 +20,7 @@ const STEP_CONTENT: Record<
       </>
     ),
     description:
-      "Your identity is the foundation of your journey here. We use this to personalize your curriculum and verify your certifications.",
+      "Your identity is the foundation of your journey here. We use this to personalize your learning and verify your identity.",
   },
   "/onboarding/contact-location": {
     title: (
