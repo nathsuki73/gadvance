@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search,
   Building2,
   Globe2,
-  Sparkles,
   X,
   RotateCcw,
   LayoutGrid,
@@ -18,9 +18,19 @@ import type { LearningPlan } from "../types";
 type FilterType = "all" | "public" | "organization";
 
 const CourseGrid = () => {
+  const { data: session } = useSession();
+  const isAuthenticated = !!session?.user;
+
   const [query, setQuery] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
+
+  // Automatically reset filter back to 'all' if user logs out while on 'organization' tab
+  useEffect(() => {
+    if (!isAuthenticated && filter === "organization") {
+      setFilter("all");
+    }
+  }, [isAuthenticated, filter]);
 
   // Fetch courses with active search query
   const { data: rawCourses = [], isLoading } = useQuery({
@@ -131,18 +141,21 @@ const CourseGrid = () => {
               <span>Public</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setFilter("organization")}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                filter === "organization"
-                  ? "bg-primary text-white shadow-xs"
-                  : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/80"
-              }`}
-            >
-              <Building2 size={13} />
-              <span>Organization</span>
-            </button>
+            {/* Conditionally render Organization tab ONLY when signed in */}
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={() => setFilter("organization")}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  filter === "organization"
+                    ? "bg-primary text-white shadow-xs"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/80"
+                }`}
+              >
+                <Building2 size={13} />
+                <span>Organization</span>
+              </button>
+            )}
           </div>
 
           {/* Reset Button (Only visible when search or filter is active) */}

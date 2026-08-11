@@ -5,6 +5,9 @@ export const searchContent = async (query: string = "") => {
   const cleanQuery = query.trim();
   const searchParams = new URLSearchParams();
 
+  // Always specify portal=student for student-facing fetches
+  searchParams.append("portal", "student");
+
   if (cleanQuery) {
     searchParams.append("search", cleanQuery);
   } else {
