@@ -129,7 +129,7 @@ export default function BlockNoteReader({
   }, [editor, initialContent]);
 
   return (
-    <div className="w-full rounded-2xl border border-zinc-200/80 bg-white p-2 shadow-2xs overflow-x-auto">
+    <div className="w-full   border-zinc-200/80 bg-white  shadow-2xs overflow-x-auto">
       <BlockNoteView editor={editor} theme="light" editable={false} />
     </div>
   );
