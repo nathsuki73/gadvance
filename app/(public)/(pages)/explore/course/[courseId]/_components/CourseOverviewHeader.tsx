@@ -1,15 +1,8 @@
 "use client";
 
 import React from "react";
-import {
-  Clock3,
-  Users,
-  BadgeCheck,
-  BookOpen,
-  PlayCircle,
-  LockKeyhole,
-} from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Clock3, Users, BookOpen, LockKeyhole, BadgeCheck } from "lucide-react";
 import ActionConfirmationDialog from "./ActionConfirmationDialog";
 import EnrollmentRequiredDialog from "./EnrollmentRequiredDialog";
 import { useCourseEnrollment } from "../_hooks/useCourseEnrollment";
@@ -21,7 +14,7 @@ type CourseOverviewHeaderProps = {
   isLoggedIn: boolean;
   initialEnrollment: Enrollment | null;
   onEnrollSuccess?: () => void;
-  onRequireAuth?: () => Promise<boolean>; // 👈 Pre-action session guard callback
+  onRequireAuth?: () => Promise<boolean>;
 };
 
 const CourseOverviewHeader = ({
@@ -31,13 +24,15 @@ const CourseOverviewHeader = ({
   onEnrollSuccess,
   onRequireAuth,
 }: CourseOverviewHeaderProps) => {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
   const {
     enrolledCount,
     isSubmitting,
     showActionDialog,
     dialogVariant,
     isEnrolled,
-    isCompleted,
     progress,
     setShowActionDialog,
     handlePrimaryAction,
@@ -52,28 +47,32 @@ const CourseOverviewHeader = ({
       if (onEnrollSuccess) onEnrollSuccess();
     },
   });
-  const queryClient = useQueryClient();
 
-  // Guard wrapper for actions (Enroll / Unenroll)
   const executeGuardedAction = async (action: () => void) => {
     if (onRequireAuth) {
       const isValid = await onRequireAuth();
-      if (!isValid) return; // Token expired -> forceSignOut automatically triggered
+      if (!isValid) return;
     }
     action();
   };
 
   const onConfirmWithInvalidation = async () => {
     await handleConfirmAction();
-    // 👈 4. Invalidate cache after enrollment / unenrollment confirmation
     queryClient.invalidateQueries({ queryKey: ["enrolledCourses"] });
+  };
+
+  const handleModuleClick = (moduleId: string) => {
+    executeGuardedAction(() => {
+      if (!moduleId || !course.id) return;
+      router.push(`/explore/course/${course.id}/module/${moduleId}`);
+    });
   };
 
   return (
     <>
       <section className="border-b border-zinc-100 bg-linear-to-b from-white via-white to-zinc-50/40">
         <div className="mx-auto grid max-w-7xl gap-12 px-6 py-12 md:px-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:py-20">
-          {/* LEFT PANEL: CONTENT HERO */}
+          {/* LEFT PANEL: HERO */}
           <div>
             <div className="mb-5 flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-[0.35em] text-primary">
               {course.tag ? (
@@ -98,10 +97,10 @@ const CourseOverviewHeader = ({
                 onClick={() => executeGuardedAction(handlePrimaryAction)}
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-hover active:scale-[0.98] cursor-pointer"
               >
-                {isEnrolled ? "View Modules" : "Enroll Now"}
+                {isEnrolled ? "Continue Learning" : "Enroll Now"}
               </button>
 
-              {isEnrolled ? (
+              {isEnrolled && (
                 <button
                   type="button"
                   onClick={() => executeGuardedAction(handleUnenrollClick)}
@@ -109,10 +108,11 @@ const CourseOverviewHeader = ({
                 >
                   Unenroll
                 </button>
-              ) : null}
+              )}
             </div>
 
-            <div className="mt-12 grid gap-4 sm:grid-cols-3">
+            {/* Stat Cards (Status card removed) */}
+            <div className="mt-12 grid gap-4 sm:grid-cols-2">
               <StatCard
                 icon={<Users className="h-4 w-4" />}
                 label="enrolled"
@@ -123,18 +123,11 @@ const CourseOverviewHeader = ({
                 label="progress"
                 value={`${progress}%`}
               />
-              <StatCard
-                icon={<BadgeCheck className="h-4 w-4" />}
-                label="status"
-                value={
-                  isCompleted ? "completed" : isEnrolled ? "active" : "open"
-                }
-              />
             </div>
           </div>
 
-          {/* RIGHT PANEL: SYLLABUS ROADMAP SECTION */}
-          <div className="min-w-0 lg:border-l lg:border-zinc-100 lg:pl-26">
+          {/* RIGHT PANEL: MODULE LIST */}
+          <div className="min-w-0 lg:border-l lg:border-zinc-100 lg:pl-16">
             <div className="flex items-start gap-4">
               <div className="mt-1 h-12 w-0.5 rounded-full bg-primary" />
               <div>
@@ -146,80 +139,59 @@ const CourseOverviewHeader = ({
 
             <div className="mt-10 max-h-115 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-200">
               {course.modules?.length ? (
-                <div className="flex flex-col">
-                  {course.modules.map((module, index) => {
-                    const moduleRow = (
-                      <div className="grid grid-cols-[auto_1fr_auto] gap-5 w-full items-start">
-                        {/* Number Indicator */}
-                        <span className="pt-0.5 pl-3 pr-3 text-xs font-bold tracking-widest text-zinc-300 font-mono min-w-6">
-                          {(index + 1).toString().padStart(2, "0")}
-                        </span>
+                <div className="flex flex-col space-y-1">
+                  {course.modules.map((module: any, index: number) => {
+                    const moduleId = module.id || module.module_id;
 
-                        {/* Title & Description */}
-                        <div className="flex flex-col gap-1 min-w-0">
-                          <div className="flex items-center gap-2.5">
-                            {index === 0 ? (
-                              <BookOpen
-                                size={15}
-                                className="shrink-0 text-[#8b5cf6] mt-0.5"
-                              />
-                            ) : (
-                              <PlayCircle
-                                size={15}
-                                className="shrink-0 text-[#8b5cf6] mt-0.5"
-                              />
-                            )}
-                            <h3 className="text-[0.95rem] font-medium tracking-tight text-zinc-800 group-hover:text-[#8b5cf6] transition-colors duration-200 truncate">
-                              {module.title}
-                            </h3>
-                          </div>
-                          <p className="text-xs font-light leading-relaxed text-zinc-400 pr-4 mt-1">
-                            {module.about ||
-                              "AI-driven adaptive learning system"}
-                          </p>
-                        </div>
-
-                        {/* Lock State Status Flag */}
-                        <div className="shrink-0 self-center pl-2">
-                          {isEnrolled ? (
-                            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 border border-emerald-100">
-                              <BadgeCheck size={12} strokeWidth={2.5} />
-                            </span>
-                          ) : (
-                            <LockKeyhole
-                              size={14}
-                              className="text-zinc-300 group-hover:text-zinc-400 transition-colors duration-200"
-                            />
-                          )}
-                        </div>
-                      </div>
-                    );
-
-                    return isEnrolled ? (
-                      <Link
-                        key={module.id}
-                        href={`/explore/course/${course.id}/module/${module.id}`}
-                        onClick={(e) => {
-                          if (onRequireAuth) {
-                            onRequireAuth().then((isValid) => {
-                              if (!isValid) e.preventDefault();
-                            });
-                          }
-                        }}
-                        className="group flex w-full border-b border-zinc-100 py-6 text-left transition-all hover:bg-zinc-50/50 rounded-xl px-2 -mx-2"
-                      >
-                        {moduleRow}
-                      </Link>
-                    ) : (
+                    return (
                       <button
-                        key={module.id}
+                        key={moduleId || index}
                         type="button"
                         onClick={() =>
-                          executeGuardedAction(handlePrimaryAction)
+                          isEnrolled
+                            ? handleModuleClick(moduleId)
+                            : executeGuardedAction(handlePrimaryAction)
                         }
-                        className="group flex w-full border-b border-zinc-100 py-6 text-left transition-all hover:bg-zinc-50/50 rounded-xl px-2 -mx-2 cursor-pointer"
+                        className="group flex w-full border-b border-zinc-100 py-5 text-left transition-all hover:bg-zinc-50/80 rounded-xl px-3 -mx-3 cursor-pointer"
                       >
-                        {moduleRow}
+                        <div className="grid grid-cols-[auto_1fr_auto] gap-4 w-full items-start">
+                          {/* Number Indicator */}
+                          <span className="pt-0.5 font-mono text-xs font-bold tracking-widest text-zinc-300 min-w-6">
+                            {(index + 1).toString().padStart(2, "0")}
+                          </span>
+
+                          {/* Title & Description */}
+                          <div className="flex flex-col gap-1 min-w-0 pr-2">
+                            <div className="flex items-center gap-2">
+                              <BookOpen
+                                size={15}
+                                className="shrink-0 text-[#8b5cf6]"
+                              />
+                              <h3 className="text-[0.95rem] font-medium tracking-tight text-zinc-800 group-hover:text-[#8b5cf6] transition-colors truncate">
+                                {module.title || `Module ${index + 1}`}
+                              </h3>
+                            </div>
+                            <p className="text-xs font-light leading-relaxed text-zinc-400 line-clamp-2 mt-0.5">
+                              {module.about ||
+                                module.description ||
+                                "Interactive learning module"}
+                            </p>
+                          </div>
+
+                          {/* Lock / Enrolled Indicator */}
+                          <div className="shrink-0 self-center pl-2">
+                            {isEnrolled ? (
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 border border-emerald-100">
+                                <BadgeCheck size={14} strokeWidth={2.5} />
+                              </span>
+                            ) : (
+                              <LockKeyhole
+                                size={14}
+                                className="text-zinc-300 group-hover:text-zinc-400 transition-colors"
+                              />
+                            )}
+                          </div>
+                        </div>
                       </button>
                     );
                   })}
