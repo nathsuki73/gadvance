@@ -210,6 +210,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
             itemId={activeItem.id}
             pageId={activeItem.content_id || activeItem.id}
             title={activeItem.title}
+            initialCompleted={completedItemIds.has(activeItem.id)}
             onComplete={() => handleItemComplete(activeItem.id)}
             onNext={handleNext}
           />

@@ -1,15 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
-import {
-  Loader2,
-  CheckCircle2,
-  ChevronRight,
-  AlertCircle,
-  BookOpen,
-} from "lucide-react";
+import { Loader2, AlertCircle, BookOpen, ArrowDown } from "lucide-react";
 
 import "@blocknote/mantine/style.css";
 import "@blocknote/core/fonts/inter.css";
@@ -41,6 +35,7 @@ interface PageContainerProps {
   itemId: string;
   pageId: string;
   title: string;
+  initialCompleted?: boolean; // 👈 Allows passing existing completion status
   onComplete: () => void;
   onNext: () => void;
 }
@@ -49,16 +44,27 @@ export default function PageContainer({
   itemId,
   pageId,
   title,
+  initialCompleted = false,
   onComplete,
   onNext,
 }: PageContainerProps) {
   const { data: session, status: sessionStatus } = useSession();
   const token = session?.laravelJwt;
 
+  const containerRef = useRef<HTMLDivElement>(null);
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isCompleted, setIsCompleted] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(initialCompleted);
+  const [scrollProgress, setScrollProgress] = useState(
+    initialCompleted ? 100 : 0,
+  );
+
+  // Sync completion and progress when pageId or initialCompleted changes
+  useEffect(() => {
+    setIsCompleted(initialCompleted);
+    setScrollProgress(initialCompleted ? 100 : 0);
+  }, [pageId, initialCompleted]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -127,17 +133,48 @@ export default function PageContainer({
     };
   }, [pageId, token, sessionStatus]);
 
-  const handleMarkComplete = () => {
-    setIsCompleted(true);
-    onComplete();
-  };
-
-  const handleNextClick = () => {
-    if (!isCompleted) {
-      handleMarkComplete();
+  const handleScrollCheck = useCallback(() => {
+    // If already completed, lock progress at 100%
+    if (isCompleted) {
+      setScrollProgress(100);
+      return;
     }
-    onNext();
-  };
+
+    const el = containerRef.current;
+    if (!el) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    const totalScrollable = scrollHeight - clientHeight;
+
+    if (totalScrollable <= 0) {
+      setScrollProgress(100);
+      setIsCompleted(true);
+      onComplete();
+      return;
+    }
+
+    const currentProgress = Math.min(
+      100,
+      Math.max(0, (scrollTop / totalScrollable) * 100),
+    );
+    setScrollProgress(currentProgress);
+
+    const distanceFromBottom = totalScrollable - scrollTop;
+    if (distanceFromBottom <= 100) {
+      setIsCompleted(true);
+      onComplete();
+    }
+  }, [isCompleted, onComplete]);
+
+  useEffect(() => {
+    if (loading || !pageData) return;
+
+    const timer = setTimeout(() => {
+      handleScrollCheck();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [loading, pageData, handleScrollCheck]);
 
   if (loading || sessionStatus === "loading") {
     return (
@@ -171,9 +208,25 @@ export default function PageContainer({
     Array.isArray(pageData.content) &&
     pageData.content.length > 0;
 
+  // Derive active display percentage: 100% if completed, else current scroll percentage
+  const displayProgress = isCompleted ? 100 : scrollProgress;
+
+  // Donut SVG Parameters
+  const size = 48;
+  const strokeWidth = 3;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset =
+    circumference - (displayProgress / 100) * circumference;
+
+  const canNavigateNext = isCompleted || displayProgress >= 90;
+
   return (
-    <div className="flex h-[100dvh] flex-col justify-between overflow-x-hidden overflow-y-auto bg-white">
-      {/* Scrollable Content Container (Header and border removed) */}
+    <div
+      ref={containerRef}
+      onScroll={handleScrollCheck}
+      className="flex h-[100dvh] flex-col justify-between overflow-x-hidden overflow-y-auto bg-white scroll-smooth"
+    >
       <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
         <main className="min-h-[250px] w-full overflow-x-auto">
           {isBlockNoteContent ? (
@@ -195,33 +248,63 @@ export default function PageContainer({
         </main>
       </div>
 
-      {/* Responsive Footer Navigation */}
-      <footer className="sticky bottom-0 z-20 border-t border-zinc-100 bg-white/95 backdrop-blur-md px-4 py-3 sm:px-8 sm:py-4">
-        <div className="mx-auto flex max-w-4xl flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-4">
+      <footer className="sticky bottom-0 z-20 border-t border-zinc-100 bg-white/95 backdrop-blur-md px-4 py-3 sm:px-8 sm:py-4 transition-all">
+        <div className="mx-auto flex max-w-4xl items-center justify-end">
           <button
             type="button"
-            onClick={handleMarkComplete}
-            disabled={isCompleted}
-            className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer min-h-[44px] ${
-              isCompleted
-                ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200/80 active:scale-[0.98]"
+            onClick={() => {
+              if (canNavigateNext) {
+                onNext();
+              }
+            }}
+            disabled={!canNavigateNext}
+            aria-label={canNavigateNext ? "Next Item" : "Reading Progress"}
+            className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all ${
+              canNavigateNext
+                ? "cursor-pointer hover:scale-105 active:scale-95"
+                : "cursor-default"
             }`}
           >
-            <CheckCircle2
-              size={16}
-              className={isCompleted ? "text-emerald-600" : "text-zinc-400"}
-            />
-            <span>{isCompleted ? "Completed" : "Mark as Complete"}</span>
-          </button>
+            {/* Donut SVG Progress Circle */}
+            <svg
+              className="absolute inset-0 -rotate-90 transform"
+              width={size}
+              height={size}
+            >
+              {/* Background Track Circle */}
+              <circle
+                className="text-purple-100"
+                stroke="currentColor"
+                fill="transparent"
+                strokeWidth={strokeWidth}
+                r={radius}
+                cx={size / 2}
+                cy={size / 2}
+              />
+              {/* Active Progress Circle */}
+              <circle
+                className="text-purple-600 transition-all duration-300 ease-out"
+                stroke="currentColor"
+                fill="transparent"
+                strokeWidth={strokeWidth}
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                r={radius}
+                cx={size / 2}
+                cy={size / 2}
+              />
+            </svg>
 
-          <button
-            type="button"
-            onClick={handleNextClick}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 sm:py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-purple-600 text-white hover:bg-purple-700 transition-all shadow-md shadow-purple-600/20 active:scale-[0.98] cursor-pointer min-h-[44px]"
-          >
-            <span>Next Item</span>
-            <ChevronRight size={15} />
+            {/* Arrow Icon inside Transparent Center */}
+            <ArrowDown
+              size={18}
+              className={`transition-colors duration-200 ${
+                canNavigateNext
+                  ? "text-purple-600 font-bold"
+                  : "text-purple-400"
+              }`}
+            />
           </button>
         </div>
       </footer>
