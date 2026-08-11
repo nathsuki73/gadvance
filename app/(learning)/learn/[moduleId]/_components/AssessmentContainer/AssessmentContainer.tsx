@@ -10,15 +10,22 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { AssessmentViewData } from "./types";
-import { getAssessmentViewData } from "./assessmentViewService";
+import {
+  getAssessmentViewData,
+  getAssessmentState,
+  saveAssessmentDraft,
+  submitAssessment,
+  AnswerPayload,
+} from "./assessmentViewService";
 import { AssessmentStartScreen } from "./AssessmentStartScreen";
 import { QuestionCard } from "./QuestionCard";
 import { ResultsSummary } from "./ResultSummary";
 
 interface AssessmentContainerProps {
-  itemId: string;
-  moduleId: string;
-  assessmentId: string;
+  itemId: string; // SectionItem ID
+  sectionId?: string; // Section ID (Required for progress tracking)
+  moduleId: string; // Module ID
+  assessmentId: string; // Assessment ID
   type?: string;
   onComplete: () => void;
   onNext: () => void;
@@ -26,6 +33,7 @@ interface AssessmentContainerProps {
 
 export default function AssessmentContainer({
   itemId,
+  sectionId = "",
   moduleId,
   assessmentId,
   type = "quiz",
@@ -38,54 +46,92 @@ export default function AssessmentContainer({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
-  // Fetch dynamic assessment payload
+  // 1. Fetch assessment data & restore user attempt state
   useEffect(() => {
     let isCancelled = false;
 
-    async function fetchAssessment() {
-      if (!assessmentId) {
-        setError("No valid assessment ID provided for this item.");
-        setIsLoading(false);
-        return;
-      }
+    async function initAssessment() {
+      if (!assessmentId) return;
 
       setIsLoading(true);
       setError(null);
 
       try {
+        // 1. Fetch Assessment Content
         const data = await getAssessmentViewData(assessmentId);
-        if (!isCancelled) {
+        if (isCancelled) return;
+
+        // 2. Fetch Active Attempt Draft State
+        const stateRes = await getAssessmentState(assessmentId, itemId);
+
+        if (stateRes.success && stateRes.data && !isCancelled) {
+          const { draft_answers, question_order, current_index, status } =
+            stateRes.data;
+
+          let activeQuestions = [...data.questions];
+
+          // Re-arrange questions to match locked order from active attempt
+          if (question_order && question_order.length > 0) {
+            const orderedMap = new Map(data.questions.map((q) => [q.id, q]));
+            const restoredQuestions = question_order
+              .map((qId) => orderedMap.get(qId))
+              .filter((q): q is (typeof data.questions)[0] => Boolean(q));
+
+            if (restoredQuestions.length > 0) {
+              activeQuestions = restoredQuestions;
+            }
+          }
+
+          setAssessment({
+            ...data,
+            questions: activeQuestions,
+          });
+
+          // Restore saved answers
+          if (draft_answers && draft_answers.length > 0) {
+            const restoredMap: Record<string, string> = {};
+            draft_answers.forEach((ans: any) => {
+              restoredMap[ans.question_id] = ans.choice_id;
+            });
+            setAnswers(restoredMap);
+            setHasStarted(true); // Skip start screen on resume
+          }
+
+          // Restore saved active question index
+          if (
+            typeof current_index === "number" &&
+            current_index < activeQuestions.length
+          ) {
+            setCurrentQuestionIndex(current_index);
+          }
+
+          if (status === "completed") {
+            setSubmitted(true);
+          }
+        } else {
           setAssessment(data);
         }
       } catch (err: any) {
-        if (!isCancelled) {
-          console.error("Error loading assessment:", err);
-          setError(
-            err.message?.includes("404")
-              ? "Assessment record not found or has been removed."
-              : err.message || "Failed to load assessment.",
-          );
-        }
+        if (!isCancelled) setError(err.message || "Failed to load assessment.");
       } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
+        if (!isCancelled) setIsLoading(false);
       }
     }
 
-    fetchAssessment();
+    initAssessment();
 
     return () => {
       isCancelled = true;
     };
-  }, [assessmentId]);
+  }, [assessmentId, itemId]);
 
-  // Auto-submit timer listener
+  // 2. Timer listener
   useEffect(() => {
     if (!hasStarted || submitted || !assessment?.settings) return;
 
@@ -104,6 +150,31 @@ export default function AssessmentContainer({
 
     return () => clearInterval(interval);
   }, [hasStarted, startTime, submitted, assessment]);
+
+  // Helper to persist draft with locked question order and current question index
+  const triggerDraftSave = (
+    updatedAnswers: Record<string, string>,
+    targetIndex: number,
+  ) => {
+    if (!assessment) return;
+
+    const formattedAnswers: AnswerPayload[] = Object.entries(
+      updatedAnswers,
+    ).map(([qId, cId]) => ({
+      question_id: qId,
+      choice_id: cId,
+    }));
+
+    const questionOrder = assessment.questions.map((q) => q.id);
+
+    saveAssessmentDraft(
+      assessmentId,
+      itemId,
+      formattedAnswers,
+      questionOrder,
+      targetIndex,
+    ).catch((err) => console.error("Draft save failed:", err));
+  };
 
   if (isLoading) {
     return (
@@ -138,7 +209,6 @@ export default function AssessmentContainer({
 
   const { settings, questions } = assessment;
 
-  // Question calculations
   const totalQuestions = questions.length;
   const currentQuestion = questions[currentQuestionIndex];
   const isFirstQuestion = currentQuestionIndex === 0;
@@ -152,46 +222,67 @@ export default function AssessmentContainer({
   }, 0);
 
   const scorePercentage =
-    totalGraded > 0 ? Math.round((correctCount / totalGraded) * 100) : 0;
+    totalGraded > 0 ? Math.round((correctCount / totalGraded) * 100) : 100;
 
+  // 3. Option Selection with Auto-Save Draft
   const handleSelectChoice = (questionId: string, choiceId: string) => {
     if (submitted && !settings.allowReview) return;
-    setAnswers((prev) => ({ ...prev, [questionId]: choiceId }));
+
+    const updatedAnswers = { ...answers, [questionId]: choiceId };
+    setAnswers(updatedAnswers);
+    triggerDraftSave(updatedAnswers, currentQuestionIndex);
   };
 
   const handleNextQuestion = () => {
     if (!isLastQuestion) {
-      setCurrentQuestionIndex((prev) => prev + 1);
+      const nextIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(nextIndex);
+      triggerDraftSave(answers, nextIndex);
     }
   };
 
   const handlePreviousQuestion = () => {
     if (!isFirstQuestion) {
-      setCurrentQuestionIndex((prev) => prev - 1);
+      const prevIndex = currentQuestionIndex - 1;
+      setCurrentQuestionIndex(prevIndex);
+      triggerDraftSave(answers, prevIndex);
     }
   };
 
+  // 4. Final Submission Endpoint Call
   const handleFinalSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    setSubmitted(true);
-    onComplete(); // Sync parent progress complete
+    if (isSubmitting || submitted) return;
 
-    // Remote sync
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      await fetch(`${baseUrl}/api/assessments/${assessmentId}/submit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          module_id: moduleId,
-          answers,
-          score: correctCount,
-          total: totalGraded,
-          percentage: scorePercentage,
+      setIsSubmitting(true);
+
+      const formattedAnswers: AnswerPayload[] = Object.entries(answers).map(
+        ([qId, cId]) => ({
+          question_id: qId,
+          choice_id: cId,
         }),
+      );
+
+      const result = await submitAssessment({
+        assessmentId,
+        moduleId,
+        sectionId,
+        sectionItemId: itemId,
+        answers: formattedAnswers,
       });
-    } catch {
-      // Catch offline or non-blocking sync issues
+
+      if (result.success) {
+        setSubmitted(true);
+        onComplete(); // Triggers sidebar DonutProgress filling
+      } else {
+        alert(result.message || "Failed to save assessment progress.");
+      }
+    } catch (err) {
+      console.error("Submission error:", err);
+      alert("Network issue while submitting assessment.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -303,6 +394,7 @@ export default function AssessmentContainer({
             onStart={() => {
               setStartTime(Date.now());
               setHasStarted(true);
+              triggerDraftSave(answers, 0);
             }}
           />
         ) : submitted ? (
@@ -386,11 +478,15 @@ export default function AssessmentContainer({
               ) : (
                 <button
                   type="button"
-                  onClick={() => handleFinalSubmit()}
-                  disabled={!isCurrentAnswered}
+                  onClick={handleFinalSubmit}
+                  disabled={!isCurrentAnswered || isSubmitting}
                   className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-purple-600 px-6 py-2.5 text-xs font-bold text-white shadow-xs transition-all cursor-pointer hover:bg-purple-700 active:scale-[0.98] disabled:opacity-40"
                 >
-                  <CheckCircle2 size={16} />
+                  {isSubmitting ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <CheckCircle2 size={16} />
+                  )}
                   <span>Complete & Submit</span>
                 </button>
               )}

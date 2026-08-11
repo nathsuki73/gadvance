@@ -188,6 +188,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
             <AssessmentContainer
               itemId={activeItem.id}
               moduleId={moduleId}
+              sectionId={activeItem.section_id}
               assessmentId={activeItem.content_id}
               type={activeItem.assessment_type || "quiz"}
               onComplete={() => handleItemComplete(activeItem.id)}

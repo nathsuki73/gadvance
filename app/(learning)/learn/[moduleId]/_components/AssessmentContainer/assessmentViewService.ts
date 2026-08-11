@@ -7,8 +7,38 @@ import {
   AssessmentSettings,
 } from "./types";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+// Safe API Base URL resolution (prevents double '/api/api' path issues)
+const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = `${rawBaseUrl.replace(/\/$/, "")}/api`;
+
+export type AnswerPayload = {
+  question_id: string;
+  choice_id: string;
+};
+
+export type AssessmentStateData = {
+  attempt_id: string;
+  status: "in_progress" | "completed" | "expired";
+  draft_answers: AnswerPayload[];
+  remaining_seconds: number | null;
+  time_limit_minutes: number | null;
+};
+
+export type SubmissionResultData = {
+  attempt_id: string;
+  score: number;
+  total_points: number;
+  percentage: number;
+  passed: boolean;
+  passing_score: number;
+};
+
+export type ServiceResponse<T> = {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+};
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
@@ -152,6 +182,9 @@ function normalizeAssessmentData(payload: any, id: string): AssessmentViewData {
   };
 }
 
+/**
+ * 1. Fetch Assessment Content and Settings
+ */
 export async function getAssessmentViewData(
   id: string,
 ): Promise<AssessmentViewData> {
@@ -171,7 +204,7 @@ export async function getAssessmentViewData(
   }
 
   const headers = await getAuthHeaders();
-  const res = await fetch(`${API_BASE_URL}/api/assessments/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/assessments/${id}`, {
     method: "GET",
     headers,
   });
@@ -184,4 +217,104 @@ export async function getAssessmentViewData(
 
   const rawData = await res.json();
   return normalizeAssessmentData(rawData, id);
+}
+
+/**
+ * 2. Fetch Active Attempt State, Draft Answers, and Remaining Timer
+ */
+export async function getAssessmentState(
+  assessmentId: string,
+  sectionItemId: string,
+): Promise<ServiceResponse<AssessmentStateData>> {
+  const headers = await getAuthHeaders();
+
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/assessments/${assessmentId}/state?section_item_id=${sectionItemId}`,
+      {
+        method: "GET",
+        headers,
+        cache: "no-store",
+      },
+    );
+
+    const json = await res.json();
+    return json;
+  } catch (error) {
+    console.error("[AssessmentViewService] Fetch state error:", error);
+    return {
+      success: false,
+      error: "Network error fetching assessment state.",
+    };
+  }
+}
+
+/**
+ * 3. Auto-Save Choice Selections as Draft
+ */
+export async function saveAssessmentDraft(
+  assessmentId: string,
+  sectionItemId: string,
+  answers: AnswerPayload[],
+  questionOrder: string[] = [],
+  currentIndex: number = 0,
+): Promise<ServiceResponse<void>> {
+  const headers = await getAuthHeaders();
+
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/assessments/${assessmentId}/save-draft`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          section_item_id: sectionItemId,
+          answers,
+          question_order: questionOrder,
+          current_index: currentIndex,
+        }),
+      },
+    );
+
+    const json = await res.json();
+    return json;
+  } catch (error) {
+    console.error("[AssessmentViewService] Save draft error:", error);
+    return { success: false, error: "Network error saving draft." };
+  }
+}
+
+/**
+ * 4. Submit Assessment, Evaluate Grade, and Fill DonutProgress
+ */
+export async function submitAssessment(payload: {
+  assessmentId: string;
+  moduleId: string;
+  sectionId: string;
+  sectionItemId: string;
+  answers: AnswerPayload[];
+}): Promise<ServiceResponse<SubmissionResultData>> {
+  const headers = await getAuthHeaders();
+
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/assessments/${payload.assessmentId}/submit`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          module_id: payload.moduleId,
+          section_id: payload.sectionId,
+          section_item_id: payload.sectionItemId,
+          answers: payload.answers,
+        }),
+      },
+    );
+
+    const json = await res.json();
+    return json;
+  } catch (error) {
+    console.error("[AssessmentViewService] Submission error:", error);
+    return { success: false, error: "Network error submitting assessment." };
+  }
 }
