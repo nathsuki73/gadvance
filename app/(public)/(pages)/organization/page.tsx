@@ -2,87 +2,156 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { Search, Building2, LayoutGrid, LogOut, Plus } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import {
+  Search,
+  Building2,
+  LayoutGrid,
+  LogOut,
+  Plus,
+  Loader2,
+} from "lucide-react";
+
+// Module augmentation to inform TypeScript of custom session fields
+declare module "next-auth" {
+  interface Session {
+    laravelJwt?: string;
+    sessionToken?: string;
+    error?: string;
+  }
+}
 
 interface Organization {
   id: string;
   title: string;
   description: string;
   membersCount: number;
+  isJoined?: boolean;
 }
 
-const MOCK_ORGANIZATIONS: Organization[] = [
-  {
-    id: "org-1",
-    title: "Computer Science Society",
-    description:
-      "A student-led community dedicated to collaborative coding, competitive programming, and tech workshops.",
-    membersCount: 128,
-  },
-  {
-    id: "org-2",
-    title: "Data Science & AI Lab",
-    description:
-      "Explore machine learning algorithms, big data analysis, and real-world neural network applications.",
-    membersCount: 84,
-  },
-  {
-    id: "org-3",
-    title: "Cyber Security Guild",
-    description:
-      "Focusing on ethical hacking, network defense, penetration testing, and CTF competitions.",
-    membersCount: 45,
-  },
-  {
-    id: "org-4",
-    title: "UI/UX & Product Design Hub",
-    description:
-      "Learn design systems, wireframing, prototyping in Figma, and human-centered design principles.",
-    membersCount: 96,
-  },
-];
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
+  ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")
+  : "";
 
 export default function OrganizationPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
+
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [joinedOrgIds, setJoinedOrgIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "joined">("all");
-  
-  /* 
-    ========================================================================
-    STATE CHANGE:
-    Set initial state to empty Set() so all cards start in "Join" state.
-    Original: new Set(["org-1"])
-    ========================================================================
-  */
-  const [joinedOrgIds, setJoinedOrgIds] = useState<Set<string>>(new Set());
+  const [isFetching, setIsFetching] = useState(true);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const isAuthenticated = !!session?.user;
   const isLoading = status === "loading";
+  const jwtToken = session?.laravelJwt;
 
-  // Reset tab to "all" if the user is unauthenticated
+  // Fetch all organizations with member counts
+  const fetchOrganizations = useCallback(async () => {
+    try {
+      setIsFetching(true);
+
+      const endpoint = `${API_BASE_URL}/api/organizations/explore`;
+      const headers: HeadersInit = {
+        Accept: "application/json",
+      };
+
+      if (jwtToken) {
+        headers["Authorization"] = `Bearer ${jwtToken}`;
+      }
+
+      const res = await fetch(endpoint, { headers });
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch organizations (${res.status})`);
+      }
+
+      const data: Organization[] = await res.json();
+      setOrganizations(data);
+
+      const joined = new Set<string>(
+        data.filter((org) => org.isJoined).map((org) => org.id),
+      );
+      setJoinedOrgIds(joined);
+    } catch (err) {
+      console.error("Error loading organizations:", err);
+    } finally {
+      setIsFetching(false);
+    }
+  }, [jwtToken]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      fetchOrganizations();
+    }
+  }, [fetchOrganizations, isLoading]);
+
+  // Reset tab to "all" if user is logged out
   useEffect(() => {
     if (!isAuthenticated && activeTab === "joined") {
       setActiveTab("all");
     }
   }, [isAuthenticated, activeTab]);
 
-  const handleJoinClick = (orgId: string) => {
+  const handleActionClick = async (orgId: string, currentlyJoined: boolean) => {
     if (isLoading) return;
 
-    if (!isAuthenticated) {
-      // Unauthenticated users are sent to Sign In with return callback
-      router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/organization")}`);
+    if (!isAuthenticated || !jwtToken) {
+      router.push(
+        `/auth/signin?callbackUrl=${encodeURIComponent("/organization")}`,
+      );
       return;
     }
 
-    // Authenticated users are redirected to workspace organization page
-    router.push("/workspace/organization");
+    try {
+      setActionLoadingId(orgId);
+
+      if (currentlyJoined) {
+        // Leave Organization Request
+        const res = await fetch(`${API_BASE_URL}/api/organizations/leave`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${jwtToken}`,
+          },
+          body: JSON.stringify({ organization_id: orgId }),
+        });
+
+        if (res.ok) {
+          setJoinedOrgIds((prev) => {
+            const next = new Set(prev);
+            next.delete(orgId);
+            return next;
+          });
+
+          setOrganizations((prev) =>
+            prev.map((org) =>
+              org.id === orgId
+                ? {
+                    ...org,
+                    membersCount: Math.max(0, org.membersCount - 1),
+                    isJoined: false,
+                  }
+                : org,
+            ),
+          );
+        }
+      } else {
+        // Redirect to workspace organization dashboard upon joining
+        router.push("/workspace/organization");
+      }
+    } catch (err) {
+      console.error("Organization action failed:", err);
+    } finally {
+      setActionLoadingId(null);
+    }
   };
 
-  // Filter logic for search & tab categories
-  const filteredOrganizations = MOCK_ORGANIZATIONS.filter((org) => {
+  // Filter organizations by search and tab
+  const filteredOrganizations = organizations.filter((org) => {
     const matchesSearch =
       org.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       org.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -90,12 +159,11 @@ export default function OrganizationPage() {
     if (!matchesSearch) return false;
 
     if (activeTab === "joined") return joinedOrgIds.has(org.id);
-    return true; // "all" tab
+    return true;
   });
 
   return (
     <div className="min-h-screen w-full bg-white">
-      {/* Container aligned with the rest of the application layout */}
       <main className="mx-auto max-w-7xl px-6 py-10 lg:px-12 lg:py-12 space-y-8">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -104,7 +172,8 @@ export default function OrganizationPage() {
               Explore Organizations
             </h1>
             <p className="text-zinc-500 text-sm sm:text-base mt-1">
-              Connect with peer groups, join specialized learning hubs, and collaborate across teams.
+              Connect with peer groups, join specialized learning hubs, and
+              collaborate across teams.
             </p>
           </div>
 
@@ -121,7 +190,7 @@ export default function OrganizationPage() {
           </div>
         </div>
 
-        {/* Filter Tabs matching UI design */}
+        {/* Filter Tabs */}
         <div className="flex items-center gap-2 border-b border-zinc-100 pb-4">
           <button
             onClick={() => setActiveTab("all")}
@@ -132,10 +201,9 @@ export default function OrganizationPage() {
             }`}
           >
             <LayoutGrid className="h-4 w-4" />
-            <span>All Organizations</span>
+            <span>All Organizations ({organizations.length})</span>
           </button>
 
-          {/* Conditionally render "My Organizations" only for authenticated users */}
           {isAuthenticated && (
             <button
               onClick={() => setActiveTab("joined")}
@@ -151,11 +219,19 @@ export default function OrganizationPage() {
           )}
         </div>
 
-        {/* Main Content Area */}
-        {filteredOrganizations.length > 0 ? (
+        {/* Content Area */}
+        {isFetching ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-3">
+            <Loader2 className="h-8 w-8 animate-spin text-[#8b5cf6]" />
+            <p className="text-sm text-zinc-500 font-medium">
+              Loading organizations...
+            </p>
+          </div>
+        ) : filteredOrganizations.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredOrganizations.map((org) => {
               const isJoined = isAuthenticated && joinedOrgIds.has(org.id);
+              const isBusy = actionLoadingId === org.id;
 
               return (
                 <div
@@ -163,34 +239,35 @@ export default function OrganizationPage() {
                   className="group flex flex-col justify-between rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm hover:shadow-md transition-all hover:border-zinc-300"
                 >
                   <div className="space-y-3">
-                    {/* Title */}
                     <div className="flex items-start justify-between gap-3">
                       <h3 className="text-lg font-bold text-zinc-900 group-hover:text-[#8b5cf6] transition-colors leading-tight">
                         {org.title}
                       </h3>
                     </div>
 
-                    {/* Description */}
                     <p className="text-sm text-zinc-600 leading-relaxed line-clamp-3">
-                      {org.description}
+                      {org.description || "No description provided."}
                     </p>
                   </div>
 
-                  {/* Card Footer Action */}
                   <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between">
                     <span className="text-xs text-zinc-400 font-medium">
-                      {org.membersCount + (isJoined ? 1 : 0)} members
+                      {org.membersCount}{" "}
+                      {org.membersCount === 1 ? "member" : "members"}
                     </span>
 
                     <button
-                      onClick={() => handleJoinClick(org.id)}
-                      className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+                      disabled={isBusy}
+                      onClick={() => handleActionClick(org.id, isJoined)}
+                      className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all cursor-pointer disabled:opacity-50 ${
                         isJoined
                           ? "bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200"
                           : "bg-[#8b5cf6] text-white hover:bg-[#7c3aed] shadow-sm"
                       }`}
                     >
-                      {isJoined ? (
+                      {isBusy ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : isJoined ? (
                         <>
                           <LogOut className="h-3.5 w-3.5" />
                           <span>Leave</span>
@@ -208,14 +285,14 @@ export default function OrganizationPage() {
             })}
           </div>
         ) : (
-          /* Empty State */
           <div className="my-12 flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/40 py-20 px-4 text-center">
             <Building2 className="h-10 w-10 text-zinc-300 mb-3" />
             <h3 className="text-base font-semibold text-zinc-800">
               No organizations available
             </h3>
             <p className="text-sm text-zinc-500 mt-1 max-w-sm">
-              Try checking your spelling or reset filters to see all organizations.
+              Try checking your spelling or reset filters to see all
+              organizations.
             </p>
           </div>
         )}
