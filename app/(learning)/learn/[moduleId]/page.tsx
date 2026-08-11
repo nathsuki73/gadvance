@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
 
 import ModuleSidebar from "./_components/SideBar/ModuleSidebar";
-import AssessmentContainer from "./_components/AssessmentContainer";
+import AssessmentContainer from "./_components/AssessmentContainer/AssessmentContainer";
 import PageContainer from "./_components/PageContainer";
 import { getModuleStructure, ModuleStructure, SectionItem } from "./service";
 import {
@@ -157,14 +157,27 @@ const LearnPage = ({ params }: LearnPageProps) => {
         }`}
       >
         {activeItem.item_type === "assessment" ? (
-          <AssessmentContainer
-            itemId={activeItem.id}
-            moduleId={moduleId}
-            assessmentId={activeItem.content_id || activeItem.id}
-            type={activeItem.assessment_type || "quiz"}
-            onComplete={() => handleItemComplete(activeItem.id)}
-            onNext={handleNext}
-          />
+          activeItem.content_id ? (
+            <AssessmentContainer
+              itemId={activeItem.id}
+              moduleId={moduleId}
+              assessmentId={activeItem.content_id}
+              type={activeItem.assessment_type || "quiz"}
+              onComplete={() => handleItemComplete(activeItem.id)}
+              onNext={handleNext}
+            />
+          ) : (
+            <div className="flex h-[100dvh] w-full items-center justify-center bg-white p-6">
+              <div className="text-center">
+                <p className="text-sm font-semibold text-zinc-800">
+                  Unlinked Assessment
+                </p>
+                <p className="text-xs text-zinc-400 mt-1">
+                  This section item does not have a linked assessment ID.
+                </p>
+              </div>
+            </div>
+          )
         ) : (
           <PageContainer
             itemId={activeItem.id}
