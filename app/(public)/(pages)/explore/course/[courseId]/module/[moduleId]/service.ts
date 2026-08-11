@@ -18,7 +18,6 @@ interface ExtendedApiOptions extends ApiOptions {
 }
 
 async function request<T>(endpoint: string, options: ExtendedApiOptions = {}) {
-  // 2. Define your API_URL inside the function so it reads dynamically at runtime!
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://13.229.44.51";
   const API_URL = `${baseUrl}/api`;
 
@@ -82,21 +81,44 @@ async function request<T>(endpoint: string, options: ExtendedApiOptions = {}) {
  * -----------------------------------------------------*/
 
 /**
- * Public: Get all modules
+ * Public: Get all modules (Strictly filtered for published status)
  */
 export async function getModules() {
-  return request<ModuleResponse[]>("/modules", {
+  const res = await request<ModuleResponse[]>("/modules?portal=student", {
     requiresAuth: false,
   });
+
+  if (res.success && Array.isArray(res.data)) {
+    return {
+      ...res,
+      data: res.data.filter((module) => module.status === "published"),
+    };
+  }
+
+  return res;
 }
 
 /**
- * Public: Get single module
+ * Public: Get single module (Guarded for published status)
  */
 export async function getModule(moduleId: string) {
-  return request<ModuleResponse>(`/modules/${moduleId}`, {
-    requiresAuth: false,
-  });
+  const res = await request<ModuleResponse>(
+    `/modules/${moduleId}?portal=student`,
+    {
+      requiresAuth: false,
+    },
+  );
+
+  if (res.success && res.data) {
+    if (res.data.status !== "published") {
+      return {
+        success: false,
+        error: "Module is not published",
+      };
+    }
+  }
+
+  return res;
 }
 
 /* -------------------------------------------------------
@@ -109,11 +131,20 @@ export async function getModule(moduleId: string) {
  * user progress tracking
  */
 export async function getLearningModule(moduleId: string) {
-  return request<
+  const res = await request<
     ModuleResponse & {
       progress?: ModuleProgressResponse;
     }
   >(`/learn/modules/${moduleId}`);
+
+  if (res.success && res.data && res.data.status !== "published") {
+    return {
+      success: false,
+      error: "Module is not published",
+    };
+  }
+
+  return res;
 }
 
 /**
