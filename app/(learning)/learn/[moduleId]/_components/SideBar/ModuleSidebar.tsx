@@ -5,6 +5,7 @@ import { ArrowLeft, ChevronDown, ChevronRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Section, SectionItem } from "../../service";
 import SideBarNavItem from "./_components/SideBarNavItem";
+import { DonutProgress } from "./_components/DonutProgress";
 
 type ModuleSidebarProps = {
   courseId: string;
@@ -96,28 +97,37 @@ export default function ModuleSidebar({
           </div>
 
           <div className="hidden w-full items-center justify-between lg:flex">
-            {!isCollapsed && (
-              <div className="min-w-0 pr-2">
-                <h2 className="truncate text-sm font-semibold leading-snug text-zinc-800">
-                  {structureTitle}
-                </h2>
-              </div>
+            {!isCollapsed ? (
+              <>
+                <div className="min-w-0 pr-2">
+                  <h2 className="truncate text-sm font-semibold leading-snug text-zinc-800">
+                    {structureTitle}
+                  </h2>
+                </div>
+                <button
+                  onClick={onToggleCollapse}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50 transition-colors cursor-pointer"
+                  aria-label="Collapse sidebar"
+                >
+                  ‹
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={onToggleCollapse}
+                className="mx-auto flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50 transition-colors cursor-pointer"
+                aria-label="Expand sidebar"
+                title="Expand sidebar"
+              >
+                ›
+              </button>
             )}
-            <button
-              onClick={onToggleCollapse}
-              className={`flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50 transition-colors cursor-pointer ${
-                isCollapsed ? "mx-auto" : ""
-              }`}
-              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {isCollapsed ? "›" : "‹"}
-            </button>
           </div>
         </div>
 
         {/* Section & Item Navigation Body */}
         <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto px-3 py-4">
-          {sections.map((section, secIdx) => {
+          {sections.map((section) => {
             const isExpanded = expandedSections.has(section.id);
             const items = section.items || [];
             const completedCount = items.filter((i) =>
@@ -133,19 +143,21 @@ export default function ModuleSidebar({
                     onClick={() => toggleSection(section.id)}
                     className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-zinc-200/50 cursor-pointer"
                   >
-                    <div className="flex flex-col min-w-0 pr-2">
-                      <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase font-mono">
-                        Section {(secIdx + 1).toString().padStart(2, "0")}
-                      </span>
+                    {/* Left Side: Donut Progress + Section Title */}
+                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                      <DonutProgress
+                        totalSteps={items.length}
+                        completedSteps={completedCount}
+                        size={18}
+                        strokeWidth={2.5}
+                      />
                       <h3 className="truncate text-xs font-bold text-zinc-800">
                         {section.title}
                       </h3>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0 text-zinc-400">
-                      <span className="text-[10px] font-mono font-medium">
-                        {completedCount}/{items.length}
-                      </span>
+                    {/* Right Side: Chevron Indicator */}
+                    <div className="flex items-center shrink-0 text-zinc-400">
                       {isExpanded ? (
                         <ChevronDown size={14} />
                       ) : (
