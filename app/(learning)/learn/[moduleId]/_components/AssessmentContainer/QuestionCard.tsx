@@ -8,7 +8,7 @@ import {
   BookOpen,
   Check,
 } from "lucide-react";
-import { Question, AssessmentSettings, BloomLevel } from "./types";
+import { Question, AssessmentSettings, BloomLevel } from "../types";
 
 const BLOOM_BADGES: Record<BloomLevel, { label: string; style: string }> = {
   1: {
@@ -73,6 +73,9 @@ export function QuestionCard({
     (submitted || settings.showFeedbackImmediately);
 
   const showTestFeedback = canShowReview && isTestMode && submitted;
+
+  // 🔒 Lock choices if submitted OR if immediate feedback is being shown for this question
+  const isLocked = submitted || Boolean(showFeedback && selectedChoiceId);
 
   return (
     <div className="space-y-4 rounded-2xl border border-zinc-200/70 bg-zinc-50/50 p-5">
@@ -141,7 +144,7 @@ export function QuestionCard({
               key={choice.id}
               type="button"
               onClick={() => onSelectChoice(question.id, choice.id)}
-              disabled={submitted}
+              disabled={isLocked} // 👈 Updated: prevents changing answer once feedback is displayed
               className={`relative flex w-full flex-col gap-2 rounded-xl border p-3.5 text-left text-xs transition-all cursor-pointer disabled:cursor-not-allowed min-h-[48px] ${containerStyle}`}
             >
               <div className="z-10 flex w-full items-center justify-between">
