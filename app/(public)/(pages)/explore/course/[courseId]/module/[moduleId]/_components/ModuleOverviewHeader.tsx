@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -8,54 +8,30 @@ import {
   BookOpen,
   PlayCircle,
   ChevronRight,
+  ChevronDown,
   ClipboardCheck,
   GraduationCap,
+  FileText,
+  Folder,
 } from "lucide-react";
 
-// Explicit data structural signatures modeled precisely from your clean schema types
-export type Block = {
+export type SectionItem = {
   id: string;
-  type: string;
-  content: string;
-  metadata?: Record<string, unknown> | null;
+  section_id: string;
+  item_type: string;
+  content_id?: string | null;
+  title: string;
   order_index: number;
-  progress?: {
-    completed: boolean;
-    completed_at?: string | null;
-  };
+  assessment_type?: string | null;
 };
 
-export type QuizBlock = {
-  id: string;
-  lesson_id: string;
-  bloom_tier: string;
-  question: string;
-  option_a: string;
-  option_b: string;
-  option_c: string;
-  option_d: string;
-  correct_answer: string;
-};
-
-export type Lesson = {
+export type Section = {
   id: string;
   module_id: string;
   title: string;
   description?: string | null;
   order_index: number;
-  blocks: Block[];
-  quiz_blocks: QuizBlock[];
-  progress?: {
-    completed_blocks: number;
-    total_blocks: number;
-    percentage: number;
-  };
-};
-
-export type ModuleProgressResponse = {
-  completed_blocks: number;
-  total_blocks: number;
-  percentage: number;
+  items: SectionItem[];
 };
 
 export type ModuleResponse = {
@@ -64,31 +40,61 @@ export type ModuleResponse = {
   about?: string | null;
   description?: string | null;
   image?: string | null;
-  lessons: Lesson[];
-  progress?: ModuleProgressResponse | null;
+  sections?: Section[];
+  lessons?: Array<{
+    id: string;
+    title: string;
+    description?: string | null;
+  }>;
+  progress?: {
+    percentage: number;
+  } | null;
 };
 
 type ModuleOverviewHeaderProps = {
   module: ModuleResponse;
 };
 
+const getItemIcon = (itemType?: string, assessmentType?: string | null) => {
+  if (itemType === "assessment") {
+    if (assessmentType === "pre_test") {
+      return <ClipboardCheck size={14} className="text-purple-600 shrink-0" />;
+    }
+    if (assessmentType === "post_test") {
+      return <GraduationCap size={14} className="text-purple-600 shrink-0" />;
+    }
+    return <ClipboardCheck size={14} className="text-purple-600 shrink-0" />;
+  }
+  if (itemType === "page") {
+    return <FileText size={14} className="text-purple-600 shrink-0" />;
+  }
+  return <PlayCircle size={14} className="text-purple-600 shrink-0" />;
+};
+
 const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
   const router = useRouter();
 
-  const lessonsCount = module.lessons?.length || 0;
+  const sections = module.sections || [];
+  const totalSections = sections.length;
   const progress = module.progress?.percentage || 0;
-  const lessons = module.lessons || [];
 
-  let runningIndex = 0;
+  // Track expanded state for sections (all open by default)
+  const [openSectionIds, setOpenSectionIds] = useState<Record<string, boolean>>(
+    () => sections.reduce((acc, sec) => ({ ...acc, [sec.id]: true }), {}),
+  );
+
+  const toggleSection = (id: string) => {
+    setOpenSectionIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const handleContinueLearning = () => {
     router.push(`/learn/${module.id}`);
   };
 
   return (
-    <section className="border-b border-zinc-100 bg-linear-to-b from-white via-white to-zinc-50/40">
+    <section className="border-b border-zinc-100 bg-gradient-to-b from-white via-white to-zinc-50/40">
       <div className="mx-auto grid max-w-7xl gap-12 px-6 py-12 md:px-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:py-20">
-        {/* LEFT PANEL: CONTENT HERO */}
+        {/* LEFT PANEL: HERO */}
         <div>
           <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl lg:text-6xl leading-[1.1]">
             {module.title}
@@ -96,14 +102,14 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
 
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-zinc-500 font-light md:text-lg">
             {module.description ||
-              "Move through the lessons at your own pace and keep track of your progress from one section to the next."}
+              "Move through the sections at your own pace and keep track of your progress from one topic to the next."}
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
             <button
               type="button"
               onClick={handleContinueLearning}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-hover active:scale-[0.98]"
+              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-purple-600/20 transition-all hover:bg-purple-700 active:scale-[0.98] cursor-pointer"
             >
               Continue Learning
               <ChevronRight size={14} strokeWidth={2.5} />
@@ -113,8 +119,8 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
           <div className="mt-12 grid gap-4 sm:grid-cols-2 max-w-md">
             <StatCard
               icon={<BookOpen className="h-4 w-4" />}
-              label="lessons"
-              value={String(lessonsCount)}
+              label="sections"
+              value={String(totalSections)}
             />
             <StatCard
               icon={<Clock3 className="h-4 w-4" />}
@@ -124,148 +130,105 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
           </div>
         </div>
 
-        {/* RIGHT PANEL: UNIFIED ROADMAP SECTION */}
-        <div className="min-w-0 lg:border-l lg:border-zinc-100 lg:pl-26">
+        {/* RIGHT PANEL: GROUPED SECTIONS CURRICULUM */}
+        <div className="min-w-0 lg:border-l lg:border-zinc-100 lg:pl-12">
           <div className="flex items-start gap-4">
-            <div className="mt-1 h-12 w-0.5 rounded-full bg-primary" />
+            <div className="mt-1 h-12 w-0.5 rounded-full bg-purple-600" />
             <div>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
-                Lessons Outline
+                Module Outline
               </h2>
             </div>
           </div>
 
-          <div className="mt-10 max-h-115 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-200">
-            <div className="flex flex-col">
-              {/* ENTRY MILESTONE: Course Entry Pre-test */}
-              {(() => {
-                const currentNum = runningIndex++;
-                return (
-                  <div className="group flex w-full border-b border-zinc-100 py-6 text-left transition-all hover:bg-zinc-50/50 rounded-xl px-2 -mx-2">
-                    <div className="grid grid-cols-[auto_1fr_auto] gap-5 w-full items-start">
-                      <span className="pt-0.5 pl-3 pr-3 text-xs font-bold tracking-widest text-zinc-300 font-mono min-w-6">
-                        {currentNum.toString().padStart(2, "0")}
-                      </span>
-                      <div className="flex flex-col gap-1 min-w-0">
-                        <div className="flex items-center gap-2.5">
-                          <ClipboardCheck
-                            size={15}
-                            className="text-[#8b5cf6] shrink-0 mt-0.5"
-                          />
-                          <h3 className="text-[0.95rem] font-medium tracking-tight text-zinc-800 group-hover:text-[#8b5cf6] transition-colors duration-200 truncate">
-                            Course Entry Pre-test
-                          </h3>
-                        </div>
-                        <p className="text-xs font-light leading-relaxed text-zinc-400 pr-4 mt-1">
-                          baseline diagnostic evaluation assessment
-                        </p>
-                      </div>
-                      <div className="shrink-0 self-center pl-2">
-                        <ChevronRight
-                          size={14}
-                          className="text-zinc-300 group-hover:text-zinc-400 transition-colors duration-200"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* CORE CURRICULUM LESSONS */}
-              {lessons.map((lesson) => {
-                const stepsCount =
-                  (lesson.blocks?.length || 0) +
-                  (lesson.quiz_blocks?.length || 0);
-                const currentNum = runningIndex++;
+          <div className="mt-10 max-h-[480px] overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-zinc-200">
+            {sections.length > 0 ? (
+              sections.map((sec) => {
+                const isOpen = openSectionIds[sec.id] ?? true;
 
                 return (
-                  <Link
-                    key={lesson.id}
-                    href={`/courses/${module.id}/lessons/${lesson.id}`}
-                    className="group flex w-full border-b border-zinc-100 py-6 text-left transition-all hover:bg-zinc-50/50 rounded-xl px-2 -mx-2"
+                  <div
+                    key={sec.id}
+                    className="rounded-2xl border border-zinc-200/80 bg-white overflow-hidden shadow-xs transition-all"
                   >
-                    <div className="grid grid-cols-[auto_1fr_auto] gap-5 w-full items-start">
-                      <span className="pt-0.5 pl-3 pr-3 text-xs font-bold tracking-widest text-zinc-300 font-mono min-w-6">
-                        {currentNum.toString().padStart(2, "0")}
-                      </span>
-                      <div className="flex flex-col gap-1 min-w-0">
-                        <div className="flex items-center gap-2.5">
-                          <PlayCircle
-                            size={15}
-                            className="shrink-0 text-[#8b5cf6] mt-0.5"
-                          />
-                          <h3 className="text-[0.95rem] font-medium tracking-tight text-zinc-800 group-hover:text-[#8b5cf6] transition-colors duration-200 truncate">
-                            {lesson.title}
-                          </h3>
-                        </div>
-                        <p className="text-xs font-light leading-relaxed text-zinc-400 pr-4 mt-1">
-                          {(() => {
-                            if (!lesson.description) return "";
-
-                            // 1. Strip leading ## and trim surrounding spaces
-                            let cleaned = lesson.description
-                              .replace(/^##\s*/, "")
-                              .trim();
-
-                            // 2. Remove "Overview" (case-insensitive) from the very start if it exists
-                            cleaned = cleaned
-                              .replace(/^overview\s*/i, "")
-                              .trim();
-
-                            const maxLength = 80; // Adjust this number to fit your UI needs
-
-                            // 3. Truncate with ellipses if it's too long
-                            return cleaned.length > maxLength
-                              ? `${cleaned.substring(0, maxLength).trim()}...`
-                              : cleaned;
-                          })()}
-                        </p>
+                    {/* SECTION HEADER WITH DESCRIPTION */}
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(sec.id)}
+                      className="w-full flex items-center justify-between p-4 bg-zinc-50/70 hover:bg-zinc-100/60 transition-colors text-left cursor-pointer"
+                    >
+                      <div className="pr-4">
+                        <h3 className="text-sm font-semibold text-zinc-900 leading-tight">
+                          {sec.title}
+                        </h3>
+                        {sec.description && (
+                          <p className="text-[11px] text-zinc-400 font-light mt-0.5 leading-relaxed line-clamp-2">
+                            {sec.description}
+                          </p>
+                        )}
                       </div>
-                      <div className="shrink-0 self-center pl-2">
-                        <ChevronRight
-                          size={14}
-                          className="text-zinc-300 group-hover:text-zinc-400 transition-colors duration-200"
+
+                      {isOpen ? (
+                        <ChevronDown
+                          size={16}
+                          className="text-zinc-400 shrink-0"
                         />
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-
-              {/* EXIT MILESTONE: Course Final Post-test */}
-              {(() => {
-                const currentNum = runningIndex++;
-                return (
-                  <div className="group flex w-full border-b border-zinc-100 py-6 text-left transition-all hover:bg-zinc-50/50 rounded-xl px-2 -mx-2">
-                    <div className="grid grid-cols-[auto_1fr_auto] gap-5 w-full items-start">
-                      <span className="pt-0.5 pl-3 pr-3 text-xs font-bold tracking-widest text-zinc-300 font-mono min-w-6">
-                        {currentNum.toString().padStart(2, "0")}
-                      </span>
-                      <div className="flex flex-col gap-1 min-w-0">
-                        <div className="flex items-center gap-2.5">
-                          <GraduationCap
-                            size={15}
-                            className="text-[#8b5cf6] shrink-0 mt-0.5"
-                          />
-                          <h3 className="text-[0.95rem] font-medium tracking-tight text-zinc-800 group-hover:text-[#8b5cf6] transition-colors duration-200 truncate">
-                            Course Final Post-test
-                          </h3>
-                        </div>
-                        <p className="text-xs font-light leading-relaxed text-zinc-400 pr-4 mt-1">
-                          comprehensive final core milestone evaluation
-                        </p>
-                      </div>
-                      <div className="shrink-0 self-center pl-2">
+                      ) : (
                         <ChevronRight
-                          size={14}
-                          className="text-zinc-300 group-hover:text-zinc-400 transition-colors duration-200"
+                          size={16}
+                          className="text-zinc-400 shrink-0"
                         />
+                      )}
+                    </button>
+
+                    {/* SUB-SECTION ITEMS */}
+                    {isOpen && sec.items && sec.items.length > 0 && (
+                      <div className="divide-y divide-zinc-100 border-t border-zinc-100 bg-white">
+                        {sec.items.map((item, itemIdx) => {
+                          const targetHref =
+                            item.item_type === "assessment"
+                              ? `/courses/${module.id}/assessments/${item.content_id || item.id}`
+                              : `/courses/${module.id}/lessons/${item.content_id || item.id}`;
+
+                          return (
+                            <Link
+                              key={item.id}
+                              href={targetHref}
+                              className="group flex items-center justify-between px-5 py-3.5 text-xs transition-colors hover:bg-purple-50/30"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <span className="text-[10px] font-mono font-medium text-zinc-300">
+                                  {(itemIdx + 1).toString().padStart(2, "0")}
+                                </span>
+                                {getItemIcon(
+                                  item.item_type,
+                                  item.assessment_type,
+                                )}
+                                <span className="font-medium text-zinc-700 group-hover:text-purple-600 transition-colors truncate">
+                                  {item.title}
+                                </span>
+                              </div>
+
+                              <ChevronRight
+                                size={14}
+                                className="text-zinc-300 group-hover:text-purple-600 transition-colors shrink-0"
+                              />
+                            </Link>
+                          );
+                        })}
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
-              })()}
-            </div>
+              })
+            ) : (
+              <div className="p-8 text-center border border-dashed border-zinc-200 rounded-2xl">
+                <Folder className="mx-auto h-8 w-8 text-zinc-300 mb-2" />
+                <p className="text-xs text-zinc-400">
+                  No sections found for this module.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
