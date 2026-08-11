@@ -11,6 +11,10 @@
     "deploy": "next build && rsync -avz -e 'ssh -p 65002' ./out/ u242590936@sg-nme-web613.main-hosting.eu:~/domains/gadvance-lspu.com/public_html/"
   },
   "dependencies": {
+    "@blocknote/core": "^0.53.0",
+    "@blocknote/mantine": "^0.53.0",
+    "@blocknote/react": "^0.53.0",
+    "@blocknote/xl-multi-column": "^0.53.0",
     "@jobuntux/psgc": "^0.2.1",
     "@tanstack/react-query": "^5.101.2",
     "@upstash/redis": "^1.37.0",

@@ -25,7 +25,7 @@ export async function proxy(request: NextRequest) {
     "/workspace/support",
   ];
 
-  // Check if the route is a public workspace page or a subpage of a public page
+  // Check if the route is a public workspace page or a subpage
   const isPublicPage = publicWorkspacePages.some(
     (page) => pathname === page || pathname.startsWith(page + "/"),
   );
@@ -35,8 +35,7 @@ export async function proxy(request: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET,
   });
 
-  // ⚡ NEW: Catch authenticated users landing on the public home page "/"
-  // Send them straight to the workspace, keeping them away from the public view loop
+  // Redirect authenticated users landing on "/" to "/workspace"
   if (token && isHomeRoute) {
     const workspaceUrl = request.nextUrl.clone();
     workspaceUrl.pathname = "/workspace";
@@ -44,12 +43,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(workspaceUrl);
   }
 
-  // If a user isn't logged in and is trying to access home, let them through
+  // Allow unauthenticated guests on "/"
   if (isHomeRoute) {
     return NextResponse.next();
   }
 
-  // Only require auth for protected workspace routes and onboarding
+  // Require auth for protected workspace routes and onboarding
   if (!token && (isOnboardingRoute || (isWorkspaceRoute && !isPublicPage))) {
     const signInUrl = request.nextUrl.clone();
     signInUrl.pathname = "/auth/signin";
@@ -74,22 +73,24 @@ export async function proxy(request: NextRequest) {
   ) {
     try {
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
-      const res = await fetch(`${apiBaseUrl}/api/profile`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${token.laravelJwt}`,
-        },
-      });
+      if (apiBaseUrl) {
+        const res = await fetch(`${apiBaseUrl}/api/profile`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token.laravelJwt}`,
+          },
+        });
 
-      if (res.ok) {
-        const payload = await res.json();
-        const dbData = payload?.data ?? payload;
-        const dbStatus = dbData?.status?.trim().toLowerCase();
+        if (res.ok) {
+          const payload = await res.json().catch(() => null);
+          const dbData = payload?.data ?? payload;
+          const dbStatus = dbData?.status?.trim().toLowerCase();
 
-        if (dbStatus === "active") {
-          resolvedStatus = "active"; // Override the stale token status dynamically!
+          if (dbStatus === "active") {
+            resolvedStatus = "active";
+          }
         }
       }
     } catch (err) {
@@ -99,6 +100,9 @@ export async function proxy(request: NextRequest) {
 
   return NextResponse.next();
 }
+
+// 🔑 Alias your `proxy` function so Next.js executes it on matching routes
+export { proxy as middleware };
 
 export const config = {
   matcher: ["/", "/onboarding", "/workspace/:path*"],
