@@ -86,17 +86,44 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   const handleItemComplete = useCallback(
     async (itemId: string) => {
+      if (!activeItem || !moduleId) return;
+
+      // Resolve section_id safely
+      const sectionId =
+        activeItem.section_id ||
+        module?.sections?.find((sec) => sec.items?.some((i) => i.id === itemId))
+          ?.id;
+
+      if (!sectionId) {
+        console.error(
+          "[LearnPage] Could not resolve section_id for item:",
+          itemId,
+        );
+        return;
+      }
+
+      // 1. Optimistic UI update
       setCompletedItemIds((prev) => new Set(prev).add(itemId));
 
-      if (moduleId) {
-        await saveLearningProgress({
-          module_id: moduleId,
-          learning_item_id: itemId,
-          progress: 100,
+      // 2. Persist to backend database
+      const response = await saveLearningProgress({
+        module_id: moduleId,
+        section_id: sectionId,
+        learning_item_id: itemId,
+        progress: 100,
+      });
+
+      if (!response.success) {
+        console.error("[LearnPage] DB save failed:", response.error);
+        // Revert optimistic state if save failed
+        setCompletedItemIds((prev) => {
+          const next = new Set(prev);
+          next.delete(itemId);
+          return next;
         });
       }
     },
-    [moduleId],
+    [activeItem, module, moduleId],
   );
 
   const handleNext = () => {

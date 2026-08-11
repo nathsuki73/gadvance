@@ -3,31 +3,49 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
+// Safe API base URL resolution (prevents double '/api/api' path bugs)
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = rawApiUrl.replace(/\/$/, "").endsWith("/api")
+  ? rawApiUrl.replace(/\/$/, "")
+  : `${rawApiUrl.replace(/\/$/, "")}/api`;
 
-type SaveLearningProgressPayload = {
+export type SaveLearningProgressPayload = {
   module_id: string;
+  section_id: string; // ➕ Added section_id to match backend validation
   learning_item_id: string;
   progress: number;
 };
 
-// Represents a single progress record returned by the backend
+// Single item progress record
 export type ProgressRecord = {
+  id?: number;
+  user_id?: string;
+  module_id?: string;
+  section_id?: string;
   learning_item_id: string;
   progress: number;
 };
 
-// Strongly typed the generic data object
-type ApiResponse<T = unknown> = {
+// Section summary metrics for DonutProgress
+export type SectionSummary = {
+  section_id: string;
+  total_items: number;
+  completed_items: number;
+  percentage: number;
+};
+
+export type LearningProgressResponse = {
   success: boolean;
   message?: string;
   error?: string;
-  data?: T;
+  data?: ProgressRecord[];
+  completed_item_ids?: string[];
+  section_summaries?: SectionSummary[];
 };
 
 export const getLearningProgress = async (
   moduleId: string,
-): Promise<ApiResponse<ProgressRecord[]>> => {
+): Promise<LearningProgressResponse> => {
   const session = await getServerSession(authOptions);
 
   if (!session?.laravelJwt) {
@@ -59,7 +77,12 @@ export const getLearningProgress = async (
       };
     }
 
-    return result as ApiResponse<ProgressRecord[]>;
+    return {
+      success: true,
+      data: result.data || [],
+      completed_item_ids: result.completed_item_ids || [],
+      section_summaries: result.section_summaries || [],
+    };
   } catch (error) {
     console.error("Fetch learning progress error:", error);
     return {
@@ -71,7 +94,7 @@ export const getLearningProgress = async (
 
 export const saveLearningProgress = async (
   payload: SaveLearningProgressPayload,
-): Promise<ApiResponse> => {
+): Promise<LearningProgressResponse> => {
   const session = await getServerSession(authOptions);
 
   if (!session?.laravelJwt) {
