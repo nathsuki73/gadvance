@@ -27,6 +27,11 @@ export type LearningPlan = {
   tag?: string;
   duration?: string;
   enrollments_count?: number;
+
+  // 🔑 Added cumulative combined progress property from backend
+  progress?: {
+    percentage: number;
+  } | null;
 };
 
 export type CoursePageProps = {

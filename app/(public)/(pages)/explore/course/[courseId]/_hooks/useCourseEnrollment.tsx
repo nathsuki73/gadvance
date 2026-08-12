@@ -149,6 +149,7 @@ export const useCourseEnrollment = ({
     handleConfirmAction,
     isEnrolled: !!enrollment,
     isCompleted: enrollment?.status === "completed",
-    progress: enrollment?.progress_percentage || 0,
+    progress:
+      course.progress?.percentage ?? enrollment?.progress_percentage ?? 0,
   };
 };

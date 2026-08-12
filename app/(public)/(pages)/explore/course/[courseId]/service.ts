@@ -1,5 +1,5 @@
 import { apiFetch } from "@/app/lib/api-client";
-import { EnrollmentResponse } from "./types";
+import { EnrollmentResponse, LearningPlan } from "./types";
 
 /**
  * Standardized response contract returned by the client functions
@@ -11,7 +11,7 @@ interface ServiceResponse<T> {
 }
 
 /**
- * Helper wrapper to handle apiFetch execution and JSON parsing
+ * Helper wrapper to handle apiFetch execution and JSON parsing with built-in logging
  */
 async function clientRequest<T>(
   endpoint: string,
@@ -21,11 +21,16 @@ async function clientRequest<T>(
     const res = await apiFetch(endpoint, options);
 
     if (!res) {
-      // apiFetch returns null on 401 unauthenticated redirect
+      console.warn(
+        `[clientRequest] Unauthorized or null response for: ${endpoint}`,
+      );
       return { success: false, error: "Unauthorized" };
     }
 
     const result = await res.json();
+
+    // 🔍 Print raw response logs to inspect the data structure and progress percentage
+    console.log(`[API Response Logs] Endpoint: ${endpoint}`, result);
 
     if (!res.ok) {
       return {
@@ -45,6 +50,15 @@ async function clientRequest<T>(
       error: "Network connection error",
     };
   }
+}
+
+/**
+ * Public/Protected: Get single learning plan details with nested modules and calculated progress
+ */
+export async function getLearningPlanDetails(courseId: string) {
+  return clientRequest<LearningPlan>(
+    `/api/learning-plans/${courseId}?portal=student`,
+  );
 }
 
 /**

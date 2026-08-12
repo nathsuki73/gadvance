@@ -121,7 +121,7 @@ const CourseOverviewHeader = ({
               <StatCard
                 icon={<Clock3 className="h-4 w-4" />}
                 label="progress"
-                value={`${progress}%`}
+                value={`${isEnrolled && typeof progress === "number" ? progress : 1}%`}
               />
             </div>
           </div>
