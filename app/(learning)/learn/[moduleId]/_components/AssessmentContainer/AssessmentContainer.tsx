@@ -22,10 +22,10 @@ import { QuestionCard } from "./QuestionCard";
 import { ResultsSummary } from "./ResultSummary";
 
 interface AssessmentContainerProps {
-  itemId: string; // SectionItem ID
-  sectionId?: string; // Section ID (Required for progress tracking)
-  moduleId: string; // Module ID
-  assessmentId: string; // Assessment ID
+  itemId: string;
+  sectionId?: string;
+  moduleId: string;
+  assessmentId: string;
   type?: string;
   onComplete: () => void;
   onNext: () => void;
@@ -53,7 +53,6 @@ export default function AssessmentContainer({
   const [submittedQuestions, setSubmittedQuestions] = useState<
     Record<string, boolean>
   >({});
-
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
@@ -61,7 +60,7 @@ export default function AssessmentContainer({
   useEffect(() => {
     let isCancelled = false;
 
-    // 🔑 RESET ALL PREVIOUS ITEM STATES BEFORE LOADING NEW ASSESSMENT
+    // Reset local state before fetching new item
     setHasStarted(false);
     setCurrentQuestionIndex(0);
     setAnswers({});
@@ -83,8 +82,13 @@ export default function AssessmentContainer({
         const stateRes = await getAssessmentState(assessmentId, itemId);
 
         if (stateRes.success && stateRes.data && !isCancelled) {
-          const { draft_answers, question_order, current_index, status } =
-            stateRes.data;
+          const {
+            draft_answers,
+            question_order,
+            current_index,
+            status,
+            poll_distributions,
+          } = stateRes.data as any;
 
           let activeQuestions = [...data.questions];
 
@@ -99,6 +103,27 @@ export default function AssessmentContainer({
             }
           }
 
+          // Merge poll distribution counts/percentages if present
+          if (
+            poll_distributions &&
+            Object.keys(poll_distributions).length > 0
+          ) {
+            activeQuestions = activeQuestions.map((q) => ({
+              ...q,
+              choices: q.choices.map((c: any) => {
+                const dist = poll_distributions[c.id];
+                if (typeof dist === "object" && dist !== null) {
+                  return {
+                    ...c,
+                    votes: dist.votes ?? c.votes ?? 0,
+                    percentage: dist.percentage ?? c.percentage ?? 0,
+                  };
+                }
+                return c;
+              }),
+            }));
+          }
+
           setAssessment({
             ...data,
             questions: activeQuestions,
@@ -110,7 +135,6 @@ export default function AssessmentContainer({
               restoredMap[ans.question_id] = ans.choice_id;
             });
             setAnswers(restoredMap);
-            setHasStarted(true);
           }
 
           if (
@@ -120,11 +144,18 @@ export default function AssessmentContainer({
             setCurrentQuestionIndex(current_index);
           }
 
-          // Strictly set submitted if THIS SPECIFIC assessment attempt is completed
+          // 🔑 Minimal & Robust Check: If backend status is completed, bypass start screen immediately
           if (status === "completed") {
+            setHasStarted(true);
             setSubmitted(true);
+            setShowReview(true);
+
             if (data.settings.type === "poll") {
-              setShowReview(true);
+              const allSubmittedMap: Record<string, boolean> = {};
+              activeQuestions.forEach((q) => {
+                allSubmittedMap[q.id] = true;
+              });
+              setSubmittedQuestions(allSubmittedMap);
             }
           }
         } else {
