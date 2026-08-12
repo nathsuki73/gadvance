@@ -45,7 +45,7 @@ export default function AssessmentContainer({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState<boolean>(false);
-  const [showReview, setShowReview] = useState<boolean>(false); // 👈 Toggles review section
+  const [showReview, setShowReview] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,11 +64,9 @@ export default function AssessmentContainer({
       setError(null);
 
       try {
-        // 1. Fetch Assessment Content
         const data = await getAssessmentViewData(assessmentId);
         if (isCancelled) return;
 
-        // 2. Fetch Active Attempt Draft State
         const stateRes = await getAssessmentState(assessmentId, itemId);
 
         if (stateRes.success && stateRes.data && !isCancelled) {
@@ -77,7 +75,6 @@ export default function AssessmentContainer({
 
           let activeQuestions = [...data.questions];
 
-          // Re-arrange questions to match locked order from active attempt
           if (question_order && question_order.length > 0) {
             const orderedMap = new Map(data.questions.map((q) => [q.id, q]));
             const restoredQuestions = question_order
@@ -94,17 +91,15 @@ export default function AssessmentContainer({
             questions: activeQuestions,
           });
 
-          // Restore saved answers
           if (draft_answers && draft_answers.length > 0) {
             const restoredMap: Record<string, string> = {};
             draft_answers.forEach((ans: any) => {
               restoredMap[ans.question_id] = ans.choice_id;
             });
             setAnswers(restoredMap);
-            setHasStarted(true); // Skip start screen on resume
+            setHasStarted(true);
           }
 
-          // Restore saved active question index
           if (
             typeof current_index === "number" &&
             current_index < activeQuestions.length
@@ -114,6 +109,9 @@ export default function AssessmentContainer({
 
           if (status === "completed") {
             setSubmitted(true);
+            if (data.settings.type === "poll") {
+              setShowReview(true);
+            }
           }
         } else {
           setAssessment(data);
@@ -152,7 +150,6 @@ export default function AssessmentContainer({
     return () => clearInterval(interval);
   }, [hasStarted, startTime, submitted, assessment]);
 
-  // Helper to persist draft with locked question order and current question index
   const triggerDraftSave = (
     updatedAnswers: Record<string, string>,
     targetIndex: number,
@@ -209,6 +206,7 @@ export default function AssessmentContainer({
   }
 
   const { settings, questions } = assessment;
+  const isPoll = settings.type === "poll";
 
   const totalQuestions = questions.length;
   const currentQuestion = questions[currentQuestionIndex];
@@ -225,12 +223,63 @@ export default function AssessmentContainer({
   const scorePercentage =
     totalGraded > 0 ? Math.round((correctCount / totalGraded) * 100) : 100;
 
-  // 3. Option Selection with Auto-Save Draft
+  // ⚡ Optimistic local vote count increment (+1) on click
   const handleSelectChoice = (questionId: string, choiceId: string) => {
-    if (submitted && !settings.allowReview) return;
+    if (submitted && !settings.allowReview && !isPoll) return;
 
+    const previousChoiceId = answers[questionId];
     const updatedAnswers = { ...answers, [questionId]: choiceId };
     setAnswers(updatedAnswers);
+
+    if (isPoll && assessment) {
+      setAssessment((prev) => {
+        if (!prev) return null;
+
+        return {
+          ...prev,
+          questions: prev.questions.map((q) => {
+            if (q.id !== questionId) return q;
+
+            const updatedChoices = q.choices.map((c) => {
+              let currentVotes = c.votes ?? 0;
+
+              // Add 1 to the newly selected choice
+              if (c.id === choiceId) {
+                currentVotes += 1;
+              }
+
+              // Subtract 1 from the previous choice if user switched answer
+              if (
+                previousChoiceId &&
+                c.id === previousChoiceId &&
+                c.id !== choiceId
+              ) {
+                currentVotes = Math.max(0, currentVotes - 1);
+              }
+
+              return { ...c, votes: currentVotes };
+            });
+
+            const totalQVotes = updatedChoices.reduce(
+              (sum, c) => sum + (c.votes ?? 0),
+              0,
+            );
+
+            return {
+              ...q,
+              choices: updatedChoices.map((c) => ({
+                ...c,
+                percentage:
+                  totalQVotes > 0
+                    ? Math.round(((c.votes ?? 0) / totalQVotes) * 100)
+                    : 0,
+              })),
+            };
+          }),
+        };
+      });
+    }
+
     triggerDraftSave(updatedAnswers, currentQuestionIndex);
   };
 
@@ -250,7 +299,6 @@ export default function AssessmentContainer({
     }
   };
 
-  // 4. Final Submission Endpoint Call
   const handleFinalSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (isSubmitting || submitted) return;
@@ -274,8 +322,37 @@ export default function AssessmentContainer({
       });
 
       if (result.success) {
+        if (result.poll_distributions && assessment) {
+          const distributions = result.poll_distributions;
+
+          setAssessment((prev) => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              questions: prev.questions.map((q) => ({
+                ...q,
+                choices: q.choices.map((c) => {
+                  const dist = distributions[c.id];
+                  return {
+                    ...c,
+                    votes:
+                      typeof dist === "object"
+                        ? dist.votes
+                        : (dist ?? c.votes ?? 0),
+                    percentage:
+                      typeof dist === "object"
+                        ? dist.percentage
+                        : (c.percentage ?? 0),
+                  };
+                }),
+              })),
+            };
+          });
+        }
+
         setSubmitted(true);
-        onComplete(); // Triggers sidebar DonutProgress filling
+        setShowReview(true);
+        onComplete();
       } else {
         alert(result.message || "Failed to save assessment progress.");
       }
@@ -344,7 +421,6 @@ export default function AssessmentContainer({
             {assessment.title}
           </h1>
 
-          {/* Render timer strictly when a time limit exists */}
           {hasStarted && Boolean(settings.timeLimitMinutes) && (
             <div
               className={`flex shrink-0 items-center gap-1.5 font-mono text-xs px-3 py-1.5 rounded-xl border ${
@@ -366,7 +442,6 @@ export default function AssessmentContainer({
           )}
         </div>
 
-        {/* Question Step Bar */}
         {hasStarted && !submitted && (
           <div className="mx-auto mt-3 max-w-3xl space-y-1.5">
             <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-400">
@@ -410,8 +485,7 @@ export default function AssessmentContainer({
               />
             )}
 
-            {/* Post-submission Collapsible Review Section */}
-            {settings.allowReview && (
+            {(settings.allowReview || isPoll) && (
               <div className="space-y-4">
                 <button
                   type="button"
@@ -419,7 +493,7 @@ export default function AssessmentContainer({
                   className="flex w-full items-center justify-between rounded-2xl border border-zinc-200/80 bg-zinc-50/70 px-5 py-3.5 text-left transition-all hover:border-purple-300 hover:bg-purple-50/30 cursor-pointer"
                 >
                   <span className="text-xs font-bold uppercase tracking-wider text-zinc-700">
-                    Review Submission
+                    {isPoll ? "View Poll Results" : "Review Submission"}
                   </span>
                   <ChevronRight
                     size={18}
@@ -447,7 +521,6 @@ export default function AssessmentContainer({
               </div>
             )}
 
-            {/* Next Item Action Button */}
             <div className="pt-4">
               <button
                 type="button"

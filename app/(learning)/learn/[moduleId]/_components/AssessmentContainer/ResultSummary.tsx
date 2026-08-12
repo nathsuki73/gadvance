@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Target,
   CheckCircle,
+  BarChart3,
 } from "lucide-react";
 import { AssessmentSettings } from "./types";
 
@@ -56,18 +57,22 @@ export function ResultsSummary({
           <div
             className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-xs shrink-0 ${
               settings.type === "poll"
-                ? "bg-amber-600"
+                ? "bg-purple-600"
                 : isPassed
                   ? "bg-emerald-600"
                   : "bg-rose-600"
             }`}
           >
-            <Award size={22} />
+            {settings.type === "poll" ? (
+              <BarChart3 size={22} />
+            ) : (
+              <Award size={22} />
+            )}
           </div>
           <div>
             <h2 className="text-base font-bold text-zinc-900">
               {settings.type === "poll"
-                ? "Poll Completed!"
+                ? "Poll Submitted!"
                 : isPassed
                   ? "Assessment Passed!"
                   : "Needs Improvement"}
@@ -78,28 +83,42 @@ export function ResultsSummary({
           </div>
         </div>
 
-        {/* Retake button displays strictly when review is allowed and attempts remain */}
-        {settings.allowReview && hasAttemptsRemaining && (
-          <button
-            type="button"
-            onClick={onRetry}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#8b5cf6] px-4 py-2 text-xs font-bold text-white hover:bg-[#7c3aed] active:scale-[0.98] transition-all cursor-pointer shadow-xs"
-          >
-            <RotateCcw size={14} />
-            <span>Retake</span>
-          </button>
-        )}
+        {/* Retake button displays strictly for graded assessments */}
+        {settings.type !== "poll" &&
+          settings.allowReview &&
+          hasAttemptsRemaining && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#8b5cf6] px-4 py-2 text-xs font-bold text-white hover:bg-[#7c3aed] active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+            >
+              <RotateCcw size={14} />
+              <span>Retake</span>
+            </button>
+          )}
       </div>
 
-      {settings.type !== "poll" && (
+      {settings.type === "poll" ? (
+        /* Poll Submission Confirmation Card */
+        <div className="rounded-2xl border border-purple-200/80 bg-purple-50/50 p-6 text-center space-y-2">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 text-purple-700">
+            <CheckCircle2 size={24} />
+          </div>
+          <h3 className="text-sm font-bold text-purple-950">
+            Thank you for participating!
+          </h3>
+          <p className="text-xs text-purple-800/80 max-w-md mx-auto leading-relaxed">
+            Your vote has been added to the total response count. Review the
+            breakdown below.
+          </p>
+        </div>
+      ) : (
         <>
           {settings.allowReview ? (
             /* Ring-Score & Key Metrics */
             <div className="flex flex-col sm:flex-row items-center justify-around gap-6 rounded-2xl border border-purple-100/80 bg-white/80 p-6 backdrop-blur-xs">
-              {/* Ring Progress Score */}
               <div className="relative flex items-center justify-center">
                 <svg className="h-28 w-28 -rotate-90 transform">
-                  {/* Background Track Circle */}
                   <circle
                     cx="56"
                     cy="56"
@@ -109,7 +128,6 @@ export function ResultsSummary({
                     className="text-slate-100"
                     fill="transparent"
                   />
-                  {/* Active Animated Progress Arc */}
                   <circle
                     cx="56"
                     cy="56"
@@ -139,9 +157,7 @@ export function ResultsSummary({
                 </div>
               </div>
 
-              {/* Side Stat Highlights: Passing Mark & Correct Count */}
               <div className="grid grid-cols-2 gap-4 w-full sm:w-auto">
-                {/* Passing Mark */}
                 <div className="flex flex-col items-center justify-center rounded-2xl border border-purple-100/60 bg-purple-50/30 px-6 py-3.5 min-w-[120px]">
                   <div className="flex items-center gap-1.5 text-slate-700 mb-1">
                     <Target size={14} />
@@ -154,7 +170,6 @@ export function ResultsSummary({
                   </span>
                 </div>
 
-                {/* Correct Answers */}
                 <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-100 bg-slate-50/50 px-6 py-3.5 min-w-[120px]">
                   <div className="flex items-center gap-1.5 text-slate-700 mb-1">
                     <CheckCircle size={14} />
@@ -188,10 +203,6 @@ export function ResultsSummary({
                   Your submission has been recorded successfully.
                 </p>
               </div>
-              <p className="text-[11px] text-zinc-400 italic border-t border-purple-50 pt-3">
-                Detailed question & answer review is disabled for this
-                assessment.
-              </p>
             </div>
           )}
         </>

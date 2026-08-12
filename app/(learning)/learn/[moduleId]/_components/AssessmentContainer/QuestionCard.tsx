@@ -62,7 +62,8 @@ export function QuestionCard({
     ? BLOOM_BADGES[question.bloomLevel]
     : null;
 
-  const showPollDistribution = isPoll && submitted && Boolean(selectedChoiceId);
+  const showPollDistribution =
+    isPoll && (submitted || Boolean(selectedChoiceId));
   const canShowReview = settings.allowReview;
 
   const showFeedback =
@@ -73,9 +74,10 @@ export function QuestionCard({
     (submitted || settings.showFeedbackImmediately);
 
   const showTestFeedback = canShowReview && isTestMode && submitted;
-
-  // 🔒 Lock choices if submitted OR if immediate feedback is being shown for this question
-  const isLocked = submitted || Boolean(showFeedback && selectedChoiceId);
+  const isLocked =
+    submitted ||
+    (isPoll && Boolean(selectedChoiceId)) ||
+    Boolean(showFeedback && selectedChoiceId);
 
   return (
     <div className="space-y-4 rounded-2xl border border-zinc-200/70 bg-zinc-50/50 p-5">
@@ -87,7 +89,7 @@ export function QuestionCard({
               Question {index + 1}
             </span>
             {isPoll && (
-              <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+              <span className="rounded-md border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700">
                 Opinion Poll
               </span>
             )}
@@ -112,10 +114,12 @@ export function QuestionCard({
       </div>
 
       {/* Choice Options */}
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {question.choices.map((choice) => {
           const isSelected = selectedChoiceId === choice.id;
           const isChoiceCorrect = question.correctChoiceId === choice.id;
+          const votesCount = choice.votes ?? 0;
+          const percent = choice.percentage ?? 0;
 
           let containerStyle =
             "border-zinc-200 bg-white text-zinc-700 hover:border-purple-300 hover:bg-purple-50/30";
@@ -139,62 +143,81 @@ export function QuestionCard({
             }
           }
 
+          if (showPollDistribution) {
+            if (isSelected) {
+              containerStyle =
+                "border-purple-500/80 bg-purple-50/20 text-purple-950 font-semibold shadow-xs";
+              radioCircleStyle = "border-purple-600 bg-purple-600 text-white";
+            } else {
+              containerStyle = "border-zinc-200/80 bg-white text-zinc-700";
+              radioCircleStyle = "border-zinc-300 bg-white";
+            }
+          }
+
           return (
             <button
               key={choice.id}
               type="button"
               onClick={() => onSelectChoice(question.id, choice.id)}
-              disabled={isLocked} // 👈 Updated: prevents changing answer once feedback is displayed
-              className={`relative flex w-full flex-col gap-2 rounded-xl border p-3.5 text-left text-xs transition-all cursor-pointer disabled:cursor-not-allowed min-h-[48px] ${containerStyle}`}
+              disabled={isLocked}
+              className={`relative overflow-hidden flex w-full items-center justify-between gap-3 rounded-xl border p-3.5 text-left text-xs transition-all cursor-pointer disabled:cursor-default min-h-[50px] ${containerStyle}`}
             >
-              <div className="z-10 flex w-full items-center justify-between">
-                <div className="flex items-center gap-3 pr-2 min-w-0">
-                  <div
-                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all ${radioCircleStyle}`}
-                  >
-                    {isSelected && !(showFeedback || showTestFeedback) && (
+              {/* Background Animated Progress Bar */}
+              {showPollDistribution && (
+                <div
+                  className={`absolute inset-y-0 left-0 transition-all duration-700 ease-out rounded-lg pointer-events-none ${
+                    isSelected
+                      ? "bg-purple-200/60 border-r border-purple-400/40"
+                      : "bg-zinc-100/90"
+                  }`}
+                  style={{ width: `${percent}%` }}
+                />
+              )}
+
+              {/* Option Text */}
+              <div className="relative z-10 flex items-center gap-3 pr-2 min-w-0">
+                <div
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all ${radioCircleStyle}`}
+                >
+                  {isSelected &&
+                    !showPollDistribution &&
+                    !(showFeedback || showTestFeedback) && (
                       <div className="h-1.5 w-1.5 rounded-full bg-white" />
                     )}
-                    {(showFeedback || showTestFeedback) && isChoiceCorrect && (
-                      <Check size={10} strokeWidth={3} />
-                    )}
-                    {(showFeedback || showTestFeedback) &&
-                      isSelected &&
-                      !isChoiceCorrect && <XCircle size={10} strokeWidth={3} />}
-                  </div>
-                  <span className="truncate">{choice.text}</span>
+                  {showPollDistribution && isSelected && (
+                    <Check size={10} strokeWidth={3} />
+                  )}
+                  {(showFeedback || showTestFeedback) && isChoiceCorrect && (
+                    <Check size={10} strokeWidth={3} />
+                  )}
+                  {(showFeedback || showTestFeedback) &&
+                    isSelected &&
+                    !isChoiceCorrect && <XCircle size={10} strokeWidth={3} />}
                 </div>
+                <span className="truncate font-medium">{choice.text}</span>
+              </div>
 
+              {/* Vote Count Indicator */}
+              <div className="relative z-10 flex items-center gap-2 shrink-0">
                 {showPollDistribution && (
-                  <span className="ml-2 text-xs font-bold text-amber-700 shrink-0">
-                    {choice.percentage}%
+                  <span
+                    className={`font-mono text-xs font-bold transition-opacity duration-300 ${
+                      isSelected ? "text-purple-700" : "text-zinc-600"
+                    }`}
+                  >
+                    {votesCount} {votesCount === 1 ? "vote" : "votes"}
                   </span>
                 )}
 
                 {(showFeedback || showTestFeedback) && isChoiceCorrect && (
-                  <CheckCircle2
-                    size={16}
-                    className="ml-2 text-emerald-600 shrink-0"
-                  />
+                  <CheckCircle2 size={16} className="text-emerald-600" />
                 )}
                 {(showFeedback || showTestFeedback) &&
                   isSelected &&
                   !isChoiceCorrect && (
-                    <XCircle
-                      size={16}
-                      className="ml-2 text-rose-600 shrink-0"
-                    />
+                    <XCircle size={16} className="text-rose-600" />
                   )}
               </div>
-
-              {showPollDistribution && (
-                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-amber-100">
-                  <div
-                    className="h-full bg-amber-500 transition-all duration-500 ease-out"
-                    style={{ width: `${choice.percentage}%` }}
-                  />
-                </div>
-              )}
             </button>
           );
         })}
@@ -243,11 +266,9 @@ export function QuestionCard({
       )}
 
       {showPollDistribution && (
-        <div className="flex items-center gap-2 border-t border-zinc-200/60 pt-2 text-[11px] font-medium text-amber-800">
-          <BarChart3 size={14} className="text-amber-600 shrink-0" />
-          <span>
-            Opinion breakdown calculated across all learner submissions.
-          </span>
+        <div className="flex items-center gap-2 border-t border-zinc-200/60 pt-2 text-[11px] font-medium text-purple-700">
+          <BarChart3 size={14} className="text-purple-600 shrink-0" />
+          <span>Total votes calculated across all learner submissions.</span>
         </div>
       )}
     </div>
