@@ -57,8 +57,18 @@ export default function AssessmentContainer({
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
+  // 1. Fetch assessment data & restore user attempt state
   useEffect(() => {
     let isCancelled = false;
+
+    // 🔑 RESET ALL PREVIOUS ITEM STATES BEFORE LOADING NEW ASSESSMENT
+    setHasStarted(false);
+    setCurrentQuestionIndex(0);
+    setAnswers({});
+    setSubmitted(false);
+    setShowReview(false);
+    setSubmittedQuestions({});
+    setElapsedSeconds(0);
 
     async function initAssessment() {
       if (!assessmentId) return;
@@ -110,6 +120,7 @@ export default function AssessmentContainer({
             setCurrentQuestionIndex(current_index);
           }
 
+          // Strictly set submitted if THIS SPECIFIC assessment attempt is completed
           if (status === "completed") {
             setSubmitted(true);
             if (data.settings.type === "poll") {
@@ -133,6 +144,7 @@ export default function AssessmentContainer({
     };
   }, [assessmentId, itemId]);
 
+  // 2. Timer listener
   useEffect(() => {
     if (!hasStarted || submitted || !assessment?.settings) return;
 
@@ -236,7 +248,6 @@ export default function AssessmentContainer({
     triggerDraftSave(updatedAnswers, currentQuestionIndex);
   };
 
-  // 🔑 Accurately increments vote count (+1 vote) while computing percentage
   const handleSubmitSinglePollVote = () => {
     if (!currentQuestion || !answers[currentQuestion.id]) return;
 
@@ -253,19 +264,16 @@ export default function AssessmentContainer({
         questions: prev.questions.map((q) => {
           if (q.id !== qId) return q;
 
-          // 1. Calculate raw vote count per choice
           const updatedChoices = q.choices.map((c) => ({
             ...c,
             votes: c.id === choiceId ? (c.votes ?? 0) + 1 : (c.votes ?? 0),
           }));
 
-          // 2. Sum question total votes
           const totalQVotes = updatedChoices.reduce(
             (sum, c) => sum + (c.votes ?? 0),
             0,
           );
 
-          // 3. Compute percentage relative to question total
           return {
             ...q,
             choices: updatedChoices.map((c) => ({
@@ -320,7 +328,6 @@ export default function AssessmentContainer({
       });
 
       if (result.success) {
-        // 🔑 Correctly assigns votes (count) and percentage separately
         if (result.poll_distributions && assessment) {
           const distributions = result.poll_distributions;
 
