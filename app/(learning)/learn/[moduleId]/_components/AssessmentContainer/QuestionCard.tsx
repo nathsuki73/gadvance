@@ -42,7 +42,7 @@ interface QuestionCardProps {
   index: number;
   selectedChoiceId?: string;
   submitted: boolean;
-  isQuestionSubmitted?: boolean; // 👈 Tracks step-by-step poll submissions
+  isQuestionSubmitted?: boolean;
   settings: AssessmentSettings;
   onSelectChoice: (questionId: string, choiceId: string) => void;
 }
@@ -64,7 +64,6 @@ export function QuestionCard({
     ? BLOOM_BADGES[question.bloomLevel]
     : null;
 
-  // 🔑 Show vote count breakdown if overall assessment is submitted OR this question was submitted
   const showPollDistribution = isPoll && (submitted || isQuestionSubmitted);
   const canShowReview = settings.allowReview;
 
@@ -76,8 +75,6 @@ export function QuestionCard({
     (submitted || settings.showFeedbackImmediately);
 
   const showTestFeedback = canShowReview && isTestMode && submitted;
-
-  // 🔒 Lock options once submitted or question vote is finalized
   const isLocked =
     submitted ||
     isQuestionSubmitted ||
@@ -122,7 +119,7 @@ export function QuestionCard({
         {question.choices.map((choice) => {
           const isSelected = selectedChoiceId === choice.id;
           const isChoiceCorrect = question.correctChoiceId === choice.id;
-          const votesCount = choice.votes ?? 0;
+          const votesCount = choice.votes ?? (isSelected ? 1 : 0);
           const percent = choice.percentage ?? 0;
 
           let containerStyle =
@@ -159,75 +156,87 @@ export function QuestionCard({
           }
 
           return (
-            <button
-              key={choice.id}
-              type="button"
-              onClick={() => onSelectChoice(question.id, choice.id)}
-              disabled={isLocked}
-              className={`relative overflow-hidden flex w-full items-center justify-between gap-3 rounded-xl border p-3.5 text-left text-xs transition-all cursor-pointer disabled:cursor-default min-h-[50px] ${containerStyle}`}
-            >
-              {/* Animated Fill Bar (Displays when poll vote is submitted) */}
-              {showPollDistribution && (
-                <div
-                  className={`absolute inset-y-0 left-0 transition-all duration-700 ease-out rounded-lg pointer-events-none ${
-                    isSelected
-                      ? "bg-purple-200/60 border-r border-purple-400/40"
-                      : "bg-zinc-100/90"
-                  }`}
-                  style={{ width: `${percent}%` }}
-                />
-              )}
+            <div key={choice.id} className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => onSelectChoice(question.id, choice.id)}
+                disabled={isLocked}
+                className={`relative overflow-hidden flex flex-1 items-center justify-between gap-3 rounded-xl border p-3.5 text-left text-xs transition-all cursor-pointer disabled:cursor-default min-h-[48px] ${containerStyle}`}
+              >
+                {/* Background Progress Bar */}
+                {showPollDistribution && (
+                  <div
+                    className={`absolute inset-y-0 left-0 transition-all duration-700 ease-out rounded-lg pointer-events-none ${
+                      isSelected
+                        ? "bg-purple-200/60 border-r border-purple-400/40"
+                        : "bg-zinc-100/90"
+                    }`}
+                    style={{ width: `${percent}%` }}
+                  />
+                )}
 
-              {/* Choice Radio & Label */}
-              <div className="relative z-10 flex items-center gap-3 pr-2 min-w-0">
-                <div
-                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all ${radioCircleStyle}`}
-                >
-                  {isSelected &&
-                    !showPollDistribution &&
-                    !(showFeedback || showTestFeedback) && (
-                      <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                {/* Option Label & Radio */}
+                <div className="relative z-10 flex items-center gap-3 pr-2 min-w-0">
+                  <div
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all ${radioCircleStyle}`}
+                  >
+                    {isSelected &&
+                      !showPollDistribution &&
+                      !(showFeedback || showTestFeedback) && (
+                        <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                      )}
+                    {showPollDistribution && isSelected && (
+                      <Check size={10} strokeWidth={3} />
                     )}
-                  {showPollDistribution && isSelected && (
-                    <Check size={10} strokeWidth={3} />
+                    {(showFeedback || showTestFeedback) && isChoiceCorrect && (
+                      <Check size={10} strokeWidth={3} />
+                    )}
+                    {(showFeedback || showTestFeedback) &&
+                      isSelected &&
+                      !isChoiceCorrect && <XCircle size={10} strokeWidth={3} />}
+                  </div>
+                  <span className="truncate font-medium">{choice.text}</span>
+                </div>
+
+                {/* Minimalist Vote Count Inside Box */}
+                <div className="relative z-10 flex items-center gap-2 shrink-0">
+                  {showPollDistribution && (
+                    <span
+                      className={`text-[11px] font-semibold transition-opacity duration-300 ${
+                        isSelected ? "text-purple-800" : "text-zinc-500"
+                      }`}
+                    >
+                      {votesCount} {votesCount === 1 ? "vote" : "votes"}
+                    </span>
                   )}
+
                   {(showFeedback || showTestFeedback) && isChoiceCorrect && (
-                    <Check size={10} strokeWidth={3} />
+                    <CheckCircle2 size={16} className="text-emerald-600" />
                   )}
                   {(showFeedback || showTestFeedback) &&
                     isSelected &&
-                    !isChoiceCorrect && <XCircle size={10} strokeWidth={3} />}
+                    !isChoiceCorrect && (
+                      <XCircle size={16} className="text-rose-600" />
+                    )}
                 </div>
-                <span className="truncate font-medium">{choice.text}</span>
-              </div>
+              </button>
 
-              {/* Vote Count Badge */}
-              <div className="relative z-10 flex items-center gap-2 shrink-0">
-                {showPollDistribution && (
-                  <span
-                    className={`font-mono text-xs font-bold transition-opacity duration-300 ${
-                      isSelected ? "text-purple-700" : "text-zinc-600"
-                    }`}
-                  >
-                    {votesCount} {votesCount === 1 ? "vote" : "votes"}
-                  </span>
-                )}
-
-                {(showFeedback || showTestFeedback) && isChoiceCorrect && (
-                  <CheckCircle2 size={16} className="text-emerald-600" />
-                )}
-                {(showFeedback || showTestFeedback) &&
-                  isSelected &&
-                  !isChoiceCorrect && (
-                    <XCircle size={16} className="text-rose-600" />
-                  )}
-              </div>
-            </button>
+              {/* 🔑 Minimalist Percentage Badge Outside Option Box */}
+              {showPollDistribution && (
+                <div
+                  className={`w-12 shrink-0 text-right font-mono text-xs font-bold ${
+                    isSelected ? "text-purple-600" : "text-zinc-400"
+                  }`}
+                >
+                  {percent}%
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
 
-      {/* Quiz/Test Remediation */}
+      {/* Immediate Remediation & Feedback */}
       {(showFeedback || showTestFeedback) && !isPoll && (
         <div className="space-y-2.5 border-t border-zinc-200/60 pt-3">
           <div

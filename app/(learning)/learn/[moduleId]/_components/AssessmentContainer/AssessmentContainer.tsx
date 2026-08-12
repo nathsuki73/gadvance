@@ -16,7 +16,7 @@ import {
   saveAssessmentDraft,
   submitAssessment,
   AnswerPayload,
-} from "./assessmentViewService";
+} from "./assessmentService";
 import { AssessmentStartScreen } from "./AssessmentStartScreen";
 import { QuestionCard } from "./QuestionCard";
 import { ResultsSummary } from "./ResultSummary";
@@ -50,7 +50,6 @@ export default function AssessmentContainer({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔑 Tracks step-by-step vote submissions per question for Poll mode
   const [submittedQuestions, setSubmittedQuestions] = useState<
     Record<string, boolean>
   >({});
@@ -229,7 +228,6 @@ export default function AssessmentContainer({
   const scorePercentage =
     totalGraded > 0 ? Math.round((correctCount / totalGraded) * 100) : 100;
 
-  // Standard Option Click (Marks choice without submitting/revealing count)
   const handleSelectChoice = (questionId: string, choiceId: string) => {
     if (submitted || submittedQuestions[questionId]) return;
 
@@ -238,7 +236,7 @@ export default function AssessmentContainer({
     triggerDraftSave(updatedAnswers, currentQuestionIndex);
   };
 
-  // 🔑 Submit single question vote in Poll mode to reveal vote counts & fill bar
+  // 🔑 Accurately increments vote count (+1 vote) while computing percentage
   const handleSubmitSinglePollVote = () => {
     if (!currentQuestion || !answers[currentQuestion.id]) return;
 
@@ -247,7 +245,6 @@ export default function AssessmentContainer({
 
     setSubmittedQuestions((prev) => ({ ...prev, [qId]: true }));
 
-    // Optimistically update vote counts and percentages for this question
     setAssessment((prev) => {
       if (!prev) return null;
 
@@ -256,16 +253,19 @@ export default function AssessmentContainer({
         questions: prev.questions.map((q) => {
           if (q.id !== qId) return q;
 
+          // 1. Calculate raw vote count per choice
           const updatedChoices = q.choices.map((c) => ({
             ...c,
             votes: c.id === choiceId ? (c.votes ?? 0) + 1 : (c.votes ?? 0),
           }));
 
+          // 2. Sum question total votes
           const totalQVotes = updatedChoices.reduce(
             (sum, c) => sum + (c.votes ?? 0),
             0,
           );
 
+          // 3. Compute percentage relative to question total
           return {
             ...q,
             choices: updatedChoices.map((c) => ({
@@ -320,6 +320,7 @@ export default function AssessmentContainer({
       });
 
       if (result.success) {
+        // 🔑 Correctly assigns votes (count) and percentage separately
         if (result.poll_distributions && assessment) {
           const distributions = result.poll_distributions;
 
@@ -331,16 +332,17 @@ export default function AssessmentContainer({
                 ...q,
                 choices: q.choices.map((c) => {
                   const dist = distributions[c.id];
+                  if (typeof dist === "object" && dist !== null) {
+                    return {
+                      ...c,
+                      votes: dist.votes ?? c.votes ?? 0,
+                      percentage: dist.percentage ?? c.percentage ?? 0,
+                    };
+                  }
                   return {
                     ...c,
-                    votes:
-                      typeof dist === "object"
-                        ? dist.votes
-                        : (dist ?? c.votes ?? 0),
-                    percentage:
-                      typeof dist === "object"
-                        ? dist.percentage
-                        : (c.percentage ?? 0),
+                    votes: typeof dist === "number" ? dist : (c.votes ?? 0),
+                    percentage: c.percentage ?? 0,
                   };
                 }),
               })),
@@ -557,7 +559,6 @@ export default function AssessmentContainer({
                 <span>Previous</span>
               </button>
 
-              {/* 🔑 Submit -> Next Flow */}
               {isPoll && !isCurrentQuestionSubmitted ? (
                 <button
                   type="button"
@@ -590,7 +591,7 @@ export default function AssessmentContainer({
                   ) : (
                     <CheckCircle2 size={16} />
                   )}
-                  <span>Results</span>
+                  <span>Complete & Submit</span>
                 </button>
               )}
             </div>

@@ -24,13 +24,20 @@ export type AssessmentStateData = {
   time_limit_minutes: number | null;
 };
 
-export type SubmissionResultData = {
-  attempt_id: string;
-  score: number;
-  total_points: number;
+export type PollDistributionItem = {
+  votes: number;
   percentage: number;
-  passed: boolean;
-  passing_score: number;
+};
+
+export type SubmissionResultData = {
+  attempt_id?: string;
+  score?: number;
+  total_points?: number;
+  percentage?: number;
+  passed?: boolean;
+  passing_score?: number;
+  is_poll?: boolean;
+  poll_distributions?: Record<string, PollDistributionItem | number>;
 };
 
 export type ServiceResponse<T> = {
@@ -38,6 +45,8 @@ export type ServiceResponse<T> = {
   data?: T;
   message?: string;
   error?: string;
+  is_poll?: boolean;
+  poll_distributions?: Record<string, PollDistributionItem | number>;
 };
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
@@ -68,20 +77,8 @@ function shuffleArray<T>(arr: T[]): T[] {
   return shuffled;
 }
 
-function generateMockPercentages(count: number): number[] {
-  if (count <= 0) return [];
-  if (count === 1) return [100];
-
-  const raw = Array.from(
-    { length: count },
-    () => Math.floor(Math.random() * 40) + 10,
-  );
-  const sum = raw.reduce((a, b) => a + b, 0);
-  return raw.map((val) => Math.round((val / sum) * 100));
-}
-
 function normalizeAssessmentData(payload: any, id: string): AssessmentViewData {
-  // 🔑 Unpack data wrapper if present
+  // Unpack data wrapper if present
   const data = payload?.data ?? payload;
   const settingsObj = data.settings || {};
   const mode: AssessmentMode =
@@ -136,14 +133,14 @@ function normalizeAssessmentData(payload: any, id: string): AssessmentViewData {
 
   let mappedQuestions: Question[] = rawQuestions.map((q: any) => {
     const rawOptions = q.options || q.choices || [];
-    const pollPercentages = generateMockPercentages(rawOptions.length);
 
     let mappedChoices: Choice[] = rawOptions.map((o: any, idx: number) => ({
       id: o.id || `choice-${idx}`,
       text: o.optionText || o.option_text || o.text || "",
       isCorrect: Boolean(o.isCorrect ?? o.is_correct),
       explanation: o.explanation || "",
-      percentage: pollPercentages[idx] || 0,
+      votes: o.votes ?? 0, // 🔑 Map true vote count from backend DB
+      percentage: o.percentage ?? 0, // 🔑 Map true percentage from backend DB
     }));
 
     if (shuffleOptions) {
