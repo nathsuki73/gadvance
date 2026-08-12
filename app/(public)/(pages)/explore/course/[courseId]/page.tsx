@@ -81,26 +81,33 @@ export default function CoursePage({ params }: CoursePageProps) {
     const fetchCourseAndEnrollment = async () => {
       try {
         setDataLoading(true);
+        setError(false);
+
+        // 1. Fetch Course Details
         const courseData = await getLearningPlanDetails(courseId);
         setLearningPlan(courseData);
 
+        // 2. Fetch Enrollment (Safely isolated)
         if (isFullyAuthenticated) {
-          const enrollmentResult = await getMyEnrollment(courseId);
-
-          // 💡 Ensure enrollmentData is ONLY set if valid enrollment object with an ID exists
-          if (
-            enrollmentResult.success &&
-            enrollmentResult.data &&
-            (enrollmentResult.data.id ||
-              (enrollmentResult.data as any).enrollment_id)
-          ) {
-            setEnrollmentData(enrollmentResult.data as Enrollment);
-          } else {
-            setEnrollmentData(null); // 👈 Force null if not enrolled or failed
+          try {
+            const enrollmentResult = await getMyEnrollment(courseId);
+            if (
+              enrollmentResult?.success &&
+              enrollmentResult.data &&
+              (enrollmentResult.data.id ||
+                (enrollmentResult.data as any).enrollment_id)
+            ) {
+              setEnrollmentData(enrollmentResult.data as Enrollment);
+            } else {
+              setEnrollmentData(null);
+            }
+          } catch (enrollErr) {
+            console.warn("Enrollment lookup failed:", enrollErr);
+            setEnrollmentData(null);
           }
         }
       } catch (err) {
-        console.error("Fetch error:", err);
+        console.error("Course fetch error:", err);
         setError(true);
       } finally {
         setDataLoading(false);
