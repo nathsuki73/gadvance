@@ -59,6 +59,7 @@ export default function AssessmentContainer({
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
   // 1. Fetch assessment data & restore user attempt state
+  // 1. Fetch assessment data & restore user attempt state
   useEffect(() => {
     let isCancelled = false;
 
@@ -131,13 +132,24 @@ export default function AssessmentContainer({
             questions: activeQuestions,
           });
 
-          // Restore saved answers from the attempt
-          if (draft_answers && draft_answers.length > 0) {
-            const restoredMap: Record<string, string> = {};
-            draft_answers.forEach((ans: any) => {
-              restoredMap[ans.question_id] = ans.choice_id;
-            });
+          // 🔑 Restore saved answers and automatically skip the start screen if progress exists
+          const restoredMap: Record<string, string> = {};
+          if (draft_answers) {
+            if (Array.isArray(draft_answers)) {
+              draft_answers.forEach((ans: any) => {
+                restoredMap[ans.question_id] = ans.choice_id;
+              });
+            } else if (
+              typeof draft_answers === "object" &&
+              draft_answers !== null
+            ) {
+              Object.assign(restoredMap, draft_answers);
+            }
+          }
+
+          if (Object.keys(restoredMap).length > 0) {
             setAnswers(restoredMap);
+            setHasStarted(true); // Automatically bypasses start screen
           }
 
           if (
@@ -145,13 +157,16 @@ export default function AssessmentContainer({
             current_index < activeQuestions.length
           ) {
             setCurrentQuestionIndex(current_index);
+            if (current_index > 0) {
+              setHasStarted(true); // Resumes directly at the saved question index
+            }
           }
 
-          // 🔑 UNIVERSAL FIX: If the attempt status is completed, bypass everything and show results
+          // 🔑 Status check: Go to results if completed, or resume active quiz if in_progress with data
           if (status === "completed") {
             setHasStarted(true);
             setSubmitted(true);
-            setShowReview(false); // Keeps review collapsed by default on refresh, or true if you prefer
+            setShowReview(false);
 
             if (data.settings.type === "poll") {
               const allSubmittedMap: Record<string, boolean> = {};
@@ -160,6 +175,11 @@ export default function AssessmentContainer({
               });
               setSubmittedQuestions(allSubmittedMap);
             }
+          } else if (
+            status === "in_progress" &&
+            Object.keys(restoredMap).length > 0
+          ) {
+            setHasStarted(true);
           }
         } else {
           setAssessment(data);
