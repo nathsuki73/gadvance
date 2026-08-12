@@ -47,7 +47,6 @@ export async function getModuleStructure(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-
     throw new Error(
       errorData.message ||
         `Failed to fetch module structure: ${response.status}`,
@@ -55,11 +54,17 @@ export async function getModuleStructure(
   }
 
   const payload = await response.json();
-  const laravelData: LaravelModuleData = payload.data;
+  const laravelData = payload.data || payload;
 
-  // Resolve courseId / learning_plan_id safely from relationship or payload
-  const courseId =
+  let courseId =
     laravelData.learning_plan_id || laravelData.learning_plans?.[0]?.id || "";
+
+  if (!courseId && typeof window !== "undefined") {
+    const match = window.location.pathname.match(/\/course\/([^/]+)/);
+    if (match) {
+      courseId = match[1];
+    }
+  }
 
   return {
     courseId,
