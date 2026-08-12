@@ -42,6 +42,7 @@ interface QuestionCardProps {
   index: number;
   selectedChoiceId?: string;
   submitted: boolean;
+  isQuestionSubmitted?: boolean; // 👈 Tracks step-by-step poll submissions
   settings: AssessmentSettings;
   onSelectChoice: (questionId: string, choiceId: string) => void;
 }
@@ -51,6 +52,7 @@ export function QuestionCard({
   index,
   selectedChoiceId,
   submitted,
+  isQuestionSubmitted = false,
   settings,
   onSelectChoice,
 }: QuestionCardProps) {
@@ -62,8 +64,8 @@ export function QuestionCard({
     ? BLOOM_BADGES[question.bloomLevel]
     : null;
 
-  const showPollDistribution =
-    isPoll && (submitted || Boolean(selectedChoiceId));
+  // 🔑 Show vote count breakdown if overall assessment is submitted OR this question was submitted
+  const showPollDistribution = isPoll && (submitted || isQuestionSubmitted);
   const canShowReview = settings.allowReview;
 
   const showFeedback =
@@ -74,9 +76,11 @@ export function QuestionCard({
     (submitted || settings.showFeedbackImmediately);
 
   const showTestFeedback = canShowReview && isTestMode && submitted;
+
+  // 🔒 Lock options once submitted or question vote is finalized
   const isLocked =
     submitted ||
-    (isPoll && Boolean(selectedChoiceId)) ||
+    isQuestionSubmitted ||
     Boolean(showFeedback && selectedChoiceId);
 
   return (
@@ -162,7 +166,7 @@ export function QuestionCard({
               disabled={isLocked}
               className={`relative overflow-hidden flex w-full items-center justify-between gap-3 rounded-xl border p-3.5 text-left text-xs transition-all cursor-pointer disabled:cursor-default min-h-[50px] ${containerStyle}`}
             >
-              {/* Background Animated Progress Bar */}
+              {/* Animated Fill Bar (Displays when poll vote is submitted) */}
               {showPollDistribution && (
                 <div
                   className={`absolute inset-y-0 left-0 transition-all duration-700 ease-out rounded-lg pointer-events-none ${
@@ -174,7 +178,7 @@ export function QuestionCard({
                 />
               )}
 
-              {/* Option Text */}
+              {/* Choice Radio & Label */}
               <div className="relative z-10 flex items-center gap-3 pr-2 min-w-0">
                 <div
                   className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all ${radioCircleStyle}`}
@@ -197,7 +201,7 @@ export function QuestionCard({
                 <span className="truncate font-medium">{choice.text}</span>
               </div>
 
-              {/* Vote Count Indicator */}
+              {/* Vote Count Badge */}
               <div className="relative z-10 flex items-center gap-2 shrink-0">
                 {showPollDistribution && (
                   <span
@@ -223,7 +227,7 @@ export function QuestionCard({
         })}
       </div>
 
-      {/* Immediate Remediation & Feedback */}
+      {/* Quiz/Test Remediation */}
       {(showFeedback || showTestFeedback) && !isPoll && (
         <div className="space-y-2.5 border-t border-zinc-200/60 pt-3">
           <div

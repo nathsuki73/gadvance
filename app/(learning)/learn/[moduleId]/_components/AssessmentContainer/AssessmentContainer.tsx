@@ -50,10 +50,14 @@ export default function AssessmentContainer({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 🔑 Tracks step-by-step vote submissions per question for Poll mode
+  const [submittedQuestions, setSubmittedQuestions] = useState<
+    Record<string, boolean>
+  >({});
+
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
-  // 1. Fetch assessment data & restore user attempt state
   useEffect(() => {
     let isCancelled = false;
 
@@ -130,7 +134,6 @@ export default function AssessmentContainer({
     };
   }, [assessmentId, itemId]);
 
-  // 2. Timer listener
   useEffect(() => {
     if (!hasStarted || submitted || !assessment?.settings) return;
 
@@ -213,6 +216,9 @@ export default function AssessmentContainer({
   const isFirstQuestion = currentQuestionIndex === 0;
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
   const isCurrentAnswered = Boolean(answers[currentQuestion?.id]);
+  const isCurrentQuestionSubmitted = Boolean(
+    submittedQuestions[currentQuestion?.id],
+  );
 
   const gradedQuestions = questions.filter((q) => !q.isPoll);
   const totalGraded = gradedQuestions.length;
@@ -223,64 +229,56 @@ export default function AssessmentContainer({
   const scorePercentage =
     totalGraded > 0 ? Math.round((correctCount / totalGraded) * 100) : 100;
 
-  // ⚡ Optimistic local vote count increment (+1) on click
+  // Standard Option Click (Marks choice without submitting/revealing count)
   const handleSelectChoice = (questionId: string, choiceId: string) => {
-    if (submitted && !settings.allowReview && !isPoll) return;
+    if (submitted || submittedQuestions[questionId]) return;
 
-    const previousChoiceId = answers[questionId];
     const updatedAnswers = { ...answers, [questionId]: choiceId };
     setAnswers(updatedAnswers);
-
-    if (isPoll && assessment) {
-      setAssessment((prev) => {
-        if (!prev) return null;
-
-        return {
-          ...prev,
-          questions: prev.questions.map((q) => {
-            if (q.id !== questionId) return q;
-
-            const updatedChoices = q.choices.map((c) => {
-              let currentVotes = c.votes ?? 0;
-
-              // Add 1 to the newly selected choice
-              if (c.id === choiceId) {
-                currentVotes += 1;
-              }
-
-              // Subtract 1 from the previous choice if user switched answer
-              if (
-                previousChoiceId &&
-                c.id === previousChoiceId &&
-                c.id !== choiceId
-              ) {
-                currentVotes = Math.max(0, currentVotes - 1);
-              }
-
-              return { ...c, votes: currentVotes };
-            });
-
-            const totalQVotes = updatedChoices.reduce(
-              (sum, c) => sum + (c.votes ?? 0),
-              0,
-            );
-
-            return {
-              ...q,
-              choices: updatedChoices.map((c) => ({
-                ...c,
-                percentage:
-                  totalQVotes > 0
-                    ? Math.round(((c.votes ?? 0) / totalQVotes) * 100)
-                    : 0,
-              })),
-            };
-          }),
-        };
-      });
-    }
-
     triggerDraftSave(updatedAnswers, currentQuestionIndex);
+  };
+
+  // 🔑 Submit single question vote in Poll mode to reveal vote counts & fill bar
+  const handleSubmitSinglePollVote = () => {
+    if (!currentQuestion || !answers[currentQuestion.id]) return;
+
+    const qId = currentQuestion.id;
+    const choiceId = answers[qId];
+
+    setSubmittedQuestions((prev) => ({ ...prev, [qId]: true }));
+
+    // Optimistically update vote counts and percentages for this question
+    setAssessment((prev) => {
+      if (!prev) return null;
+
+      return {
+        ...prev,
+        questions: prev.questions.map((q) => {
+          if (q.id !== qId) return q;
+
+          const updatedChoices = q.choices.map((c) => ({
+            ...c,
+            votes: c.id === choiceId ? (c.votes ?? 0) + 1 : (c.votes ?? 0),
+          }));
+
+          const totalQVotes = updatedChoices.reduce(
+            (sum, c) => sum + (c.votes ?? 0),
+            0,
+          );
+
+          return {
+            ...q,
+            choices: updatedChoices.map((c) => ({
+              ...c,
+              percentage:
+                totalQVotes > 0
+                  ? Math.round(((c.votes ?? 0) / totalQVotes) * 100)
+                  : 0,
+            })),
+          };
+        }),
+      };
+    });
   };
 
   const handleNextQuestion = () => {
@@ -386,6 +384,7 @@ export default function AssessmentContainer({
 
     setAnswers({});
     setSubmitted(false);
+    setSubmittedQuestions({});
     setShowReview(false);
     setCurrentQuestionIndex(0);
     setElapsedSeconds(0);
@@ -512,6 +511,7 @@ export default function AssessmentContainer({
                         index={qIndex}
                         selectedChoiceId={answers[q.id]}
                         submitted={submitted}
+                        isQuestionSubmitted={true}
                         settings={settings}
                         onSelectChoice={handleSelectChoice}
                       />
@@ -540,6 +540,7 @@ export default function AssessmentContainer({
               index={currentQuestionIndex}
               selectedChoiceId={answers[currentQuestion.id]}
               submitted={submitted}
+              isQuestionSubmitted={isCurrentQuestionSubmitted}
               settings={settings}
               onSelectChoice={handleSelectChoice}
             />
@@ -556,7 +557,18 @@ export default function AssessmentContainer({
                 <span>Previous</span>
               </button>
 
-              {!isLastQuestion ? (
+              {/* 🔑 Submit -> Next Flow */}
+              {isPoll && !isCurrentQuestionSubmitted ? (
+                <button
+                  type="button"
+                  onClick={handleSubmitSinglePollVote}
+                  disabled={!isCurrentAnswered}
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-purple-600 px-6 py-2.5 text-xs font-bold text-white shadow-xs transition-all cursor-pointer hover:bg-purple-700 active:scale-[0.98] disabled:opacity-40"
+                >
+                  <CheckCircle2 size={16} />
+                  <span>Submit Vote</span>
+                </button>
+              ) : !isLastQuestion ? (
                 <button
                   type="button"
                   onClick={handleNextQuestion}
@@ -578,7 +590,7 @@ export default function AssessmentContainer({
                   ) : (
                     <CheckCircle2 size={16} />
                   )}
-                  <span>Complete & Submit</span>
+                  <span>Results</span>
                 </button>
               )}
             </div>
