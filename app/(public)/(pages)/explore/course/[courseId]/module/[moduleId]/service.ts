@@ -156,3 +156,20 @@ export async function completeBlock(blockId: string) {
     method: "POST",
   });
 }
+
+/**
+ * Protected: Fetch user learning progress for a specific module
+ */
+export async function getModuleProgress(moduleId: string) {
+  return request<{
+    success: boolean;
+    data: any[];
+    completed_item_ids: string[];
+    section_summaries: Array<{
+      section_id: string;
+      total_items: number;
+      completed_items: number;
+      percentage: number;
+    }>;
+  }>(`/learning-progress/${moduleId}`);
+}

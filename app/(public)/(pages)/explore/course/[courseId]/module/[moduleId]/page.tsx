@@ -5,7 +5,7 @@ import { notFound, usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 import ModuleOverviewHeader from "./_components/ModuleOverviewHeader";
-import { getModule } from "./service";
+import { getModule } from "./service"; // 👈 Use getModule instead of getLearningModule
 import { ModuleResponse } from "./types";
 
 const ModulePage = ({
@@ -34,12 +34,16 @@ const ModulePage = ({
     const fetchModule = async () => {
       try {
         setLoading(true);
+        // 🔑 getModule is safe for public/semi-public fetching and utilizes the updated backend controller
         const result = await getModule(moduleId);
-        console.log(result);
-        if (!result.success || !result.data) throw new Error();
+
+        if (!result.success || !result.data) {
+          throw new Error(result.error || "Failed to fetch module");
+        }
+
         setModule(result.data);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load module overview:", err);
         setError(true);
       } finally {
         setLoading(false);
@@ -51,7 +55,7 @@ const ModulePage = ({
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
-        <Loader2 className="animate-spin text-primary/30" size={32} />
+        <Loader2 className="animate-spin text-purple-600/30" size={32} />
       </div>
     );
   }
@@ -64,7 +68,7 @@ const ModulePage = ({
         <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
           <button
             onClick={handleBackToCourse}
-            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary-hover"
+            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-purple-600 cursor-pointer"
           >
             <ArrowLeft
               size={16}
