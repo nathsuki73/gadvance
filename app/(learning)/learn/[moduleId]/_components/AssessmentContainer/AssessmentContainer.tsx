@@ -45,6 +45,7 @@ export default function AssessmentContainer({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState<boolean>(false);
+  const [showReview, setShowReview] = useState<boolean>(false); // 👈 Toggles review section
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -308,6 +309,7 @@ export default function AssessmentContainer({
 
     setAnswers({});
     setSubmitted(false);
+    setShowReview(false);
     setCurrentQuestionIndex(0);
     setElapsedSeconds(0);
     setStartTime(Date.now());
@@ -325,9 +327,7 @@ export default function AssessmentContainer({
       return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
     }
 
-    const mins = Math.floor(elapsedSeconds / 60);
-    const secs = elapsedSeconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    return "";
   };
 
   const currentProgressPercent =
@@ -344,11 +344,11 @@ export default function AssessmentContainer({
             {assessment.title}
           </h1>
 
-          {hasStarted && (
+          {/* Render timer strictly when a time limit exists */}
+          {hasStarted && Boolean(settings.timeLimitMinutes) && (
             <div
               className={`flex shrink-0 items-center gap-1.5 font-mono text-xs px-3 py-1.5 rounded-xl border ${
-                settings.timeLimitMinutes &&
-                settings.timeLimitMinutes * 60 - elapsedSeconds <= 60
+                settings.timeLimitMinutes! * 60 - elapsedSeconds <= 60
                   ? "animate-pulse border-rose-200 bg-rose-50 font-bold text-rose-700"
                   : "border-zinc-200/60 bg-zinc-50 text-zinc-600"
               }`}
@@ -356,8 +356,7 @@ export default function AssessmentContainer({
               <Clock
                 size={14}
                 className={
-                  settings.timeLimitMinutes &&
-                  settings.timeLimitMinutes * 60 - elapsedSeconds <= 60
+                  settings.timeLimitMinutes! * 60 - elapsedSeconds <= 60
                     ? "text-rose-600"
                     : "text-zinc-400"
                 }
@@ -411,23 +410,42 @@ export default function AssessmentContainer({
               />
             )}
 
-            {/* Post-submission Review Cards */}
-            <div className="space-y-6">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                Review Submission
-              </h3>
-              {questions.map((q, qIndex) => (
-                <QuestionCard
-                  key={q.id}
-                  question={q}
-                  index={qIndex}
-                  selectedChoiceId={answers[q.id]}
-                  submitted={submitted}
-                  settings={settings}
-                  onSelectChoice={handleSelectChoice}
-                />
-              ))}
-            </div>
+            {/* Post-submission Collapsible Review Section */}
+            {settings.allowReview && (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setShowReview((prev) => !prev)}
+                  className="flex w-full items-center justify-between rounded-2xl border border-zinc-200/80 bg-zinc-50/70 px-5 py-3.5 text-left transition-all hover:border-purple-300 hover:bg-purple-50/30 cursor-pointer"
+                >
+                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                    Review Submission
+                  </span>
+                  <ChevronRight
+                    size={18}
+                    className={`text-zinc-500 transition-transform duration-200 ${
+                      showReview ? "rotate-90 text-purple-600" : ""
+                    }`}
+                  />
+                </button>
+
+                {showReview && (
+                  <div className="space-y-6 pt-2">
+                    {questions.map((q, qIndex) => (
+                      <QuestionCard
+                        key={q.id}
+                        question={q}
+                        index={qIndex}
+                        selectedChoiceId={answers[q.id]}
+                        submitted={submitted}
+                        settings={settings}
+                        onSelectChoice={handleSelectChoice}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Next Item Action Button */}
             <div className="pt-4">
