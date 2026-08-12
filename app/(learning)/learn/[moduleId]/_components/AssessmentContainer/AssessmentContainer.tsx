@@ -53,6 +53,7 @@ export default function AssessmentContainer({
   const [submittedQuestions, setSubmittedQuestions] = useState<
     Record<string, boolean>
   >({});
+
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
@@ -103,7 +104,7 @@ export default function AssessmentContainer({
             }
           }
 
-          // Merge poll distribution counts/percentages if present
+          // If poll distributions exist from backend, merge them
           if (
             poll_distributions &&
             Object.keys(poll_distributions).length > 0
@@ -129,6 +130,7 @@ export default function AssessmentContainer({
             questions: activeQuestions,
           });
 
+          // Restore saved answers from the attempt
           if (draft_answers && draft_answers.length > 0) {
             const restoredMap: Record<string, string> = {};
             draft_answers.forEach((ans: any) => {
@@ -144,11 +146,11 @@ export default function AssessmentContainer({
             setCurrentQuestionIndex(current_index);
           }
 
-          // 🔑 Minimal & Robust Check: If backend status is completed, bypass start screen immediately
+          // 🔑 UNIVERSAL FIX: If the attempt status is completed, bypass everything and show results
           if (status === "completed") {
             setHasStarted(true);
             setSubmitted(true);
-            setShowReview(true);
+            setShowReview(false); // Keeps review collapsed by default on refresh, or true if you prefer
 
             if (data.settings.type === "poll") {
               const allSubmittedMap: Record<string, boolean> = {};
@@ -460,7 +462,7 @@ export default function AssessmentContainer({
             {assessment.title}
           </h1>
 
-          {hasStarted && Boolean(settings.timeLimitMinutes) && (
+          {hasStarted && Boolean(settings.timeLimitMinutes) && !submitted && (
             <div
               className={`flex shrink-0 items-center gap-1.5 font-mono text-xs px-3 py-1.5 rounded-xl border ${
                 settings.timeLimitMinutes! * 60 - elapsedSeconds <= 60
