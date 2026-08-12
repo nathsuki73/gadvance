@@ -16,6 +16,7 @@ import {
   saveAssessmentDraft,
   submitAssessment,
   AnswerPayload,
+  retakeAssessment,
 } from "./assessmentService";
 import { AssessmentStartScreen } from "./AssessmentStartScreen";
 import { QuestionCard } from "./QuestionCard";
@@ -404,13 +405,22 @@ export default function AssessmentContainer({
     }
   };
 
-  const handleRetry = () => {
+  const handleRetry = async () => {
     if (settings.maxAttempts !== null) {
       if (settings.maxAttempts <= 1) {
         alert("You have reached the maximum allowed attempts.");
         return;
       }
+    }
 
+    // 🔑 Notify backend to reset attempt status to in_progress
+    const res = await retakeAssessment(assessmentId, itemId);
+    if (!res.success) {
+      alert(res.error || "Failed to retake assessment.");
+      return;
+    }
+
+    if (settings.maxAttempts !== null) {
       setAssessment((prev) =>
         prev
           ? {

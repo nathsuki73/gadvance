@@ -315,3 +315,30 @@ export async function submitAssessment(payload: {
     return { success: false, error: "Network error submitting assessment." };
   }
 }
+
+/**
+ * 5. Reset Assessment Attempt for Retake
+ */
+export async function retakeAssessment(
+  assessmentId: string,
+  sectionItemId: string,
+): Promise<ServiceResponse<void>> {
+  const headers = await getAuthHeaders();
+
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/assessments/${assessmentId}/retake`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ section_item_id: sectionItemId }),
+      },
+    );
+
+    const json = await res.json();
+    return json;
+  } catch (error) {
+    console.error("[AssessmentViewService] Retake error:", error);
+    return { success: false, error: "Network error resetting assessment." };
+  }
+}
