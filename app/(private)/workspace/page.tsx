@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -44,7 +44,8 @@ export default function WorkspacePage() {
         return res.data;
       },
       enabled: status === "authenticated",
-      staleTime: 1000 * 60 * 2,
+      staleTime: 0,
+      refetchOnWindowFocus: true,
     });
 
   // 2. Fetch Joined Organizations Query
@@ -92,23 +93,29 @@ export default function WorkspacePage() {
     return <WorkspaceSkeleton />;
   }
 
-  // Data Mapping
-  const profile = profileResponse ?? null;
+  // Data Mapping (Safely extract response if nested inside profileResponse.data)
+  const profile: any = (profileResponse as any)?.data ?? profileResponse ?? null;
   const firstName =
     profile?.first_name || session?.user?.name?.split(" ")[0] || "User";
 
   const joinedOrganizations = joinedOrgsResponse ?? [];
   const hasOrganizations = joinedOrganizations.length > 0;
 
-  const activeModule = profile?.active_module
-    ? {
-        id: profile.active_module.id,
-        title: profile.active_module.title,
-        description: profile.active_module.description,
-        progress: profile.active_module.progress_percentage ?? 0,
-        href: `/learn/${profile.active_module.id}`,
-      }
-    : null;
+  // 🎯 Dynamic Extraction of Modules (handles recently_viewed_modules or active_module)
+  const rawModules =
+    profile?.recently_viewed_modules && profile.recently_viewed_modules.length > 0
+      ? profile.recently_viewed_modules
+      : profile?.active_module
+      ? [profile.active_module]
+      : [];
+
+  const recentModules: ModuleItem[] = rawModules.map((m: any) => ({
+    id: m.id,
+    title: m.title || "Untitled Module",
+    description: m.description || "No description provided.",
+    progress: m.progress_percentage ?? m.progress ?? 0,
+    href: `/learn/${m.id}`,
+  }));
 
   const handleLeaveOrganization = (orgId: string, orgName: string) => {
     if (confirm(`Are you sure you want to leave ${orgName}?`)) {
@@ -147,13 +154,13 @@ export default function WorkspacePage() {
 
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {/* Main Column: Recently Viewed */}
+          {/* Main Column: Recently Viewed Module Carousel */}
           <section className="lg:col-span-2 space-y-4">
             <h2 className="text-xs font-semibold tracking-wider text-primary uppercase">
-              Recently Viewed Module
+              Recently Viewed Modules
             </h2>
-            <ActiveModuleCard
-              module={activeModule}
+            <RecentlyViewedSection
+              modules={recentModules}
               onNavigate={(href) => router.push(href)}
             />
           </section>
@@ -205,7 +212,6 @@ function InstitutionSection({
 }: InstitutionSectionProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // If user has not joined any organizations, display the original empty banner state
   if (!hasOrganizations) {
     return (
       <div className="relative w-full py-8 px-6 bg-gradient-to-b from-purple-50/60 to-white border border-purple-200/60 rounded-2xl flex flex-col items-center text-center overflow-hidden transition-all duration-300">
@@ -235,7 +241,6 @@ function InstitutionSection({
     );
   }
 
-  // Controls for organization slider
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % organizations.length);
   };
@@ -252,7 +257,6 @@ function InstitutionSection({
 
   return (
     <div className="relative w-full bg-gradient-to-b from-purple-50/80 via-white to-purple-50/30 border border-purple-200/70 rounded-2xl p-6 md:p-8 shadow-sm transition-all duration-300">
-      {/* Top Header Row */}
       <div className="flex items-center justify-between border-b border-purple-100 pb-4 mb-6">
         <div className="flex items-center gap-2">
           <Building2 className="h-4 w-4 text-primary" />
@@ -261,7 +265,6 @@ function InstitutionSection({
           </span>
         </div>
 
-        {/* Explore More Button */}
         <button
           onClick={onExploreOrgs}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-hover transition-colors cursor-pointer"
@@ -271,9 +274,7 @@ function InstitutionSection({
         </button>
       </div>
 
-      {/* Main Slider Content Card */}
       <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
-        {/* Organization Info */}
         <div className="space-y-3 w-full max-w-2xl text-left">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-xl md:text-2xl font-bold text-zinc-900 tracking-tight">
@@ -301,7 +302,6 @@ function InstitutionSection({
           )}
         </div>
 
-        {/* Action Controls Column */}
         <div className="flex flex-col sm:flex-row md:flex-col items-center gap-3 w-full md:w-auto shrink-0 pt-2 md:pt-0">
           <button
             onClick={() => onGoToOrgPage(currentOrg.id)}
@@ -325,10 +325,8 @@ function InstitutionSection({
         </div>
       </div>
 
-      {/* Slider Controls (Only shown if user has joined 2 or more organizations) */}
       {organizations.length > 1 && (
         <div className="mt-6 pt-4 border-t border-purple-100/60 flex items-center justify-between">
-          {/* Slide Indicator Dots */}
           <div className="flex items-center gap-1.5">
             {organizations.map((_, idx) => (
               <button
@@ -344,7 +342,6 @@ function InstitutionSection({
             ))}
           </div>
 
-          {/* Navigation Buttons */}
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrev}
@@ -368,22 +365,34 @@ function InstitutionSection({
 }
 
 /* ========================================================================
-   SUB-COMPONENTS: ACTIVE MODULE & STAT CARDS
+   RECENTLY VIEWED MODULES CAROUSEL SECTION
    ======================================================================== */
 
-interface ActiveModuleProps {
-  module: {
-    id: string;
-    title: string;
-    description: string;
-    progress: number;
-    href: string;
-  } | null;
+interface ModuleItem {
+  id: string;
+  title: string;
+  description: string;
+  progress: number;
+  href: string;
+}
+
+interface RecentlyViewedSectionProps {
+  modules: ModuleItem[];
   onNavigate: (href: string) => void;
 }
 
-function ActiveModuleCard({ module, onNavigate }: ActiveModuleProps) {
-  if (!module) {
+function RecentlyViewedSection({
+  modules,
+  onNavigate,
+}: RecentlyViewedSectionProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // 🎯 Reset carousel index to 0 whenever module list updates (so the most recently visited module appears at the front)
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [modules]);
+
+  if (!modules || modules.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-purple-200/60 bg-white/80 p-8 text-center flex flex-col items-center justify-center min-h-[260px]">
         <p className="text-sm text-zinc-400 font-light">
@@ -393,45 +402,105 @@ function ActiveModuleCard({ module, onNavigate }: ActiveModuleProps) {
     );
   }
 
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % modules.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev - 1 + modules.length) % modules.length);
+  };
+
+  const currentModule = modules[currentIndex] || modules[0];
+  const isCompleted = currentModule.progress >= 100;
+
   return (
-    <div className="rounded-2xl border border-purple-200/50 bg-white/90 p-8 relative overflow-hidden flex flex-col justify-between min-h-[260px]">
+    <div className="rounded-2xl border border-purple-200/50 bg-white/90 p-8 relative overflow-hidden flex flex-col justify-between min-h-[280px] shadow-xs">
+      {/* Slide Counter / Header Row */}
+      {modules.length > 1 && (
+        <div className="flex items-center justify-between border-b border-[#8b5cf6] pb-3 mb-4">
+          <span className="text-[10px] font-bold tracking-wider text-purple-600 uppercase">
+            Module {currentIndex + 1} of {modules.length}
+          </span>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={handlePrev}
+              aria-label="Previous module"
+              className="p-1.5 rounded-lg border border-purple-200 bg-white text-zinc-600 hover:bg-purple-50 hover:text-primary transition-colors cursor-pointer shadow-xs"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              onClick={handleNext}
+              aria-label="Next module"
+              className="p-1.5 rounded-lg border border-purple-200 bg-white text-zinc-600 hover:bg-purple-50 hover:text-primary transition-colors cursor-pointer shadow-xs"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Module Card Main Content */}
       <div className="space-y-4 w-full">
-        <h3 className="text-2xl font-semibold tracking-tight text-zinc-900">
-          {module.title}
+        <h3 className="text-2xl font-semibold tracking-tight text-zinc-900 leading-tight">
+          {currentModule.title}
         </h3>
 
         <div className="py-1 max-w-md space-y-2">
           <div className="h-2 w-full bg-purple-100/60 rounded-full overflow-hidden">
             <div
               className="h-full bg-primary rounded-full transition-all duration-500"
-              style={{ width: `${module.progress}%` }}
+              style={{ width: `${currentModule.progress}%` }}
             />
           </div>
           <div className="flex items-center text-[11px] font-medium text-zinc-400">
-            <span>Course Progress:&nbsp;</span>
+            <span>Module Progress:&nbsp;</span>
             <span className="font-bold text-primary">
-              {module.progress}% Completed
+              {currentModule.progress}% Completed
             </span>
           </div>
         </div>
 
         <p className="text-xs text-zinc-500 font-light leading-relaxed line-clamp-3">
-          {module.description}
+          {currentModule.description}
         </p>
       </div>
 
-      <div className="pt-6 mt-auto">
+      {/* Footer Navigation & Indicator */}
+      <div className="pt-6 mt-auto flex items-center justify-between">
         <button
-          onClick={() => onNavigate(module.href)}
-          className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] cursor-pointer"
+          onClick={() => onNavigate(currentModule.href)}
+          className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] cursor-pointer shadow-sm"
         >
-          <PlayCircle size={14} />
-          <span>Resume Module</span>
+          {isCompleted ? <CheckCircle2 size={14} /> : <PlayCircle size={14} />}
+          <span>{isCompleted ? "View Module" : "Resume Module"}</span>
         </button>
+
+        {modules.length > 1 && (
+          <div className="flex items-center gap-1.5">
+            {modules.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentIndex(idx)}
+                aria-label={`Go to module ${idx + 1}`}
+                className={`h-2 rounded-full transition-all cursor-pointer ${
+                  idx === currentIndex
+                    ? "w-6 bg-primary"
+                    : "w-2 bg-purple-200 hover:bg-purple-300"
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+/* ========================================================================
+   SUB-COMPONENT: STAT CARDS
+   ======================================================================== */
 
 interface StatCardProps {
   icon: React.ReactNode;

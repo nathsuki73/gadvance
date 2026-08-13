@@ -1,3 +1,12 @@
+export type RecentModule = {
+  id: string;
+  learning_plan_id?: string;
+  title: string;
+  description: string;
+  progress_percentage?: number;
+  updated_at?: string;
+};
+
 export type UserProfile = {
   id: number;
 
@@ -28,11 +37,9 @@ export type UserProfile = {
   in_progress_count?: number;
   completed_count?: number;
 
-  // 🎯 ADD THIS BLOCK: Tells TypeScript how to parse the active module payload
-  active_module?: {
-    id: string;
-    title: string;
-    description: string;
-    progress_percentage?: number;
-  } | null;
+  // Active module payload
+  active_module?: RecentModule | null;
+
+  // 🎯 Array of recently viewed modules ordered from newest to oldest
+  recently_viewed_modules?: RecentModule[];
 };

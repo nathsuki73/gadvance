@@ -1,8 +1,9 @@
 "use client";
 
-import { use, useEffect, useState, useCallback } from "react";
+import { use, useEffect, useState, useCallback, useRef } from "react";
 import { notFound } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import ModuleSidebar from "./_components/SideBar/ModuleSidebar";
 import AssessmentContainer from "./_components/AssessmentContainer/AssessmentContainer";
@@ -20,6 +21,7 @@ type LearnPageProps = {
 
 const LearnPage = ({ params }: LearnPageProps) => {
   const { moduleId } = use(params);
+  const queryClient = useQueryClient();
 
   const [module, setModule] = useState<ModuleStructure | null>(null);
   const [activeItem, setActiveItem] = useState<SectionItem | null>(null);
@@ -32,6 +34,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  // Tracks items touched during the session to avoid duplicate visit-touch network requests
+  const touchedItemIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!moduleId) return;
@@ -76,6 +81,40 @@ const LearnPage = ({ params }: LearnPageProps) => {
     loadData();
   }, [moduleId]);
 
+  // 🎯 TOUCH LATEST VISIT: Update updated_at when opening an item so this module moves to the front of Recently Viewed
+  useEffect(() => {
+    if (!moduleId || !activeItem || !module) return;
+
+    const itemId = activeItem.id;
+    if (touchedItemIds.current.has(itemId)) return;
+
+    const sectionId =
+      activeItem.section_id ||
+      module?.sections?.find((sec) => sec.items?.some((i) => i.id === itemId))
+        ?.id;
+
+    if (!sectionId) return;
+
+    const touchModuleVisit = async () => {
+      touchedItemIds.current.add(itemId);
+      const isAlreadyCompleted = completedItemIds.has(itemId);
+
+      // Persist current item status to bump updated_at
+      const response = await saveLearningProgress({
+        module_id: moduleId,
+        section_id: sectionId,
+        learning_item_id: itemId,
+        progress: isAlreadyCompleted ? 100 : 0,
+      });
+
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      }
+    };
+
+    touchModuleVisit();
+  }, [moduleId, activeItem, module, completedItemIds, queryClient]);
+
   // Flattened items list for next/previous navigation
   const allItems = module?.sections?.flatMap((sec) => sec.items) ?? [];
 
@@ -85,7 +124,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
   };
 
   const handleItemComplete = useCallback(
-    async (itemId: string) => {
+    async (itemId: string, progressValue = 100) => {
       if (!activeItem || !moduleId) return;
 
       // Resolve section_id safely
@@ -103,27 +142,33 @@ const LearnPage = ({ params }: LearnPageProps) => {
       }
 
       // 1. Optimistic UI update
-      setCompletedItemIds((prev) => new Set(prev).add(itemId));
+      if (progressValue >= 100) {
+        setCompletedItemIds((prev) => new Set(prev).add(itemId));
+      }
 
       // 2. Persist to backend database
       const response = await saveLearningProgress({
         module_id: moduleId,
         section_id: sectionId,
         learning_item_id: itemId,
-        progress: 100,
+        progress: progressValue,
       });
 
-      if (!response.success) {
+      if (response.success) {
+        // 🎯 Invalidate cache so Workspace picks up updated percentage & recency ordering
+        queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      } else {
         console.error("[LearnPage] DB save failed:", response.error);
-        // Revert optimistic state if save failed
-        setCompletedItemIds((prev) => {
-          const next = new Set(prev);
-          next.delete(itemId);
-          return next;
-        });
+        if (progressValue >= 100) {
+          setCompletedItemIds((prev) => {
+            const next = new Set(prev);
+            next.delete(itemId);
+            return next;
+          });
+        }
       }
     },
-    [activeItem, module, moduleId],
+    [activeItem, module, moduleId, queryClient],
   );
 
   const handleNext = () => {
@@ -191,7 +236,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
               sectionId={activeItem.section_id}
               assessmentId={activeItem.content_id}
               type={activeItem.assessment_type || "quiz"}
-              onComplete={() => handleItemComplete(activeItem.id)}
+              onComplete={() => handleItemComplete(activeItem.id, 100)}
               onNext={handleNext}
             />
           ) : (
@@ -212,7 +257,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
             pageId={activeItem.content_id || activeItem.id}
             title={activeItem.title}
             initialCompleted={completedItemIds.has(activeItem.id)}
-            onComplete={() => handleItemComplete(activeItem.id)}
+            onComplete={() => handleItemComplete(activeItem.id, 100)}
             onNext={handleNext}
           />
         )}

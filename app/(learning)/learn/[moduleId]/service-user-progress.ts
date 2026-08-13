@@ -38,9 +38,10 @@ export type LearningProgressResponse = {
   success: boolean;
   message?: string;
   error?: string;
-  data?: ProgressRecord[];
+  data?: ProgressRecord[] | ProgressRecord;
   completed_item_ids?: string[];
   section_summaries?: SectionSummary[];
+  course_progress?: number; // ➕ Dynamic overall course percentage calculated by Laravel
 };
 
 export const getLearningProgress = async (
@@ -129,6 +130,7 @@ export const saveLearningProgress = async (
       success: true,
       message: result.message,
       data: result.data,
+      course_progress: result.course_progress, // ➕ Returns the newly calculated overall percentage to Next.js
     };
   } catch (error) {
     console.error("Save learning progress error:", error);
@@ -139,3 +141,4 @@ export const saveLearningProgress = async (
     };
   }
 };
+

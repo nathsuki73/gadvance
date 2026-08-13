@@ -11,6 +11,7 @@ import {
   Plus,
   Loader2,
 } from "lucide-react";
+import LeaveConfirmModal from "./leave-confirm-modal";
 
 // Module augmentation to inform TypeScript of custom session fields
 declare module "next-auth" {
@@ -43,6 +44,12 @@ export default function OrganizationPage() {
   const [activeTab, setActiveTab] = useState<"all" | "joined">("all");
   const [isFetching, setIsFetching] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
+  // State for Leave Confirmation Modal
+  const [selectedOrgToLeave, setSelectedOrgToLeave] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   const isAuthenticated = !!session?.user;
   const isLoading = status === "loading";
@@ -95,7 +102,8 @@ export default function OrganizationPage() {
     }
   }, [isAuthenticated, activeTab]);
 
-  const handleActionClick = async (orgId: string, currentlyJoined: boolean) => {
+  // Handle Join or Open Leave Confirmation Modal
+  const handleActionClick = (org: Organization, currentlyJoined: boolean) => {
     if (isLoading) return;
 
     if (!isAuthenticated || !jwtToken) {
@@ -105,46 +113,58 @@ export default function OrganizationPage() {
       return;
     }
 
+    if (currentlyJoined) {
+      // 🎯 Open modal confirmation prompt
+      setSelectedOrgToLeave({ id: org.id, title: org.title });
+    } else {
+      // Redirect to workspace organization dashboard upon joining
+      router.push("/workspace/organization");
+    }
+  };
+
+  // Perform Leave Organization API Call from Modal
+  const handleConfirmLeave = async () => {
+    if (!selectedOrgToLeave || !jwtToken) return;
+
+    const orgId = selectedOrgToLeave.id;
+
     try {
       setActionLoadingId(orgId);
 
-      if (currentlyJoined) {
-        // Leave Organization Request
-        const res = await fetch(`${API_BASE_URL}/api/organizations/leave`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization: `Bearer ${jwtToken}`,
-          },
-          body: JSON.stringify({ organization_id: orgId }),
+      const res = await fetch(`${API_BASE_URL}/api/organizations/leave`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${jwtToken}`,
+        },
+        body: JSON.stringify({ organization_id: orgId }),
+      });
+
+      if (res.ok) {
+        setJoinedOrgIds((prev) => {
+          const next = new Set(prev);
+          next.delete(orgId);
+          return next;
         });
 
-        if (res.ok) {
-          setJoinedOrgIds((prev) => {
-            const next = new Set(prev);
-            next.delete(orgId);
-            return next;
-          });
+        setOrganizations((prev) =>
+          prev.map((org) =>
+            org.id === orgId
+              ? {
+                  ...org,
+                  membersCount: Math.max(0, org.membersCount - 1),
+                  isJoined: false,
+                }
+              : org,
+          ),
+        );
 
-          setOrganizations((prev) =>
-            prev.map((org) =>
-              org.id === orgId
-                ? {
-                    ...org,
-                    membersCount: Math.max(0, org.membersCount - 1),
-                    isJoined: false,
-                  }
-                : org,
-            ),
-          );
-        }
-      } else {
-        // Redirect to workspace organization dashboard upon joining
-        router.push("/workspace/organization");
+        // Close modal after success
+        setSelectedOrgToLeave(null);
       }
     } catch (err) {
-      console.error("Organization action failed:", err);
+      console.error("Leave organization failed:", err);
     } finally {
       setActionLoadingId(null);
     }
@@ -258,7 +278,7 @@ export default function OrganizationPage() {
 
                     <button
                       disabled={isBusy}
-                      onClick={() => handleActionClick(org.id, isJoined)}
+                      onClick={() => handleActionClick(org, isJoined)}
                       className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all cursor-pointer disabled:opacity-50 ${
                         isJoined
                           ? "bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200"
@@ -297,6 +317,15 @@ export default function OrganizationPage() {
           </div>
         )}
       </main>
+
+      {/* Leave Confirmation Modal */}
+      <LeaveConfirmModal
+        isOpen={!!selectedOrgToLeave}
+        orgName={selectedOrgToLeave?.title || ""}
+        isPending={actionLoadingId === selectedOrgToLeave?.id}
+        onClose={() => setSelectedOrgToLeave(null)}
+        onConfirm={handleConfirmLeave}
+      />
     </div>
   );
 }
