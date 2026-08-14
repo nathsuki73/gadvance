@@ -33,6 +33,7 @@ interface AssessmentContainerProps {
   type?: string;
   onComplete: () => void;
   onNext: () => void;
+  onNavigate?: (targetId: string, blockId: string) => void;
 }
 
 export default function AssessmentContainer({
@@ -43,6 +44,7 @@ export default function AssessmentContainer({
   type = "quiz",
   onComplete,
   onNext,
+  onNavigate,
 }: AssessmentContainerProps) {
   const [assessment, setAssessment] = useState<AssessmentViewData | null>(null);
   const [hasStarted, setHasStarted] = useState<boolean>(false);

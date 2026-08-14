@@ -1,7 +1,8 @@
 "use client";
 
 import { use, useEffect, useState, useCallback, useRef } from "react";
-import { notFound, useSearchParams } from "next/navigation";
+// 🔑 1. Import useRouter
+import { useRouter, notFound, useSearchParams } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -21,6 +22,7 @@ type LearnPageProps = {
 
 const LearnPage = ({ params }: LearnPageProps) => {
   const { moduleId } = use(params);
+  const router = useRouter(); // 🔑 2. Initialize router
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const targetItemId = searchParams.get("item");
@@ -58,10 +60,11 @@ const LearnPage = ({ params }: LearnPageProps) => {
         const allItems = structure.sections?.flatMap((sec) => sec.items) ?? [];
 
         if (allItems.length > 0) {
-          // 🔑 Check URL query param immediately upon initial fetch load
           const initialTarget = searchParams.get("item");
           if (initialTarget) {
-            const foundItem = allItems.find((i) => i.id === initialTarget);
+            const foundItem = allItems.find(
+              (i) => i.id === initialTarget || i.content_id === initialTarget,
+            );
             setActiveItem(foundItem || allItems[0]);
           } else {
             setActiveItem(allItems[0]);
@@ -86,21 +89,23 @@ const LearnPage = ({ params }: LearnPageProps) => {
     };
 
     loadData();
-  }, [moduleId]);
+  }, [moduleId]); // 🔑 Remains safely decoupled from searchParams so API only calls once
 
-  // 2. Synchronize activeItem instantly when query param changes (client-side transition)
+  // 2. Synchronize activeItem instantly when query param changes
   useEffect(() => {
     if (!module) return;
     const allItems = module.sections?.flatMap((sec) => sec.items) ?? [];
     if (allItems.length === 0) return;
 
     if (targetItemId) {
-      const foundItem = allItems.find((i) => i.id === targetItemId);
+      const foundItem = allItems.find(
+        (i) => i.id === targetItemId || i.content_id === targetItemId,
+      );
       if (foundItem && foundItem.id !== activeItem?.id) {
         setActiveItem(foundItem);
       }
     }
-  }, [targetItemId, module]);
+  }, [targetItemId, module, activeItem?.id]);
 
   // Touch latest visit tracking
   useEffect(() => {
@@ -137,9 +142,10 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   const allItems = module?.sections?.flatMap((sec) => sec.items) ?? [];
 
+  // 🔑 3. Let Next.js handle Sidebar routing smoothly
   const handleSelectItem = (item: SectionItem) => {
-    setActiveItem(item);
     setMobileSidebarOpen(false);
+    router.push(`/learn/${moduleId}?item=${item.id}`, { scroll: false });
   };
 
   const handleItemComplete = useCallback(
@@ -169,22 +175,28 @@ const LearnPage = ({ params }: LearnPageProps) => {
     [activeItem, module, moduleId, queryClient],
   );
 
+  // 🔑 4. Let Next.js handle Next Button routing smoothly
   const handleNext = () => {
     if (!activeItem) return;
 
     const currentIndex = allItems.findIndex((i) => i.id === activeItem.id);
     if (currentIndex !== -1 && currentIndex < allItems.length - 1) {
       const nextItem = allItems[currentIndex + 1];
-      setActiveItem(nextItem);
+      router.push(`/learn/${moduleId}?item=${nextItem.id}`, { scroll: false });
+    }
+  };
 
-      if (typeof window !== "undefined") {
-        const currentHash = window.location.hash;
-        window.history.pushState(
-          null,
-          "",
-          `/learn/${moduleId}?item=${nextItem.id}${currentHash}`,
-        );
-      }
+  // 🔑 5. Let Next.js handle Remedial Hash Navigation smoothly
+  const handleNavigateTo = (targetId: string, blockId?: string) => {
+    const foundItem = allItems.find(
+      (i) => i.id === targetId || i.content_id === targetId,
+    );
+
+    if (foundItem) {
+      const hash = blockId ? `#${blockId}` : "";
+      router.push(`/learn/${moduleId}?item=${foundItem.id}${hash}`, {
+        scroll: false,
+      });
     }
   };
 
@@ -243,6 +255,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
               type={activeItem.assessment_type || "quiz"}
               onComplete={() => handleItemComplete(activeItem.id, 100)}
               onNext={handleNext}
+              onNavigate={handleNavigateTo}
             />
           ) : (
             <div className="flex h-[100dvh] w-full items-center justify-center bg-white p-6">

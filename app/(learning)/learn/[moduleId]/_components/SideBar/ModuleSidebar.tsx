@@ -183,12 +183,8 @@ export default function ModuleSidebar({
                           collapsed={collapsedView}
                           onClick={() => {
                             if (isUnlocked) {
-                              // 🔑 Use Next.js client-side router transition without full reload
-                              const targetHash = `#${item.content_id || item.id}`;
-                              router.push(
-                                `/learn/${moduleId}?item=${item.id}${targetHash}`,
-                                { scroll: false },
-                              );
+                              // 🔑 FIX: Just call the parent! The parent instantly swaps the view
+                              // and updates the URL bar without triggering a reload.
                               onSelect(item);
                             }
                           }}
