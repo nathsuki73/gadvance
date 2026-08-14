@@ -176,6 +176,8 @@ function normalizeAssessmentData(payload: any, id: string): AssessmentViewData {
     settings,
     questions: mappedQuestions,
     updatedAt: data.updated_at || data.updatedAt,
+    previous_attempt: data.previous_attempt,
+    user_has_completed: data.user_has_completed,
   };
 }
 

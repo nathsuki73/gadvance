@@ -54,7 +54,12 @@ export default function AssessmentContainer({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔑 State to hold the top 3 remedial review links returned by the backend
+  // 🔑 NEW: States to permanently hold the backend's official score calculations
+  const [savedScore, setSavedScore] = useState<number | null>(null);
+  const [savedCorrectCount, setSavedCorrectCount] = useState<number | null>(
+    null,
+  );
+
   const [remedialSuggestions, setRemedialSuggestions] = useState<
     Array<{ page_id: string; block_id: string; review_url: string }>
   >([]);
@@ -77,6 +82,8 @@ export default function AssessmentContainer({
     setSubmittedQuestions({});
     setElapsedSeconds(0);
     setRemedialSuggestions([]);
+    setSavedScore(null);
+    setSavedCorrectCount(null);
 
     async function initAssessment() {
       if (!assessmentId) return;
@@ -87,6 +94,23 @@ export default function AssessmentContainer({
       try {
         const data = await getAssessmentViewData(assessmentId);
         if (isCancelled) return;
+
+        // 🔑 CHECK PREVIOUS ATTEMPT DATA ON PAGE LOAD
+        const prevAttempt = (data as any).previous_attempt;
+        if (prevAttempt) {
+          setSavedScore(prevAttempt.score_percentage);
+
+          if (Array.isArray(prevAttempt.answers)) {
+            const correct = prevAttempt.answers.filter(
+              (a: any) => a.is_correct,
+            ).length;
+            setSavedCorrectCount(correct);
+          }
+
+          if (prevAttempt.remedial_suggestions) {
+            setRemedialSuggestions(prevAttempt.remedial_suggestions);
+          }
+        }
 
         const stateRes = await getAssessmentState(assessmentId, itemId);
 
@@ -169,7 +193,7 @@ export default function AssessmentContainer({
           if (status === "completed") {
             setHasStarted(true);
             setSubmitted(true);
-            setShowReview(false);
+            setShowReview(false); // Keeps review closed by default on reload
 
             if (data.settings.type === "poll") {
               const allSubmittedMap: Record<string, boolean> = {};
@@ -289,12 +313,19 @@ export default function AssessmentContainer({
 
   const gradedQuestions = questions.filter((q) => !q.isPoll);
   const totalGraded = gradedQuestions.length;
-  const correctCount = gradedQuestions.reduce((acc, q) => {
+
+  // Local calculations (fallbacks if backend data is missing)
+  const localCorrectCount = gradedQuestions.reduce((acc, q) => {
     return answers[q.id] === q.correctChoiceId ? acc + 1 : acc;
   }, 0);
+  const localScorePercentage =
+    totalGraded > 0 ? Math.round((localCorrectCount / totalGraded) * 100) : 100;
 
-  const scorePercentage =
-    totalGraded > 0 ? Math.round((correctCount / totalGraded) * 100) : 100;
+  // 🔑 FINAL VALUES: Use backend scores if available, overriding local calculations
+  const displayScore = savedScore !== null ? savedScore : localScorePercentage;
+  const displayCorrectCount =
+    savedCorrectCount !== null ? savedCorrectCount : localCorrectCount;
+  const isPassed = displayScore >= settings.passingScore;
 
   const handleSelectChoice = (questionId: string, choiceId: string) => {
     if (submitted || submittedQuestions[questionId]) return;
@@ -384,8 +415,16 @@ export default function AssessmentContainer({
       });
 
       if (result.success) {
-        // 🔑 FIX: Unpack remedial suggestions securely from result.data
         const responseData = result.data as any;
+
+        // 🔑 Capture Backend Score Instantly
+        const backendScore =
+          responseData?.score_percentage ?? result.score_percentage;
+        if (backendScore !== undefined) {
+          setSavedScore(backendScore);
+          setSavedCorrectCount(Math.round((backendScore / 100) * totalGraded));
+        }
+
         if (responseData?.remedial_suggestions) {
           setRemedialSuggestions(responseData.remedial_suggestions);
         } else if (
@@ -474,6 +513,10 @@ export default function AssessmentContainer({
     setCurrentQuestionIndex(0);
     setElapsedSeconds(0);
     setStartTime(Date.now());
+
+    // Clear saved scores
+    setSavedScore(null);
+    setSavedCorrectCount(null);
   };
 
   const formatTimerDisplay = () => {
@@ -498,7 +541,6 @@ export default function AssessmentContainer({
 
   return (
     <div className="flex h-[100dvh] flex-col justify-between overflow-x-hidden overflow-y-auto bg-white font-sans antialiased">
-      {/* Top Navigation & Status Bar */}
       <div className="border-b border-zinc-100 bg-white px-4 py-3 sm:px-8 sm:py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
           <h1 className="truncate text-sm font-bold text-zinc-900">
@@ -544,7 +586,6 @@ export default function AssessmentContainer({
         )}
       </div>
 
-      {/* Main Content Body */}
       <div className="mx-auto my-auto w-full max-w-3xl p-4 sm:p-8">
         {!hasStarted ? (
           <AssessmentStartScreen
@@ -559,8 +600,8 @@ export default function AssessmentContainer({
           <div className="space-y-6">
             {settings.showFinalResults && (
               <ResultsSummary
-                scorePercentage={scorePercentage}
-                correctCount={correctCount}
+                scorePercentage={displayScore} // 🔑 Injected fixed backend score
+                correctCount={displayCorrectCount} // 🔑 Injected fixed backend count
                 totalGraded={totalGraded}
                 totalQuestions={totalQuestions}
                 elapsedSeconds={elapsedSeconds}
@@ -569,7 +610,6 @@ export default function AssessmentContainer({
               />
             )}
 
-            {/* 🔑 Dynamic Frontend URL Construction */}
             {remedialSuggestions.length > 0 && (
               <div className="rounded-2xl border border-purple-200/60 bg-purple-50/40 p-5 space-y-3">
                 <div className="flex items-center gap-2 text-purple-900">
@@ -584,8 +624,7 @@ export default function AssessmentContainer({
                 </p>
                 <div className="grid gap-2">
                   {remedialSuggestions.map((item, idx) => {
-                    // 🔑 Construct clean URL using frontend module scope + item IDs + hash block
-                    const reviewUrl = `/learn/${moduleId}?item=${item.item_id || item.page_id}#${item.block_id}`;
+                    const reviewUrl = `/learn/${moduleId}?item=${item.page_id}#${item.block_id}`;
 
                     return (
                       <Link
