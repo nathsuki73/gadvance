@@ -36,7 +36,6 @@ export default function ModuleSidebar({
 }: ModuleSidebarProps) {
   const router = useRouter();
 
-  // Track expanded state per section UUID (all open by default)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     () => new Set(sections.map((s) => s.id)),
   );
@@ -55,7 +54,6 @@ export default function ModuleSidebar({
     });
   };
 
-  // Flatten all items across sections for sequential unlock calculation
   const allItems = sections.flatMap((sec) => sec.items || []);
 
   const checkIsItemUnlocked = (itemId: string): boolean => {
@@ -67,7 +65,6 @@ export default function ModuleSidebar({
 
   return (
     <>
-      {/* Mobile Backdrop Overlay */}
       {mobileOpen && (
         <button
           onClick={onCloseMobile}
@@ -81,7 +78,6 @@ export default function ModuleSidebar({
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 ${isCollapsed ? "lg:w-16" : "lg:w-80"}`}
       >
-        {/* Sidebar Header */}
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-zinc-200 bg-white/80 px-4">
           <div className="flex w-full items-center justify-between gap-2 lg:hidden">
             <span className="max-w-[200px] truncate text-sm font-semibold text-zinc-900">
@@ -125,7 +121,6 @@ export default function ModuleSidebar({
           </div>
         </div>
 
-        {/* Section & Item Navigation Body */}
         <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto px-3 py-4">
           {sections.map((section) => {
             const isExpanded = expandedSections.has(section.id);
@@ -136,14 +131,12 @@ export default function ModuleSidebar({
 
             return (
               <div key={section.id} className="space-y-1">
-                {/* SECTION HEADER BAR */}
                 {!collapsedView ? (
                   <button
                     type="button"
                     onClick={() => toggleSection(section.id)}
                     className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-zinc-200/50 cursor-pointer"
                   >
-                    {/* Left Side: Donut Progress + Section Title */}
                     <div className="flex items-center gap-2.5 min-w-0 pr-2">
                       <DonutProgress
                         totalSteps={items.length}
@@ -156,7 +149,6 @@ export default function ModuleSidebar({
                       </h3>
                     </div>
 
-                    {/* Right Side: Chevron Indicator */}
                     <div className="flex items-center shrink-0 text-zinc-400">
                       {isExpanded ? (
                         <ChevronDown size={14} />
@@ -169,7 +161,6 @@ export default function ModuleSidebar({
                   <div className="h-px w-8 bg-zinc-200 mx-auto my-2" />
                 )}
 
-                {/* SECTION ITEMS */}
                 {(isExpanded || collapsedView) && (
                   <div
                     className={!collapsedView ? "space-y-1 pl-1" : "space-y-1"}
@@ -192,6 +183,12 @@ export default function ModuleSidebar({
                           collapsed={collapsedView}
                           onClick={() => {
                             if (isUnlocked) {
+                              // 🔑 Use Next.js client-side router transition without full reload
+                              const targetHash = `#${item.content_id || item.id}`;
+                              router.push(
+                                `/learn/${moduleId}?item=${item.id}${targetHash}`,
+                                { scroll: false },
+                              );
                               onSelect(item);
                             }
                           }}
@@ -205,7 +202,6 @@ export default function ModuleSidebar({
           })}
         </div>
 
-        {/* Sidebar Footer Exit Control */}
         <div className="shrink-0 border-t border-zinc-200 bg-white/80 p-3">
           <button
             onClick={() =>

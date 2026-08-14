@@ -35,7 +35,7 @@ interface PageContainerProps {
   itemId: string;
   pageId: string;
   title: string;
-  initialCompleted?: boolean; // 👈 Allows passing existing completion status
+  initialCompleted?: boolean;
   onComplete: () => void;
   onNext: () => void;
 }
@@ -60,7 +60,6 @@ export default function PageContainer({
     initialCompleted ? 100 : 0,
   );
 
-  // Sync completion and progress when pageId or initialCompleted changes
   useEffect(() => {
     setIsCompleted(initialCompleted);
     setScrollProgress(initialCompleted ? 100 : 0);
@@ -133,8 +132,41 @@ export default function PageContainer({
     };
   }, [pageId, token, sessionStatus]);
 
+  // 🔑 Auto-Scroll & Highlight effect for Remedial Anchor Hashes (#block_id)
+  useEffect(() => {
+    if (loading || !pageData) return;
+
+    const handleHashScroll = () => {
+      const hash = window.location.hash;
+      if (!hash) return;
+
+      const blockId = hash.replace("#", "");
+      // BlockNote typically assigns data-id or id attributes matching the block UUID
+      const targetElement =
+        document.getElementById(blockId) ||
+        document.querySelector(`[data-id="${blockId}"]`);
+
+      if (targetElement && containerRef.current) {
+        targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        targetElement.classList.add(
+          "bg-purple-100/80",
+          "transition-colors",
+          "duration-500",
+          "rounded-xl",
+          "p-2",
+        );
+        setTimeout(() => {
+          targetElement.classList.remove("bg-purple-100/80");
+        }, 3000);
+      }
+    };
+
+    // Small delay to ensure BlockNote DOM has finished rendering
+    const timer = setTimeout(handleHashScroll, 500);
+    return () => clearTimeout(timer);
+  }, [loading, pageData]);
+
   const handleScrollCheck = useCallback(() => {
-    // If already completed, lock progress at 100%
     if (isCompleted) {
       setScrollProgress(100);
       return;
@@ -208,10 +240,8 @@ export default function PageContainer({
     Array.isArray(pageData.content) &&
     pageData.content.length > 0;
 
-  // Derive active display percentage: 100% if completed, else current scroll percentage
   const displayProgress = isCompleted ? 100 : scrollProgress;
 
-  // Donut SVG Parameters
   const size = 48;
   const strokeWidth = 3;
   const radius = (size - strokeWidth) / 2;
@@ -265,13 +295,11 @@ export default function PageContainer({
                 : "cursor-default"
             }`}
           >
-            {/* Donut SVG Progress Circle */}
             <svg
               className="absolute inset-0 -rotate-90 transform"
               width={size}
               height={size}
             >
-              {/* Background Track Circle */}
               <circle
                 className="text-purple-100"
                 stroke="currentColor"
@@ -281,7 +309,6 @@ export default function PageContainer({
                 cx={size / 2}
                 cy={size / 2}
               />
-              {/* Active Progress Circle */}
               <circle
                 className="text-purple-600 transition-all duration-300 ease-out"
                 stroke="currentColor"
@@ -296,7 +323,6 @@ export default function PageContainer({
               />
             </svg>
 
-            {/* Arrow Icon inside Transparent Center */}
             <ArrowDown
               size={18}
               className={`transition-colors duration-200 ${

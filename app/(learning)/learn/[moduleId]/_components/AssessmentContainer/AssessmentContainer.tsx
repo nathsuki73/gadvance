@@ -8,6 +8,8 @@ import {
   ChevronLeft,
   Loader2,
   CheckCircle2,
+  BookOpenText,
+  ExternalLink,
 } from "lucide-react";
 import { AssessmentViewData } from "./types";
 import {
@@ -21,6 +23,7 @@ import {
 import { AssessmentStartScreen } from "./AssessmentStartScreen";
 import { QuestionCard } from "./QuestionCard";
 import { ResultsSummary } from "./ResultSummary";
+import Link from "next/link";
 
 interface AssessmentContainerProps {
   itemId: string;
@@ -51,6 +54,11 @@ export default function AssessmentContainer({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 🔑 State to hold the top 3 remedial review links returned by the backend
+  const [remedialSuggestions, setRemedialSuggestions] = useState<
+    Array<{ page_id: string; block_id: string; review_url: string }>
+  >([]);
+
   const [submittedQuestions, setSubmittedQuestions] = useState<
     Record<string, boolean>
   >({});
@@ -58,12 +66,9 @@ export default function AssessmentContainer({
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
-  // 1. Fetch assessment data & restore user attempt state
-  // 1. Fetch assessment data & restore user attempt state
   useEffect(() => {
     let isCancelled = false;
 
-    // Reset local state before fetching new item
     setHasStarted(false);
     setCurrentQuestionIndex(0);
     setAnswers({});
@@ -71,6 +76,7 @@ export default function AssessmentContainer({
     setShowReview(false);
     setSubmittedQuestions({});
     setElapsedSeconds(0);
+    setRemedialSuggestions([]);
 
     async function initAssessment() {
       if (!assessmentId) return;
@@ -98,7 +104,7 @@ export default function AssessmentContainer({
           if (question_order && question_order.length > 0) {
             const orderedMap = new Map(data.questions.map((q) => [q.id, q]));
             const restoredQuestions = question_order
-              .map((qId) => orderedMap.get(qId))
+              .map((qId: string) => orderedMap.get(qId))
               .filter((q): q is (typeof data.questions)[0] => Boolean(q));
 
             if (restoredQuestions.length > 0) {
@@ -106,7 +112,6 @@ export default function AssessmentContainer({
             }
           }
 
-          // If poll distributions exist from backend, merge them
           if (
             poll_distributions &&
             Object.keys(poll_distributions).length > 0
@@ -132,7 +137,6 @@ export default function AssessmentContainer({
             questions: activeQuestions,
           });
 
-          // 🔑 Restore saved answers and automatically skip the start screen if progress exists
           const restoredMap: Record<string, string> = {};
           if (draft_answers) {
             if (Array.isArray(draft_answers)) {
@@ -149,7 +153,7 @@ export default function AssessmentContainer({
 
           if (Object.keys(restoredMap).length > 0) {
             setAnswers(restoredMap);
-            setHasStarted(true); // Automatically bypasses start screen
+            setHasStarted(true);
           }
 
           if (
@@ -158,11 +162,10 @@ export default function AssessmentContainer({
           ) {
             setCurrentQuestionIndex(current_index);
             if (current_index > 0) {
-              setHasStarted(true); // Resumes directly at the saved question index
+              setHasStarted(true);
             }
           }
 
-          // 🔑 Status check: Go to results if completed, or resume active quiz if in_progress with data
           if (status === "completed") {
             setHasStarted(true);
             setSubmitted(true);
@@ -198,7 +201,6 @@ export default function AssessmentContainer({
     };
   }, [assessmentId, itemId]);
 
-  // 2. Timer listener
   useEffect(() => {
     if (!hasStarted || submitted || !assessment?.settings) return;
 
@@ -382,6 +384,17 @@ export default function AssessmentContainer({
       });
 
       if (result.success) {
+        // 🔑 FIX: Unpack remedial suggestions securely from result.data
+        const responseData = result.data as any;
+        if (responseData?.remedial_suggestions) {
+          setRemedialSuggestions(responseData.remedial_suggestions);
+        } else if (
+          result.data &&
+          Array.isArray((result.data as any).remedial_suggestions)
+        ) {
+          setRemedialSuggestions((result.data as any).remedial_suggestions);
+        }
+
         if (result.poll_distributions && assessment) {
           const distributions = result.poll_distributions;
 
@@ -433,7 +446,6 @@ export default function AssessmentContainer({
       }
     }
 
-    // 🔑 Notify backend to reset attempt status to in_progress
     const res = await retakeAssessment(assessmentId, itemId);
     if (!res.success) {
       alert(res.error || "Failed to retake assessment.");
@@ -458,6 +470,7 @@ export default function AssessmentContainer({
     setSubmitted(false);
     setSubmittedQuestions({});
     setShowReview(false);
+    setRemedialSuggestions([]);
     setCurrentQuestionIndex(0);
     setElapsedSeconds(0);
     setStartTime(Date.now());
@@ -556,6 +569,47 @@ export default function AssessmentContainer({
               />
             )}
 
+            {/* 🔑 Dynamic Frontend URL Construction */}
+            {remedialSuggestions.length > 0 && (
+              <div className="rounded-2xl border border-purple-200/60 bg-purple-50/40 p-5 space-y-3">
+                <div className="flex items-center gap-2 text-purple-900">
+                  <BookOpenText size={18} className="text-[#8b5cf6]" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider">
+                    Recommended Study Sections (Review Material)
+                  </h3>
+                </div>
+                <p className="text-xs text-zinc-600">
+                  Based on your assessment results, focus on reviewing these
+                  targeted sections:
+                </p>
+                <div className="grid gap-2">
+                  {remedialSuggestions.map((item, idx) => {
+                    // 🔑 Construct clean URL using frontend module scope + item IDs + hash block
+                    const reviewUrl = `/learn/${moduleId}?item=${item.item_id || item.page_id}#${item.block_id}`;
+
+                    return (
+                      <Link
+                        key={idx}
+                        href={reviewUrl}
+                        className="flex items-center justify-between rounded-xl border border-purple-200/80 bg-white p-3 text-xs font-semibold text-zinc-800 shadow-2xs transition-all hover:border-purple-400 hover:bg-purple-50/50"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-[10px] font-bold text-purple-700">
+                            {idx + 1}
+                          </span>
+                          <span>Target Section Block #{idx + 1}</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[#8b5cf6]">
+                          <span>Review Page</span>
+                          <ExternalLink size={13} />
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {(settings.allowReview || isPoll) && (
               <div className="space-y-4">
                 <button
@@ -605,7 +659,6 @@ export default function AssessmentContainer({
             </div>
           </div>
         ) : (
-          /* Active Question Step Card */
           <div className="space-y-6">
             <QuestionCard
               question={currentQuestion}
@@ -617,7 +670,6 @@ export default function AssessmentContainer({
               onSelectChoice={handleSelectChoice}
             />
 
-            {/* Step Navigation Controls */}
             <div className="flex items-center justify-between border-t border-zinc-100 pt-4">
               <button
                 type="button"

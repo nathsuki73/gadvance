@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useState, useCallback, useRef } from "react";
-import { notFound } from "next/navigation";
+import { notFound, useSearchParams } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -22,6 +22,8 @@ type LearnPageProps = {
 const LearnPage = ({ params }: LearnPageProps) => {
   const { moduleId } = use(params);
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+  const targetItemId = searchParams.get("item");
 
   const [module, setModule] = useState<ModuleStructure | null>(null);
   const [activeItem, setActiveItem] = useState<SectionItem | null>(null);
@@ -35,9 +37,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  // Tracks items touched during the session to avoid duplicate visit-touch network requests
   const touchedItemIds = useRef<Set<string>>(new Set());
 
+  // 1. Load module structure and progress ONCE on initial mount
   useEffect(() => {
     if (!moduleId) return;
 
@@ -53,14 +55,18 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
         setModule(structure);
 
-        // Extract all section items across all sections
         const allItems = structure.sections?.flatMap((sec) => sec.items) ?? [];
 
         if (allItems.length > 0) {
-          setActiveItem(allItems[0]);
+          const initialTarget = searchParams.get("item");
+          if (initialTarget) {
+            const foundItem = allItems.find((i) => i.id === initialTarget);
+            setActiveItem(foundItem || allItems[0]);
+          } else {
+            setActiveItem(allItems[0]);
+          }
         }
 
-        // Restore completion state
         if (progressData?.success && Array.isArray(progressData.data)) {
           const completed = new Set<string>();
           progressData.data.forEach((record: ProgressRecord) => {
@@ -79,9 +85,23 @@ const LearnPage = ({ params }: LearnPageProps) => {
     };
 
     loadData();
-  }, [moduleId]);
+  }, [moduleId]); // 🔑 Removed searchParams so it never re-triggers the full loading spinner
 
-  // 🎯 TOUCH LATEST VISIT: Update updated_at when opening an item so this module moves to the front of Recently Viewed
+  // 2. Synchronize activeItem instantly when query param changes (client-side transition)
+  useEffect(() => {
+    if (!module) return;
+    const allItems = module.sections?.flatMap((sec) => sec.items) ?? [];
+    if (allItems.length === 0) return;
+
+    if (targetItemId) {
+      const foundItem = allItems.find((i) => i.id === targetItemId);
+      if (foundItem && foundItem.id !== activeItem?.id) {
+        setActiveItem(foundItem);
+      }
+    }
+  }, [targetItemId, module]);
+
+  // Touch latest visit tracking
   useEffect(() => {
     if (!moduleId || !activeItem || !module) return;
 
@@ -99,7 +119,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
       touchedItemIds.current.add(itemId);
       const isAlreadyCompleted = completedItemIds.has(itemId);
 
-      // Persist current item status to bump updated_at
       const response = await saveLearningProgress({
         module_id: moduleId,
         section_id: sectionId,
@@ -115,7 +134,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
     touchModuleVisit();
   }, [moduleId, activeItem, module, completedItemIds, queryClient]);
 
-  // Flattened items list for next/previous navigation
   const allItems = module?.sections?.flatMap((sec) => sec.items) ?? [];
 
   const handleSelectItem = (item: SectionItem) => {
@@ -127,46 +145,25 @@ const LearnPage = ({ params }: LearnPageProps) => {
     async (itemId: string, progressValue = 100) => {
       if (!activeItem || !moduleId) return;
 
-      // Resolve section_id safely
       const sectionId =
         activeItem.section_id ||
         module?.sections?.find((sec) => sec.items?.some((i) => i.id === itemId))
           ?.id;
 
-      if (!sectionId) {
-        console.error(
-          "[LearnPage] Could not resolve section_id for item:",
-          itemId,
-        );
-        return;
-      }
+      if (!sectionId) return;
 
-      // 1. Optimistic UI update
       if (progressValue >= 100) {
         setCompletedItemIds((prev) => new Set(prev).add(itemId));
       }
 
-      // 2. Persist to backend database
-      const response = await saveLearningProgress({
+      await saveLearningProgress({
         module_id: moduleId,
         section_id: sectionId,
         learning_item_id: itemId,
         progress: progressValue,
       });
 
-      if (response.success) {
-        // 🎯 Invalidate cache so Workspace picks up updated percentage & recency ordering
-        queryClient.invalidateQueries({ queryKey: ["userProfile"] });
-      } else {
-        console.error("[LearnPage] DB save failed:", response.error);
-        if (progressValue >= 100) {
-          setCompletedItemIds((prev) => {
-            const next = new Set(prev);
-            next.delete(itemId);
-            return next;
-          });
-        }
-      }
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
     },
     [activeItem, module, moduleId, queryClient],
   );
@@ -176,7 +173,17 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
     const currentIndex = allItems.findIndex((i) => i.id === activeItem.id);
     if (currentIndex !== -1 && currentIndex < allItems.length - 1) {
-      handleSelectItem(allItems[currentIndex + 1]);
+      const nextItem = allItems[currentIndex + 1];
+      setActiveItem(nextItem);
+
+      if (typeof window !== "undefined") {
+        const currentHash = window.location.hash;
+        window.history.pushState(
+          null,
+          "",
+          `/learn/${moduleId}?item=${nextItem.id}${currentHash}`,
+        );
+      }
     }
   };
 
@@ -194,7 +201,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   return (
     <main className="min-h-screen bg-white text-zinc-900">
-      {/* Sidebar Navigation */}
       <ModuleSidebar
         courseId={module.courseId}
         moduleId={moduleId}
@@ -209,7 +215,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
         onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
-      {/* Mobile Header */}
       <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center border-b border-zinc-200 bg-white px-4 lg:hidden">
         <button
           onClick={() => setMobileSidebarOpen(true)}
@@ -222,7 +227,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
         </span>
       </div>
 
-      {/* Main Content Render */}
       <div
         className={`h-screen max-h-screen transition-all duration-300 pt-14 lg:pt-0 ${
           isSidebarCollapsed ? "lg:pl-16" : "lg:pl-80"
@@ -241,18 +245,14 @@ const LearnPage = ({ params }: LearnPageProps) => {
             />
           ) : (
             <div className="flex h-[100dvh] w-full items-center justify-center bg-white p-6">
-              <div className="text-center">
-                <p className="text-sm font-semibold text-zinc-800">
-                  Unlinked Assessment
-                </p>
-                <p className="text-xs text-zinc-400 mt-1">
-                  This section item does not have a linked assessment ID.
-                </p>
-              </div>
+              <p className="text-sm font-semibold text-zinc-800">
+                Unlinked Assessment
+              </p>
             </div>
           )
         ) : (
           <PageContainer
+            key={activeItem.id}
             itemId={activeItem.id}
             pageId={activeItem.content_id || activeItem.id}
             title={activeItem.title}

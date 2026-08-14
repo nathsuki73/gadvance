@@ -290,7 +290,9 @@ export async function submitAssessment(payload: {
   sectionId: string;
   sectionItemId: string;
   answers: AnswerPayload[];
-}): Promise<ServiceResponse<SubmissionResultData>> {
+}): Promise<
+  ServiceResponse<SubmissionResultData & { remedial_suggestions?: any[] }>
+> {
   const headers = await getAuthHeaders();
 
   try {
@@ -309,7 +311,14 @@ export async function submitAssessment(payload: {
     );
 
     const json = await res.json();
-    return json;
+
+    // 🔑 FIX: Ensure Laravel's returned root 'data' or top-level properties are accessible
+    return {
+      success: json.success ?? res.ok,
+      data: json.data ?? json,
+      poll_distributions: json.poll_distributions,
+      message: json.message,
+    };
   } catch (error) {
     console.error("[AssessmentViewService] Submission error:", error);
     return { success: false, error: "Network error submitting assessment." };
