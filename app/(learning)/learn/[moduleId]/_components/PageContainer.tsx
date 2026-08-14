@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import { Loader2, AlertCircle, BookOpen, ArrowDown } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 import "@blocknote/mantine/style.css";
 import "@blocknote/core/fonts/inter.css";
@@ -19,17 +20,6 @@ const BlockNoteReader = dynamic(() => import("./BlockNoteReader"), {
     </div>
   ),
 });
-
-interface PageData {
-  id: string;
-  title: string;
-  content?: any;
-  blocks?: Array<{
-    id: string;
-    type: string;
-    content?: string | null;
-  }>;
-}
 
 interface PageContainerProps {
   itemId: string;
@@ -52,9 +42,6 @@ export default function PageContainer({
   const token = session?.laravelJwt;
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const [pageData, setPageData] = useState<PageData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isCompleted, setIsCompleted] = useState(initialCompleted);
   const [scrollProgress, setScrollProgress] = useState(
     initialCompleted ? 100 : 0,
@@ -65,74 +52,58 @@ export default function PageContainer({
     setScrollProgress(initialCompleted ? 100 : 0);
   }, [pageId, initialCompleted]);
 
-  useEffect(() => {
-    let isCancelled = false;
+  // 🔑 Cached via React Query: Fetches page content once, then caches it in memory permanently during the session
+  const {
+    data: pageData,
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ["pageContent", pageId],
+    queryFn: async () => {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      const headers: Record<string, string> = {
+        Accept: "application/json",
+      };
 
-    if (sessionStatus === "loading") return;
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
 
-    const fetchPageContent = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+      const res = await fetch(`${baseUrl}/api/pages/${pageId}`, {
+        headers,
+      });
 
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
-        const headers: Record<string, string> = {
-          Accept: "application/json",
-        };
+      if (!res.ok) {
+        throw new Error(`Failed to load page content (${res.status})`);
+      }
 
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
-        }
+      const json = await res.json();
+      const rawData = json.data ?? json;
 
-        const res = await fetch(`${baseUrl}/api/pages/${pageId}`, {
-          headers,
-          cache: "no-store",
-        });
-
-        if (!res.ok) {
-          throw new Error(`Failed to load page content (${res.status})`);
-        }
-
-        const json = await res.json();
-        const rawData = json.data ?? json;
-
-        let parsedContent = rawData.content;
-        if (typeof parsedContent === "string") {
-          try {
-            parsedContent = JSON.parse(parsedContent);
-          } catch {
-            // Raw HTML fallback
-          }
-        }
-
-        if (!isCancelled) {
-          setPageData({
-            ...rawData,
-            content: parsedContent,
-          });
-        }
-      } catch (err) {
-        if (!isCancelled) {
-          console.error("Page content fetch error:", err);
-          setError("Unable to load page content. Please try again.");
-        }
-      } finally {
-        if (!isCancelled) {
-          setLoading(false);
+      let parsedContent = rawData.content;
+      if (typeof parsedContent === "string") {
+        try {
+          parsedContent = JSON.parse(parsedContent);
+        } catch {
+          // Raw HTML fallback
         }
       }
-    };
 
-    if (pageId) {
-      fetchPageContent();
-    }
+      return {
+        ...rawData,
+        content: parsedContent,
+      };
+    },
+    enabled: Boolean(pageId) && sessionStatus !== "loading",
+    staleTime: Infinity, // Never refetch once loaded
+    gcTime: 1000 * 60 * 30, // Keep in cache for 30 mins
+  });
 
-    return () => {
-      isCancelled = true;
-    };
-  }, [pageId, token, sessionStatus]);
+  const error = queryError
+    ? "Unable to load page content. Please try again."
+    : null;
 
-  // 🔑 Auto-Scroll & Highlight effect for Remedial Anchor Hashes (#block_id)
+  // Auto-Scroll & Highlight effect for Remedial Anchor Hashes (#block_id)
   useEffect(() => {
     if (loading || !pageData) return;
 
@@ -141,7 +112,6 @@ export default function PageContainer({
       if (!hash) return;
 
       const blockId = hash.replace("#", "");
-      // BlockNote typically assigns data-id or id attributes matching the block UUID
       const targetElement =
         document.getElementById(blockId) ||
         document.querySelector(`[data-id="${blockId}"]`);
@@ -161,7 +131,6 @@ export default function PageContainer({
       }
     };
 
-    // Small delay to ensure BlockNote DOM has finished rendering
     const timer = setTimeout(handleHashScroll, 500);
     return () => clearTimeout(timer);
   }, [loading, pageData]);
@@ -260,7 +229,7 @@ export default function PageContainer({
       <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
         <main className="min-h-[250px] w-full overflow-x-auto">
           {isBlockNoteContent ? (
-            <BlockNoteReader key={pageId} initialContent={pageData.content} />
+            <BlockNoteReader initialContent={pageData.content} />
           ) : typeof pageData?.content === "string" &&
             pageData.content.length > 0 ? (
             <div

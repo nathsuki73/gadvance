@@ -58,6 +58,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
         const allItems = structure.sections?.flatMap((sec) => sec.items) ?? [];
 
         if (allItems.length > 0) {
+          // 🔑 Check URL query param immediately upon initial fetch load
           const initialTarget = searchParams.get("item");
           if (initialTarget) {
             const foundItem = allItems.find((i) => i.id === initialTarget);
@@ -85,7 +86,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
     };
 
     loadData();
-  }, [moduleId]); // 🔑 Removed searchParams so it never re-triggers the full loading spinner
+  }, [moduleId]);
 
   // 2. Synchronize activeItem instantly when query param changes (client-side transition)
   useEffect(() => {
