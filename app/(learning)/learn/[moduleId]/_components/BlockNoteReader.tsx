@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { BlockNoteSchema, defaultBlockSpecs } from "@blocknote/core";
 import * as locales from "@blocknote/core/locales";
 import { useCreateBlockNote } from "@blocknote/react";
@@ -32,60 +32,111 @@ function getCustomSchema() {
   return customSchemaInstance;
 }
 
-function cleanBlockForSchema(block: any): any {
-  if (!block || typeof block !== "object") return null;
+/**
+ * Safely sanitizes blocks and flattens legacy tables into text paragraphs
+ * to prevent BlockNote schema parsing crashes in read-only mode.
+ */
+function sanitizeBlocks(blocks: any[]): any[] {
+  if (!Array.isArray(blocks)) return [];
 
-  const type = block.type || "paragraph";
-  const cleaned: any = {
-    type,
-    props: block.props || {},
-  };
+  return blocks.flatMap((block) => {
+    if (!block || typeof block !== "object") return [];
 
-  if (block.id) {
-    cleaned.id = block.id;
-  }
+    const type = typeof block.type === "string" ? block.type : "paragraph";
 
-  if (type === "table") {
-    if (block.content) {
-      cleaned.content = block.content;
-    }
-  } else {
-    const noContentBlockTypes = [
-      "image",
-      "youtube",
-      "video",
-      "audio",
-      "file",
-      "columnList",
-      "column",
-    ];
+    // Safely convert legacy table structures into paragraphs to avoid schema violations
+    if (type === "table") {
+      const rows = block.content?.rows || [];
+      const flattenedParagraphs: any[] = [];
 
-    if (!noContentBlockTypes.includes(type)) {
-      if (Array.isArray(block.content)) {
-        cleaned.content = block.content.map((item: any) => {
-          if (typeof item === "string") {
-            return { type: "text", text: item, styles: {} };
-          }
-          return item;
-        });
-      } else if (typeof block.content === "string") {
-        cleaned.content = [{ type: "text", text: block.content, styles: {} }];
-      } else {
-        cleaned.content = [];
+      for (const row of rows) {
+        const cellTexts = (row.cells || [])
+          .map((cell: any) => {
+            if (Array.isArray(cell.content)) {
+              return cell.content
+                .map((c: any) => (c && c.text ? c.text : ""))
+                .join("");
+            }
+            return "";
+          })
+          .filter(Boolean);
+
+        if (cellTexts.length > 0) {
+          flattenedParagraphs.push({
+            type: "paragraph",
+            props: {
+              textAlignment: "left",
+              backgroundColor: "default",
+              textColor: "default",
+            },
+            content: [
+              { type: "text", text: cellTexts.join(" | "), styles: {} },
+            ],
+            children: [],
+          });
+        }
       }
-    }
-  }
 
-  if (Array.isArray(block.children) && block.children.length > 0) {
-    const cleanedChildren = block.children
-      .map(cleanBlockForSchema)
-      .filter(Boolean);
-    if (cleanedChildren.length > 0) {
-      cleaned.children = cleanedChildren;
-    }
-  }
+      if (flattenedParagraphs.length > 0) {
+        return flattenedParagraphs;
+      }
 
-  return cleaned;
+      return [
+        {
+          type: "paragraph",
+          props: {
+            textAlignment: "left",
+            backgroundColor: "default",
+            textColor: "default",
+          },
+          content: [{ type: "text", text: "[Table Content]", styles: {} }],
+          children: [],
+        },
+      ];
+    }
+
+    // Standard block sanitization
+    const sanitizedContent = sanitizeContent(block.content);
+    const children = Array.isArray(block.children)
+      ? sanitizeBlocks(block.children)
+      : [];
+
+    return [
+      {
+        id: typeof block.id === "string" ? block.id : undefined,
+        type,
+        props:
+          block.props && typeof block.props === "object" ? block.props : {},
+        content: sanitizedContent,
+        children,
+      },
+    ];
+  });
+}
+
+function sanitizeContent(content: any): any[] {
+  if (Array.isArray(content)) {
+    return content.map((item) => {
+      if (typeof item === "string")
+        return { type: "text", text: item, styles: {} };
+      if (item && typeof item === "object") {
+        return {
+          type: typeof item.type === "string" ? item.type : "text",
+          text:
+            item.text === null || item.text === undefined
+              ? ""
+              : String(item.text),
+          styles:
+            item.styles && typeof item.styles === "object" ? item.styles : {},
+          href: typeof item.href === "string" ? item.href : undefined,
+        };
+      }
+      return { type: "text", text: "", styles: {} };
+    });
+  }
+  if (typeof content === "string")
+    return [{ type: "text", text: content, styles: {} }];
+  return [];
 }
 
 interface BlockNoteReaderProps {
@@ -96,6 +147,7 @@ export default function BlockNoteReader({
   initialContent,
 }: BlockNoteReaderProps) {
   const schema = useMemo(() => getCustomSchema(), []);
+  const isInitializedRef = useRef<boolean>(false);
 
   const editor = useCreateBlockNote({
     schema,
@@ -107,29 +159,30 @@ export default function BlockNoteReader({
   });
 
   useEffect(() => {
-    if (
-      !editor ||
-      !Array.isArray(initialContent) ||
-      initialContent.length === 0
-    ) {
-      return;
-    }
+    if (!editor || isInitializedRef.current) return;
 
-    try {
-      const sanitized = initialContent.map(cleanBlockForSchema).filter(Boolean);
-      if (sanitized.length > 0) {
-        editor.replaceBlocks(editor.document, sanitized);
+    if (
+      initialContent &&
+      Array.isArray(initialContent) &&
+      initialContent.length > 0
+    ) {
+      try {
+        const sanitized = sanitizeBlocks(initialContent);
+        if (sanitized.length > 0) {
+          editor.replaceBlocks(editor.document, sanitized);
+          isInitializedRef.current = true;
+        }
+      } catch (err) {
+        console.warn(
+          "BlockNoteReader: Failed to parse initial content blocks:",
+          err,
+        );
       }
-    } catch (err) {
-      console.warn(
-        "BlockNoteReader: Failed to parse initial content blocks:",
-        err,
-      );
     }
   }, [editor, initialContent]);
 
   return (
-    <div className="w-full   border-zinc-200/80 bg-white  shadow-2xs overflow-x-auto">
+    <div className="w-full border-zinc-200/85 bg-white shadow-2xs overflow-x-auto">
       <BlockNoteView editor={editor} theme="light" editable={false} />
     </div>
   );
