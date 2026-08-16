@@ -8,7 +8,7 @@ import {
   BookOpen,
   Check,
 } from "lucide-react";
-import { Question, AssessmentSettings, BloomLevel } from "../types";
+import { Question, AssessmentSettings, BloomLevel } from "./types";
 
 const BLOOM_BADGES: Record<BloomLevel, { label: string; style: string }> = {
   1: {

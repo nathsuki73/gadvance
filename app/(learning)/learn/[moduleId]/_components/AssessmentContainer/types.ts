@@ -8,6 +8,7 @@ export interface Choice {
   isCorrect?: boolean;
   explanation?: string;
   percentage?: number;
+  votes?: number; // 👈 Add this optional property
 }
 
 export interface Question {
@@ -48,4 +49,14 @@ export interface AssessmentViewData {
   settings: AssessmentSettings;
   questions: Question[];
   updatedAt?: string;
+  previous_attempt?: {
+    score_percentage: number;
+    answers?: Array<{ is_correct: boolean }>;
+    remedial_suggestions?: Array<{
+      page_id: string;
+      block_id: string;
+      review_url: string;
+    }>;
+  };
+  user_has_completed?: boolean;
 }

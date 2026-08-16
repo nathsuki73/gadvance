@@ -2,16 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import TopicOverview from "./Overview/TopicOverview";
-import { ModuleStructureItem } from "../../service";
 import { fetchOverview, fetchSubtopics } from "./service";
 import { Lesson } from "./Overview/types";
 import Subtopic, { SubtopicItem } from "./SubTopic/Subtopic";
 import { LessonQuiz as MainLessonQuiz } from "./Quiz/LessonQuiz";
 import { LessonQuiz as MiniQuiz } from "./SubTopic/MiniQuiz/LessonQuiz";
 import { ArrowRight, PlayCircle } from "lucide-react";
+import { ModuleStructure } from "../../service";
 
 type LessonContainerProps = {
-  lessonItems?: ModuleStructureItem[];
+  lessonItems?: ModuleStructure[];
   lessonId: string;
   activeBlockId: string | undefined;
   onContinueAction: () => void;
@@ -31,7 +31,7 @@ export default function LessonContainer({
 }: LessonContainerProps) {
   // Cache the overviews in an object keyed by lessonId
   const [overviewsCache, setOverviewsCache] = useState<
-    Record<string, ModuleStructureItem>
+    Record<string, ModuleStructure>
   >({});
 
   const [subtopicsCache, setSubtopicsCache] = useState<
@@ -65,12 +65,17 @@ export default function LessonContainer({
 
   // 💡 FIX 1: Restore completion status from localStorage when activeBlockId changes/mounts
   useEffect(() => {
-    if (!currentEffectiveBlock || currentEffectiveBlock === "overview" || currentEffectiveBlock === "quiz") {
+    if (
+      !currentEffectiveBlock ||
+      currentEffectiveBlock === "overview" ||
+      currentEffectiveBlock === "quiz"
+    ) {
       return;
     }
 
     const isCompletedInStorage =
-      localStorage.getItem(`quiz_completed_${currentEffectiveBlock}`) === "true" ||
+      localStorage.getItem(`quiz_completed_${currentEffectiveBlock}`) ===
+        "true" ||
       !!localStorage.getItem(`quiz_result_${currentEffectiveBlock}`);
 
     if (isCompletedInStorage) {
@@ -102,7 +107,7 @@ export default function LessonContainer({
           [lessonId]: {
             ...currentLessonItem,
             description: apiDescription,
-          } as ModuleStructureItem,
+          } as ModuleStructure,
         }));
       } catch (error) {
         console.error("Failed to fetch lesson overview:", error);
@@ -156,7 +161,10 @@ export default function LessonContainer({
 
   const scrollToTopOfSection = () => {
     requestAnimationFrame(() => {
-      topAnchorRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
+      topAnchorRef.current?.scrollIntoView({
+        behavior: "auto",
+        block: "start",
+      });
     });
   };
 
@@ -190,7 +198,10 @@ export default function LessonContainer({
 
       {/* 1. Overview View */}
       <div className={`flex-1 w-full ${isOverview ? "" : "hidden"}`}>
-        <TopicOverview overview={currentOverview} onContinue={handleNextAction} />
+        <TopicOverview
+          overview={currentOverview}
+          onContinue={handleNextAction}
+        />
       </div>
 
       {/* 2. Subtopic View */}
@@ -214,7 +225,9 @@ export default function LessonContainer({
               >
                 <MiniQuiz
                   lessonBlockId={blockId}
-                  onBktUpdate={(bId, score) => handleMiniQuizCompletion(bId, score)}
+                  onBktUpdate={(bId, score) =>
+                    handleMiniQuizCompletion(bId, score)
+                  }
                   completedAction={() => handleMiniQuizCompletion(blockId)}
                 />
               </div>

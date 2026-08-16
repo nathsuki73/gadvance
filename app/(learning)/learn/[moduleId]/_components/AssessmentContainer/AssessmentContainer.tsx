@@ -128,10 +128,19 @@ export default function AssessmentContainer({
           let activeQuestions = [...data.questions];
 
           if (question_order && question_order.length > 0) {
-            const orderedMap = new Map(data.questions.map((q) => [q.id, q]));
+            const orderedMap = new Map(
+              data.questions.map((q: (typeof data.questions)[number]) => [
+                q.id,
+                q,
+              ]),
+            );
             const restoredQuestions = question_order
               .map((qId: string) => orderedMap.get(qId))
-              .filter((q): q is (typeof data.questions)[0] => Boolean(q));
+              .filter(
+                (
+                  q: (typeof data.questions)[number] | undefined,
+                ): q is (typeof data.questions)[0] => Boolean(q),
+              );
 
             if (restoredQuestions.length > 0) {
               activeQuestions = restoredQuestions;
@@ -144,7 +153,8 @@ export default function AssessmentContainer({
           ) {
             activeQuestions = activeQuestions.map((q) => ({
               ...q,
-              choices: q.choices.map((c: any) => {
+              choices: q.choices.map((choice) => {
+                const c = choice as any;
                 const dist = poll_distributions[c.id];
                 if (typeof dist === "object" && dist !== null) {
                   return {
@@ -195,7 +205,7 @@ export default function AssessmentContainer({
           if (status === "completed") {
             setHasStarted(true);
             setSubmitted(true);
-            setShowReview(false); // Keeps review closed by default on reload
+            setShowReview(false);
 
             if (data.settings.type === "poll") {
               const allSubmittedMap: Record<string, boolean> = {};
@@ -313,11 +323,11 @@ export default function AssessmentContainer({
     submittedQuestions[currentQuestion?.id],
   );
 
-  const gradedQuestions = questions.filter((q) => !q.isPoll);
+  const gradedQuestions = questions.filter((q: any) => !q.isPoll);
   const totalGraded = gradedQuestions.length;
 
   // Local calculations (fallbacks if backend data is missing)
-  const localCorrectCount = gradedQuestions.reduce((acc, q) => {
+  const localCorrectCount = gradedQuestions.reduce((acc: number, q: any) => {
     return answers[q.id] === q.correctChoiceId ? acc + 1 : acc;
   }, 0);
   const localScorePercentage =
@@ -353,25 +363,31 @@ export default function AssessmentContainer({
         questions: prev.questions.map((q) => {
           if (q.id !== qId) return q;
 
-          const updatedChoices = q.choices.map((c) => ({
-            ...c,
-            votes: c.id === choiceId ? (c.votes ?? 0) + 1 : (c.votes ?? 0),
-          }));
+          const updatedChoices = q.choices.map((choice) => {
+            const c = choice as any;
+            return {
+              ...c,
+              votes: c.id === choiceId ? (c.votes ?? 0) + 1 : (c.votes ?? 0),
+            };
+          });
 
           const totalQVotes = updatedChoices.reduce(
-            (sum, c) => sum + (c.votes ?? 0),
+            (sum, c) => sum + ((c as any).votes ?? 0),
             0,
           );
 
           return {
             ...q,
-            choices: updatedChoices.map((c) => ({
-              ...c,
-              percentage:
-                totalQVotes > 0
-                  ? Math.round(((c.votes ?? 0) / totalQVotes) * 100)
-                  : 0,
-            })),
+            choices: updatedChoices.map((choice) => {
+              const c = choice as any;
+              return {
+                ...c,
+                percentage:
+                  totalQVotes > 0
+                    ? Math.round(((c.votes ?? 0) / totalQVotes) * 100)
+                    : 0,
+              };
+            }),
           };
         }),
       };
@@ -421,7 +437,7 @@ export default function AssessmentContainer({
 
         // 🔑 Capture Backend Score Instantly
         const backendScore =
-          responseData?.score_percentage ?? result.score_percentage;
+          responseData?.score_percentage ?? (result as any).score_percentage;
         if (backendScore !== undefined) {
           setSavedScore(backendScore);
           setSavedCorrectCount(Math.round((backendScore / 100) * totalGraded));
@@ -445,7 +461,8 @@ export default function AssessmentContainer({
               ...prev,
               questions: prev.questions.map((q) => ({
                 ...q,
-                choices: q.choices.map((c) => {
+                choices: q.choices.map((choice) => {
+                  const c = choice as any;
                   const dist = distributions[c.id];
                   if (typeof dist === "object" && dist !== null) {
                     return {
@@ -480,7 +497,8 @@ export default function AssessmentContainer({
   };
 
   const handleRetry = async () => {
-    if (settings.maxAttempts !== null) {
+    // 🔑 Using != null safely checks for both null and undefined
+    if (settings.maxAttempts != null) {
       if (settings.maxAttempts <= 1) {
         alert("You have reached the maximum allowed attempts.");
         return;
@@ -493,7 +511,7 @@ export default function AssessmentContainer({
       return;
     }
 
-    if (settings.maxAttempts !== null) {
+    if (settings.maxAttempts != null) {
       setAssessment((prev) =>
         prev
           ? {
@@ -602,8 +620,8 @@ export default function AssessmentContainer({
           <div className="space-y-6">
             {settings.showFinalResults && (
               <ResultsSummary
-                scorePercentage={displayScore} // 🔑 Injected fixed backend score
-                correctCount={displayCorrectCount} // 🔑 Injected fixed backend count
+                scorePercentage={displayScore}
+                correctCount={displayCorrectCount}
                 totalGraded={totalGraded}
                 totalQuestions={totalQuestions}
                 elapsedSeconds={elapsedSeconds}

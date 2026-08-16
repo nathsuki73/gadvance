@@ -33,6 +33,8 @@ export interface LessonQuizResponse {
 export interface Choice {
   id: string;
   text: string;
+  votes?: number; // 👈 Add this
+  percentage?: number;
 }
 
 export interface Question {

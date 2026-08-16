@@ -39,14 +39,17 @@ const CourseGrid = () => {
   });
 
   // Client-side filtering logic based on course attributes
+  // Client-side filtering logic based on course attributes
   const courses = React.useMemo(() => {
     if (filter === "public") {
       return rawCourses.filter(
-        (c) => !c.organization_id && c.is_public !== false,
+        (course: any) => !course.organization_id && course.is_public !== false,
       );
     }
     if (filter === "organization") {
-      return rawCourses.filter((c) => Boolean(c.organization_id));
+      return rawCourses.filter((course: any) =>
+        Boolean(course.organization_id),
+      );
     }
     return rawCourses;
   }, [rawCourses, filter]);

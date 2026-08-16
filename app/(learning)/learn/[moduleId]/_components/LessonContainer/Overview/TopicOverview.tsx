@@ -1,7 +1,7 @@
-import { ModuleStructureItem } from "../../../service";
+import { ModuleStructure } from "../../../service";
 
 interface TopicOverviewProps {
-  overview?: ModuleStructureItem;
+  overview?: ModuleStructure;
   onContinue: () => void;
 }
 

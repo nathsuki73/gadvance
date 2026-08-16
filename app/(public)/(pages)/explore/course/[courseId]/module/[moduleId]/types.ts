@@ -50,6 +50,7 @@ export type ModuleResponse = {
   image?: string;
   lessons: Lesson[]; // <-- Replaced section_groups with your clean lessons list!
   progress?: ModuleProgressResponse;
+  status?: string;
 };
 
 export type StaticQuestion = {

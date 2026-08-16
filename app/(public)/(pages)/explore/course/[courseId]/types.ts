@@ -62,6 +62,7 @@ export type ApiOptions = {
 };
 
 export type EnrollmentResponse = {
+  id: string;
   message?: string;
   data?: Enrollment | null;
 };

@@ -23,6 +23,7 @@ export interface ModuleStructure {
   courseId: string;
   id: string;
   title: string;
+  description: string;
   sections: Section[];
 }
 
@@ -31,6 +32,7 @@ interface LaravelModuleData {
   learning_plans?: Array<{ id: string }>;
   id: string;
   title: string;
+  description?: string;
   sections?: Section[];
 }
 
@@ -70,6 +72,7 @@ export async function getModuleStructure(
     courseId,
     id: laravelData.id,
     title: laravelData.title,
+    description: laravelData.description || "",
     sections: laravelData.sections || [],
   };
 }

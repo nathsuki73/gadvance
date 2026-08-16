@@ -33,7 +33,7 @@ export function ResultsSummary({
   const isPassed = scorePercentage >= settings.passingScore;
 
   const hasAttemptsRemaining =
-    settings.maxAttempts === null || settings.maxAttempts > 1;
+    settings.maxAttempts == null || settings.maxAttempts > 1;
 
   const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60);
