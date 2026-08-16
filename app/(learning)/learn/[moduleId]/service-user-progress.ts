@@ -1,22 +1,14 @@
-"use server";
+"use client";
 
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-
-// Safe API base URL resolution (prevents double '/api/api' path bugs)
-const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const API_BASE_URL = rawApiUrl.replace(/\/$/, "").endsWith("/api")
-  ? rawApiUrl.replace(/\/$/, "")
-  : `${rawApiUrl.replace(/\/$/, "")}/api`;
+import { apiFetch } from "@/app/lib/api-client";
 
 export type SaveLearningProgressPayload = {
   module_id: string;
-  section_id: string; // ➕ Added section_id to match backend validation
+  section_id: string;
   learning_item_id: string;
   progress: number;
 };
 
-// Single item progress record
 export type ProgressRecord = {
   id?: number;
   user_id?: string;
@@ -26,7 +18,6 @@ export type ProgressRecord = {
   progress: number;
 };
 
-// Section summary metrics for DonutProgress
 export type SectionSummary = {
   section_id: string;
   total_items: number;
@@ -38,45 +29,31 @@ export type LearningProgressResponse = {
   success: boolean;
   message?: string;
   error?: string;
-  data?: ProgressRecord[] | ProgressRecord;
+  data?: ProgressRecord[] | ProgressRecord | any;
   completed_item_ids?: string[];
   section_summaries?: SectionSummary[];
-  course_progress?: number; // ➕ Dynamic overall course percentage calculated by Laravel
+  course_progress?: number;
+  certificate?: {
+    azure_file_path: string;
+    verify_code: string;
+  } | null;
 };
 
 export const getLearningProgress = async (
   moduleId: string,
 ): Promise<LearningProgressResponse> => {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.laravelJwt) {
-    return {
-      success: false,
-      error: "Unauthorized",
-    };
-  }
-
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/learning-progress/${moduleId}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${session.laravelJwt}`,
-          Accept: "application/json",
-        },
-        cache: "no-store",
-      },
-    );
+    // 🔑 Added /api/ prefix
+    const response = await apiFetch(`/api/learning-progress/${moduleId}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    if (!response || !response.ok) {
+      return { success: false, error: "Failed to fetch progress records" };
+    }
 
     const result = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: result.message || "Failed to fetch progress records",
-      };
-    }
 
     return {
       success: true,
@@ -86,59 +63,71 @@ export const getLearningProgress = async (
     };
   } catch (error) {
     console.error("Fetch learning progress error:", error);
-    return {
-      success: false,
-      error: "Network error",
-    };
+    return { success: false, error: "Network error" };
   }
 };
 
 export const saveLearningProgress = async (
   payload: SaveLearningProgressPayload,
 ): Promise<LearningProgressResponse> => {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.laravelJwt) {
-    return {
-      success: false,
-      error: "Unauthorized",
-    };
-  }
-
   try {
-    const response = await fetch(`${API_BASE_URL}/learning-progress`, {
+    // 🔑 Added /api/ prefix
+    const response = await apiFetch(`/api/learning-progress`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${session.laravelJwt}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
       cache: "no-store",
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: result.message || "Failed to save learning progress",
-      };
+    if (!response || !response.ok) {
+      return { success: false, error: "Failed to save learning progress" };
     }
+
+    const result = await response.json();
 
     return {
       success: true,
       message: result.message,
       data: result.data,
-      course_progress: result.course_progress, // ➕ Returns the newly calculated overall percentage to Next.js
+      course_progress: result.course_progress,
     };
   } catch (error) {
     console.error("Save learning progress error:", error);
-
-    return {
-      success: false,
-      error: "Network error",
-    };
+    return { success: false, error: "Network error" };
   }
 };
 
+/**
+ * 🚀 Milestone sync action: Recalculates plan progress and auto-issues certificate if 100%
+ */
+export const syncLearningPlanProgress = async (
+  learningPlanId: string,
+): Promise<LearningProgressResponse> => {
+  try {
+    // 🔑 Added /api/ prefix
+    const response = await apiFetch(
+      `/api/learning-plans/${learningPlanId}/sync-progress`,
+      {
+        method: "POST",
+        cache: "no-store",
+      },
+    );
+
+    if (!response || !response.ok) {
+      return { success: false, error: "Failed to sync learning plan progress" };
+    }
+
+    const result = await response.json();
+
+    return {
+      success: true,
+      message: result.message,
+      data: result.data,
+      course_progress: result.data?.progress_percentage ?? 0,
+      certificate: result.certificate || null,
+    };
+  } catch (error) {
+    console.error("Sync learning plan progress error:", error);
+    return { success: false, error: "Network error" };
+  }
+};

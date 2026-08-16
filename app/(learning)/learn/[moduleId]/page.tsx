@@ -14,6 +14,7 @@ import {
   getLearningProgress,
   saveLearningProgress,
   ProgressRecord,
+  syncLearningPlanProgress,
 } from "./service-user-progress";
 
 type LearnPageProps = {
@@ -163,12 +164,20 @@ const LearnPage = ({ params }: LearnPageProps) => {
         setCompletedItemIds((prev) => new Set(prev).add(itemId));
       }
 
+      // 1. Save the specific item progress
       await saveLearningProgress({
         module_id: moduleId,
         section_id: sectionId,
         learning_item_id: itemId,
         progress: progressValue,
       });
+
+      // 🚀 2. Trigger the Learning Plan milestone sync (updates overall course percentage & status)
+      const learningPlanId =
+        (module as any)?.learning_plan_id || module?.courseId;
+      if (learningPlanId && progressValue >= 100) {
+        await syncLearningPlanProgress(learningPlanId);
+      }
 
       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
     },

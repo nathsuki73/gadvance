@@ -12,6 +12,17 @@ export interface JoinedOrganization {
   membersCount?: number;
 }
 
+export type StudentCertificate = {
+  id: string;
+  verify_code: string;
+  azure_file_path: string;
+  created_at: string;
+  learning_plan?: {
+    title: string;
+  };
+  template?: any;
+};
+
 export const getUserProfile = async (): Promise<ApiResponse<UserProfile>> => {
   try {
     const response = await apiFetch("/api/profile", { method: "GET" });
@@ -90,6 +101,64 @@ export const leaveOrganization = async (
     return { success: true, data: null };
   } catch (error) {
     console.error("Leave organization error:", error);
+    return { success: false, error: "Network error" };
+  }
+};
+
+export const getStudentCertificates = async (): Promise<
+  ApiResponse<StudentCertificate[]>
+> => {
+  try {
+    const response = await apiFetch("/api/certificates", { method: "GET" });
+
+    if (!response) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: result.message || "Failed to fetch certificates",
+      };
+    }
+
+    const certs = Array.isArray(result) ? result : result.data || [];
+    return { success: true, data: certs };
+  } catch (error) {
+    console.error("Student certificates fetch error:", error);
+    return { success: false, error: "Network error" };
+  }
+};
+
+export const sendCertificateEmail = async (
+  certificateId: string,
+): Promise<ApiResponse<null>> => {
+  try {
+    const response = await apiFetch(
+      `/api/certificates/${certificateId}/email`,
+      {
+        method: "POST",
+      },
+    );
+
+    if (!response) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: result.message || "Failed to send certificate email",
+      };
+    }
+
+    return { success: true, data: null };
+  } catch (error) {
+    console.error("Send certificate email error:", error);
     return { success: false, error: "Network error" };
   }
 };
