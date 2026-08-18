@@ -473,8 +473,8 @@ export default function AuthHeader() {
         }`}
       >
         <nav className="flex flex-col gap-1 border-t border-zinc-100 pt-4">
-          <div className="flex items-center gap-3 px-3 py-3 bg-zinc-50 rounded-2xl mb-3">
-            <div className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-xl bg-[#c4b5fd]">
+          <div className="flex items-center gap-3 px-3 py-3 bg-zinc-50 rounded-xl mb-3">
+            <div className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-xl">
               {renderAvatar(
                 "h-full w-full rounded-xl object-cover",
                 "flex h-full w-full items-center justify-center rounded-xl bg-[#c4b5fd] text-white text-sm font-bold",
