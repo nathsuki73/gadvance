@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   Menu,
@@ -20,6 +20,7 @@ import logoIcon from "@/app/assets/logo.ico";
 import { NavLink } from "./NavLink";
 import SearchBar from "./SearchBar";
 import LogoutConfirmationDialog from "./LogoutConfirmation";
+import { useQuery } from "@tanstack/react-query";
 import { getUserProfile } from "../../service";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
@@ -35,16 +36,6 @@ const AUTH_NAVS = [
 const FALLBACK_USER = {
   name: "Learner",
   email: "gadvanceproject@gmail.com",
-};
-
-type ProfileInfo = {
-  firstName?: string | null;
-  first_name?: string | null;
-  middleName?: string | null;
-  middle_name?: string | null;
-  lastName?: string | null;
-  last_name?: string | null;
-  avatar?: string | null;
 };
 
 type SearchResult = {
@@ -92,15 +83,31 @@ export default function AuthHeader() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
-  // Profile data
-  const [profileInfo, setProfileInfo] = useState<ProfileInfo | null>(null);
-  const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
   const [avatarFallbackIndex, setAvatarFallbackIndex] = useState(0);
 
   // Search
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const userEmail = session?.user?.email;
+
+  // 🎯 Shared React Query profile fetch (deduplicates requests with WorkspacePage)
+  const { data: profileResponse } = useQuery({
+    queryKey: ["userProfile", userEmail],
+    queryFn: async () => {
+      const res = await getUserProfile();
+      if (!res.success || !res.data) return null;
+      return res.data;
+    },
+    enabled: !!userEmail,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+
+  const profileInfo = profileResponse ?? null;
+  const profileAvatar = resolveAvatarSrc(profileInfo?.avatar ?? null);
 
   const closeAllOverlays = () => {
     setShowMobileMenu(false);
@@ -114,19 +121,16 @@ export default function AuthHeader() {
     const first =
       session?.user?.firstName ||
       session?.user?.first_name ||
-      profileInfo?.firstName ||
       profileInfo?.first_name ||
       "";
     const middle =
       session?.user?.middleName ||
       session?.user?.middle_name ||
-      profileInfo?.middleName ||
       profileInfo?.middle_name ||
       "";
     const last =
       session?.user?.lastName ||
       session?.user?.last_name ||
-      profileInfo?.lastName ||
       profileInfo?.last_name ||
       "";
 
@@ -159,8 +163,6 @@ export default function AuthHeader() {
   // Debounced global search
   useEffect(() => {
     if (searchQuery.trim().length === 0) {
-      // setSearchResults([]);
-      // setIsSearchOpen(false);
       return;
     }
 
@@ -192,27 +194,6 @@ export default function AuthHeader() {
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery, session]);
-
-  // Load extended profile (name parts + avatar) once per session
-  useEffect(() => {
-    if (profileAvatar || !session?.user) return;
-
-    let isMounted = true;
-
-    (async () => {
-      const response = await getUserProfile();
-      if (!isMounted || !response.success) return;
-
-      setProfileInfo(response.data ?? null);
-
-      const avatar = resolveAvatarSrc(response.data?.avatar ?? null);
-      if (avatar) setProfileAvatar(avatar);
-    })();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [profileAvatar, session?.user]);
 
   // Close all overlays on outside click
   useEffect(() => {
