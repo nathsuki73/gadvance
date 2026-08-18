@@ -269,7 +269,11 @@ export default function AuthHeader() {
         width={40}
         height={40}
         sizes="40px"
-        unoptimized={activeAvatarSource.startsWith("data:")}
+        unoptimized={
+          activeAvatarSource.startsWith("data:") ||
+          activeAvatarSource.startsWith("http://") ||
+          activeAvatarSource.startsWith("https://")
+        }
         className={sizeClassName}
         onError={() =>
           setAvatarFallbackIndex((i) =>
