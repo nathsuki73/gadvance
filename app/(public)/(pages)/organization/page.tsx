@@ -1,9 +1,10 @@
 // app/(workspace)/organization/page.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Search,
   Building2,
@@ -14,6 +15,7 @@ import {
   X,
   RotateCcw,
 } from "lucide-react";
+import { apiFetch } from "@/app/lib/api-client";
 import LeaveConfirmModal from "./leave-confirm-modal";
 
 interface Organization {
@@ -24,73 +26,70 @@ interface Organization {
   isJoined?: boolean;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
-  ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")
-  : "";
-
 type FilterType = "all" | "joined";
+
+async function fetchExploreOrganizations(): Promise<Organization[]> {
+  const res = await apiFetch("/api/organizations/explore");
+  if (!res || !res.ok) {
+    throw new Error("Failed to fetch organizations");
+  }
+  return res.json();
+}
 
 export default function OrganizationPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const queryClient = useQueryClient();
 
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [joinedOrgIds, setJoinedOrgIds] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
-  const [isFetching, setIsFetching] = useState(true);
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
-
-  // State for Leave Confirmation Modal
   const [selectedOrgToLeave, setSelectedOrgToLeave] = useState<{
     id: string;
     title: string;
   } | null>(null);
 
   const isAuthenticated = !!session?.user;
-  const isLoading = status === "loading";
-  const jwtToken = session?.laravelJwt;
 
-  // Fetch all organizations with member counts
-  const fetchOrganizations = useCallback(async () => {
-    try {
-      setIsFetching(true);
+  // 🎯 TanStack Query for fetching explore organizations with caching
+  const { data: organizations = [], isLoading: isFetching } = useQuery({
+    queryKey: ["exploreOrganizations", session?.user?.email],
+    queryFn: fetchExploreOrganizations,
+    enabled: status !== "loading",
+    staleTime: 1000 * 60 * 2, // Cache data for 2 minutes to prevent reloading on navigation
+    refetchOnWindowFocus: false, // Prevents refetching when switching browser tabs
+  });
 
-      const endpoint = `${API_BASE_URL}/api/organizations/explore`;
-      const headers: HeadersInit = {
-        Accept: "application/json",
-      };
-
-      if (jwtToken) {
-        headers["Authorization"] = `Bearer ${jwtToken}`;
+  // 🎯 Leave Organization Mutation
+  const leaveOrgMutation = useMutation({
+    mutationFn: async (orgId: string) => {
+      const res = await apiFetch("/api/organizations/leave", {
+        method: "POST",
+        body: JSON.stringify({ organization_id: orgId }),
+      });
+      if (!res || !res.ok) {
+        throw new Error("Failed to leave organization");
       }
+      return res.json();
+    },
+    onSuccess: () => {
+      // Invalidate relevant queries so cache updates automatically across pages
+      queryClient.invalidateQueries({ queryKey: ["exploreOrganizations"] });
+      queryClient.invalidateQueries({ queryKey: ["userOrganization"] });
+      queryClient.invalidateQueries({ queryKey: ["joinedOrganizations"] });
+      setSelectedOrgToLeave(null);
+    },
+    onError: (err) => {
+      console.error("Leave organization failed:", err);
+    },
+  });
 
-      const res = await fetch(endpoint, { headers });
-
-      if (!res.ok) {
-        throw new Error(`Failed to fetch organizations (${res.status})`);
-      }
-
-      const data: Organization[] = await res.json();
-      setOrganizations(data);
-
-      const joined = new Set<string>(
-        data.filter((org) => org.isJoined).map((org) => org.id),
-      );
-      setJoinedOrgIds(joined);
-    } catch (err) {
-      console.error("Error loading organizations:", err);
-    } finally {
-      setIsFetching(false);
-    }
-  }, [jwtToken]);
-
-  useEffect(() => {
-    if (!isLoading) {
-      fetchOrganizations();
-    }
-  }, [fetchOrganizations, isLoading]);
+  // Compute joined IDs from fetched organizations
+  const joinedOrgIds = React.useMemo(() => {
+    return new Set<string>(
+      organizations.filter((org) => org.isJoined).map((org) => org.id),
+    );
+  }, [organizations]);
 
   // Reset filter back to 'all' if user logs out while on 'joined' tab
   useEffect(() => {
@@ -99,11 +98,10 @@ export default function OrganizationPage() {
     }
   }, [isAuthenticated, filter]);
 
-  // Handle Join or Open Leave Confirmation Modal
   const handleActionClick = (org: Organization, currentlyJoined: boolean) => {
-    if (isLoading) return;
+    if (status === "loading") return;
 
-    if (!isAuthenticated || !jwtToken) {
+    if (!isAuthenticated) {
       router.push(
         `/auth/signin?callbackUrl=${encodeURIComponent("/organization")}`,
       );
@@ -117,51 +115,9 @@ export default function OrganizationPage() {
     }
   };
 
-  // Perform Leave Organization API Call from Modal
-  const handleConfirmLeave = async () => {
-    if (!selectedOrgToLeave || !jwtToken) return;
-
-    const orgId = selectedOrgToLeave.id;
-
-    try {
-      setActionLoadingId(orgId);
-
-      const res = await fetch(`${API_BASE_URL}/api/organizations/leave`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${jwtToken}`,
-        },
-        body: JSON.stringify({ organization_id: orgId }),
-      });
-
-      if (res.ok) {
-        setJoinedOrgIds((prev) => {
-          const next = new Set(prev);
-          next.delete(orgId);
-          return next;
-        });
-
-        setOrganizations((prev) =>
-          prev.map((org) =>
-            org.id === orgId
-              ? {
-                  ...org,
-                  membersCount: Math.max(0, org.membersCount - 1),
-                  isJoined: false,
-                }
-              : org,
-          ),
-        );
-
-        setSelectedOrgToLeave(null);
-      }
-    } catch (err) {
-      console.error("Leave organization failed:", err);
-    } finally {
-      setActionLoadingId(null);
-    }
+  const handleConfirmLeave = () => {
+    if (!selectedOrgToLeave) return;
+    leaveOrgMutation.mutate(selectedOrgToLeave.id);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -177,7 +133,7 @@ export default function OrganizationPage() {
 
   const isFiltered = activeSearch !== "" || filter !== "all";
 
-  // Filter organizations by search and tab
+  // Filter organizations by search query and active tab
   const filteredOrganizations = React.useMemo(() => {
     return organizations.filter((org) => {
       const matchesSearch =
@@ -347,7 +303,9 @@ export default function OrganizationPage() {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {filteredOrganizations.map((org) => {
                 const isJoined = isAuthenticated && joinedOrgIds.has(org.id);
-                const isBusy = actionLoadingId === org.id;
+                const isBusy =
+                  leaveOrgMutation.isPending &&
+                  selectedOrgToLeave?.id === org.id;
 
                 return (
                   <div
@@ -408,7 +366,7 @@ export default function OrganizationPage() {
         <LeaveConfirmModal
           isOpen={!!selectedOrgToLeave}
           orgName={selectedOrgToLeave?.title || ""}
-          isPending={actionLoadingId === selectedOrgToLeave?.id}
+          isPending={leaveOrgMutation.isPending}
           onClose={() => setSelectedOrgToLeave(null)}
           onConfirm={handleConfirmLeave}
         />
