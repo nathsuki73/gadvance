@@ -1,10 +1,18 @@
+// app/(workspace)/organization/join/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, ArrowLeft, Loader2, SearchX } from "lucide-react";
+import {
+  Building2,
+  ArrowLeft,
+  Loader2,
+  SearchX,
+  CheckCircle,
+  ArrowRight,
+} from "lucide-react";
 import { apiFetch } from "@/app/lib/api-client";
 
 interface Organization {
@@ -41,12 +49,11 @@ export default function JoinOrganizationPage() {
     setIsSearching(true);
     setError(null);
     try {
-      // Lookup endpoint via apiFetch
       const res = await apiFetch(
         `/api/organizations/lookup?code=${encodeURIComponent(targetCode)}`,
       );
 
-      if (!res) return; // Unauthenticated - forceSignOut handles redirect
+      if (!res) return;
 
       if (res.ok) {
         const data = await res.json();
@@ -56,7 +63,7 @@ export default function JoinOrganizationPage() {
         setError(errData.message || "Invalid or expired invitation code.");
         setOrgData(null);
       }
-    } catch (err: any) {
+    } catch {
       setError("Failed to find organization.");
       setOrgData(null);
     } finally {
@@ -69,23 +76,17 @@ export default function JoinOrganizationPage() {
     setIsJoining(true);
     setError(null);
     try {
-      // Execute join: POST /api/organizations/join
       const res = await apiFetch("/api/organizations/join", {
         method: "POST",
         body: JSON.stringify({ code: urlCode }),
       });
 
-      if (!res) return; // Unauthenticated - forceSignOut handles redirect
+      if (!res) return;
 
       if (res.ok) {
-        // 🎯 1. Clear stale cache for user profile and organization queries
         await queryClient.invalidateQueries({ queryKey: ["userProfile"] });
         await queryClient.invalidateQueries({ queryKey: ["userOrganization"] });
-
-        // 🎯 2. Force NextAuth client session to re-sync JWT claims
         await updateSession();
-
-        // 🎯 3. Navigate back to workspace with fresh state ready
         router.push("/workspace");
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -93,7 +94,7 @@ export default function JoinOrganizationPage() {
           errData.message || "Failed to join organization. Please try again.",
         );
       }
-    } catch (err: any) {
+    } catch {
       setError("Failed to join organization. Please try again.");
     } finally {
       setIsJoining(false);
@@ -109,13 +110,13 @@ export default function JoinOrganizationPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white text-zinc-900 font-sans relative">
+    <main className="min-h-screen bg-white text-zinc-900 font-sans relative flex flex-col">
       {/* Sticky Top Navigation Bar */}
       <nav className="sticky top-0 z-40 border-b border-zinc-50 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
           <button
             onClick={() => router.push("/workspace/organization")}
-            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary-hover"
+            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary-hover cursor-pointer"
           >
             <ArrowLeft
               size={16}
@@ -126,89 +127,104 @@ export default function JoinOrganizationPage() {
         </div>
       </nav>
 
-      <div className="mx-auto max-w-xl px-6 py-16 md:py-24">
-        <div className="flex flex-col items-center text-center space-y-8">
-          {orgData ? (
-            /* Confirm Found Organization UI */
-            <>
-              <div className="p-4 rounded-2xl bg-primary/10 text-primary">
-                <Building2 size={32} />
-              </div>
+      {/* Main Content Container (Anchored closer to the top with proper spacing) */}
+      <div className="flex-1 px-6 py-10 md:py-14 flex justify-center">
+        <div className="w-full max-w-lg bg-white p-4 sm:p-6">
+          <div className="flex flex-col items-center text-center space-y-6">
+            {orgData ? (
+              /* Confirm Found Organization UI */
+              <>
+                {/* Verified badge repositioned to the very top */}
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-primary border border-purple-100">
+                  <CheckCircle size={13} />
+                  <span>Verified Workspace</span>
+                </div>
 
-              <div className="w-full space-y-8">
-                <div className="space-y-3">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary bg-primary/10 px-3 py-1 rounded-full inline-block">
-                    Organization Found
-                  </span>
+                <div className="p-4 rounded-2xl bg-purple-50 text-primary border border-purple-100 mt-2">
+                  <Building2 size={32} />
+                </div>
 
-                  <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+                <div className="w-full space-y-3">
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 leading-tight">
                     {orgData.name}
                   </h1>
 
-                  <p className="text-xs text-zinc-400 font-light leading-relaxed max-w-md mx-auto">
+                  <p className="text-xs sm:text-sm text-zinc-500 font-light leading-relaxed max-w-md mx-auto">
                     {orgData.description ||
                       "Official institution workspace for gender and development advancement training."}
                   </p>
                 </div>
 
                 {error && (
-                  <p className="text-xs text-red-500 font-medium">{error}</p>
+                  <div className="w-full p-3 rounded-xl bg-red-50 border border-red-100 text-xs text-red-600 font-medium text-center">
+                    {error}
+                  </div>
                 )}
 
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full pt-2">
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full pt-4 border-t border-zinc-100">
                   <button
+                    type="button"
                     onClick={() => router.push("/workspace/organization")}
-                    className="w-full sm:w-1/2 border border-zinc-200 hover:bg-zinc-50 text-zinc-700 py-3.5 rounded-xl text-xs font-semibold transition-all"
+                    className="w-full sm:flex-1 py-3.5 px-4 rounded-xl text-xs font-semibold text-zinc-600 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 transition-colors cursor-pointer"
                   >
-                    Use Different Code
+                    Enter Different Code
                   </button>
                   <button
+                    type="button"
                     onClick={handleConfirmJoin}
                     disabled={isJoining}
-                    className="w-full sm:w-1/2 bg-primary hover:bg-primary-hover text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm shadow-violet-100"
+                    className="w-full sm:flex-1 py-3.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider text-white bg-primary hover:bg-primary-hover shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     {isJoining ? (
-                      <Loader2 className="animate-spin" size={16} />
+                      <>
+                        <Loader2 className="animate-spin" size={14} />
+                        <span>Joining...</span>
+                      </>
                     ) : (
-                      "Confirm & Join"
+                      <>
+                        <span>Confirm & Join</span>
+                        <ArrowRight size={14} />
+                      </>
                     )}
                   </button>
                 </div>
-              </div>
-            </>
-          ) : (
-            /* Friendly Organization Not Found UI */
-            <>
-              <div className="p-4 rounded-2xl bg-zinc-100/80 text-zinc-400">
-                <SearchX size={32} />
-              </div>
+              </>
+            ) : (
+              /* Friendly Organization Not Found UI */
+              <>
+                <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-zinc-100 text-zinc-600">
+                  Notice
+                </span>
 
-              <div className="w-full space-y-6">
-                <div className="space-y-2">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 bg-zinc-100 px-3 py-1 rounded-full inline-block">
-                    Notice
-                  </span>
-                  <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+                <div className="p-4 rounded-2xl bg-zinc-100 text-zinc-400 mt-2">
+                  <SearchX size={32} />
+                </div>
+
+                <div className="w-full space-y-3">
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
                     Organization Not Found
                   </h1>
-                  <p className="text-xs text-zinc-400 font-light leading-relaxed max-w-sm mx-auto">
+
+                  <p className="text-xs sm:text-sm text-zinc-500 font-light leading-relaxed max-w-sm mx-auto">
                     We couldn&apos;t locate an active workspace for that code.
                     Please verify your 6-digit code or ask your team lead for a
                     new invite.
                   </p>
                 </div>
 
-                <div className="pt-2">
+                <div className="w-full pt-4 border-t border-zinc-100">
                   <button
+                    type="button"
                     onClick={() => router.push("/workspace/organization")}
-                    className="w-full bg-primary hover:bg-primary-hover text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm shadow-violet-100 active:scale-[0.98] inline-flex items-center justify-center gap-2"
+                    className="w-full py-3.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider text-white bg-primary hover:bg-primary-hover shadow-sm transition-all cursor-pointer inline-flex items-center justify-center gap-2"
                   >
                     <span>Enter Code Manually</span>
+                    <ArrowRight size={14} />
                   </button>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </main>
