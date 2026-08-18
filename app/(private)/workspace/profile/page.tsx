@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
 import {
   User,
   MapPin,
@@ -18,7 +19,7 @@ import { ProfileData } from "./types";
 import BasicInfo from "./_components/basic-info";
 import ContactLocationInfo from "./_components/contact-location-info";
 import AvatarBioInfo from "./_components/avatar-bio-info";
-import { getStudentCertificates } from "../service";
+import { getUserProfile, getStudentCertificates } from "../service";
 
 const NAV_ITEMS = [
   { id: "personal-identity", label: "Personal Identity", icon: User },
@@ -28,12 +29,30 @@ const NAV_ITEMS = [
 
 export default function ProfilePage() {
   const { status, data: session } = useSession();
+  const userEmail = session?.user?.email;
 
   const [activeTab, setActiveTab] = useState<string>("personal-identity");
-  const [profileData] = useState<ProfileData | undefined>();
-  const [isLoading] = useState(false);
 
-  // 🔑 Real certificates state & search
+  // 🔑 1. Fetch User Profile using React Query (shares cache with AuthHeader and WorkspacePage)
+  const { data: profileResponse, isLoading: isProfileLoading } = useQuery({
+    queryKey: ["userProfile", userEmail],
+    queryFn: async () => {
+      const res = await getUserProfile();
+      if (!res.success || !res.data) {
+        throw new Error("Failed to fetch profile data");
+      }
+      return res.data;
+    },
+    enabled: status === "authenticated",
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+  });
+
+  const profileData: ProfileData | undefined = profileResponse
+    ? (profileResponse as unknown as ProfileData)
+    : undefined;
+
+  // 🔑 2. Real certificates state & search
   const [certificates, setCertificates] = useState<any[]>([]);
   const [certificateSearchQuery, setCertificateSearchQuery] =
     useState<string>("");
@@ -65,7 +84,9 @@ export default function ProfilePage() {
     return title.includes(cleanQuery) || code.includes(cleanQuery);
   });
 
-  if (status === "loading" || isLoading) {
+  const isLoading = status === "loading" || isProfileLoading;
+
+  if (isLoading) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3 text-center">
@@ -167,7 +188,7 @@ export default function ProfilePage() {
           </section>
         </div>
 
-        {/* 🚀 Certificates Section with Real Fetch and Search Bar */}
+        {/* Certificates Section */}
         <section className="mt-12 md:mt-16">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
             <div>
@@ -187,7 +208,7 @@ export default function ProfilePage() {
             </span>
           </div>
 
-          {/* Uniform Search Bar Styling */}
+          {/* Search Bar */}
           <div className="mb-8">
             <div className="relative flex items-center">
               <Search size={18} className="absolute left-4 text-zinc-400" />
