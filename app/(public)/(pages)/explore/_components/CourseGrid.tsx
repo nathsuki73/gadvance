@@ -39,7 +39,6 @@ const CourseGrid = () => {
   });
 
   // Client-side filtering logic based on course attributes
-  // Client-side filtering logic based on course attributes
   const courses = React.useMemo(() => {
     if (filter === "public") {
       return rawCourses.filter(
@@ -93,6 +92,8 @@ const CourseGrid = () => {
               className="absolute left-3.5 text-zinc-400 pointer-events-none"
             />
             <input
+              id="course-search-input"
+              name="search"
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}

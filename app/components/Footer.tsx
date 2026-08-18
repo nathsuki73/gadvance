@@ -164,6 +164,7 @@ const Footer = () => {
               className="mt-4 flex flex-col sm:flex-row gap-2"
             >
               <input
+                id="news-letter-input"
                 type="email"
                 placeholder="Enter your email"
                 value={newsletterEmail}

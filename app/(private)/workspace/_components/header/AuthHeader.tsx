@@ -331,7 +331,11 @@ export default function AuthHeader() {
         <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
           {/* Desktop search */}
           <div className="hidden sm:block sm:flex-1 sm:max-w-md relative">
-            <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              id="desktop-search-input"
+            />
             {renderSearchDropdown()}
           </div>
 
@@ -452,7 +456,11 @@ export default function AuthHeader() {
       >
         <div className="border-t border-zinc-100 pt-3 flex justify-center">
           <div className="relative w-full max-w-md">
-            <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              id="mobile-search-input"
+            />
             {renderSearchDropdown()}
           </div>
         </div>
