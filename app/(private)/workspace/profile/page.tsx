@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -32,8 +32,10 @@ export default function ProfilePage() {
   const userEmail = session?.user?.email;
 
   const [activeTab, setActiveTab] = useState<string>("personal-identity");
+  const [certificateSearchQuery, setCertificateSearchQuery] =
+    useState<string>("");
 
-  // 🔑 1. Fetch User Profile using React Query (shares cache with AuthHeader and WorkspacePage)
+  // 1. Fetch User Profile using React Query
   const { data: profileResponse, isLoading: isProfileLoading } = useQuery({
     queryKey: ["userProfile", userEmail],
     queryFn: async () => {
@@ -52,28 +54,22 @@ export default function ProfilePage() {
     ? (profileResponse as unknown as ProfileData)
     : undefined;
 
-  // 🔑 2. Real certificates state & search
-  const [certificates, setCertificates] = useState<any[]>([]);
-  const [certificateSearchQuery, setCertificateSearchQuery] =
-    useState<string>("");
-  const [certsLoading, setCertsLoading] = useState(true);
+  // 2. Fetch Certificates using React Query (Cached & Optimized)
+  const { data: certificatesResponse, isLoading: certsLoading } = useQuery({
+    queryKey: ["studentCertificates", userEmail],
+    queryFn: async () => {
+      const res = await getStudentCertificates();
+      if (!res.success || !res.data) {
+        return [];
+      }
+      return res.data;
+    },
+    enabled: status === "authenticated",
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+  });
 
-  const fetchCertificates = useCallback(async () => {
-    if (status !== "authenticated" || !session?.laravelJwt) return;
-
-    setCertsLoading(true);
-    const res = await getStudentCertificates();
-    if (res.success && res.data) {
-      setCertificates(res.data);
-    }
-    setCertsLoading(false);
-  }, [status, session]);
-
-  useEffect(() => {
-    if (status === "authenticated") {
-      fetchCertificates();
-    }
-  }, [status, fetchCertificates]);
+  const certificates = certificatesResponse ?? [];
 
   // Filter logic for certificates
   const filteredCertificates = certificates.filter((cert) => {
