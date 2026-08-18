@@ -32,7 +32,6 @@ export default function WorkspacePage() {
 
   const userEmail = session?.user?.email;
 
-  // 1. Fetch User Profile Query
   const { data: profileResponse, isLoading: isProfileInitialLoading } =
     useQuery({
       queryKey: ["userProfile", userEmail],
@@ -44,8 +43,8 @@ export default function WorkspacePage() {
         return res.data;
       },
       enabled: status === "authenticated",
-      staleTime: 0,
-      refetchOnWindowFocus: true,
+      staleTime: 1000 * 60 * 2, // <-- Change from 0 to 2 minutes
+      refetchOnWindowFocus: false, // <-- Prevents refetching just by clicking back onto the tab
     });
 
   // 2. Fetch Joined Organizations Query
@@ -94,7 +93,8 @@ export default function WorkspacePage() {
   }
 
   // Data Mapping (Safely extract response if nested inside profileResponse.data)
-  const profile: any = (profileResponse as any)?.data ?? profileResponse ?? null;
+  const profile: any =
+    (profileResponse as any)?.data ?? profileResponse ?? null;
   const firstName =
     profile?.first_name || session?.user?.name?.split(" ")[0] || "User";
 
@@ -103,11 +103,12 @@ export default function WorkspacePage() {
 
   // 🎯 Dynamic Extraction of Modules (handles recently_viewed_modules or active_module)
   const rawModules =
-    profile?.recently_viewed_modules && profile.recently_viewed_modules.length > 0
+    profile?.recently_viewed_modules &&
+    profile.recently_viewed_modules.length > 0
       ? profile.recently_viewed_modules
       : profile?.active_module
-      ? [profile.active_module]
-      : [];
+        ? [profile.active_module]
+        : [];
 
   const recentModules: ModuleItem[] = rawModules.map((m: any) => ({
     id: m.id,

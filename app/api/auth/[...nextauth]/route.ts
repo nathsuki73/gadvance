@@ -521,15 +521,6 @@ export const authOptions: NextAuthOptions = {
       }
 
       if (typeof token.laravelJwt === "string") {
-        const expiration = getJwtExpiration(token.laravelJwt);
-        const currentTime = Math.floor(Date.now() / 1000);
-
-        console.log("[Laravel JWT]", {
-          expiration,
-          currentTime,
-          secondsRemaining: expiration ? expiration - currentTime : null,
-        });
-
         if (shouldRefreshLaravelToken(token.laravelJwt)) {
           console.log("[Laravel JWT] Refreshing token...");
 

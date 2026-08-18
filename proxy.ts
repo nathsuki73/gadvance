@@ -63,40 +63,40 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(workspaceUrl);
   }
 
-  let resolvedStatus = token?.status;
+  const resolvedStatus = token?.status;
 
-  if (
-    isWorkspaceRoute &&
-    !isPublicPage &&
-    isOnboardingStatus(resolvedStatus) &&
-    token?.laravelJwt
-  ) {
-    try {
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
-      if (apiBaseUrl) {
-        const res = await fetch(`${apiBaseUrl}/api/profile`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization: `Bearer ${token.laravelJwt}`,
-          },
-        });
+  // if (
+  //   isWorkspaceRoute &&
+  //   !isPublicPage &&
+  //   isOnboardingStatus(resolvedStatus) &&
+  //   token?.laravelJwt
+  // ) {
+  //   try {
+  //     const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+  //     if (apiBaseUrl) {
+  //       const res = await fetch(`${apiBaseUrl}/api/profile`, {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Accept: "application/json",
+  //           Authorization: `Bearer ${token.laravelJwt}`,
+  //         },
+  //       });
 
-        if (res.ok) {
-          const payload = await res.json().catch(() => null);
-          const dbData = payload?.data ?? payload;
-          const dbStatus = dbData?.status?.trim().toLowerCase();
+  //       if (res.ok) {
+  //         const payload = await res.json().catch(() => null);
+  //         const dbData = payload?.data ?? payload;
+  //         const dbStatus = dbData?.status?.trim().toLowerCase();
 
-          if (dbStatus === "active") {
-            resolvedStatus = "active";
-          }
-        }
-      }
-    } catch (err) {
-      console.error("Middleware live status check fallback failed:", err);
-    }
-  }
+  //         if (dbStatus === "active") {
+  //           resolvedStatus = "active";
+  //         }
+  //       }
+  //     }
+  //   } catch (err) {
+  //     console.error("Middleware live status check fallback failed:", err);
+  //   }
+  // }
 
   return NextResponse.next();
 }
