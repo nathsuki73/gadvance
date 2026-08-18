@@ -70,7 +70,6 @@ export default function WorkspacePage() {
     mutationFn: (orgId: string) => leaveOrganization(orgId),
     onSuccess: (res) => {
       if (res.success) {
-        queryClient.invalidateQueries({ queryKey: ["userProfile", userEmail] });
         queryClient.invalidateQueries({
           queryKey: ["joinedOrganizations", userEmail],
         });

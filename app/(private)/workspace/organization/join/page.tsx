@@ -1,10 +1,10 @@
 // app/(workspace)/organization/join/page.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Building2,
   ArrowLeft,
@@ -29,52 +29,46 @@ export default function JoinOrganizationPage() {
   const queryClient = useQueryClient();
 
   const urlCode = searchParams.get("code") || "";
-  const [isSearching, setIsSearching] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
-  const [orgData, setOrgData] = useState<Organization | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (status === "authenticated") {
-      if (urlCode && urlCode.trim().length === 6) {
-        handleFetchOrgByCode(urlCode.trim());
-      } else {
-        setIsSearching(false);
-        setError("Invalid or missing invitation code.");
-      }
-    }
-  }, [urlCode, status]);
+  const isValidCode = urlCode.trim().length === 6;
 
-  const handleFetchOrgByCode = async (targetCode: string) => {
-    setIsSearching(true);
-    setError(null);
-    try {
+  // 🎯 Use TanStack Query for lookup. It automatically deduplicates requests and caches results.
+  const {
+    data: orgData,
+    isLoading: isSearching,
+    error: lookupError,
+  } = useQuery<Organization, Error>({
+    queryKey: ["orgLookup", urlCode],
+    queryFn: async () => {
       const res = await apiFetch(
-        `/api/organizations/lookup?code=${encodeURIComponent(targetCode)}`,
+        `/api/organizations/lookup?code=${encodeURIComponent(urlCode.trim())}`,
       );
-
-      if (!res) return;
-
-      if (res.ok) {
-        const data = await res.json();
-        setOrgData(data);
-      } else {
+      if (!res) throw new Error("Unauthorized");
+      if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        setError(errData.message || "Invalid or expired invitation code.");
-        setOrgData(null);
+        throw new Error(
+          errData.message || "Invalid or expired invitation code.",
+        );
       }
-    } catch {
-      setError("Failed to find organization.");
-      setOrgData(null);
-    } finally {
-      setIsSearching(false);
-    }
-  };
+      return res.json();
+    },
+    enabled: status === "authenticated" && isValidCode,
+    staleTime: 1000 * 60 * 5, // Cache lookup for 5 minutes
+    retry: false,
+  });
+
+  const errorMessage =
+    actionError ||
+    (!isValidCode
+      ? "Invalid or missing invitation code."
+      : lookupError?.message);
 
   const handleConfirmJoin = async () => {
     if (!urlCode) return;
     setIsJoining(true);
-    setError(null);
+    setActionError(null);
     try {
       const res = await apiFetch("/api/organizations/join", {
         method: "POST",
@@ -84,24 +78,30 @@ export default function JoinOrganizationPage() {
       if (!res) return;
 
       if (res.ok) {
-        await queryClient.invalidateQueries({ queryKey: ["userProfile"] });
         await queryClient.invalidateQueries({ queryKey: ["userOrganization"] });
+        await queryClient.invalidateQueries({
+          queryKey: ["exploreOrganizations"],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["joinedOrganizations"],
+        });
+
         await updateSession();
         router.push("/workspace");
       } else {
         const errData = await res.json().catch(() => ({}));
-        setError(
+        setActionError(
           errData.message || "Failed to join organization. Please try again.",
         );
       }
     } catch {
-      setError("Failed to join organization. Please try again.");
+      setActionError("Failed to join organization. Please try again.");
     } finally {
       setIsJoining(false);
     }
   };
 
-  if (status === "loading" || isSearching) {
+  if (status === "loading" || (isSearching && isValidCode)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
         <Loader2 className="animate-spin text-primary/30" size={32} />
@@ -127,14 +127,13 @@ export default function JoinOrganizationPage() {
         </div>
       </nav>
 
-      {/* Main Content Container (Anchored closer to the top with proper spacing) */}
+      {/* Main Content Container */}
       <div className="flex-1 px-6 py-10 md:py-14 flex justify-center">
         <div className="w-full max-w-lg bg-white p-4 sm:p-6">
           <div className="flex flex-col items-center text-center space-y-6">
             {orgData ? (
               /* Confirm Found Organization UI */
               <>
-                {/* Verified badge repositioned to the very top */}
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-primary border border-purple-100">
                   <CheckCircle size={13} />
                   <span>Verified Workspace</span>
@@ -155,9 +154,9 @@ export default function JoinOrganizationPage() {
                   </p>
                 </div>
 
-                {error && (
+                {errorMessage && (
                   <div className="w-full p-3 rounded-xl bg-red-50 border border-red-100 text-xs text-red-600 font-medium text-center">
-                    {error}
+                    {errorMessage}
                   </div>
                 )}
 
@@ -206,9 +205,8 @@ export default function JoinOrganizationPage() {
                   </h1>
 
                   <p className="text-xs sm:text-sm text-zinc-500 font-light leading-relaxed max-w-sm mx-auto">
-                    We couldn&apos;t locate an active workspace for that code.
-                    Please verify your 6-digit code or ask your team lead for a
-                    new invite.
+                    {errorMessage ||
+                      "We couldn't locate an active workspace for that code. Please verify your 6-digit code or ask your team lead for a new invite."}
                   </p>
                 </div>
 

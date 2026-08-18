@@ -1,46 +1,13 @@
+// app/(workspace)/organization/page.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { useQuery } from "@tanstack/react-query";
-import { Building2, ArrowRight, Loader2, ArrowLeft } from "lucide-react";
-import { apiFetch } from "@/app/lib/api-client";
+import { Building2, ArrowRight, ArrowLeft } from "lucide-react";
 
-// Service fetch function using apiFetch
-async function getUserOrganization() {
-  const res = await apiFetch("/api/organizations");
-  if (!res || !res.ok) return null;
-
-  const data = await res.json();
-
-  // 🎯 Explicitly verify that data exists AND has an id
-  if (!data || !data.id) {
-    return null;
-  }
-
-  return data;
-}
-
-export default function OrganizationPage() {
+export default function JoinOrganizationPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
-
   const [code, setCode] = useState("");
-
-  // Query user's current organization state
-  const { data: orgData, isLoading } = useQuery({
-    queryKey: ["userOrganization", session?.user?.email],
-    queryFn: getUserOrganization,
-    enabled: status === "authenticated",
-  });
-
-  // 🛡️ Redirect to workspace if the user is ALREADY in an organization
-  useEffect(() => {
-    if (orgData) {
-      router.replace("/workspace");
-    }
-  }, [orgData, router]);
 
   const handleSubmitCode = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,14 +16,6 @@ export default function OrganizationPage() {
     }
   };
 
-  if (status === "loading" || isLoading || orgData) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <Loader2 className="animate-spin text-primary/30" size={32} />
-      </div>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-white text-zinc-900 font-sans relative">
       {/* Sticky Top Navigation Bar */}
@@ -64,7 +23,7 @@ export default function OrganizationPage() {
         <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
           <button
             onClick={() => router.back()}
-            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary-hover"
+            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary-hover cursor-pointer"
           >
             <ArrowLeft
               size={16}
@@ -107,7 +66,7 @@ export default function OrganizationPage() {
             <button
               type="submit"
               disabled={code.length !== 6}
-              className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover disabled:opacity-30 text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] shadow-sm shadow-violet-100"
+              className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover disabled:opacity-30 text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] shadow-sm shadow-violet-100 cursor-pointer"
             >
               <span>Continue</span>
               <ArrowRight size={14} />
