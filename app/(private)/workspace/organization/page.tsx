@@ -63,14 +63,14 @@ export default function OrganizationPage() {
       <nav className="sticky top-0 z-40 border-b border-zinc-50 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
           <button
-            onClick={() => router.push("/workspace")}
+            onClick={() => router.back()}
             className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary-hover"
           >
             <ArrowLeft
               size={16}
               className="transition-transform duration-300 group-hover:-translate-x-1"
             />
-            <span className="lowercase font-medium">back to workspace</span>
+            <span className="lowercase font-medium">back</span>
           </button>
         </div>
       </nav>
