@@ -12,7 +12,7 @@ function isOnboardingStatus(value: unknown) {
 }
 
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
   const isHomeRoute = pathname === "/";
   const isOnboardingRoute = pathname === "/onboarding";
   const isWorkspaceRoute = pathname.startsWith("/workspace");
@@ -25,7 +25,6 @@ export async function proxy(request: NextRequest) {
     "/workspace/support",
   ];
 
-  // Check if the route is a public workspace page or a subpage
   const isPublicPage = publicWorkspacePages.some(
     (page) => pathname === page || pathname.startsWith(page + "/"),
   );
@@ -51,8 +50,14 @@ export async function proxy(request: NextRequest) {
   // Require auth for protected workspace routes and onboarding
   if (!token && (isOnboardingRoute || (isWorkspaceRoute && !isPublicPage))) {
     const signInUrl = request.nextUrl.clone();
+    
+    // Ensure this matches your login page route
     signInUrl.pathname = "/auth/signin";
-    signInUrl.searchParams.set("callbackUrl", pathname || "/onboarding");
+
+    // 🎯 PRESERVE FULL URL (Pathname + Query string ?code=...)
+    const fullCallbackUrl = `${pathname}${search || ""}`;
+    signInUrl.searchParams.set("callbackUrl", fullCallbackUrl || "/onboarding");
+
     return NextResponse.redirect(signInUrl);
   }
 
@@ -63,45 +68,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(workspaceUrl);
   }
 
-  const resolvedStatus = token?.status;
-
-  // if (
-  //   isWorkspaceRoute &&
-  //   !isPublicPage &&
-  //   isOnboardingStatus(resolvedStatus) &&
-  //   token?.laravelJwt
-  // ) {
-  //   try {
-  //     const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
-  //     if (apiBaseUrl) {
-  //       const res = await fetch(`${apiBaseUrl}/api/profile`, {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Accept: "application/json",
-  //           Authorization: `Bearer ${token.laravelJwt}`,
-  //         },
-  //       });
-
-  //       if (res.ok) {
-  //         const payload = await res.json().catch(() => null);
-  //         const dbData = payload?.data ?? payload;
-  //         const dbStatus = dbData?.status?.trim().toLowerCase();
-
-  //         if (dbStatus === "active") {
-  //           resolvedStatus = "active";
-  //         }
-  //       }
-  //     }
-  //   } catch (err) {
-  //     console.error("Middleware live status check fallback failed:", err);
-  //   }
-  // }
-
   return NextResponse.next();
 }
 
-// 🔑 Alias your `proxy` function so Next.js executes it on matching routes
 export { proxy as middleware };
 
 export const config = {

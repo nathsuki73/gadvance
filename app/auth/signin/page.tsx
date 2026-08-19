@@ -2,12 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn as nextAuthSignIn, signOut, useSession } from "next-auth/react";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import { handleSignIn, handleSignOut } from "../../lib/auth";
 import ConfirmDialog from "@/app/components/ConfirmDialog";
-import logoIcon from "@/app/assets/logo.ico";
 import { useToast } from "@/app/components/context/ToastContext";
 import { OnboardingLogo } from "@/app/onboarding/_components/OnboardingLogo";
 
@@ -15,6 +14,11 @@ const SignIn = () => {
   const { data: session, status } = useSession();
   const { showToast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Read callback destination (e.g. /workspace/organization/join?code=ABC123)
+  const callbackUrl = searchParams.get("callbackUrl");
+
   const [loading, setLoading] = useState(false);
   const [showSwitchAccountDialog, setShowSwitchAccountDialog] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -35,15 +39,17 @@ const SignIn = () => {
         return;
       }
 
-      // 2. Normal redirect for active users
+      // 2. Route user: prioritize callbackUrl if provided
       const normalizedStatus = session?.user?.status?.trim().toLowerCase();
       if (normalizedStatus === "onboarding") {
         router.replace("/onboarding");
+      } else if (callbackUrl) {
+        router.replace(callbackUrl);
       } else {
         router.replace("/workspace");
       }
     }
-  }, [status, session, router]);
+  }, [status, session, router, callbackUrl]);
 
   const displayName = session?.user?.name?.trim() || "";
 
@@ -84,8 +90,14 @@ const SignIn = () => {
       const freshSession = await sessionRes.json();
       const normalizedStatus = freshSession?.user?.status?.trim().toLowerCase();
 
-      const destination =
-        normalizedStatus === "onboarding" ? "/onboarding" : "/workspace";
+      // 🎯 Prioritize the invite/callback link over default workspace
+      let destination = "/workspace";
+      if (normalizedStatus === "onboarding") {
+        destination = "/onboarding";
+      } else if (callbackUrl) {
+        destination = callbackUrl;
+      }
+
       window.location.assign(destination);
     } catch (submissionError) {
       console.error("Sign-in error:", submissionError);
@@ -93,6 +105,11 @@ const SignIn = () => {
       setLoading(false);
     }
   };
+
+  // Build the target signup URL while preserving the invitation link
+  const signUpHref = callbackUrl
+    ? `/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`
+    : "/auth/signup";
 
   return (
     <div className="min-h-screen flex bg-white font-sans text-zinc-900 overflow-hidden">
@@ -204,7 +221,7 @@ const SignIn = () => {
             <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mt-10 text-center">
               No account?{" "}
               <Link
-                href="/auth/signup"
+                href={signUpHref}
                 className="text-[#8b5cf6] hover:underline transition-colors"
               >
                 create account

@@ -2,14 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import { handleSignIn } from "../../lib/auth";
 import { handleRegistration } from "./actions";
 import { z } from "zod";
 import { signOut, useSession } from "next-auth/react";
-import logoIcon from "@/app/assets/logo.ico";
 import { useToast } from "@/app/components/context/ToastContext";
 import { OnboardingLogo } from "@/app/onboarding/_components/OnboardingLogo";
 
@@ -32,6 +30,9 @@ const SignUp = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Capture the destination callback (e.g. /workspace/organization/join?code=ABC123)
+  const callbackUrl = searchParams.get("callbackUrl");
+
   const { showToast } = useToast();
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
@@ -45,7 +46,7 @@ const SignUp = () => {
 
   useEffect(() => {
     if (status === "authenticated") {
-      const justLoggedOut = searchParams.get("loggedOut") === "1"; // add useSearchParams import
+      const justLoggedOut = searchParams.get("loggedOut") === "1";
       if (justLoggedOut) {
         signOut({ redirect: false }).finally(() => {
           window.location.href = "/auth/signin";
@@ -54,11 +55,13 @@ const SignUp = () => {
       }
       if (session?.user?.status === "onboarding") {
         router.push("/onboarding");
+      } else if (callbackUrl) {
+        router.push(callbackUrl);
       } else {
         router.push("/workspace");
       }
     }
-  }, [status, session, router, searchParams]);
+  }, [status, session, router, searchParams, callbackUrl]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -73,14 +76,7 @@ const SignUp = () => {
 
     const result = signUpSchema.safeParse(formData);
     if (!result.success) {
-      const formattedErrors: Record<string, string> = {};
       const firstErrorMessage = result.error.issues[0]?.message;
-
-      result.error.issues.forEach((issue) => {
-        formattedErrors[String(issue.path[0])] = issue.message;
-      });
-
-      // setErrors(formattedErrors);
       showToast(firstErrorMessage || "Please check the form inputs.", "error");
       return;
     }
@@ -100,16 +96,20 @@ const SignUp = () => {
           "Verification link sent! Please check your inbox.",
           "success",
         );
-        // Redirect to the Magic Link status page instead of OTP page
+
+        // Build verify-link redirect while preserving the callbackUrl
+        const callbackParam = callbackUrl
+          ? `&callbackUrl=${encodeURIComponent(callbackUrl)}`
+          : "";
+
         router.push(
           `/auth/verify-link?context=signup&email=${encodeURIComponent(
             formData.email,
-          )}`,
+          )}${callbackParam}`,
         );
       } else {
         setLoading(false);
         const errorMessage = response?.error || "Registration failed.";
-        // console.error(errorMessage);
         setErrors({ form: errorMessage });
         showToast(errorMessage, "error");
       }
@@ -122,6 +122,11 @@ const SignUp = () => {
       showToast(networkErrorMessage, "error");
     }
   };
+
+  // Build the target signin URL while keeping the callback intact
+  const signInHref = callbackUrl
+    ? `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
+    : "/auth/signin";
 
   return (
     <div className="min-h-screen flex bg-white font-sans text-zinc-900 overflow-hidden">
@@ -250,7 +255,7 @@ const SignUp = () => {
             <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mt-8 text-center">
               Already have an account?{" "}
               <Link
-                href="/auth/signin"
+                href={signInHref}
                 className="text-[#8b5cf6] hover:underline transition-colors"
               >
                 sign in
