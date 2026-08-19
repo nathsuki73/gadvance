@@ -1,7 +1,7 @@
 // app/(workspace)/organization/join/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,7 +25,7 @@ interface Organization {
 export default function JoinOrganizationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { status, update: updateSession } = useSession({ required: true });
+  const { status, update: updateSession } = useSession({ required: false });
   const queryClient = useQueryClient();
 
   const urlCode = searchParams.get("code") || "";
@@ -34,7 +34,17 @@ export default function JoinOrganizationPage() {
 
   const isValidCode = urlCode.trim().length === 6;
 
-  // 🎯 Use TanStack Query for lookup. It automatically deduplicates requests and caches results.
+  // 1. Redirect unauthenticated visitors to /auth/signin with the exact /workspace return route
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      const returnUrl = encodeURIComponent(
+        `/workspace/organization/join?code=${urlCode.trim()}`,
+      );
+      router.replace(`/auth/signin?callbackUrl=${returnUrl}`);
+    }
+  }, [status, urlCode, router]);
+
+  // 2. TanStack Query for looking up organization details
   const {
     data: orgData,
     isLoading: isSearching,
@@ -72,7 +82,7 @@ export default function JoinOrganizationPage() {
     try {
       const res = await apiFetch("/api/organizations/join", {
         method: "POST",
-        body: JSON.stringify({ code: urlCode }),
+        body: JSON.stringify({ code: urlCode.trim() }),
       });
 
       if (!res) return;
@@ -102,6 +112,15 @@ export default function JoinOrganizationPage() {
   };
 
   if (status === "loading" || (isSearching && isValidCode)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <Loader2 className="animate-spin text-primary/30" size={32} />
+      </div>
+    );
+  }
+
+  // Prevent flash while redirecting unauthenticated users
+  if (status === "unauthenticated") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
         <Loader2 className="animate-spin text-primary/30" size={32} />
@@ -181,8 +200,9 @@ export default function JoinOrganizationPage() {
                       </>
                     ) : (
                       <>
-                        <span>Confirm & Join</span>
-                        <ArrowRight size={14} />
+                        <span className="inline-flex items-center gap-2">
+                          Confirm & Join <ArrowRight size={14} />
+                        </span>
                       </>
                     )}
                   </button>
