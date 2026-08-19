@@ -9,6 +9,7 @@ import { handleSignIn, handleSignOut } from "../../lib/auth";
 import ConfirmDialog from "@/app/components/ConfirmDialog";
 import { useToast } from "@/app/components/context/ToastContext";
 import { OnboardingLogo } from "@/app/onboarding/_components/OnboardingLogo";
+import { Eye, EyeOff } from "lucide-react";
 
 const SignIn = () => {
   const { data: session, status } = useSession();
@@ -21,6 +22,7 @@ const SignIn = () => {
 
   const [loading, setLoading] = useState(false);
   const [showSwitchAccountDialog, setShowSwitchAccountDialog] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
 
   // A session is only genuinely valid if it exists, has no errors, and has a laravelJwt
@@ -55,7 +57,9 @@ const SignIn = () => {
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
-    setFormData((current) => ({ ...current, [name]: value }));
+    // Automatically lowercase email as user types to prevent mistyping
+    const processedValue = name === "email" ? value.toLowerCase() : value;
+    setFormData((current) => ({ ...current, [name]: processedValue }));
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -165,7 +169,7 @@ const SignIn = () => {
                     name="email"
                     type="email"
                     required
-                    placeholder="joe@example.com"
+                    placeholder="sample@example.com"
                     value={formData.email}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
@@ -178,15 +182,27 @@ const SignIn = () => {
                       Password
                     </label>
                   </div>
-                  <input
-                    name="password"
-                    type="password"
-                    required
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
-                  />
+                  <div className="relative">
+                    <input
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      placeholder="Enter your password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3.5 pr-10 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                   <Link
                     href="/auth/forgot-password"
                     className="text-[10px] font-bold text-[#8b5cf6] hover:text-[#7c3aed] uppercase tracking-widest transition-colors mt-3 block text-right"
@@ -198,7 +214,7 @@ const SignIn = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70"
+                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 cursor-pointer"
                 >
                   {loading ? "Signing In..." : "Sign In"}
                 </button>
