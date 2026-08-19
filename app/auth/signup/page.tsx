@@ -10,10 +10,15 @@ import { z } from "zod";
 import { signOut, useSession } from "next-auth/react";
 import { useToast } from "@/app/components/context/ToastContext";
 import { OnboardingLogo } from "@/app/onboarding/_components/OnboardingLogo";
+import { Eye, EyeOff } from "lucide-react";
 
 const signUpSchema = z
   .object({
-    email: z.string().email("Invalid email address"),
+    email: z
+      .string()
+      .trim()
+      .min(1, "Email address is required")
+      .email("Please enter a valid email address (e.g., name@example.com)"),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
@@ -37,6 +42,10 @@ const SignUp = () => {
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Password visibility states
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -76,6 +85,14 @@ const SignUp = () => {
 
     const result = signUpSchema.safeParse(formData);
     if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        if (issue.path[0]) {
+          fieldErrors[issue.path[0] as string] = issue.message;
+        }
+      });
+      setErrors(fieldErrors);
+
       const firstErrorMessage = result.error.issues[0]?.message;
       showToast(firstErrorMessage || "Please check the form inputs.", "error");
       return;
@@ -85,7 +102,7 @@ const SignUp = () => {
 
     try {
       const response = await handleRegistration(
-        formData.email,
+        formData.email.trim(),
         formData.password,
         formData.confirmPassword,
       );
@@ -104,7 +121,7 @@ const SignUp = () => {
 
         router.push(
           `/auth/verify-link?context=signup&email=${encodeURIComponent(
-            formData.email,
+            formData.email.trim(),
           )}${callbackParam}`,
         );
       } else {
@@ -173,7 +190,7 @@ const SignUp = () => {
                   <input
                     name="email"
                     type="email"
-                    placeholder="joe@example.com"
+                    placeholder="sample@example.com"
                     value={formData.email}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 rounded-xl border ${
@@ -189,39 +206,78 @@ const SignUp = () => {
 
                 {/* Password Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Password Field */}
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                       Password
                       <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <input
-                      name="password"
-                      type="password"
-                      placeholder="Password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 rounded-xl border ${
-                        errors.password ? "border-red-400" : "border-zinc-100"
-                      } focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
-                    />
+                    <div className="relative">
+                      <input
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 pr-10 rounded-xl border ${
+                          errors.password ? "border-red-400" : "border-zinc-100"
+                        } focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showPassword ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Confirm Password Field */}
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                       Confirm Password
                       <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <input
-                      name="confirmPassword"
-                      type="password"
-                      placeholder="Confirm Password"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 rounded-xl border ${
-                        errors.confirmPassword
-                          ? "border-red-400"
-                          : "border-zinc-100"
-                      } focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
-                    />
+                    <div className="relative">
+                      <input
+                        name="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm Password"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 pr-10 rounded-xl border ${
+                          errors.confirmPassword
+                            ? "border-red-400"
+                            : "border-zinc-100"
+                        } focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
+                        aria-label={
+                          showConfirmPassword
+                            ? "Hide confirm password"
+                            : "Show confirm password"
+                        }
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 {(errors.password || errors.confirmPassword) && (
@@ -233,7 +289,7 @@ const SignUp = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 mt-2"
+                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 mt-2 cursor-pointer"
                 >
                   {loading ? "Creating Account..." : "Create account"}
                 </button>
