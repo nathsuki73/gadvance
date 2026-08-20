@@ -53,13 +53,6 @@ const LogoutConfirmationDialog = ({
             Sign out
           </button>
         </div>
-
-        {/* Subtle branding anchor matching the  card footer layout */}
-        <div className="mt-8 pt-6 border-t border-zinc-100 text-center">
-          <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-widest">
-            gadvance philippines
-          </p>
-        </div>
       </div>
     </div>,
     document.body,
