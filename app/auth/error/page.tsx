@@ -3,6 +3,7 @@
 import React, { use } from "react";
 import Link from "next/link";
 import { AlertCircle, ArrowLeft, Home } from "lucide-react";
+// Adjust your logo import path if needed
 import logoIcon from "@/app/assets/logo.ico";
 
 const ERROR_COPY: Record<string, { title: string; description: string }> = {
@@ -31,12 +32,14 @@ const ERROR_COPY: Record<string, { title: string; description: string }> = {
 export default function AuthErrorPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; message?: string }>;
 }) {
-  // Use the React 'use' hook to unwrap the searchParams promise safely in a Client Component
   const params = use(searchParams);
   const errorCode = params.error || "Default";
-  const errorMessage = ERROR_COPY[errorCode] || ERROR_COPY.Default;
+
+  // Use a custom message if passed from NextAuth/Backend, otherwise use the preset dictionary
+  const customMessage = params.message;
+  const errorInfo = ERROR_COPY[errorCode] || ERROR_COPY.Default;
 
   return (
     <div className="min-h-screen flex bg-white font-sans text-zinc-900 overflow-hidden">
@@ -56,10 +59,12 @@ export default function AuthErrorPage({
               <AlertCircle size={24} strokeWidth={1.5} />
             </div>
             <h1 className="text-3xl font-bold text-zinc-900 mb-2 tracking-tight">
-              {errorMessage.title}
+              {errorInfo.title}
             </h1>
-            <p className="text-zinc-400 text-sm font-light leading-relaxed">
-              {errorMessage.description}
+            <p className="text-zinc-500 text-sm font-light leading-relaxed">
+              {customMessage
+                ? decodeURIComponent(customMessage)
+                : errorInfo.description}
             </p>
           </div>
 
@@ -76,7 +81,7 @@ export default function AuthErrorPage({
               className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
             >
               <ArrowLeft size={14} />
-              try signing in again
+              Try signing in again
             </Link>
 
             <Link
@@ -84,7 +89,7 @@ export default function AuthErrorPage({
               className="w-full border border-zinc-100 hover:bg-zinc-50 text-zinc-400 px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
             >
               <Home size={14} />
-              return home
+              Return home
             </Link>
           </div>
         </div>

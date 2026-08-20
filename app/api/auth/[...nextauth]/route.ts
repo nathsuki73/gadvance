@@ -223,54 +223,49 @@ async function exchangeGoogleForLaravelToken(params: {
   googleIdToken?: string;
 }) {
   if (!laravelAuthExchangeUrl || !jwtSharedSecret) {
-    console.warn(
-      "Missing Laravel handshake config. Set LARAVEL_AUTH_EXCHANGE_URL and LARAVEL_SSO_SECRET.",
-    );
-    return null;
+    throw new Error("Missing Laravel handshake configuration.");
   }
 
+  const response = await fetch(laravelAuthExchangeUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-SSO-Secret": jwtSharedSecret,
+    },
+    body: JSON.stringify({
+      provider: "google",
+      email: params.email,
+      image: params.image,
+      google_id: params.googleId,
+      google_id_token: params.googleIdToken,
+    }),
+  });
+
+  let rawData: unknown = {};
   try {
-    const response = await fetch(laravelAuthExchangeUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-SSO-Secret": jwtSharedSecret,
-      },
-      body: JSON.stringify({
-        provider: "google",
-        email: params.email,
-        image: params.image,
-        google_id: params.googleId,
-        google_id_token: params.googleIdToken,
-      }),
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      console.error(
-        `Laravel exchange failed (${response.status}) at ${laravelAuthExchangeUrl}: ${text || "empty response"}`,
-      );
-      return null;
-    }
-
-    let rawData: unknown = {};
-    try {
-      rawData = await response.json();
-    } catch {
-      rawData = {};
-    }
-
-    const data = mapLaravelIdentityResponse(rawData);
-    if (!data?.token) {
-      console.error("Laravel exchange response missing token field");
-      return null;
-    }
-
-    return data;
-  } catch (error) {
-    console.error("Laravel exchange request error:", error);
-    return null;
+    rawData = await response.json();
+  } catch {
+    rawData = {};
   }
+
+  if (!response.ok) {
+    const errorPayload = rawData as Record<string, unknown>;
+    const errorMessage =
+      typeof errorPayload.error === "string"
+        ? errorPayload.error
+        : typeof errorPayload.message === "string"
+          ? errorPayload.message
+          : "Authentication failed with the server.";
+
+    throw new Error(errorMessage);
+  }
+
+  const data = mapLaravelIdentityResponse(rawData);
+  if (!data?.token) {
+    throw new Error("Laravel exchange response missing token field.");
+  }
+
+  return data;
 }
 
 async function refreshLaravelToken(laravelToken: string) {
@@ -559,40 +554,44 @@ export const authOptions: NextAuthOptions = {
     },
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        const exchanged = await exchangeGoogleForLaravelToken({
-          email: user.email,
-          image: user.image,
-          googleId: account.providerAccountId,
-          googleIdToken: account.id_token,
-        });
+        try {
+          const exchanged = await exchangeGoogleForLaravelToken({
+            email: user.email,
+            image: user.image,
+            googleId: account.providerAccountId,
+            googleIdToken: account.id_token,
+          });
 
-        if (!exchanged?.token) {
-          console.error(
-            "Blocked Google sign-in because Laravel handshake did not return a valid token.",
-          );
+          if (!exchanged?.token) {
+            return `/auth/error?error=AccessDenied&message=${encodeURIComponent("Authentication token was not generated.")}`;
+          }
 
-          return false;
-        }
-
-        const mutableUser = user as typeof user & {
-          laravelAuth?: {
-            token: string;
-            status?: SupportedStatus;
-            name?: string;
-            email?: string;
-            sessionToken?: string;
+          const mutableUser = user as typeof user & {
+            laravelAuth?: {
+              token: string;
+              status?: SupportedStatus;
+              name?: string;
+              email?: string;
+              sessionToken?: string;
+            };
           };
-        };
 
-        mutableUser.laravelAuth = {
-          token: exchanged.token,
-          status: normalizeStatus(exchanged.status),
-          name: exchanged.name || user.name || undefined,
-          email: exchanged.email || user.email || undefined,
-          sessionToken: exchanged.sessionToken,
-        };
+          mutableUser.laravelAuth = {
+            token: exchanged.token,
+            status: normalizeStatus(exchanged.status),
+            name: exchanged.name || user.name || undefined,
+            email: exchanged.email || user.email || undefined,
+            sessionToken: exchanged.sessionToken,
+          };
 
-        return true;
+          return true;
+        } catch (error: any) {
+          console.error("[Google Sign-In Error]:", error.message);
+          const message = encodeURIComponent(
+            error.message || "Authentication failed.",
+          );
+          return `/auth/error?error=AccessDenied&message=${message}`;
+        }
       }
 
       return true;
