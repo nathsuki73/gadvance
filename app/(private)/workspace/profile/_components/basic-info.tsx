@@ -48,6 +48,8 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
 
   useEffect(() => {
     if (initialData) {
+      const profileObj =
+        initialData.profile || initialData.user_profile || initialData;
       setFormData({
         firstName: initialData.first_name || "",
         middleName: initialData.middle_name || "",
@@ -64,7 +66,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
         setCalculatedAge(initialData.age.toString());
       }
 
-      setGender(initialData.gender || "");
+      setGender(profileObj.gender || initialData.gender || "");
     }
   }, [initialData]);
 

@@ -1,5 +1,5 @@
 export interface ProfileData {
-  // Personal Identity
+  // Personal Identity (Flattened from Laravel Controller)
   first_name?: string;
   middle_name?: string;
   last_name?: string;
@@ -30,7 +30,7 @@ export interface ProfileData {
   avatar?: string;
   bio?: string;
 
-  // Nested Profile Relations (for API responses)
+  // Optional fallbacks if nested structures ever pass through
   profile?: ProfileData;
   user_profile?: ProfileData;
 }

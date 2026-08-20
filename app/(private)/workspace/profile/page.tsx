@@ -35,24 +35,21 @@ export default function ProfilePage() {
   const [certificateSearchQuery, setCertificateSearchQuery] =
     useState<string>("");
 
-  // 1. Fetch User Profile using React Query
-  const { data: profileResponse, isLoading: isProfileLoading } = useQuery({
-    queryKey: ["userProfile", userEmail],
-    queryFn: async () => {
-      const res = await getUserProfile();
-      if (!res.success || !res.data) {
-        throw new Error("Failed to fetch profile data");
-      }
-      return res.data;
-    },
-    enabled: status === "authenticated",
-    staleTime: 1000 * 60 * 5,
-    refetchOnWindowFocus: false,
-  });
-
-  const profileData: ProfileData | undefined = profileResponse
-    ? (profileResponse as unknown as ProfileData)
-    : undefined;
+  // 1. Fetch User Profile using React Query cleanly typed to ProfileData
+  const { data: profileData, isLoading: isProfileLoading } =
+    useQuery<ProfileData>({
+      queryKey: ["userProfile", userEmail],
+      queryFn: async () => {
+        const res = await getUserProfile();
+        if (!res.success || !res.data) {
+          throw new Error("Failed to fetch profile data");
+        }
+        return res.data as ProfileData;
+      },
+      enabled: status === "authenticated",
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false,
+    });
 
   // 2. Fetch Certificates using React Query (Cached & Optimized)
   const { data: certificatesResponse, isLoading: certsLoading } = useQuery({
@@ -169,11 +166,7 @@ export default function ProfilePage() {
               )}
               {activeTab === "contact-location" && (
                 <ContactLocationInfo
-                  initialData={
-                    profileData?.profile ||
-                    profileData?.user_profile ||
-                    profileData
-                  }
+                  initialData={profileData}
                   onSuccess={() => {}}
                 />
               )}
