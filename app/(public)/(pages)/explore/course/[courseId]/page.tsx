@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use, useCallback } from "react";
+import React, { useEffect, useState, use, useCallback, useRef } from "react";
 import { notFound, usePathname, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import CourseOverviewHeader from "./_components/CourseOverviewHeader";
@@ -10,7 +10,6 @@ import type { LearningPlan, CoursePageProps, Enrollment } from "./types";
 import { useSession } from "next-auth/react";
 import CoursePageSkeleton from "./_components/CoursePageSkeleton";
 import { forceSignOut } from "@/app/lib/api-client";
-import { getMyEnrollment } from "./service";
 
 export default function CoursePage({ params }: CoursePageProps) {
   const { status, data: session } = useSession();
@@ -26,32 +25,22 @@ export default function CoursePage({ params }: CoursePageProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Pure helper to verify if the Laravel JWT token is still fresh
-  const isTokenFresh = useCallback(() => {
-    if (status !== "authenticated" || !session?.laravelJwt || session?.error) {
-      return false;
-    }
-    try {
-      const payload = JSON.parse(atob(session.laravelJwt.split(".")[1]));
-      if (payload.exp && payload.exp * 1000 <= Date.now()) {
-        return false;
-      }
-      return true;
-    } catch {
-      return false;
-    }
-  }, [status, session]);
+  // Guard ref to ensure the API fetch runs strictly once per component mount
+  const hasFetchedRef = useRef(false);
 
-  const isFullyAuthenticated = isTokenFresh();
+  // Clean and unified authentication state check for both Google and Credentials sign-ins
+  const isFullyAuthenticated =
+    status === "authenticated" &&
+    Boolean(session?.laravelJwt && !session?.error);
 
-  // Centralized guard function: purges session if token is dead
+  // Centralized guard function: purges session if token is dead/invalid
   const ensureValidSession = useCallback(async (): Promise<boolean> => {
-    if (!isTokenFresh()) {
+    if (!isFullyAuthenticated) {
       await forceSignOut();
       return false;
     }
     return true;
-  }, [isTokenFresh]);
+  }, [isFullyAuthenticated]);
 
   // 1. Light Tab Focus Listener: Runs ONLY when user switches back to this tab
   useEffect(() => {
@@ -75,9 +64,13 @@ export default function CoursePage({ params }: CoursePageProps) {
     router.push(courseLink);
   };
 
-  // Inside your useEffect hook:
+  // 2. Fetch course details safely without double-fetching loops
   useEffect(() => {
-    if (status === "loading") return;
+    if (!courseId) return;
+
+    // Prevent duplicate fetches on initial render cycles & React Strict Mode
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
 
     const fetchCourseDetails = async () => {
       try {
@@ -101,10 +94,8 @@ export default function CoursePage({ params }: CoursePageProps) {
       }
     };
 
-    if (courseId) {
-      fetchCourseDetails();
-    }
-  }, [courseId, status, isFullyAuthenticated]);
+    fetchCourseDetails();
+  }, [courseId]);
 
   if (status === "loading" || dataLoading) {
     return <CoursePageSkeleton />;
@@ -120,7 +111,7 @@ export default function CoursePage({ params }: CoursePageProps) {
         <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
           <button
             onClick={handleBackToCourse}
-            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary"
+            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary cursor-pointer"
           >
             <ArrowLeft
               size={16}
