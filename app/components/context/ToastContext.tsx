@@ -54,44 +54,43 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ showToast, dismissToast }}>
       {children}
 
-      {/* Toast Container: Uses max-w-md and allows individual toast resizing */}
-      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 max-w-[90vw] sm:max-w-md px-4 pointer-events-none">
+      {/* Mobile-First Toast Container: Anchors nicely at bottom with safe-area padding */}
+      <div className="fixed bottom-4 left-0 right-0 z-50 flex flex-col items-center gap-2 px-3 sm:px-4 pointer-events-none">
         {toasts.map((toast) => {
           const isError = toast.type === "error";
           const borderClass = isError
-            ? "border-rose-200 hover:border-rose-300"
+            ? "border-rose-200 bg-rose-50/95 sm:bg-white/95 text-rose-900"
             : toast.type === "warning"
-              ? "border-amber-200 hover:border-amber-300"
-              : "border-violet-100 hover:border-violet-200";
+              ? "border-amber-200 bg-amber-50/95 sm:bg-white/95 text-amber-900"
+              : "border-violet-100 bg-white/95 text-zinc-800";
 
           return (
             <div
               key={toast.id}
               onClick={() => dismissToast(toast.id)}
-              className={`pointer-events-auto cursor-pointer flex items-start sm:items-center justify-between gap-3 rounded-lg border bg-white/95 px-4 py-3 shadow-lg shadow-zinc-900/5 backdrop-blur-md transition-all duration-200 animate-slide-up w-auto ${borderClass}`}
+              className={`pointer-events-auto cursor-pointer flex items-center justify-between gap-3 rounded-2xl border px-4 py-3.5 shadow-xl shadow-zinc-950/10 backdrop-blur-md transition-all duration-200 animate-slide-up w-full max-w-sm sm:max-w-md ${borderClass}`}
               role="alert"
             >
-              <div className="flex items-start sm:items-center gap-2.5 min-w-0">
-                <span className="mt-0.5 sm:mt-0">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <span className="shrink-0">
                   <ToastIcon type={toast.type} />
                 </span>
-                {/* Responsive text: wraps cleanly instead of truncating */}
-                <p className="text-xs sm:text-sm font-medium text-zinc-800 break-words leading-relaxed">
+                <p className="text-xs sm:text-sm font-medium break-words leading-relaxed">
                   {toast.message}
                 </p>
               </div>
 
-              {/* Close Button */}
+              {/* Close Button - Optimized touch target for mobile */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   dismissToast(toast.id);
                 }}
-                className="text-zinc-400 hover:text-zinc-600 transition-colors p-0.5 rounded focus:outline-none shrink-0 mt-0.5 sm:mt-0"
+                className="text-zinc-400 hover:text-zinc-600 transition-colors p-1.5 rounded-xl focus:outline-none shrink-0 cursor-pointer"
                 aria-label="Close notification"
               >
                 <svg
-                  className="w-3.5 h-3.5"
+                  className="w-4 h-4"
                   viewBox="0 0 16 16"
                   fill="none"
                   stroke="currentColor"
@@ -113,7 +112,7 @@ function ToastIcon({ type }: { type: ToastType }) {
     case "success":
       return (
         <svg
-          className="w-4 h-4 text-[#8b5cf6] shrink-0"
+          className="w-4 h-4 text-[#8b5cf6]"
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
@@ -129,7 +128,7 @@ function ToastIcon({ type }: { type: ToastType }) {
     case "warning":
       return (
         <svg
-          className="w-4 h-4 text-amber-500 shrink-0"
+          className="w-4 h-4 text-amber-500"
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
@@ -146,7 +145,7 @@ function ToastIcon({ type }: { type: ToastType }) {
     case "error":
       return (
         <svg
-          className="w-4 h-4 text-rose-500 shrink-0"
+          className="w-4 h-4 text-rose-500"
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
@@ -160,7 +159,7 @@ function ToastIcon({ type }: { type: ToastType }) {
     default:
       return (
         <svg
-          className="w-4 h-4 text-[#8b5cf6] shrink-0"
+          className="w-4 h-4 text-[#8b5cf6]"
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
