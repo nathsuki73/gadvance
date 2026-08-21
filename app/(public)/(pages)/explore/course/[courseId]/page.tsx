@@ -75,36 +75,23 @@ export default function CoursePage({ params }: CoursePageProps) {
     router.push(courseLink);
   };
 
+  // Inside your useEffect hook:
   useEffect(() => {
     if (status === "loading") return;
 
-    const fetchCourseAndEnrollment = async () => {
+    const fetchCourseDetails = async () => {
       try {
         setDataLoading(true);
         setError(false);
 
-        // 1. Fetch Course Details
+        // Single fetch for both course details and enrollment status!
         const courseData = await getLearningPlanDetails(courseId);
-        setLearningPlan(courseData);
 
-        // 2. Fetch Enrollment (Safely isolated)
-        if (isFullyAuthenticated) {
-          try {
-            const enrollmentResult = await getMyEnrollment(courseId);
-            if (
-              enrollmentResult?.success &&
-              enrollmentResult.data &&
-              (enrollmentResult.data.id ||
-                (enrollmentResult.data as any).enrollment_id)
-            ) {
-              setEnrollmentData(enrollmentResult.data as Enrollment);
-            } else {
-              setEnrollmentData(null);
-            }
-          } catch (enrollErr) {
-            console.warn("Enrollment lookup failed:", enrollErr);
-            setEnrollmentData(null);
-          }
+        if (courseData) {
+          setLearningPlan(courseData);
+          setEnrollmentData(courseData.enrollment ?? null);
+        } else {
+          setError(true);
         }
       } catch (err) {
         console.error("Course fetch error:", err);
@@ -115,7 +102,7 @@ export default function CoursePage({ params }: CoursePageProps) {
     };
 
     if (courseId) {
-      fetchCourseAndEnrollment();
+      fetchCourseDetails();
     }
   }, [courseId, status, isFullyAuthenticated]);
 
