@@ -83,9 +83,12 @@ const SignUp = () => {
   }, [status, session, router, searchParams, callbackUrl]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (errors[e.target.name]) {
-      setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
+    const { name, value } = e.target;
+    // Disallow capital casing on email as user types
+    const processedValue = name === "email" ? value.toLowerCase() : value;
+    setFormData({ ...formData, [name]: processedValue });
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -147,12 +150,16 @@ const SignUp = () => {
         setLoading(false);
         const errorMessage = response?.error || "Registration failed.";
 
-        // 🚨 Check if it's a rate limit error (429) or contains time restrictions
-        if (
+        // ⏱️ Extract the exact remaining seconds from Laravel's rate limit error message
+        const secondsMatch = errorMessage.match(/(\d+)\s*seconds?/i);
+        if (secondsMatch) {
+          const exactSeconds = parseInt(secondsMatch[1], 10);
+          setCooldown(exactSeconds);
+        } else if (
           errorMessage.toLowerCase().includes("seconds") ||
           errorMessage.toLowerCase().includes("too many")
         ) {
-          setCooldown(60); // Trigger a 60-second lockout countdown on the button
+          setCooldown(60); // Fallback to 60s if no number is matched
         }
 
         setErrors({ form: errorMessage });
@@ -308,7 +315,7 @@ const SignUp = () => {
                   </p>
                 )}
 
-                {/* Submit Button with Dynamic Cooldown text */}
+                {/* Submit Button with Dynamic Cooldown Countdown text */}
                 <button
                   type="submit"
                   disabled={loading || cooldown > 0}
