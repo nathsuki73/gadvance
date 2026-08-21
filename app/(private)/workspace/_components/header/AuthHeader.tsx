@@ -371,7 +371,7 @@ export default function AuthHeader() {
                 className="relative rounded-full p-2 text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
               >
                 <Bell className="h-5 w-5" strokeWidth={1.8} />
-                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#a78bfa]" />
+                {/* <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#a78bfa]" /> */}
               </button>
 
               <Notification
