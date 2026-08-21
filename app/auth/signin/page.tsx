@@ -21,9 +21,21 @@ const SignIn = () => {
   const callbackUrl = searchParams.get("callbackUrl");
 
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0); // ⏱️ Cooldown state in seconds
   const [showSwitchAccountDialog, setShowSwitchAccountDialog] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
+
+  // ⏱️ Handle Button Cooldown Countdown Loop
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (cooldown > 0) {
+      timer = setInterval(() => {
+        setCooldown((prev) => (prev > 1 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   // A session is only genuinely valid if it exists, has no errors, and has a laravelJwt
   const isSessionValid = Boolean(
@@ -65,6 +77,9 @@ const SignIn = () => {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    // 🛡️ Guard against rapid multi-clicking or clicking while in cooldown
+    if (loading || cooldown > 0) return;
+
     const email = formData.email.trim();
     const password = formData.password;
 
@@ -83,8 +98,21 @@ const SignIn = () => {
       });
 
       if (!result || result.error) {
-        showToast("Invalid email or password.", "error");
         setLoading(false);
+        const errorMessage = result?.error || "Invalid email or password.";
+
+        const secondsMatch = errorMessage.match(/(\d+)\s*seconds?/i);
+        if (secondsMatch) {
+          const exactSeconds = parseInt(secondsMatch[1], 10);
+          setCooldown(exactSeconds); // Sets the exact timer from Redis/Laravel!
+        } else if (
+          errorMessage.toLowerCase().includes("too many") ||
+          errorMessage.toLowerCase().includes("seconds")
+        ) {
+          setCooldown(60); // Fallback to 60 if numbers aren't matched
+        }
+
+        showToast(errorMessage, "error");
         return;
       }
 
@@ -211,12 +239,17 @@ const SignIn = () => {
                   </Link>
                 </div>
 
+                {/* Submit Button with Dynamic Cooldown & Loading states */}
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 cursor-pointer"
+                  disabled={loading || cooldown > 0}
+                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  {loading ? "Signing In..." : "Sign In"}
+                  {loading
+                    ? "Signing In..."
+                    : cooldown > 0
+                      ? `Try again in ${cooldown}s`
+                      : "Sign In"}
                 </button>
 
                 <div className="relative flex items-center py-4">

@@ -159,61 +159,51 @@ function mapLaravelIdentityResponse(
 async function completePasswordSignin(params: {
   email: string;
   password: string;
-}): Promise<LaravelIdentity | null> {
+}): Promise<LaravelIdentity> {
   if (!laravelApiBaseUrl) {
-    console.warn("Missing API URL. Set NEXT_PUBLIC_API_URL.");
-    return null;
+    throw new Error("Missing API URL. Set NEXT_PUBLIC_API_URL.");
   }
 
   const endpoint = `${laravelApiBaseUrl.replace(/\/$/, "")}/api/auth/signin`;
 
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      email: params.email,
+      password: params.password,
+    }),
+  });
+
+  let rawData: any = {};
   try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        email: params.email,
-        password: params.password,
-      }),
-    });
-
-    let rawData: unknown = {};
-    try {
-      rawData = await response.json();
-    } catch {
-      rawData = {};
-    }
-
-    const mapped = mapLaravelIdentityResponse(rawData, "active");
-    if (!response.ok || !mapped.token) {
-      const message =
-        rawData && typeof rawData === "object"
-          ? ((rawData as Record<string, unknown>).error ??
-            (rawData as Record<string, unknown>).message)
-          : undefined;
-
-      console.warn("Laravel password sign-in failed", {
-        endpoint,
-        status: response.status,
-        message: typeof message === "string" ? message : undefined,
-      });
-      return null;
-    }
-
-    return {
-      token: mapped.token,
-      status: mapped.status,
-      name: mapped.name,
-      email: mapped.email,
-      sessionToken: mapped.sessionToken,
-    };
-  } catch (error) {
-    console.error("Password sign-in request error:", error);
-    return null;
+    rawData = await response.json();
+  } catch {
+    rawData = {};
   }
+
+  // 🛑 Capture Laravel errors (including 429 rate limit or 401 invalid credentials)
+  if (!response.ok) {
+    const errorMessage =
+      rawData?.error || rawData?.message || "Invalid email or password.";
+    throw new Error(errorMessage);
+  }
+
+  const mapped = mapLaravelIdentityResponse(rawData, "active");
+  if (!mapped.token) {
+    throw new Error("Authentication token was not generated.");
+  }
+
+  return {
+    token: mapped.token,
+    status: mapped.status,
+    name: mapped.name,
+    email: mapped.email,
+    sessionToken: mapped.sessionToken,
+  };
 }
 
 async function exchangeGoogleForLaravelToken(params: {
@@ -388,7 +378,7 @@ export const authOptions: NextAuthOptions = {
         const dateOfBirth = credentials?.dateOfBirth;
 
         if (!email) {
-          return null;
+          throw new Error("Email address is required.");
         }
 
         if (otp) {
@@ -398,7 +388,7 @@ export const authOptions: NextAuthOptions = {
             dateOfBirth,
           });
           if (!completed) {
-            return null;
+            throw new Error("Invalid verification code.");
           }
 
           const status = completed.status || "onboarding";
@@ -419,14 +409,11 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (!password || password.length === 0) {
-          return null;
+          throw new Error("Password is required.");
         }
 
+        // 🚀 This will now safely bubble up Laravel errors (including 429 rate limits)
         const completed = await completePasswordSignin({ email, password });
-        if (!completed) {
-          return null;
-        }
-
         const status = completed.status || "active";
 
         return {
@@ -457,13 +444,9 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
     maxAge: 14 * 24 * 60 * 60,
-    // maxAge: 120,
   },
   callbacks: {
     async jwt({ token, user, trigger, session }) {
-      /*
-       * Initial sign-in
-       */
       if (user) {
         const authBridge = (
           user as typeof user & {
@@ -485,12 +468,9 @@ export const authOptions: NextAuthOptions = {
         }
 
         delete token.laravelJwtError;
-        return token; // skip refresh check on the very first pass
+        return token;
       }
 
-      /*
-       * Manually triggered session update
-       */
       if (trigger === "update") {
         const sessionUser = session?.user;
 
@@ -517,19 +497,12 @@ export const authOptions: NextAuthOptions = {
 
       if (typeof token.laravelJwt === "string") {
         if (shouldRefreshLaravelToken(token.laravelJwt)) {
-          console.log("[Laravel JWT] Refreshing token...");
-
           const refreshed = await refreshLaravelToken(token.laravelJwt);
 
           if (refreshed?.token) {
-            console.log("[Laravel JWT] Token refreshed successfully.");
-
             token.laravelJwt = refreshed.token;
-
             delete token.laravelJwtError;
           } else {
-            console.error("[Laravel JWT] Token refresh failed.");
-
             token.laravelJwtError = "RefreshAccessTokenError";
           }
         }
@@ -548,7 +521,7 @@ export const authOptions: NextAuthOptions = {
 
       session.laravelJwt = token.laravelJwt;
       session.sessionToken = token.sessionToken;
-      session.error = token.laravelJwtError; // NEW: surface to client
+      session.error = token.laravelJwtError;
 
       return session;
     },
@@ -586,7 +559,6 @@ export const authOptions: NextAuthOptions = {
 
           return true;
         } catch (error: any) {
-          console.error("[Google Sign-In Error]:", error.message);
           const message = encodeURIComponent(
             error.message || "Authentication failed.",
           );
