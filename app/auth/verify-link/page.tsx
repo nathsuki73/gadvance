@@ -10,26 +10,94 @@ const MagicLinkContent = () => {
   const searchParams = useSearchParams();
   const { showToast } = useToast();
 
-  const email = searchParams.get("email") || "";
+  const urlEmail = searchParams.get("email");
 
-  // Timer & Resend State
-  const [timer, setTimer] = useState(60);
+  const [email, setEmail] = useState<string>("");
+  const [isReady, setIsReady] = useState(false);
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // 🛡️ Strict URL Healing: sessionStorage is the absolute source of truth
+  useEffect(() => {
+    const storedEmail = sessionStorage.getItem("pending_verification_email");
+
+    if (storedEmail && emailRegex.test(storedEmail)) {
+      setEmail(storedEmail);
+
+      if (urlEmail !== storedEmail) {
+        window.history.replaceState(
+          null,
+          "",
+          `/auth/verify-link?email=${encodeURIComponent(storedEmail)}`,
+        );
+      }
+    } else if (urlEmail && emailRegex.test(urlEmail)) {
+      setEmail(urlEmail);
+      sessionStorage.setItem("pending_verification_email", urlEmail);
+    } else {
+      setEmail(urlEmail || storedEmail || "");
+    }
+
+    setIsReady(true);
+  }, [urlEmail]);
+
+  const storageKey = email
+    ? `magic_link_expiry_${email}`
+    : "magic_link_expiry_fallback";
+
+  const [timer, setTimer] = useState<number>(60);
   const [canResend, setCanResend] = useState(false);
   const [resending, setResending] = useState(false);
 
+  // ⏱️ Drift-Free Timestamp Sync & Calculation Loop
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (timer > 0) {
-      interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
-    } else {
-      setCanResend(true);
-    }
-    return () => clearInterval(interval);
-  }, [timer]);
+    if (!isReady) return;
+
+    const checkExpiration = () => {
+      const savedExpiry = sessionStorage.getItem(storageKey);
+      const now = Date.now();
+
+      if (savedExpiry) {
+        const timeLeft = Math.floor((Number(savedExpiry) - now) / 1000);
+        if (timeLeft > 0) {
+          setTimer(timeLeft);
+          setCanResend(false);
+        } else {
+          setTimer(0);
+          setCanResend(true);
+        }
+      } else {
+        const newExpiry = now + 60000; // 60 seconds
+        sessionStorage.setItem(storageKey, String(newExpiry));
+        setTimer(60);
+        setCanResend(false);
+      }
+    };
+
+    // Run calculation immediately on load/focus
+    checkExpiration();
+
+    // Re-check exact delta every second (and automatically corrects itself when tab regains focus)
+    const interval = setInterval(checkExpiration, 1000);
+
+    // Also recalculate instantly if the user switches back to the tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkExpiration();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isReady, storageKey]);
 
   const handleResend = async () => {
-    if (!email) {
-      showToast("No recipient email found to resend to.", "error");
+    if (!email || !emailRegex.test(email)) {
+      showToast("No valid recipient email found to resend to.", "error");
       return;
     }
 
@@ -51,6 +119,11 @@ const MagicLinkContent = () => {
 
       if (response.ok && data.success) {
         showToast("Verification link resent successfully!", "success");
+
+        // Reset target absolute timestamp for another 60s cooldown
+        const freshExpiry = Date.now() + 60000;
+        sessionStorage.setItem(storageKey, String(freshExpiry));
+
         setTimer(60);
         setCanResend(false);
       } else {
@@ -62,15 +135,6 @@ const MagicLinkContent = () => {
       setResending(false);
     }
   };
-
-  const maskEmail = (str: string) => {
-    if (!str || !str.includes("@")) return "your email address";
-    const [local, domain] = str.split("@");
-    if (local.length <= 2) return `${local[0]}*@${domain}`;
-    return `${local.slice(0, 2)}${"*".repeat(local.length - 2)}@${domain}`;
-  };
-
-  const maskedEmail = maskEmail(email);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans text-zinc-900">
@@ -90,7 +154,7 @@ const MagicLinkContent = () => {
         <div className="flex flex-col items-center gap-3 mb-8 bg-zinc-50/80 p-4 rounded-2xl border border-zinc-100">
           <div className="flex items-center gap-2 text-xs font-bold text-zinc-700">
             <Mail size={14} className="text-[#8b5cf6]" />
-            <span>{maskedEmail}</span>
+            <span>{email || "your email address"}</span>
           </div>
         </div>
 
@@ -111,8 +175,8 @@ const MagicLinkContent = () => {
           {canResend ? (
             <button
               onClick={handleResend}
-              disabled={resending}
-              className="text-[#8b5cf6] font-black text-sm hover:underline disabled:opacity-50"
+              disabled={resending || !emailRegex.test(email)}
+              className="text-[#8b5cf6] font-black text-sm hover:underline disabled:opacity-50 cursor-pointer"
             >
               {resending ? "Resending Link..." : "Resend Verification Link"}
             </button>
@@ -127,7 +191,10 @@ const MagicLinkContent = () => {
 
           <Link
             href="/auth/signup"
-            className="flex items-center gap-2 text-zinc-400 text-xs font-bold uppercase tracking-widest hover:text-zinc-600 transition-colors mt-2"
+            onClick={() =>
+              sessionStorage.removeItem("pending_verification_email")
+            }
+            className="flex items-center gap-2 text-zinc-400 text-xs font-bold uppercase tracking-widest hover:text-zinc-600 transition-colors mt-2 cursor-pointer"
           >
             <ArrowLeft size={14} /> Back to Sign Up
           </Link>
