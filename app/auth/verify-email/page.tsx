@@ -10,6 +10,7 @@ import {
   ArrowRight,
   RefreshCw,
   LogIn,
+  ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -25,8 +26,6 @@ const VerifyEmailContent = () => {
 
   const registration = searchParams.get("registration");
   const token = searchParams.get("token");
-
-  // Derive initial validity derived directly from query params
   const hasValidParams = Boolean(registration && token);
 
   const [status, setStatus] = useState<"verifying" | "success" | "error">(
@@ -39,12 +38,10 @@ const VerifyEmailContent = () => {
     hasValidParams ? "" : "Verification link is missing required parameters.",
   );
 
-  // Prevent double-execution in Next.js Strict Mode
   const hasCalledApi = useRef(false);
 
   useEffect(() => {
     if (!hasValidParams || hasCalledApi.current) return;
-
     hasCalledApi.current = true;
 
     const executeVerification = async () => {
@@ -109,9 +106,7 @@ const VerifyEmailContent = () => {
 
   return (
     <div className="min-h-screen flex bg-white font-sans text-zinc-900 overflow-hidden">
-      {/* Left Side: Main Status Card */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 md:px-24 lg:px-32 py-12 relative z-10 bg-white">
-        {/* Brand Header */}
         <div className="absolute top-8 left-8 flex items-center gap-3">
           <div className="relative h-7 w-7">
             <Image
@@ -125,9 +120,8 @@ const VerifyEmailContent = () => {
         </div>
 
         <div className="w-full max-w-md mx-auto lg:mx-0">
-          {/* STATE 1: VERIFYING IN PROGRESS */}
           {status === "verifying" && (
-            <div className="flex flex-col items-center text-center animate-in fade-in duration-300">
+            <div className="flex flex-col items-center text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-violet-50 text-[#8b5cf6] rounded-2xl mb-6 shadow-sm">
                 <Loader2 size={32} className="animate-spin" />
               </div>
@@ -140,9 +134,8 @@ const VerifyEmailContent = () => {
             </div>
           )}
 
-          {/* STATE 2: VERIFICATION SUCCESS */}
           {status === "success" && (
-            <div className="flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-400">
+            <div className="flex flex-col items-center text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl mb-6 shadow-sm border border-emerald-100">
                 <CheckCircle2 size={32} />
               </div>
@@ -162,10 +155,9 @@ const VerifyEmailContent = () => {
             </div>
           )}
 
-          {/* STATE 3: VERIFICATION FAILED */}
           {status === "error" && (
-            <div className="flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-400">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-violet-50 text-[#8b5cf6] rounded-2xl mb-6 shadow-sm border border-violet-100">
+            <div className="flex flex-col items-center text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-red-50 text-red-500 rounded-2xl mb-6 shadow-sm border border-red-100">
                 {errorType === "expired" ? (
                   <Clock size={30} />
                 ) : (
@@ -185,8 +177,8 @@ const VerifyEmailContent = () => {
                 {errorMessage}
               </p>
 
-              <div className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl p-4 mb-8 text-left">
-                <p className="text-xs text-zinc-500 leading-relaxed">
+              <div className="w-full rounded-2xl border border-red-100 bg-red-50/70 p-5 mb-8 text-left shadow-sm">
+                <p className="text-xs text-red-700 leading-relaxed font-light">
                   {errorType === "expired" &&
                     "Verification links expire after 30 minutes for security reasons. You can request a fresh link by signing up or choosing resend."}
                   {errorType === "already_exists" &&
@@ -212,14 +204,14 @@ const VerifyEmailContent = () => {
                       href="/auth/signup"
                       className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
                     >
-                      <RefreshCw size={14} /> Request New Verification Link
+                      <RefreshCw size={14} /> Request New Link
                     </Link>
 
                     <Link
                       href="/auth/signin"
-                      className="w-full bg-zinc-50 hover:bg-zinc-100 text-zinc-600 border border-zinc-200 px-8 py-3.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all text-center"
+                      className="w-full bg-zinc-50 hover:bg-zinc-100 text-zinc-600 border border-zinc-200 px-8 py-3.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 text-center"
                     >
-                      Back to Sign In
+                      <ArrowLeft size={14} /> Back to Sign In
                     </Link>
                   </>
                 )}
@@ -229,17 +221,14 @@ const VerifyEmailContent = () => {
         </div>
       </div>
 
-      {/* Right Side: Decorative Panel */}
       <div
         className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
-        style={{
-          clipPath: "ellipse(100% 100% at 100% 50%)",
-        }}
+        style={{ clipPath: "ellipse(100% 100% at 100% 50%)" }}
       >
         <div className="text-center px-12 relative z-10">
           <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">
             Empowering your <br />
-            <span className="font-semibold italic font-serif text-white">
+            <span className="font-semibold italic font-serif">
               learning journey.
             </span>
           </h2>
@@ -248,7 +237,6 @@ const VerifyEmailContent = () => {
             gender and development advancements.
           </p>
         </div>
-
         <div className="absolute bottom-12 left-0 right-0 text-center text-[10px] tracking-[0.4em] text-white/40 uppercase">
           © 2026 gadvance. all rights reserved.
         </div>
