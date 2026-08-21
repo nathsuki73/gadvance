@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/app/components/context/ToastContext";
@@ -9,7 +9,7 @@ import { useToast } from "@/app/components/context/ToastContext";
 const MagicLinkContent = () => {
   const searchParams = useSearchParams();
   const { showToast } = useToast();
-
+  const router = useRouter();
   const urlEmail = searchParams.get("email");
 
   const [email, setEmail] = useState<string>("");
@@ -17,29 +17,29 @@ const MagicLinkContent = () => {
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  // 🛡️ Strict URL Healing: sessionStorage is the absolute source of truth
+  // 🛡️ Strict Sign-Up Source of Truth: sessionStorage is required. No self-healing from arbitrary URLs.
   useEffect(() => {
     const storedEmail = sessionStorage.getItem("pending_verification_email");
 
-    if (storedEmail && emailRegex.test(storedEmail)) {
-      setEmail(storedEmail);
+    // If there is no valid stored email from sign-up, do not let them stay here!
+    if (!storedEmail || !emailRegex.test(storedEmail)) {
+      sessionStorage.removeItem("pending_verification_email");
+      router.replace("/auth/signup");
+      return;
+    }
 
-      if (urlEmail !== storedEmail) {
-        window.history.replaceState(
-          null,
-          "",
-          `/auth/verify-link?email=${encodeURIComponent(storedEmail)}`,
-        );
-      }
-    } else if (urlEmail && emailRegex.test(urlEmail)) {
-      setEmail(urlEmail);
-      sessionStorage.setItem("pending_verification_email", urlEmail);
-    } else {
-      setEmail(urlEmail || storedEmail || "");
+    // We have a valid sign-up session. Now self-heal the URL if it was broken/tampered with.
+    setEmail(storedEmail);
+    if (urlEmail !== storedEmail) {
+      window.history.replaceState(
+        null,
+        "",
+        `/auth/verify-link?email=${encodeURIComponent(storedEmail)}`,
+      );
     }
 
     setIsReady(true);
-  }, [urlEmail]);
+  }, [urlEmail, router]);
 
   const storageKey = email
     ? `magic_link_expiry_${email}`
