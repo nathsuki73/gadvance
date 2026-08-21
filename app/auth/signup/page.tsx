@@ -34,16 +34,15 @@ const signUpSchema = z
 const SignUp = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  // Capture the destination callback (e.g. /workspace/organization/join?code=ABC123)
   const callbackUrl = searchParams.get("callbackUrl");
 
   const { showToast } = useToast();
   const { data: session, status } = useSession();
+
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0); // ⏱️ Cooldown state in seconds
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Password visibility states
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -52,6 +51,17 @@ const SignUp = () => {
     password: "",
     confirmPassword: "",
   });
+
+  // ⏱️ Handle Button Cooldown Countdown Loop
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (cooldown > 0) {
+      timer = setInterval(() => {
+        setCooldown((prev) => (prev > 1 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -81,6 +91,9 @@ const SignUp = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (loading || cooldown > 0) return;
+
     setErrors({});
 
     const result = signUpSchema.safeParse(formData);
@@ -108,7 +121,6 @@ const SignUp = () => {
       );
 
       if (response?.success) {
-        setLoading(false);
         showToast(
           "Verification link sent! Please check your inbox.",
           "success",
@@ -116,29 +128,33 @@ const SignUp = () => {
 
         const cleanEmail = formData.email.trim();
 
-        // 🧹 Clean up ANY old timer keys in sessionStorage so it doesn't accumulate clutter
         Object.keys(sessionStorage).forEach((key) => {
           if (key.startsWith("magic_link_expiry_")) {
             sessionStorage.removeItem(key);
           }
         });
 
-        // Set the active pending email
         sessionStorage.setItem("pending_verification_email", cleanEmail);
 
-        // Build verify-link redirect while preserving the callbackUrl
         const callbackParam = callbackUrl
           ? `&callbackUrl=${encodeURIComponent(callbackUrl)}`
           : "";
 
         router.push(
-          `/auth/verify-link?email=${encodeURIComponent(
-            cleanEmail,
-          )}${callbackParam}`,
+          `/auth/verify-link?email=${encodeURIComponent(cleanEmail)}${callbackParam}`,
         );
       } else {
         setLoading(false);
         const errorMessage = response?.error || "Registration failed.";
+
+        // 🚨 Check if it's a rate limit error (429) or contains time restrictions
+        if (
+          errorMessage.toLowerCase().includes("seconds") ||
+          errorMessage.toLowerCase().includes("too many")
+        ) {
+          setCooldown(60); // Trigger a 60-second lockout countdown on the button
+        }
+
         setErrors({ form: errorMessage });
         showToast(errorMessage, "error");
       }
@@ -152,7 +168,6 @@ const SignUp = () => {
     }
   };
 
-  // Build the target signin URL while keeping the callback intact
   const signInHref = callbackUrl
     ? `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
     : "/auth/signin";
@@ -161,16 +176,13 @@ const SignUp = () => {
     <div className="min-h-screen flex bg-white font-sans text-zinc-900 overflow-hidden">
       {/* Left Side: Form Section */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 md:px-24 lg:px-32 py-12 relative z-10 bg-white">
-        {/* Logo - Top Left */}
         <div className="absolute top-8 left-8 flex items-center gap-3">
           <OnboardingLogo />
         </div>
 
         <div className="w-full max-w-md mx-auto lg:mx-0">
-          {/* Prevent hydration mismatch by deferring auth checks until mounted or status is resolved */}
           {status === "loading" ? (
             <div className="flex flex-col items-center justify-center py-12 opacity-0">
-              {/* Hidden placeholder matching server/client layout layout height to prevent layout shifts */}
               <div className="w-6 h-6 mb-4"></div>
               <p className="text-sm text-transparent font-medium tracking-tight">
                 Loading...
@@ -195,7 +207,6 @@ const SignUp = () => {
               </p>
 
               <form className="space-y-4" onSubmit={handleSubmit}>
-                {/* Email Address Input */}
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                     Email Address
@@ -218,9 +229,7 @@ const SignUp = () => {
                   )}
                 </div>
 
-                {/* Password Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Password Field */}
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                       Password
@@ -254,7 +263,6 @@ const SignUp = () => {
                     </div>
                   </div>
 
-                  {/* Confirm Password Field */}
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                       Confirm Password
@@ -300,12 +308,17 @@ const SignUp = () => {
                   </p>
                 )}
 
+                {/* Submit Button with Dynamic Cooldown text */}
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 mt-2 cursor-pointer"
+                  disabled={loading || cooldown > 0}
+                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed mt-2 cursor-pointer"
                 >
-                  {loading ? "Creating Account..." : "Create account"}
+                  {loading
+                    ? "Creating Account..."
+                    : cooldown > 0
+                      ? `Try again in ${cooldown}s`
+                      : "Create account"}
                 </button>
 
                 <div className="relative flex items-center py-2">
@@ -338,9 +351,7 @@ const SignUp = () => {
       {/* Right Side: Decorative Panel */}
       <div
         className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
-        style={{
-          clipPath: "ellipse(100% 100% at 100% 50%)",
-        }}
+        style={{ clipPath: "ellipse(100% 100% at 100% 50%)" }}
       >
         <div className="text-center px-12 relative z-10">
           <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">
