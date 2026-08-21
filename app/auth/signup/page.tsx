@@ -114,10 +114,17 @@ const SignUp = () => {
           "success",
         );
 
-        sessionStorage.setItem(
-          "pending_verification_email",
-          formData.email.trim(),
-        );
+        const cleanEmail = formData.email.trim();
+
+        // 🧹 Clean up ANY old timer keys in sessionStorage so it doesn't accumulate clutter
+        Object.keys(sessionStorage).forEach((key) => {
+          if (key.startsWith("magic_link_expiry_")) {
+            sessionStorage.removeItem(key);
+          }
+        });
+
+        // Set the active pending email
+        sessionStorage.setItem("pending_verification_email", cleanEmail);
 
         // Build verify-link redirect while preserving the callbackUrl
         const callbackParam = callbackUrl
@@ -126,7 +133,7 @@ const SignUp = () => {
 
         router.push(
           `/auth/verify-link?email=${encodeURIComponent(
-            formData.email.trim(),
+            cleanEmail,
           )}${callbackParam}`,
         );
       } else {
