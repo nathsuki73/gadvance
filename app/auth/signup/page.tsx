@@ -114,13 +114,18 @@ const SignUp = () => {
           "success",
         );
 
+        sessionStorage.setItem(
+          "pending_verification_email",
+          formData.email.trim(),
+        );
+
         // Build verify-link redirect while preserving the callbackUrl
         const callbackParam = callbackUrl
           ? `&callbackUrl=${encodeURIComponent(callbackUrl)}`
           : "";
 
         router.push(
-          `/auth/verify-link?context=signup&email=${encodeURIComponent(
+          `/auth/verify-link?email=${encodeURIComponent(
             formData.email.trim(),
           )}${callbackParam}`,
         );
@@ -155,17 +160,19 @@ const SignUp = () => {
         </div>
 
         <div className="w-full max-w-md mx-auto lg:mx-0">
+          {/* Prevent hydration mismatch by deferring auth checks until mounted or status is resolved */}
           {status === "loading" ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p className="text-sm text-zinc-400 font-medium tracking-tight">
-                Verifying session...
+            <div className="flex flex-col items-center justify-center py-12 opacity-0">
+              {/* Hidden placeholder matching server/client layout layout height to prevent layout shifts */}
+              <div className="w-6 h-6 mb-4"></div>
+              <p className="text-sm text-transparent font-medium tracking-tight">
+                Loading...
               </p>
             </div>
           ) : session ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-3xl font-bold text-zinc-900 mb-2 tracking-tight">
-                Welcome back!
+                Welcome!
               </h1>
               <p className="text-zinc-400 mb-10 text-sm lowercase font-light">
                 Redirecting to your workspace...
