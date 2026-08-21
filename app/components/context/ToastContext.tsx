@@ -54,8 +54,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ showToast, dismissToast }}>
       {children}
 
-      {/* Toast Container */}
-      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-full max-w-sm px-4 sm:px-0 pointer-events-none">
+      {/* Toast Container: Uses max-w-md and allows individual toast resizing */}
+      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 max-w-[90vw] sm:max-w-md px-4 pointer-events-none">
         {toasts.map((toast) => {
           const isError = toast.type === "error";
           const borderClass = isError
@@ -68,12 +68,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <div
               key={toast.id}
               onClick={() => dismissToast(toast.id)}
-              className={`pointer-events-auto cursor-pointer flex items-center justify-between gap-3 rounded-lg border bg-white/95 px-3.5 py-2.5 shadow-lg shadow-zinc-900/5 backdrop-blur-md transition-all duration-200 animate-slide-up ${borderClass}`}
+              className={`pointer-events-auto cursor-pointer flex items-start sm:items-center justify-between gap-3 rounded-lg border bg-white/95 px-4 py-3 shadow-lg shadow-zinc-900/5 backdrop-blur-md transition-all duration-200 animate-slide-up w-auto ${borderClass}`}
               role="alert"
             >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <ToastIcon type={toast.type} />
-                <p className="text-xs sm:text-sm font-medium text-zinc-800 truncate">
+              <div className="flex items-start sm:items-center gap-2.5 min-w-0">
+                <span className="mt-0.5 sm:mt-0">
+                  <ToastIcon type={toast.type} />
+                </span>
+                {/* Responsive text: wraps cleanly instead of truncating */}
+                <p className="text-xs sm:text-sm font-medium text-zinc-800 break-words leading-relaxed">
                   {toast.message}
                 </p>
               </div>
@@ -84,7 +87,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   e.stopPropagation();
                   dismissToast(toast.id);
                 }}
-                className="text-zinc-400 hover:text-zinc-600 transition-colors p-0.5 rounded focus:outline-none shrink-0"
+                className="text-zinc-400 hover:text-zinc-600 transition-colors p-0.5 rounded focus:outline-none shrink-0 mt-0.5 sm:mt-0"
                 aria-label="Close notification"
               >
                 <svg
