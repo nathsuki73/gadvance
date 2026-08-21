@@ -191,9 +191,6 @@ const MagicLinkContent = () => {
 
           <Link
             href="/auth/signup"
-            onClick={() =>
-              sessionStorage.removeItem("pending_verification_email")
-            }
             className="flex items-center gap-2 text-zinc-400 text-xs font-bold uppercase tracking-widest hover:text-zinc-600 transition-colors mt-2 cursor-pointer"
           >
             <ArrowLeft size={14} /> Back to Sign Up
