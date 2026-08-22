@@ -15,6 +15,7 @@ import "@blocknote/mantine/style.css";
 import "@blocknote/core/fonts/inter.css";
 
 import { createYouTubeBlock } from "./YoutubeBlock";
+import { createLicensedImageBlockReader } from "./LicensedImageBlockReader";
 
 let customSchemaInstance: any = null;
 
@@ -25,6 +26,7 @@ function getCustomSchema() {
         blockSpecs: {
           ...defaultBlockSpecs,
           youtube: createYouTubeBlock(),
+          licensedImage: createLicensedImageBlockReader(),
         },
       }),
     );
@@ -33,8 +35,7 @@ function getCustomSchema() {
 }
 
 /**
- * Safely sanitizes blocks and flattens legacy tables into text paragraphs
- * to prevent BlockNote schema parsing crashes in read-only mode.
+ * Safely sanitizes blocks for read-only view
  */
 function sanitizeBlocks(blocks: any[]): any[] {
   if (!Array.isArray(blocks)) return [];
@@ -44,7 +45,7 @@ function sanitizeBlocks(blocks: any[]): any[] {
 
     const type = typeof block.type === "string" ? block.type : "paragraph";
 
-    // Safely convert legacy table structures into paragraphs to avoid schema violations
+    // Safely convert legacy table structures into paragraphs
     if (type === "table") {
       const rows = block.content?.rows || [];
       const flattenedParagraphs: any[] = [];
@@ -91,6 +92,27 @@ function sanitizeBlocks(blocks: any[]): any[] {
           },
           content: [{ type: "text", text: "[Table Content]", styles: {} }],
           children: [],
+        },
+      ];
+    }
+
+    // Allow void/media blocks like youtube, licensedImage, and image to pass through safely
+    if (
+      type === "youtube" ||
+      type === "licensedImage" ||
+      type === "image" ||
+      type === "divider"
+    ) {
+      const children = Array.isArray(block.children)
+        ? sanitizeBlocks(block.children)
+        : [];
+      return [
+        {
+          id: typeof block.id === "string" ? block.id : undefined,
+          type,
+          props:
+            block.props && typeof block.props === "object" ? block.props : {},
+          children,
         },
       ];
     }
@@ -183,6 +205,35 @@ export default function BlockNoteReader({
 
   return (
     <div className="w-full border-zinc-200/85 bg-white shadow-2xs overflow-x-auto">
+      {/* 💡 Global styles to eliminate blue selection borders and hide image download toolbars */}
+      <style jsx global>{`
+        /* Remove node selection outlines across all BlockNote viewer blocks */
+        .ProseMirror-selectednode,
+        .ProseMirror-selectednode * {
+          outline: none !important;
+          box-shadow: none !important;
+          border-color: transparent !important;
+        }
+
+        /* Prevent text highlighting or element dragging on images */
+        .bn-block-content img,
+        .bn-image-block img {
+          user-select: none !important;
+          -webkit-user-drag: none !important;
+          pointer-events: auto !important;
+        }
+
+        /* Hide BlockNote's default floating image formatting menus, file action buttons, and download triggers in read mode */
+        .bn-image-toolbar,
+        .bn-file-toolbar,
+        .bn-popover,
+        [data-node-view-wrapper] .bn-image-menu,
+        button[aria-label*="Download"],
+        button[aria-label*="Image"] {
+          display: none !important;
+        }
+      `}</style>
+
       <BlockNoteView editor={editor} theme="light" editable={false} />
     </div>
   );
