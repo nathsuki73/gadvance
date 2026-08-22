@@ -117,14 +117,20 @@ export default function PageContainer({
     const elClientHeight = el.clientHeight;
     const elTotalScrollable = elScrollHeight - elClientHeight;
 
-    const docScrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
-    const docScrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+    const docScrollTop =
+      window.scrollY ||
+      document.documentElement.scrollTop ||
+      document.body.scrollTop;
+    const docScrollHeight =
+      document.documentElement.scrollHeight || document.body.scrollHeight;
     const docClientHeight = window.innerHeight;
     const docTotalScrollable = docScrollHeight - docClientHeight;
 
     const isWindowScroll = docTotalScrollable > 20 && docScrollTop > 0;
     const scrollTop = isWindowScroll ? docScrollTop : elScrollTop;
-    const totalScrollable = isWindowScroll ? docTotalScrollable : elTotalScrollable;
+    const totalScrollable = isWindowScroll
+      ? docTotalScrollable
+      : elTotalScrollable;
 
     // If page has no scroll, allow button click immediately
     if (totalScrollable <= 10) {
@@ -213,7 +219,7 @@ export default function PageContainer({
       onScroll={handleScrollCheck}
       className="flex h-full min-h-screen flex-col justify-between overflow-x-hidden overflow-y-auto bg-white scroll-smooth"
     >
-      <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
+      <div className="mx-auto w-full max-w-4xl px-0 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
         <main className="min-h-[250px] w-full overflow-x-auto">
           {isBlockNoteContent ? (
             <BlockNoteReader initialContent={pageData.content} />
@@ -279,7 +285,9 @@ export default function PageContainer({
             <ArrowDown
               size={18}
               className={`transition-colors duration-200 ${
-                canNavigateNext ? "text-[#8b5cf6] font-bold" : "text-[#8b5cf6]/50"
+                canNavigateNext
+                  ? "text-[#8b5cf6] font-bold"
+                  : "text-[#8b5cf6]/50"
               }`}
             />
           </button>
