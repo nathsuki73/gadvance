@@ -72,7 +72,7 @@ export default function SideBarNavItem({
           locked
             ? "cursor-not-allowed opacity-40 text-zinc-300"
             : active
-              ? "bg-purple-50 text-purple-600 ring-1 ring-purple-200"
+              ? "bg-purple-50 text-[#8b5cf6] ring-1 ring-purple-200"
               : "hover:bg-zinc-200/50 text-zinc-600"
         }`}
       >
@@ -93,7 +93,7 @@ export default function SideBarNavItem({
         locked
           ? "cursor-not-allowed bg-zinc-100/30 text-zinc-400"
           : active
-            ? "border-purple-100 bg-purple-50/70 text-purple-700 font-semibold"
+            ? "border-purple-100 bg-purple-50/70 text-[#8b5cf6] font-semibold"
             : "text-zinc-600 hover:bg-zinc-200/40 hover:text-zinc-900"
       }`}
     >
@@ -109,7 +109,7 @@ export default function SideBarNavItem({
       {/* Index Number */}
       <span
         className={`shrink-0 font-mono text-[11px] font-bold ${
-          active ? "text-purple-600" : "text-zinc-300"
+          active ? "text-[#8b5cf6]" : "text-zinc-300"
         }`}
       >
         {index.toString().padStart(2, "0")}

@@ -199,17 +199,23 @@ export default function ProfilePage() {
 
           {/* Search Bar */}
           <div className="mb-8">
-            <div className="relative flex items-center">
-              <Search size={18} className="absolute left-4 text-zinc-400" />
+            <div className="relative flex items-center w-full">
+              <div className="pointer-events-none absolute left-6 flex items-center justify-center text-zinc-400 z-10 select-none">
+                <Search size={18} />
+              </div>
+
               <input
                 type="text"
                 placeholder="Search certificates by title or verification code..."
                 value={certificateSearchQuery}
                 onChange={(e) => setCertificateSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-12 py-3.5 rounded-full border border-zinc-200 bg-white shadow-sm shadow-violet-500/5 focus:outline-none focus:border-[#8b5cf6] text-xs sm:text-sm text-zinc-800 placeholder-zinc-400 transition-all"
+                style={{ paddingLeft: "3.75rem", paddingRight: "3rem" }}
+                className="w-full rounded-full border border-zinc-200 bg-white py-3.5 text-xs sm:text-sm text-zinc-800 placeholder-zinc-400 shadow-sm shadow-violet-500/5 transition-all focus:border-[#8b5cf6] focus:outline-none focus:ring-1 focus:ring-[#8b5cf6]"
               />
+
               {certificateSearchQuery && (
                 <button
+                  type="button"
                   onClick={() => setCertificateSearchQuery("")}
                   className="absolute right-4 p-1 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
                   aria-label="Clear search"
@@ -222,7 +228,7 @@ export default function ProfilePage() {
 
           {certsLoading ? (
             <div className="flex h-48 w-full items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-3 border-purple-100 border-t-purple-600" />
+              <div className="h-8 w-8 animate-spin rounded-full border-3 border-purple-100 border-t-[#8b5cf6]" />
             </div>
           ) : filteredCertificates.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-white p-12 text-center shadow-sm">
@@ -259,7 +265,7 @@ export default function ProfilePage() {
                   >
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-3">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 border border-purple-100 px-3 py-1 text-[11px] font-bold text-purple-700">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 border border-purple-100 px-3 py-1 text-[11px] font-bold text-[#8b5cf6]">
                           <CheckCircle2 size={12} /> Verified Credential
                         </span>
                         <span className="font-mono text-[11px] font-semibold text-zinc-400">
@@ -292,7 +298,7 @@ export default function ProfilePage() {
                         href={cert.azure_file_path}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-purple-700 active:scale-[0.98]"
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#8b5cf6] px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-[#7c3aed] active:scale-[0.98]"
                       >
                         <Download size={14} />
                         <span>Download</span>

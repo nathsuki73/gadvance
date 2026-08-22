@@ -80,7 +80,7 @@ export const createYouTubeBlock = createReactBlockSpec(
               contentEditable={false}
               className="flex w-full items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 p-3 shadow-xs"
             >
-              <Video size={18} className="text-purple-600 shrink-0 ml-1" />
+              <Video size={18} className="text-[#8b5cf6] shrink-0 ml-1" />
               <input
                 type="text"
                 value={inputUrl}
@@ -90,7 +90,7 @@ export const createYouTubeBlock = createReactBlockSpec(
               />
               <button
                 type="submit"
-                className="flex items-center gap-1.5 rounded-xl bg-purple-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-purple-700 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 rounded-xl bg-[#8b5cf6] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#7c3aed] transition-colors cursor-pointer"
               >
                 <Play size={12} />
                 <span>Embed</span>
@@ -139,7 +139,7 @@ export const createYouTubeBlock = createReactBlockSpec(
                             onClick={() => handleUpdateWidth(w)}
                             className={`flex-1 rounded-lg py-1 text-xs font-semibold transition-colors cursor-pointer ${
                               (props.block.props.width || "100%") === w
-                                ? "bg-purple-600 text-white"
+                                ? "bg-[#8b5cf6] text-white"
                                 : "bg-zinc-100 hover:bg-zinc-200 text-zinc-700"
                             }`}
                           >
@@ -164,7 +164,7 @@ export const createYouTubeBlock = createReactBlockSpec(
                             }}
                             className={`flex-1 rounded-lg py-1 text-xs font-semibold transition-colors cursor-pointer ${
                               currentHeight === h
-                                ? "bg-purple-600 text-white"
+                                ? "bg-[#8b5cf6] text-white"
                                 : "bg-zinc-100 hover:bg-zinc-200 text-zinc-700"
                             }`}
                           >
@@ -182,7 +182,7 @@ export const createYouTubeBlock = createReactBlockSpec(
                           onChange={(e) =>
                             setCustomHeight(Number(e.target.value))
                           }
-                          className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs outline-none focus:border-purple-600"
+                          className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs outline-none focus:border-[#8b5cf6]"
                           placeholder="Height (px)"
                         />
                         <button
@@ -191,7 +191,7 @@ export const createYouTubeBlock = createReactBlockSpec(
                             handleUpdateHeight(customHeight);
                             setShowSettings(false);
                           }}
-                          className="rounded-lg bg-purple-600 p-1 text-white hover:bg-purple-700 cursor-pointer shrink-0"
+                          className="rounded-lg bg-[#8b5cf6] p-1 text-white hover:bg-[#7c3aed] cursor-pointer shrink-0"
                         >
                           <Check size={14} />
                         </button>

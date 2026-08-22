@@ -58,17 +58,17 @@ type ModuleOverviewHeaderProps = {
 const getItemIcon = (itemType?: string, assessmentType?: string | null) => {
   if (itemType === "assessment") {
     if (assessmentType === "pre_test") {
-      return <ClipboardCheck size={14} className="text-purple-600 shrink-0" />;
+      return <ClipboardCheck size={14} className="text-[#8b5cf6] shrink-0" />;
     }
     if (assessmentType === "post_test") {
-      return <GraduationCap size={14} className="text-purple-600 shrink-0" />;
+      return <GraduationCap size={14} className="text-[#8b5cf6] shrink-0" />;
     }
-    return <ClipboardCheck size={14} className="text-purple-600 shrink-0" />;
+    return <ClipboardCheck size={14} className="text-[#8b5cf6] shrink-0" />;
   }
   if (itemType === "page") {
-    return <FileText size={14} className="text-purple-600 shrink-0" />;
+    return <FileText size={14} className="text-[#8b5cf6] shrink-0" />;
   }
-  return <PlayCircle size={14} className="text-purple-600 shrink-0" />;
+  return <PlayCircle size={14} className="text-[#8b5cf6] shrink-0" />;
 };
 
 const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
@@ -109,7 +109,7 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
             <button
               type="button"
               onClick={handleContinueLearning}
-              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-purple-600/20 transition-all hover:bg-purple-700 active:scale-[0.98] cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-purple-600/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] cursor-pointer"
             >
               Continue Learning
               <ChevronRight size={14} strokeWidth={2.5} />
@@ -204,14 +204,14 @@ const ModuleOverviewHeader = ({ module }: ModuleOverviewHeaderProps) => {
                                   item.item_type,
                                   item.assessment_type,
                                 )}
-                                <span className="font-medium text-zinc-700 group-hover:text-purple-600 transition-colors truncate">
+                                <span className="font-medium text-zinc-700 group-hover:text-[#7c3aed] transition-colors truncate">
                                   {item.title}
                                 </span>
                               </div>
 
                               <ChevronRight
                                 size={14}
-                                className="text-zinc-300 group-hover:text-purple-600 transition-colors shrink-0"
+                                className="text-zinc-300 group-hover:text-[#7c3aed] transition-colors shrink-0"
                               />
                             </Link>
                           );

@@ -283,7 +283,7 @@ export default function AssessmentContainer({
   if (isLoading) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white p-6">
-        <div className="flex flex-col items-center gap-3 text-purple-600">
+        <div className="flex flex-col items-center gap-3 text-[#8b5cf6]">
           <Loader2 size={32} className="animate-spin" />
           <p className="text-xs font-semibold text-zinc-500">
             Loading assessment module...
@@ -598,7 +598,7 @@ export default function AssessmentContainer({
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-100">
               <div
-                className="h-full bg-purple-600 transition-all duration-300 ease-out"
+                className="h-full bg-[#8b5cf6] transition-all duration-300 ease-out"
                 style={{ width: `${currentProgressPercent}%` }}
               />
             </div>
@@ -653,7 +653,7 @@ export default function AssessmentContainer({
                         className="flex items-center justify-between rounded-xl border border-purple-200/80 bg-white p-3 text-xs font-semibold text-zinc-800 shadow-2xs transition-all hover:border-purple-400 hover:bg-purple-50/50"
                       >
                         <span className="flex items-center gap-2">
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-[10px] font-bold text-purple-700">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-[10px] font-bold text-[#8b5cf6]">
                             {idx + 1}
                           </span>
                           <span>Target Section Block #{idx + 1}</span>
@@ -674,7 +674,7 @@ export default function AssessmentContainer({
                 <button
                   type="button"
                   onClick={() => setShowReview((prev) => !prev)}
-                  className="flex w-full items-center justify-between rounded-2xl border border-zinc-200/80 bg-zinc-50/70 px-5 py-3.5 text-left transition-all hover:border-purple-300 hover:bg-purple-50/30 cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-2xl border border-zinc-200/80 bg-zinc-50/70 px-5 py-3.5 text-left transition-all hover:border-[#8b5cf6] hover:bg-[#7c3aed] cursor-pointer"
                 >
                   <span className="text-xs font-bold uppercase tracking-wider text-zinc-700">
                     {isPoll ? "View Poll Results" : "Review Submission"}
@@ -682,7 +682,7 @@ export default function AssessmentContainer({
                   <ChevronRight
                     size={18}
                     className={`text-zinc-500 transition-transform duration-200 ${
-                      showReview ? "rotate-90 text-purple-600" : ""
+                      showReview ? "rotate-90 text-[#8b5cf6]" : ""
                     }`}
                   />
                 </button>
@@ -710,7 +710,7 @@ export default function AssessmentContainer({
               <button
                 type="button"
                 onClick={onNext}
-                className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-purple-600/20 transition-all cursor-pointer hover:bg-purple-700 active:scale-[0.98]"
+                className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-[#8b5cf6]/20 transition-all cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98]"
               >
                 <span>Continue to Next Item</span>
                 <ChevronRight size={16} />
@@ -745,7 +745,7 @@ export default function AssessmentContainer({
                   type="button"
                   onClick={handleSubmitSinglePollVote}
                   disabled={!isCurrentAnswered}
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-purple-600 px-6 py-2.5 text-xs font-bold text-white shadow-xs transition-all cursor-pointer hover:bg-purple-700 active:scale-[0.98] disabled:opacity-40"
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-2.5 text-xs font-bold text-white shadow-xs transition-all cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-40"
                 >
                   <CheckCircle2 size={16} />
                   <span>Submit Vote</span>
@@ -755,7 +755,7 @@ export default function AssessmentContainer({
                   type="button"
                   onClick={handleNextQuestion}
                   disabled={!isCurrentAnswered}
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-purple-600 px-6 py-2.5 text-xs font-bold text-white shadow-xs transition-all cursor-pointer hover:bg-purple-700 active:scale-[0.98] disabled:opacity-40"
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-2.5 text-xs font-bold text-white shadow-xs transition-all cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-40"
                 >
                   <span>Next</span>
                   <ChevronRight size={16} />
@@ -765,7 +765,7 @@ export default function AssessmentContainer({
                   type="button"
                   onClick={handleFinalSubmit}
                   disabled={!isCurrentAnswered || isSubmitting}
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-purple-600 px-6 py-2.5 text-xs font-bold text-white shadow-xs transition-all cursor-pointer hover:bg-purple-700 active:scale-[0.98] disabled:opacity-40"
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-2.5 text-xs font-bold text-white shadow-xs transition-all cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-40"
                 >
                   {isSubmitting ? (
                     <Loader2 size={16} className="animate-spin" />

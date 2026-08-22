@@ -57,7 +57,7 @@ export function ResultsSummary({
           <div
             className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-xs shrink-0 ${
               settings.type === "poll"
-                ? "bg-purple-600"
+                ? "bg-[#8b5cf6]"
                 : isPassed
                   ? "bg-emerald-600"
                   : "bg-rose-600"
@@ -99,13 +99,13 @@ export function ResultsSummary({
       {settings.type === "poll" ? (
         /* Poll Submission Confirmation Card */
         <div className="rounded-2xl border border-purple-200/80 bg-purple-50/50 p-6 text-center space-y-2">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 text-purple-700">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 text-[#8b5cf6]">
             <CheckCircle2 size={24} />
           </div>
-          <h3 className="text-sm font-bold text-purple-950">
+          <h3 className="text-sm font-bold text-[#8b5cf6]">
             Thank you for participating!
           </h3>
-          <p className="text-xs text-purple-800/80 max-w-md mx-auto leading-relaxed">
+          <p className="text-xs text-[#8b5cf6] max-w-md mx-auto leading-relaxed">
             Your vote has been added to the total response count. Review the
             breakdown below.
           </p>

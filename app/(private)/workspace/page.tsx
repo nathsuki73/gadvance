@@ -418,7 +418,7 @@ function RecentlyViewedSection({
       {/* Slide Counter / Header Row */}
       {modules.length > 1 && (
         <div className="flex items-center justify-between border-b border-[#8b5cf6] pb-3 mb-4">
-          <span className="text-[10px] font-bold tracking-wider text-purple-600 uppercase">
+          <span className="text-[10px] font-bold tracking-wider text-[#8b5cf6] uppercase">
             Module {currentIndex + 1} of {modules.length}
           </span>
 
@@ -518,7 +518,7 @@ function StatCard({ icon, label, count }: StatCardProps) {
         {icon}
       </div>
       <div className="flex items-baseline gap-2 mt-2">
-        <span className="text-4xl font-light tracking-tight text-purple-700">
+        <span className="text-4xl font-light tracking-tight text-[#8b5cf6]">
           {count}
         </span>
         <span className="text-xs text-zinc-400 font-light lowercase">

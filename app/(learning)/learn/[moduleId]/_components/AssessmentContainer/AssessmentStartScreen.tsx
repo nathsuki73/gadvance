@@ -19,7 +19,7 @@ export function AssessmentStartScreen({
   return (
     <div className="flex flex-col items-center justify-center py-6 sm:py-10 text-center">
       {/* Question Count Badge */}
-      <div className="mb-6 inline-flex items-center gap-1.5 rounded-full border border-purple-100 bg-purple-50/60 px-3.5 py-1 text-xs font-semibold text-purple-700">
+      <div className="mb-6 inline-flex items-center gap-1.5 rounded-full border border-purple-100 bg-purple-50/60 px-3.5 py-1 text-xs font-semibold text-[#8b5cf6]">
         <HelpCircle size={14} />
         <span>
           {totalItems} {totalItems === 1 ? "Question" : "Questions"}
@@ -43,7 +43,7 @@ export function AssessmentStartScreen({
         <button
           type="button"
           onClick={onStart}
-          className="group relative inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-purple-600 px-8 py-3 text-xs font-semibold text-white shadow-md shadow-purple-600/20 transition-all duration-200 cursor-pointer hover:bg-purple-700 active:scale-[0.98] sm:text-sm"
+          className="group relative inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-8 py-3 text-xs font-semibold text-white shadow-md shadow-[#8b5cf6]/20 transition-all duration-200 cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98] sm:text-sm"
         >
           <span>Start Assessment</span>
           <ArrowRight

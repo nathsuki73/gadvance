@@ -44,17 +44,17 @@ type ModuleLessonPreviewProps = {
 const getItemIcon = (itemType?: string, assessmentType?: string | null) => {
   if (itemType === "assessment") {
     if (assessmentType === "pre_test") {
-      return <ClipboardCheck size={16} className="text-purple-600 shrink-0" />;
+      return <ClipboardCheck size={16} className="text-[#8b5cf6] shrink-0" />;
     }
     if (assessmentType === "post_test") {
-      return <GraduationCap size={16} className="text-purple-600 shrink-0" />;
+      return <GraduationCap size={16} className="text-[#8b5cf6] shrink-0" />;
     }
-    return <ClipboardCheck size={16} className="text-purple-600 shrink-0" />;
+    return <ClipboardCheck size={16} className="text-[#8b5cf6] shrink-0" />;
   }
   if (itemType === "page") {
-    return <FileText size={16} className="text-purple-600 shrink-0" />;
+    return <FileText size={16} className="text-[#8b5cf6] shrink-0" />;
   }
-  return <PlayCircle size={16} className="text-purple-600 shrink-0" />;
+  return <PlayCircle size={16} className="text-[#8b5cf6] shrink-0" />;
 };
 
 const ModuleLessonPreview = ({ module }: ModuleLessonPreviewProps) => {
@@ -142,14 +142,14 @@ const ModuleLessonPreview = ({ module }: ModuleLessonPreviewProps) => {
                                 item.item_type,
                                 item.assessment_type,
                               )}
-                              <h5 className="text-sm font-medium text-zinc-800 group-hover:text-purple-600 transition-colors">
+                              <h5 className="text-sm font-medium text-zinc-800 group-hover:text-[#7c3aed]transition-colors">
                                 {item.title}
                               </h5>
                             </div>
 
                             <ChevronRight
                               size={16}
-                              className="text-zinc-300 group-hover:text-purple-600 transition-colors shrink-0"
+                              className="text-zinc-300 group-hover:text-[#7c3aed] transition-colors shrink-0"
                             />
                           </Link>
                         );

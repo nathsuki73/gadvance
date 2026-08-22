@@ -12,7 +12,7 @@ import "@blocknote/core/fonts/inter.css";
 const BlockNoteReader = dynamic(() => import("./BlockNoteReader"), {
   ssr: false,
   loading: () => (
-    <div className="flex flex-col items-center justify-center py-12 gap-3 text-purple-600">
+    <div className="flex flex-col items-center justify-center py-12 gap-3 text-[#8b5cf6]">
       <Loader2 size={28} className="animate-spin" />
       <p className="text-xs font-semibold text-zinc-500">
         Loading Page Content...
@@ -52,7 +52,6 @@ export default function PageContainer({
     setScrollProgress(initialCompleted ? 100 : 0);
   }, [pageId, initialCompleted]);
 
-  // 🔑 Cached via React Query: Fetches page content once, then caches it in memory permanently during the session
   const {
     data: pageData,
     isLoading: loading,
@@ -95,46 +94,15 @@ export default function PageContainer({
       };
     },
     enabled: Boolean(pageId) && sessionStatus !== "loading",
-    staleTime: Infinity, // Never refetch once loaded
-    gcTime: 1000 * 60 * 30, // Keep in cache for 30 mins
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 30,
   });
 
   const error = queryError
     ? "Unable to load page content. Please try again."
     : null;
 
-  // Auto-Scroll & Highlight effect for Remedial Anchor Hashes (#block_id)
-  useEffect(() => {
-    if (loading || !pageData) return;
-
-    const handleHashScroll = () => {
-      const hash = window.location.hash;
-      if (!hash) return;
-
-      const blockId = hash.replace("#", "");
-      const targetElement =
-        document.getElementById(blockId) ||
-        document.querySelector(`[data-id="${blockId}"]`);
-
-      if (targetElement && containerRef.current) {
-        targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
-        targetElement.classList.add(
-          "bg-purple-100/80",
-          "transition-colors",
-          "duration-500",
-          "rounded-xl",
-          "p-2",
-        );
-        setTimeout(() => {
-          targetElement.classList.remove("bg-purple-100/80");
-        }, 3000);
-      }
-    };
-
-    const timer = setTimeout(handleHashScroll, 500);
-    return () => clearTimeout(timer);
-  }, [loading, pageData]);
-
+  // Track scroll position without firing onComplete
   const handleScrollCheck = useCallback(() => {
     if (isCompleted) {
       setScrollProgress(100);
@@ -144,44 +112,52 @@ export default function PageContainer({
     const el = containerRef.current;
     if (!el) return;
 
-    const { scrollTop, scrollHeight, clientHeight } = el;
-    const totalScrollable = scrollHeight - clientHeight;
+    const elScrollTop = el.scrollTop;
+    const elScrollHeight = el.scrollHeight;
+    const elClientHeight = el.clientHeight;
+    const elTotalScrollable = elScrollHeight - elClientHeight;
 
-    if (totalScrollable <= 0) {
+    const docScrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+    const docScrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+    const docClientHeight = window.innerHeight;
+    const docTotalScrollable = docScrollHeight - docClientHeight;
+
+    const isWindowScroll = docTotalScrollable > 20 && docScrollTop > 0;
+    const scrollTop = isWindowScroll ? docScrollTop : elScrollTop;
+    const totalScrollable = isWindowScroll ? docTotalScrollable : elTotalScrollable;
+
+    // If page has no scroll, allow button click immediately
+    if (totalScrollable <= 10) {
       setScrollProgress(100);
-      setIsCompleted(true);
-      onComplete();
       return;
     }
 
-    const currentProgress = Math.min(
+    const currentPercent = Math.min(
       100,
-      Math.max(0, (scrollTop / totalScrollable) * 100),
+      Math.max(0, Math.round((scrollTop / totalScrollable) * 100)),
     );
-    setScrollProgress(currentProgress);
 
-    const distanceFromBottom = totalScrollable - scrollTop;
-    if (distanceFromBottom <= 100) {
-      setIsCompleted(true);
-      onComplete();
-    }
-  }, [isCompleted, onComplete]);
+    setScrollProgress(currentPercent);
+  }, [isCompleted]);
 
   useEffect(() => {
-    if (loading || !pageData) return;
+    const el = containerRef.current;
+    if (!el) return;
 
-    const timer = setTimeout(() => {
-      handleScrollCheck();
-    }, 300);
+    el.addEventListener("scroll", handleScrollCheck, { passive: true });
+    window.addEventListener("scroll", handleScrollCheck, { passive: true });
 
-    return () => clearTimeout(timer);
-  }, [loading, pageData, handleScrollCheck]);
+    return () => {
+      el.removeEventListener("scroll", handleScrollCheck);
+      window.removeEventListener("scroll", handleScrollCheck);
+    };
+  }, [handleScrollCheck]);
 
   if (loading || sessionStatus === "loading") {
     return (
-      <div className="flex h-[100dvh] w-full items-center justify-center bg-white p-6">
+      <div className="flex h-full w-full items-center justify-center bg-white p-6">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#8b5cf6]" />
           <p className="text-xs font-medium text-zinc-400">
             Loading page content...
           </p>
@@ -192,7 +168,7 @@ export default function PageContainer({
 
   if (error) {
     return (
-      <div className="flex h-[100dvh] w-full items-center justify-center bg-white p-6">
+      <div className="flex h-full w-full items-center justify-center bg-white p-6">
         <div className="flex max-w-md flex-col items-center text-center">
           <AlertCircle className="h-10 w-10 text-rose-500 mb-3" />
           <h3 className="text-base font-semibold text-zinc-800">
@@ -218,13 +194,24 @@ export default function PageContainer({
   const strokeDashoffset =
     circumference - (displayProgress / 100) * circumference;
 
-  const canNavigateNext = isCompleted || displayProgress >= 90;
+  const canNavigateNext = isCompleted || displayProgress >= 85;
+
+  // Complete and advance ONLY on explicit user click
+  const handleButtonClick = () => {
+    if (!canNavigateNext) return;
+
+    if (!isCompleted) {
+      setIsCompleted(true);
+      onComplete();
+    }
+    onNext();
+  };
 
   return (
     <div
       ref={containerRef}
       onScroll={handleScrollCheck}
-      className="flex h-[100dvh] flex-col justify-between overflow-x-hidden overflow-y-auto bg-white scroll-smooth"
+      className="flex h-full min-h-screen flex-col justify-between overflow-x-hidden overflow-y-auto bg-white scroll-smooth"
     >
       <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
         <main className="min-h-[250px] w-full overflow-x-auto">
@@ -251,17 +238,13 @@ export default function PageContainer({
         <div className="mx-auto flex max-w-4xl items-center justify-end">
           <button
             type="button"
-            onClick={() => {
-              if (canNavigateNext) {
-                onNext();
-              }
-            }}
+            onClick={handleButtonClick}
             disabled={!canNavigateNext}
-            aria-label={canNavigateNext ? "Next Item" : "Reading Progress"}
+            aria-label="Next Item"
             className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all ${
               canNavigateNext
-                ? "cursor-pointer hover:scale-105 active:scale-95"
-                : "cursor-default"
+                ? "cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
+                : "cursor-default opacity-70"
             }`}
           >
             <svg
@@ -279,7 +262,7 @@ export default function PageContainer({
                 cy={size / 2}
               />
               <circle
-                className="text-purple-600 transition-all duration-300 ease-out"
+                className="text-[#8b5cf6] transition-all duration-300 ease-out"
                 stroke="currentColor"
                 fill="transparent"
                 strokeWidth={strokeWidth}
@@ -292,12 +275,11 @@ export default function PageContainer({
               />
             </svg>
 
+            {/* Always downward facing arrow */}
             <ArrowDown
               size={18}
               className={`transition-colors duration-200 ${
-                canNavigateNext
-                  ? "text-purple-600 font-bold"
-                  : "text-purple-400"
+                canNavigateNext ? "text-[#8b5cf6] font-bold" : "text-[#8b5cf6]/50"
               }`}
             />
           </button>

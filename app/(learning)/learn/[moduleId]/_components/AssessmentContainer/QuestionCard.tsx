@@ -86,11 +86,11 @@ export function QuestionCard({
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-purple-600">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#8b5cf6]">
               Question {index + 1}
             </span>
             {isPoll && (
-              <span className="rounded-md border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700">
+              <span className="rounded-md border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-[#8b5cf6]">
                 Opinion Poll
               </span>
             )}
@@ -203,7 +203,7 @@ export function QuestionCard({
                   {showPollDistribution && (
                     <span
                       className={`text-[11px] font-semibold transition-opacity duration-300 ${
-                        isSelected ? "text-purple-800" : "text-zinc-500"
+                        isSelected ? "text-[#8b5cf6]" : "text-zinc-500"
                       }`}
                     >
                       {votesCount} {votesCount === 1 ? "vote" : "votes"}
@@ -225,7 +225,7 @@ export function QuestionCard({
               {showPollDistribution && (
                 <div
                   className={`w-12 shrink-0 text-right font-mono text-xs font-bold ${
-                    isSelected ? "text-purple-600" : "text-zinc-400"
+                    isSelected ? "text-[#8b5cf6]" : "text-zinc-400"
                   }`}
                 >
                   {percent}%
@@ -279,8 +279,8 @@ export function QuestionCard({
       )}
 
       {showPollDistribution && (
-        <div className="flex items-center gap-2 border-t border-zinc-200/60 pt-2 text-[11px] font-medium text-purple-700">
-          <BarChart3 size={14} className="text-purple-600 shrink-0" />
+        <div className="flex items-center gap-2 border-t border-zinc-200/60 pt-2 text-[11px] font-medium text-[#8b5cf6]">
+          <BarChart3 size={14} className="text-[#8b5cf6] shrink-0" />
           <span>Total votes calculated across all learner submissions.</span>
         </div>
       )}
