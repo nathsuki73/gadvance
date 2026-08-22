@@ -43,14 +43,35 @@ export default function PageContainer({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
+
   const [isCompleted, setIsCompleted] = useState(initialCompleted);
+  const [hasReachedBottom, setHasReachedBottom] = useState(initialCompleted);
+  const [hasSpentMinimumTime, setHasSpentMinimumTime] = useState(initialCompleted);
   const [scrollProgress, setScrollProgress] = useState(
     initialCompleted ? 100 : 0
   );
 
+  // Reset states on item change
   useEffect(() => {
     setIsCompleted(initialCompleted);
+    setHasReachedBottom(initialCompleted);
+    setHasSpentMinimumTime(initialCompleted);
     setScrollProgress(initialCompleted ? 100 : 0);
+  }, [pageId, initialCompleted]);
+
+  // Minimum dwell timer (3 seconds) to prevent instant skip on short content
+  useEffect(() => {
+    if (initialCompleted) {
+      setHasSpentMinimumTime(true);
+      return;
+    }
+
+    setHasSpentMinimumTime(false);
+    const timer = setTimeout(() => {
+      setHasSpentMinimumTime(true);
+    }, 5000);
+
+    return () => clearTimeout(timer);
   }, [pageId, initialCompleted]);
 
   const {
@@ -103,7 +124,7 @@ export default function PageContainer({
     ? "Unable to load page content. Please try again."
     : null;
 
-  // ─── APPROACH 1: INTERSECTION OBSERVER ON BOTTOM SENTINEL ───
+  // Bottom Sentinel Observer
   useEffect(() => {
     if (isCompleted || loading || !pageData) return;
 
@@ -113,12 +134,12 @@ export default function PageContainer({
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          // If the bottom is in view (either page is short on load or user scrolled to bottom)
+          setHasReachedBottom(true);
           setScrollProgress(100);
         }
       },
       {
-        root: null, // observes viewport / scrolling container
+        root: null,
         threshold: 0.1,
       }
     );
@@ -130,9 +151,9 @@ export default function PageContainer({
     };
   }, [pageId, isCompleted, loading, pageData]);
 
-  // Track gradual visual percentage for long content
+  // Partial scroll tracking for the visual SVG dial
   const handleScrollCheck = useCallback(() => {
-    if (isCompleted || scrollProgress >= 100) return;
+    if (isCompleted || hasReachedBottom) return;
 
     const el = containerRef.current;
     if (!el) return;
@@ -157,8 +178,8 @@ export default function PageContainer({
       ? docTotalScrollable
       : elTotalScrollable;
 
-    // Content fits without scrolling
     if (totalScrollable <= 15) {
+      setHasReachedBottom(true);
       setScrollProgress(100);
       return;
     }
@@ -169,7 +190,7 @@ export default function PageContainer({
     );
 
     setScrollProgress((prev) => Math.max(prev, currentPercent));
-  }, [isCompleted, scrollProgress]);
+  }, [isCompleted, hasReachedBottom]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -225,7 +246,9 @@ export default function PageContainer({
   const strokeDashoffset =
     circumference - (displayProgress / 100) * circumference;
 
-  const canNavigateNext = isCompleted || displayProgress >= 85;
+  // Strict Unlock Condition: Must be already completed OR (reached 100% bottom + minimum time spent)
+  const canNavigateNext =
+    isCompleted || (hasReachedBottom && scrollProgress >= 100 && hasSpentMinimumTime);
 
   const handleButtonClick = () => {
     if (!canNavigateNext) return;
@@ -262,7 +285,7 @@ export default function PageContainer({
             </div>
           )}
 
-          {/* Bottom Sentinel: Triggers 100% progress when reached / on load if content is short */}
+          {/* Bottom Sentinel: Positioned right at the end of the text/content */}
           <div
             ref={bottomSentinelRef}
             className="h-2 w-full opacity-0 pointer-events-none"
@@ -280,8 +303,8 @@ export default function PageContainer({
             aria-label="Next Item"
             className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all ${
               canNavigateNext
-                ? "cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
-                : "cursor-default opacity-70"
+                ? "cursor-pointer hover:scale-105 active:scale-95 shadow-md"
+                : "cursor-not-allowed opacity-40 grayscale"
             }`}
           >
             <svg
@@ -312,13 +335,12 @@ export default function PageContainer({
               />
             </svg>
 
-            {/* Always downward facing arrow */}
             <ArrowDown
               size={18}
               className={`transition-colors duration-200 ${
                 canNavigateNext
                   ? "text-[#8b5cf6] font-bold"
-                  : "text-[#8b5cf6]/50"
+                  : "text-[#8b5cf6]/60"
               }`}
             />
           </button>
