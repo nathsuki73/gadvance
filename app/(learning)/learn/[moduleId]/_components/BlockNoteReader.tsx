@@ -16,6 +16,7 @@ import "@blocknote/core/fonts/inter.css";
 
 import { createYouTubeBlock } from "./YoutubeBlock";
 import { createLicensedImageBlockReader } from "./LicensedImageBlockReader";
+import { createImageBlockReader } from "./ImageBlockReader";
 
 let customSchemaInstance: any = null;
 
@@ -25,6 +26,7 @@ function getCustomSchema() {
       BlockNoteSchema.create({
         blockSpecs: {
           ...defaultBlockSpecs,
+          image: createImageBlockReader(),
           youtube: createYouTubeBlock(),
           licensedImage: createLicensedImageBlockReader(),
         },
