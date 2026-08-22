@@ -42,9 +42,10 @@ export default function PageContainer({
   const token = session?.laravelJwt;
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const bottomSentinelRef = useRef<HTMLDivElement>(null);
   const [isCompleted, setIsCompleted] = useState(initialCompleted);
   const [scrollProgress, setScrollProgress] = useState(
-    initialCompleted ? 100 : 0,
+    initialCompleted ? 100 : 0
   );
 
   useEffect(() => {
@@ -102,12 +103,36 @@ export default function PageContainer({
     ? "Unable to load page content. Please try again."
     : null;
 
-  // Track scroll position without firing onComplete
+  // ─── APPROACH 1: INTERSECTION OBSERVER ON BOTTOM SENTINEL ───
+  useEffect(() => {
+    if (isCompleted || loading || !pageData) return;
+
+    const sentinel = bottomSentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          // If the bottom is in view (either page is short on load or user scrolled to bottom)
+          setScrollProgress(100);
+        }
+      },
+      {
+        root: null, // observes viewport / scrolling container
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [pageId, isCompleted, loading, pageData]);
+
+  // Track gradual visual percentage for long content
   const handleScrollCheck = useCallback(() => {
-    if (isCompleted) {
-      setScrollProgress(100);
-      return;
-    }
+    if (isCompleted || scrollProgress >= 100) return;
 
     const el = containerRef.current;
     if (!el) return;
@@ -132,19 +157,19 @@ export default function PageContainer({
       ? docTotalScrollable
       : elTotalScrollable;
 
-    // If page has no scroll, allow button click immediately
-    if (totalScrollable <= 10) {
+    // Content fits without scrolling
+    if (totalScrollable <= 15) {
       setScrollProgress(100);
       return;
     }
 
     const currentPercent = Math.min(
       100,
-      Math.max(0, Math.round((scrollTop / totalScrollable) * 100)),
+      Math.max(0, Math.round((scrollTop / totalScrollable) * 100))
     );
 
-    setScrollProgress(currentPercent);
-  }, [isCompleted]);
+    setScrollProgress((prev) => Math.max(prev, currentPercent));
+  }, [isCompleted, scrollProgress]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -202,7 +227,6 @@ export default function PageContainer({
 
   const canNavigateNext = isCompleted || displayProgress >= 85;
 
-  // Complete and advance ONLY on explicit user click
   const handleButtonClick = () => {
     if (!canNavigateNext) return;
 
@@ -219,7 +243,7 @@ export default function PageContainer({
       onScroll={handleScrollCheck}
       className="flex h-full min-h-screen flex-col justify-between overflow-x-hidden overflow-y-auto bg-white scroll-smooth"
     >
-      <div className="mx-auto w-full max-w-4xl px-0 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
+      <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
         <main className="min-h-[250px] w-full overflow-x-auto">
           {isBlockNoteContent ? (
             <BlockNoteReader initialContent={pageData.content} />
@@ -237,6 +261,13 @@ export default function PageContainer({
               </p>
             </div>
           )}
+
+          {/* Bottom Sentinel: Triggers 100% progress when reached / on load if content is short */}
+          <div
+            ref={bottomSentinelRef}
+            className="h-2 w-full opacity-0 pointer-events-none"
+            aria-hidden="true"
+          />
         </main>
       </div>
 
