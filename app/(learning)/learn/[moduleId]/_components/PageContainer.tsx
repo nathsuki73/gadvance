@@ -42,36 +42,14 @@ export default function PageContainer({
   const token = session?.laravelJwt;
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const bottomSentinelRef = useRef<HTMLDivElement>(null);
-
   const [isCompleted, setIsCompleted] = useState(initialCompleted);
-  const [hasReachedBottom, setHasReachedBottom] = useState(initialCompleted);
-  const [hasSpentMinimumTime, setHasSpentMinimumTime] = useState(initialCompleted);
   const [scrollProgress, setScrollProgress] = useState(
-    initialCompleted ? 100 : 0
+    initialCompleted ? 100 : 0,
   );
 
-  // Reset states on item change
   useEffect(() => {
     setIsCompleted(initialCompleted);
-    setHasReachedBottom(initialCompleted);
-    setHasSpentMinimumTime(initialCompleted);
     setScrollProgress(initialCompleted ? 100 : 0);
-  }, [pageId, initialCompleted]);
-
-  // Minimum dwell timer (3 seconds) to prevent instant skip on short content
-  useEffect(() => {
-    if (initialCompleted) {
-      setHasSpentMinimumTime(true);
-      return;
-    }
-
-    setHasSpentMinimumTime(false);
-    const timer = setTimeout(() => {
-      setHasSpentMinimumTime(true);
-    }, 5000);
-
-    return () => clearTimeout(timer);
   }, [pageId, initialCompleted]);
 
   const {
@@ -124,36 +102,12 @@ export default function PageContainer({
     ? "Unable to load page content. Please try again."
     : null;
 
-  // Bottom Sentinel Observer
-  useEffect(() => {
-    if (isCompleted || loading || !pageData) return;
-
-    const sentinel = bottomSentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setHasReachedBottom(true);
-          setScrollProgress(100);
-        }
-      },
-      {
-        root: null,
-        threshold: 0.1,
-      }
-    );
-
-    observer.observe(sentinel);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [pageId, isCompleted, loading, pageData]);
-
-  // Partial scroll tracking for the visual SVG dial
+  // Track scroll position without firing onComplete
   const handleScrollCheck = useCallback(() => {
-    if (isCompleted || hasReachedBottom) return;
+    if (isCompleted) {
+      setScrollProgress(100);
+      return;
+    }
 
     const el = containerRef.current;
     if (!el) return;
@@ -178,19 +132,19 @@ export default function PageContainer({
       ? docTotalScrollable
       : elTotalScrollable;
 
-    if (totalScrollable <= 15) {
-      setHasReachedBottom(true);
+    // If page has no scroll, allow button click immediately
+    if (totalScrollable <= 10) {
       setScrollProgress(100);
       return;
     }
 
     const currentPercent = Math.min(
       100,
-      Math.max(0, Math.round((scrollTop / totalScrollable) * 100))
+      Math.max(0, Math.round((scrollTop / totalScrollable) * 100)),
     );
 
-    setScrollProgress((prev) => Math.max(prev, currentPercent));
-  }, [isCompleted, hasReachedBottom]);
+    setScrollProgress(currentPercent);
+  }, [isCompleted]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -246,10 +200,9 @@ export default function PageContainer({
   const strokeDashoffset =
     circumference - (displayProgress / 100) * circumference;
 
-  // Strict Unlock Condition: Must be already completed OR (reached 100% bottom + minimum time spent)
-  const canNavigateNext =
-    isCompleted || (hasReachedBottom && scrollProgress >= 100 && hasSpentMinimumTime);
+  const canNavigateNext = isCompleted || displayProgress >= 85;
 
+  // Complete and advance ONLY on explicit user click
   const handleButtonClick = () => {
     if (!canNavigateNext) return;
 
@@ -266,7 +219,7 @@ export default function PageContainer({
       onScroll={handleScrollCheck}
       className="flex h-full min-h-screen flex-col justify-between overflow-x-hidden overflow-y-auto bg-white scroll-smooth"
     >
-      <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
+      <div className="mx-auto w-full max-w-4xl px-0 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
         <main className="min-h-[250px] w-full overflow-x-auto">
           {isBlockNoteContent ? (
             <BlockNoteReader initialContent={pageData.content} />
@@ -284,13 +237,6 @@ export default function PageContainer({
               </p>
             </div>
           )}
-
-          {/* Bottom Sentinel: Positioned right at the end of the text/content */}
-          <div
-            ref={bottomSentinelRef}
-            className="h-2 w-full opacity-0 pointer-events-none"
-            aria-hidden="true"
-          />
         </main>
       </div>
 
@@ -303,8 +249,8 @@ export default function PageContainer({
             aria-label="Next Item"
             className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all ${
               canNavigateNext
-                ? "cursor-pointer hover:scale-105 active:scale-95 shadow-md"
-                : "cursor-not-allowed opacity-40 grayscale"
+                ? "cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
+                : "cursor-default opacity-70"
             }`}
           >
             <svg
@@ -335,12 +281,13 @@ export default function PageContainer({
               />
             </svg>
 
+            {/* Always downward facing arrow */}
             <ArrowDown
               size={18}
               className={`transition-colors duration-200 ${
                 canNavigateNext
                   ? "text-[#8b5cf6] font-bold"
-                  : "text-[#8b5cf6]/60"
+                  : "text-[#8b5cf6]/50"
               }`}
             />
           </button>
