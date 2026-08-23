@@ -240,6 +240,22 @@ export default function BlockNoteReader({
         button[aria-label*="Image"] {
           display: none !important;
         }
+
+        /* Justify all paragraph text, but leave headings (titles) as authored */
+        .bn-block-content[data-content-type="paragraph"] {
+          text-align: justify !important;
+        }
+        .bn-block-content[data-content-type="paragraph"] .bn-inline-content {
+          text-align: justify !important;
+        }
+
+        /* Explicitly re-assert center alignment on headings so it can't be overridden */
+        .bn-block-content[data-content-type="heading"] {
+          text-align: center !important;
+        }
+        .bn-block-content[data-content-type="heading"] .bn-inline-content {
+          text-align: center !important;
+        }
       `}</style>
 
       <BlockNoteView editor={editor} theme="light" editable={false} />
