@@ -111,6 +111,19 @@ function sanitizeBlocks(blocks: any[]): any[] {
         };
       }
 
+      // 💡 Handle table blocks — must come before the generic fallback,
+      // since a table's `content` is a { type: "tableContent", rows } object,
+      // not a flat inline-content array.
+      if (type === "table") {
+        return {
+          id: typeof block.id === "string" ? block.id : undefined,
+          type: "table",
+          props: safeProps,
+          content: sanitizeTableContent(block.content),
+          children: [],
+        };
+      }
+
       // Standard text/heading/list blocks
       return {
         id: typeof block.id === "string" ? block.id : undefined,
@@ -127,7 +140,8 @@ function sanitizeContent(content: any): any[] {
   if (!content) return [];
 
   if (Array.isArray(content)) {
-    return content.map(sanitizeInlineItem).filter(Boolean);
+    const sanitized = content.map(sanitizeInlineItem).filter(Boolean);
+    return repairBoundarySpacing(sanitized);
   }
 
   if (typeof content === "string") {
@@ -173,6 +187,134 @@ function sanitizeInlineItem(item: any): any {
     text:
       item.text === null || item.text === undefined ? "" : String(item.text),
     styles: safeStyles,
+  };
+}
+
+// 💡 Repair spaces lost between adjacent inline nodes (e.g. bold/plain runs
+// split during import) so words don't get glued together on render.
+function repairBoundarySpacing(items: any[]): any[] {
+  const isWordChar = (c: string) => /[A-Za-z0-9À-ÖØ-öø-ÿ]/.test(c);
+
+  const getLastChar = (item: any): string => {
+    if (!item) return "";
+    if (item.type === "link") {
+      const nested = Array.isArray(item.content) ? item.content : [];
+      for (let i = nested.length - 1; i >= 0; i--) {
+        const c = getLastChar(nested[i]);
+        if (c) return c;
+      }
+      return "";
+    }
+    const text = typeof item.text === "string" ? item.text : "";
+    return text.length > 0 ? text[text.length - 1] : "";
+  };
+
+  const getFirstChar = (item: any): string => {
+    if (!item) return "";
+    if (item.type === "link") {
+      const nested = Array.isArray(item.content) ? item.content : [];
+      for (let i = 0; i < nested.length; i++) {
+        const c = getFirstChar(nested[i]);
+        if (c) return c;
+      }
+      return "";
+    }
+    const text = typeof item.text === "string" ? item.text : "";
+    return text.length > 0 ? text[0] : "";
+  };
+
+  const appendSpaceToLast = (item: any) => {
+    if (item.type === "link") {
+      const nested = Array.isArray(item.content) ? item.content : [];
+      for (let i = nested.length - 1; i >= 0; i--) {
+        if (getLastChar(nested[i])) {
+          appendSpaceToLast(nested[i]);
+          return;
+        }
+      }
+      return;
+    }
+    if (typeof item.text === "string") {
+      item.text = item.text + " ";
+    }
+  };
+
+  for (let i = 0; i < items.length - 1; i++) {
+    const lastChar = getLastChar(items[i]);
+    const firstChar = getFirstChar(items[i + 1]);
+
+    const needsSpace =
+      lastChar &&
+      firstChar &&
+      !/\s/.test(lastChar) &&
+      !/\s/.test(firstChar) &&
+      isWordChar(lastChar) &&
+      isWordChar(firstChar);
+
+    if (needsSpace) {
+      appendSpaceToLast(items[i]);
+    }
+  }
+
+  return items;
+}
+
+// 💡 Table sanitization — mirrors the shape BlockNote expects for
+// `tableContent`: { type: "tableContent", rows: [{ cells: [...] }] }
+function sanitizeCellContent(cell: any): any[] {
+  let items: any[];
+
+  if (typeof cell === "string") {
+    return cell.trim().length > 0
+      ? [{ type: "text", text: cell, styles: {} }]
+      : [];
+  }
+
+  if (Array.isArray(cell)) {
+    items = cell.map(sanitizeInlineItem).filter(Boolean);
+  } else if (cell && typeof cell === "object") {
+    if (cell.text !== undefined) {
+      items = [sanitizeInlineItem(cell)].filter(Boolean);
+    } else if (Array.isArray(cell.content)) {
+      items = cell.content.map(sanitizeInlineItem).filter(Boolean);
+    } else {
+      return [];
+    }
+  } else {
+    return [];
+  }
+
+  return repairBoundarySpacing(items);
+}
+
+function sanitizeTableContent(content: any): any {
+  const emptyTable = { type: "tableContent", rows: [{ cells: [[]] }] };
+
+  if (!content || typeof content !== "object") return emptyTable;
+
+  const rows = Array.isArray(content.rows)
+    ? content.rows
+    : Array.isArray(content)
+      ? content
+      : null;
+
+  if (!rows) return emptyTable;
+
+  return {
+    type: "tableContent",
+    columnWidths: content.columnWidths,
+    headerRows: content.headerRows,
+    headerCols: content.headerCols,
+    rows: rows.map((row: any) => {
+      const cells = Array.isArray(row?.cells)
+        ? row.cells
+        : Array.isArray(row)
+          ? row
+          : [];
+      return {
+        cells: cells.map((cell: any) => sanitizeCellContent(cell)),
+      };
+    }),
   };
 }
 
