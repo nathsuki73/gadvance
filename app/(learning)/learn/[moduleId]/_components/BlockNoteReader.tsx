@@ -428,6 +428,18 @@ export default function BlockNoteReader({
         .bn-block-content[data-content-type="heading"] .bn-inline-content {
           text-align: center !important;
         }
+
+        /* 💡 RESPONSIVE MOBILE PADDING FIX */
+        @media (max-width: 640px) {
+          .bn-editor {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+          }
+          .bn-container {
+            padding-left: 0px !important;
+            padding-right: 0px !important;
+          }
+        }
       `}</style>
 
       <BlockNoteView editor={editor} theme="light" editable={false} />
