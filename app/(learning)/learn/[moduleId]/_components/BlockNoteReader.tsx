@@ -37,7 +37,7 @@ function getCustomSchema() {
 }
 
 /**
- * Deep sanitization ensuring every single block has valid iterable arrays for `content` and `children`.
+ * Deep sanitization ensuring every single block matches valid structures.
  */
 function sanitizeBlocks(blocks: any[]): any[] {
   if (!blocks || !Array.isArray(blocks)) return [];
@@ -111,9 +111,7 @@ function sanitizeBlocks(blocks: any[]): any[] {
         };
       }
 
-      // 💡 Handle table blocks — must come before the generic fallback,
-      // since a table's `content` is a { type: "tableContent", rows } object,
-      // not a flat inline-content array.
+      // Handle table blocks natively preserving columns/rows
       if (type === "table") {
         return {
           id: typeof block.id === "string" ? block.id : undefined,
@@ -168,7 +166,6 @@ function sanitizeInlineItem(item: any): any {
       ? rawStyles
       : {};
 
-  // Links carry a nested `content` array, not a flat `text` string.
   if (item.type === "link") {
     const nestedContent =
       Array.isArray(item.content) && item.content.length > 0
@@ -190,8 +187,6 @@ function sanitizeInlineItem(item: any): any {
   };
 }
 
-// 💡 Repair spaces lost between adjacent inline nodes (e.g. bold/plain runs
-// split during import) so words don't get glued together on render.
 function repairBoundarySpacing(items: any[]): any[] {
   const isWordChar = (c: string) => /[A-Za-z0-9À-ÖØ-öø-ÿ]/.test(c);
 
@@ -259,39 +254,78 @@ function repairBoundarySpacing(items: any[]): any[] {
   return items;
 }
 
-// 💡 Table sanitization — mirrors the shape BlockNote expects for
-// `tableContent`: { type: "tableContent", rows: [{ cells: [...] }] }
-function sanitizeCellContent(cell: any): any[] {
-  let items: any[];
-
-  if (typeof cell === "string") {
-    return cell.trim().length > 0
-      ? [{ type: "text", text: cell, styles: {} }]
-      : [];
+function sanitizeCellContent(cell: any): any {
+  if (!cell || typeof cell !== "object") {
+    return {
+      type: "tableCell",
+      content: [],
+      props: {
+        colspan: 1,
+        rowspan: 1,
+        backgroundColor: "default",
+        textColor: "default",
+        textAlignment: "left",
+      },
+    };
   }
 
-  if (Array.isArray(cell)) {
-    items = cell.map(sanitizeInlineItem).filter(Boolean);
-  } else if (cell && typeof cell === "object") {
-    if (cell.text !== undefined) {
-      items = [sanitizeInlineItem(cell)].filter(Boolean);
-    } else if (Array.isArray(cell.content)) {
-      items = cell.content.map(sanitizeInlineItem).filter(Boolean);
-    } else {
-      return [];
-    }
-  } else {
-    return [];
+  if (cell.type === "tableCell") {
+    return {
+      type: "tableCell",
+      content: sanitizeContent(cell.content),
+      props:
+        cell.props && typeof cell.props === "object"
+          ? cell.props
+          : {
+              colspan: 1,
+              rowspan: 1,
+              backgroundColor: "default",
+              textColor: "default",
+              textAlignment: "left",
+            },
+    };
   }
 
-  return repairBoundarySpacing(items);
+  let inlineContent = [];
+  if (Array.isArray(cell.content)) {
+    inlineContent = sanitizeContent(cell.content);
+  } else if (Array.isArray(cell)) {
+    inlineContent = sanitizeContent(cell);
+  } else if (cell.text !== undefined) {
+    inlineContent = sanitizeContent([cell]);
+  } else if (typeof cell === "string") {
+    inlineContent =
+      cell.trim().length > 0 ? [{ type: "text", text: cell, styles: {} }] : [];
+  }
+
+  return {
+    type: "tableCell",
+    content: inlineContent,
+    props:
+      cell.props && typeof cell.props === "object"
+        ? cell.props
+        : {
+            colspan: 1,
+            rowspan: 1,
+            backgroundColor: "default",
+            textColor: "default",
+            textAlignment: "left",
+          },
+  };
 }
 
 function sanitizeTableContent(content: any): any {
-  const emptyTable = { type: "tableContent", rows: [{ cells: [[]] }] };
+  const emptyTable = {
+    type: "tableContent",
+    columnWidths: [null, null],
+    rows: [{ cells: [sanitizeCellContent([]), sanitizeCellContent([])] }],
+  };
 
   if (!content || typeof content !== "object") return emptyTable;
 
+  const columnWidths = Array.isArray(content.columnWidths)
+    ? content.columnWidths
+    : [null, null];
   const rows = Array.isArray(content.rows)
     ? content.rows
     : Array.isArray(content)
@@ -302,7 +336,7 @@ function sanitizeTableContent(content: any): any {
 
   return {
     type: "tableContent",
-    columnWidths: content.columnWidths,
+    columnWidths,
     headerRows: content.headerRows,
     headerCols: content.headerCols,
     rows: rows.map((row: any) => {
@@ -328,7 +362,6 @@ export default function BlockNoteReader({
   const schema = useMemo(() => getCustomSchema(), []);
   const isInitializedRef = useRef<boolean>(false);
 
-  // 🔑 1. Initialize editor completely empty to avoid constructor parsing crashes
   const editor = useCreateBlockNote({
     schema,
     dropCursor: multiColumnDropCursor,
@@ -338,7 +371,6 @@ export default function BlockNoteReader({
     },
   });
 
-  // 🔑 2. Safely populate blocks after mount
   useEffect(() => {
     if (!editor || isInitializedRef.current) return;
 
@@ -383,7 +415,6 @@ export default function BlockNoteReader({
           display: none !important;
         }
 
-        /* Justify all paragraph text, but leave headings (titles) as authored */
         .bn-block-content[data-content-type="paragraph"] {
           text-align: justify !important;
         }
@@ -391,7 +422,6 @@ export default function BlockNoteReader({
           text-align: justify !important;
         }
 
-        /* Explicitly re-assert center alignment on headings so it can't be overridden */
         .bn-block-content[data-content-type="heading"] {
           text-align: center !important;
         }
