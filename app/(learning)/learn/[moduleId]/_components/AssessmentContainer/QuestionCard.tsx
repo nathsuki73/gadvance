@@ -118,7 +118,11 @@ export function QuestionCard({
       <div className="space-y-2.5">
         {question.choices.map((choice) => {
           const isSelected = selectedChoiceId === choice.id;
-          const isChoiceCorrect = question.correctChoiceId === choice.id;
+          const isChoiceCorrect =
+            (question.correctChoiceId
+              ? question.correctChoiceId === choice.id
+              : false) ||
+            Boolean(choice.isCorrect || (choice as any).is_correct);
           const votesCount = choice.votes ?? (isSelected ? 1 : 0);
           const percent = choice.percentage ?? 0;
 
