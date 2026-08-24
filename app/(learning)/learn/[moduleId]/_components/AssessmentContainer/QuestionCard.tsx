@@ -89,7 +89,7 @@ export function QuestionCard({
             <span className="text-xs font-bold uppercase tracking-wider text-[#8b5cf6]">
               Question {index + 1}
             </span>
-            {isPoll && (
+            {/* {isPoll && (
               <span className="rounded-md border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-[#8b5cf6]">
                 Opinion Poll
               </span>
@@ -98,7 +98,7 @@ export function QuestionCard({
               <span className="rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700">
                 Strict Test
               </span>
-            )}
+            )} */}
           </div>
           <h3 className="text-sm font-semibold text-zinc-900 leading-relaxed">
             {question.text}

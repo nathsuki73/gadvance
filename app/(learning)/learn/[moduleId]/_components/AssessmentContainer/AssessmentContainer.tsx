@@ -483,7 +483,7 @@ export default function AssessmentContainer({
         }
 
         setSubmitted(true);
-        setShowReview(true);
+        // setShowReview(true);
         onComplete();
       } else {
         alert(result.message || "Failed to save assessment progress.");
