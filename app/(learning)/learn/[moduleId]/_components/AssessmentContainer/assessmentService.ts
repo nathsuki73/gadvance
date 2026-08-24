@@ -120,6 +120,11 @@ function normalizeAssessmentData(payload: any, id: string): AssessmentViewData {
       mode === "quiz",
     ),
     allowReview: Boolean(settingsObj.allowReview ?? data.allow_review ?? true),
+    requirePassingToProceed: Boolean(
+      settingsObj.requirePassingToProceed ??
+      data.require_passing_to_proceed ??
+      false,
+    ),
     enableAdaptiveMapping: Boolean(
       settingsObj.enableAdaptiveMapping ?? data.enable_adaptive_mapping ?? true,
     ),

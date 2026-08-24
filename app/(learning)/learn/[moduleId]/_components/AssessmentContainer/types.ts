@@ -34,6 +34,7 @@ export interface AssessmentSettings {
   shuffleOptions?: boolean;
   showFeedbackImmediately?: boolean;
   allowReview?: boolean;
+  requirePassingToProceed?: boolean;
   enableAdaptiveMapping?: boolean;
   showFinalResults?: boolean;
   showRemediation?: boolean;
