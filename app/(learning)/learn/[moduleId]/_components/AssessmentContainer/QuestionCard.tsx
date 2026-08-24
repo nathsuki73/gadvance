@@ -164,7 +164,7 @@ export function QuestionCard({
                 type="button"
                 onClick={() => onSelectChoice(question.id, choice.id)}
                 disabled={isLocked}
-                className={`relative overflow-hidden flex flex-1 items-center justify-between gap-3 rounded-xl border p-3.5 text-left text-xs transition-all cursor-pointer disabled:cursor-default min-h-[48px] ${containerStyle}`}
+                className={`relative overflow-hidden flex flex-1 items-start justify-between gap-3 rounded-xl border p-3.5 text-left text-xs transition-all cursor-pointer disabled:cursor-default min-h-[48px] ${containerStyle}`}
               >
                 {/* Background Progress Bar */}
                 {showPollDistribution && (
@@ -179,9 +179,9 @@ export function QuestionCard({
                 )}
 
                 {/* Option Label & Radio */}
-                <div className="relative z-10 flex items-center gap-3 pr-2 min-w-0">
+                <div className="relative z-10 flex items-start gap-3 pr-2 min-w-0 flex-1">
                   <div
-                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all ${radioCircleStyle}`}
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all mt-0.5 ${radioCircleStyle}`}
                   >
                     {isSelected &&
                       !showPollDistribution &&
@@ -198,7 +198,9 @@ export function QuestionCard({
                       isSelected &&
                       !isChoiceCorrect && <XCircle size={10} strokeWidth={3} />}
                   </div>
-                  <span className="truncate font-medium">{choice.text}</span>
+                  <span className="font-medium whitespace-normal break-words text-left">
+                    {choice.text}
+                  </span>
                 </div>
 
                 {/* Minimalist Vote Count Inside Box */}
