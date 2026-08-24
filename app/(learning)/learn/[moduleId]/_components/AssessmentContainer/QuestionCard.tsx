@@ -68,7 +68,6 @@ export function QuestionCard({
   const canShowReview = settings.allowReview;
 
   const showFeedback =
-    canShowReview &&
     !isPoll &&
     !isTestMode &&
     Boolean(selectedChoiceId) &&
@@ -265,19 +264,6 @@ export function QuestionCard({
             <p className="rounded-xl border border-zinc-200/60 bg-white p-3 text-xs leading-relaxed text-zinc-600">
               <strong>Explanation:</strong> {question.explanation}
             </p>
-          )}
-
-          {settings.showRemediation && !isCorrect && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200/70 bg-amber-50/70 p-3 text-xs text-amber-900">
-              <BookOpen size={16} className="mt-0.5 text-amber-700 shrink-0" />
-              <div className="space-y-0.5">
-                <span className="font-bold">Remediation Guide</span>
-                <p className="leading-relaxed text-amber-800/90">
-                  Review core concepts linked to Bloom Level{" "}
-                  {question.bloomLevel || 1}.
-                </p>
-              </div>
-            </div>
           )}
         </div>
       )}
