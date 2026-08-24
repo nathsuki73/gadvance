@@ -36,6 +36,72 @@ export const createLicensedImageBlockReader = createReactBlockSpec(
 
       if (!imageUrl) return null;
 
+      // Reusable attribution content block to keep code clean
+      const renderAttributionContent = () => (
+        <>
+          <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+              TASL Attribution
+            </span>
+            <button
+              onClick={() => setShowPopover(false)}
+              className="text-zinc-400 hover:text-zinc-700 cursor-pointer p-1 rounded-lg hover:bg-zinc-100 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-1 text-xs">
+              <span className="font-semibold text-zinc-800 leading-snug break-words">
+                {props.block.props.title || "Untitled Graphic"}
+              </span>
+              {props.block.props.author && (
+                <span className="text-zinc-500 break-words">
+                  By{" "}
+                  <strong className="text-zinc-700">
+                    {props.block.props.author}
+                  </strong>
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2 pt-1 border-t border-zinc-100">
+              {props.block.props.sourceUrl ? (
+                <a
+                  href={props.block.props.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 px-3 py-2 text-xs text-purple-700 font-semibold transition-colors break-all"
+                >
+                  <LinkIcon size={13} className="shrink-0" />
+                  <span className="line-clamp-1">
+                    {props.block.props.sourceName ||
+                      props.block.props.sourceUrl}
+                  </span>
+                </a>
+              ) : (
+                <span className="text-xs text-zinc-400 italic">
+                  No source link provided.
+                </span>
+              )}
+
+              {props.block.props.license && (
+                <div className="inline-flex items-start gap-1.5 text-[11px] text-zinc-500 font-medium px-1">
+                  <ShieldCheck
+                    size={14}
+                    className="text-emerald-600 shrink-0 mt-0.5"
+                  />
+                  <span className="break-words">
+                    License: {props.block.props.license}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      );
+
       return (
         <div className="w-full my-4 flex flex-col items-center select-none focus:outline-none">
           {/* Global style override to eliminate blue selection outlines */}
@@ -75,7 +141,7 @@ export const createLicensedImageBlockReader = createReactBlockSpec(
                 </span>
               </div>
 
-              {/* Source Info Button Overlay (Stops click propagation so clicking source doesn't trigger fullscreen) */}
+              {/* Source Info Button Overlay */}
               <div
                 className="absolute bottom-3 right-3 z-20"
                 contentEditable={false}
@@ -90,74 +156,34 @@ export const createLicensedImageBlockReader = createReactBlockSpec(
                   <Info size={14} className="text-purple-400" />
                   <span>Source</span>
                 </button>
-
-                {/* Responsive Popover Card */}
-                {showPopover && (
-                  <div className="absolute right-0 bottom-10 z-30 flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl text-zinc-800 w-[260px] sm:w-[300px] max-w-[calc(100vw-2rem)] text-left">
-                    <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                        TASL Attribution
-                      </span>
-                      <button
-                        onClick={() => setShowPopover(false)}
-                        className="text-zinc-400 hover:text-zinc-700 cursor-pointer p-1"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-
-                    <div className="flex flex-col gap-2.5">
-                      <div className="flex flex-col gap-1 text-xs">
-                        <span className="font-semibold text-zinc-800 leading-snug">
-                          {props.block.props.title || "Untitled Graphic"}
-                        </span>
-                        {props.block.props.author && (
-                          <span className="text-zinc-500">
-                            By{" "}
-                            <strong className="text-zinc-700">
-                              {props.block.props.author}
-                            </strong>
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-2 pt-1 border-t border-zinc-100">
-                        {props.block.props.sourceUrl ? (
-                          <a
-                            href={props.block.props.sourceUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 px-3 py-2 text-xs text-purple-700 font-semibold transition-colors break-all"
-                          >
-                            <LinkIcon size={13} className="shrink-0" />
-                            <span className="truncate">
-                              {props.block.props.sourceName ||
-                                "Original Source"}
-                            </span>
-                          </a>
-                        ) : (
-                          <span className="text-xs text-zinc-400 italic">
-                            No source link provided.
-                          </span>
-                        )}
-
-                        {props.block.props.license && (
-                          <div className="inline-flex items-center gap-1.5 text-[11px] text-zinc-500 font-medium px-1">
-                            <ShieldCheck
-                              size={14}
-                              className="text-emerald-600 shrink-0"
-                            />
-                            <span className="break-words">
-                              License: {props.block.props.license}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
+
+            {/* POPOVER: Mobile Fullscreen Overlay vs Desktop Dropdown */}
+            {showPopover && (
+              <>
+                {/* Mobile: Gray transparent dark overlay covering screen, clicking outside closes it */}
+                <div
+                  className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:hidden animate-in fade-in duration-150"
+                  onClick={() => setShowPopover(false)}
+                >
+                  <div
+                    className="w-full max-w-xs flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-2xl text-zinc-800 text-left"
+                    onClick={(e) => e.stopPropagation()} // Prevents closing when clicking inside the card
+                  >
+                    {renderAttributionContent()}
+                  </div>
+                </div>
+
+                {/* Desktop: Standard absolute dropdown */}
+                <div
+                  className="hidden sm:flex absolute right-0 bottom-12 z-50 flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-2xl text-zinc-800 w-[320px] text-left animate-in fade-in zoom-in-95 duration-150"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {renderAttributionContent()}
+                </div>
+              </>
+            )}
 
             {/* FULL-SCREEN OVERLAY MODAL */}
             {isFullscreen && (
@@ -178,7 +204,7 @@ export const createLicensedImageBlockReader = createReactBlockSpec(
                 {/* Expanded Image Container */}
                 <div
                   className="relative max-h-[90vh] max-w-[90vw] flex flex-col items-center gap-3"
-                  onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image frame
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <img
                     src={imageUrl}
@@ -186,7 +212,7 @@ export const createLicensedImageBlockReader = createReactBlockSpec(
                     className="max-h-[80vh] max-w-full rounded-xl object-contain shadow-2xl"
                   />
                   {props.block.props.title && (
-                    <span className="text-xs sm:text-sm font-medium text-zinc-300 text-center px-4">
+                    <span className="text-xs sm:text-sm font-medium text-zinc-300 text-center px-4 break-words max-w-xl">
                       {props.block.props.title}{" "}
                       {props.block.props.author
                         ? `— By ${props.block.props.author}`
