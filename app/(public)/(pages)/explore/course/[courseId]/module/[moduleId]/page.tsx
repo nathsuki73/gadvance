@@ -246,10 +246,6 @@ export default function ModulePage({
                       <div className="grid gap-8 sm:gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
                         {/* Left Column */}
                         <div>
-                          <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-[#8b5cf6]">
-                            MODULE {(idx + 1).toString().padStart(2, "0")}
-                          </span>
-
                           <h1 className="mt-2 text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-zinc-900">
                             {mod.title}
                           </h1>
@@ -317,7 +313,8 @@ export default function ModulePage({
                             </div>
                           </div>
 
-                          <div className="space-y-3 sm:space-y-4 max-h-[350px] overflow-y-auto pr-1">
+                          {/* Added slim webkit scrollbar classes here */}
+                          <div className="space-y-3 sm:space-y-4 max-h-[350px] overflow-y-auto overflow-x-hidden pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300">
                             {modSections.length > 0 ? (
                               modSections.map((sec: Section, sIdx: number) => (
                                 <div
@@ -326,32 +323,31 @@ export default function ModulePage({
                                 >
                                   <div className="bg-zinc-50/80 px-4 sm:px-5 py-2.5 sm:py-3 border-b border-zinc-100">
                                     <span className="text-xs font-bold text-zinc-800">
-                                      Section {sIdx + 1}: {sec.title}
+                                      {sec.title}
                                     </span>
                                   </div>
 
                                   {sec.items && sec.items.length > 0 ? (
                                     <div className="divide-y divide-zinc-100">
                                       {sec.items.map((item: SectionItem) => (
-                                        <Link
+                                        <div
                                           key={item.id}
-                                          href={`/learn/${mod.id}?item=${item.id}`}
-                                          className="group flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5 text-xs transition-colors hover:bg-purple-50/30"
+                                          className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5 text-xs bg-white"
                                         >
                                           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2">
                                             {getItemIcon(
                                               item.item_type,
                                               item.assessment_type,
                                             )}
-                                            <span className="font-medium text-zinc-600 group-hover:text-[#8b5cf6] transition-colors truncate">
+                                            <span className="font-medium text-zinc-600 truncate">
                                               {item.title}
                                             </span>
                                           </div>
                                           <ChevronRight
                                             size={14}
-                                            className="text-zinc-300 group-hover:text-[#8b5cf6] transition-colors shrink-0"
+                                            className="text-zinc-200 shrink-0"
                                           />
-                                        </Link>
+                                        </div>
                                       ))}
                                     </div>
                                   ) : (
