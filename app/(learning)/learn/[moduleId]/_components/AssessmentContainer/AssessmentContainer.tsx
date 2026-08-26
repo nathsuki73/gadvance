@@ -563,10 +563,6 @@ export default function AssessmentContainer({
     <div className="flex h-[100dvh] flex-col justify-between overflow-x-hidden overflow-y-auto bg-white font-sans antialiased">
       <div className="border-b border-zinc-100 bg-white px-4 py-3 sm:px-8 sm:py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
-          <h1 className="truncate text-sm font-bold text-zinc-900">
-            {assessment.title}
-          </h1>
-
           {hasStarted && Boolean(settings.timeLimitMinutes) && !submitted && (
             <div
               className={`flex shrink-0 items-center gap-1.5 font-mono text-xs px-3 py-1.5 rounded-xl border ${
