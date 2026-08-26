@@ -108,7 +108,7 @@ export default function ModulePage({
 
           if (Array.isArray(rawModules) && rawModules.length > 0) {
             const moduleRequests = rawModules.map((m: any) =>
-              getModule(m.id || m.module_id || "")
+              getModule(m.id || m.module_id || ""),
             );
             const settled = await Promise.all(moduleRequests);
             const valid = settled
@@ -125,7 +125,8 @@ export default function ModulePage({
         }
 
         const result = await getModule(moduleId);
-        if (!result.success || !result.data) throw new Error("Failed to fetch module");
+        if (!result.success || !result.data)
+          throw new Error("Failed to fetch module");
         setModules([result.data as ModuleResponse]);
         setActiveIndex(0);
       } catch (err) {
@@ -207,7 +208,10 @@ export default function ModulePage({
     <main className="w-full min-h-screen bg-white text-zinc-900 pb-20 flex flex-col justify-between">
       <div>
         {/* Top Header: Breadcrumb */}
-        <div ref={overviewRef} className="mx-auto max-w-7xl px-4 sm:px-6 md:px-12 pt-8 sm:pt-10 pb-2">
+        <div
+          ref={overviewRef}
+          className="mx-auto max-w-7xl px-4 sm:px-6 md:px-12 pt-8 sm:pt-10 pb-2"
+        >
           <button
             onClick={handleBackToCourse}
             className="group inline-flex items-center gap-2 text-xs font-semibold text-zinc-500 hover:text-[#7c3aed] transition-colors cursor-pointer"
@@ -238,7 +242,7 @@ export default function ModulePage({
 
                 return (
                   <div key={mod.id} className="w-full shrink-0">
-                    <div className="rounded-3xl border border-zinc-100 bg-white p-5 sm:p-8 md:p-12 shadow-sm">
+                    <div className="rounded-3xl  bg-white p-5 sm:p-8 md:p-12">
                       <div className="grid gap-8 sm:gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
                         {/* Left Column */}
                         <div>
@@ -251,9 +255,7 @@ export default function ModulePage({
                           </h1>
 
                           <p className="mt-3 sm:mt-4 max-w-xl text-xs sm:text-base font-light leading-relaxed text-zinc-500">
-                            {mod.about ||
-                              mod.description ||
-                              "..."}
+                            {mod.about || mod.description || "..."}
                           </p>
 
                           <div className="mt-6 sm:mt-8">
@@ -262,7 +264,9 @@ export default function ModulePage({
                               onClick={() => router.push(`/learn/${mod.id}`)}
                               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-purple-500/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] cursor-pointer"
                             >
-                              {modProgress > 0 ? "Continue Learning" : "Start Learning"}
+                              {modProgress > 0
+                                ? "Continue Learning"
+                                : "Start Learning"}
                               <ChevronRight size={14} strokeWidth={2.5} />
                             </button>
                           </div>
@@ -271,7 +275,10 @@ export default function ModulePage({
                           <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-3 sm:gap-4 max-w-md">
                             <div className="rounded-2xl border border-zinc-100 bg-white p-3.5 sm:p-4 shadow-xs">
                               <div className="flex items-center gap-2 text-zinc-400">
-                                <BookOpen size={16} className="text-[#8b5cf6]" />
+                                <BookOpen
+                                  size={16}
+                                  className="text-[#8b5cf6]"
+                                />
                                 <span className="text-[9px] font-bold uppercase tracking-[0.2em]">
                                   SECTIONS
                                 </span>
@@ -301,10 +308,11 @@ export default function ModulePage({
                             <div className="mt-1 h-7 sm:h-8 w-0.5 rounded-full bg-primary" />
                             <div>
                               <h2 className="text-lg sm:text-xl font-bold tracking-tight text-zinc-900">
-                                Module Outline
+                                Overview
                               </h2>
                               <p className="text-xs text-zinc-400 font-light mt-0.5">
-                                Lessons and assessments in this module.
+                                A structured overview of the lessons and
+                                assessments.
                               </p>
                             </div>
                           </div>
@@ -331,7 +339,10 @@ export default function ModulePage({
                                           className="group flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5 text-xs transition-colors hover:bg-purple-50/30"
                                         >
                                           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2">
-                                            {getItemIcon(item.item_type, item.assessment_type)}
+                                            {getItemIcon(
+                                              item.item_type,
+                                              item.assessment_type,
+                                            )}
                                             <span className="font-medium text-zinc-600 group-hover:text-[#8b5cf6] transition-colors truncate">
                                               {item.title}
                                             </span>
@@ -413,7 +424,7 @@ export default function ModulePage({
                     const totalLessons =
                       m.sections?.reduce(
                         (acc, sec) => acc + (sec.items?.length || 0),
-                        0
+                        0,
                       ) || 0;
 
                     return (

@@ -72,7 +72,10 @@ const getItemIcon = (itemType?: string, assessmentType?: string | null) => {
   return <PlayCircle size={14} className="text-[#8b5cf6] shrink-0" />;
 };
 
-const ModuleOverviewHeader = ({ module, moduleIndex }: ModuleOverviewHeaderProps) => {
+const ModuleOverviewHeader = ({
+  module,
+  moduleIndex,
+}: ModuleOverviewHeaderProps) => {
   const router = useRouter();
 
   const sections = module.sections || [];
@@ -81,7 +84,7 @@ const ModuleOverviewHeader = ({ module, moduleIndex }: ModuleOverviewHeaderProps
   const hasStarted = progress > 0;
 
   const [openSectionIds, setOpenSectionIds] = useState<Record<string, boolean>>(
-    () => sections.reduce((acc, sec) => ({ ...acc, [sec.id]: true }), {})
+    () => sections.reduce((acc, sec) => ({ ...acc, [sec.id]: true }), {}),
   );
 
   const toggleSection = (id: string) => {
@@ -144,7 +147,7 @@ const ModuleOverviewHeader = ({ module, moduleIndex }: ModuleOverviewHeaderProps
             <div className="mt-1 h-10 w-0.5 rounded-full bg-purple-600" />
             <div>
               <h2 className="mt-1.5 text-2xl font-semibold tracking-tight text-zinc-900">
-                Module Outline
+                Overview
               </h2>
             </div>
           </div>
@@ -181,9 +184,15 @@ const ModuleOverviewHeader = ({ module, moduleIndex }: ModuleOverviewHeaderProps
                       </div>
 
                       {isOpen ? (
-                        <ChevronDown size={16} className="text-zinc-400 shrink-0" />
+                        <ChevronDown
+                          size={16}
+                          className="text-zinc-400 shrink-0"
+                        />
                       ) : (
-                        <ChevronRight size={16} className="text-zinc-400 shrink-0" />
+                        <ChevronRight
+                          size={16}
+                          className="text-zinc-400 shrink-0"
+                        />
                       )}
                     </button>
 
@@ -199,7 +208,10 @@ const ModuleOverviewHeader = ({ module, moduleIndex }: ModuleOverviewHeaderProps
                               <span className="text-[10px] font-mono font-medium text-zinc-300">
                                 {(itemIdx + 1).toString().padStart(2, "0")}
                               </span>
-                              {getItemIcon(item.item_type, item.assessment_type)}
+                              {getItemIcon(
+                                item.item_type,
+                                item.assessment_type,
+                              )}
                               <span className="font-medium text-zinc-700 group-hover:text-[#7c3aed] transition-colors truncate">
                                 {item.title}
                               </span>
