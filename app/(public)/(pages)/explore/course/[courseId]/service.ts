@@ -29,9 +29,6 @@ async function clientRequest<T>(
 
     const result = await res.json();
 
-    // 🔍 Print raw response logs to inspect the data structure and progress percentage
-    console.log(`[API Response Logs] Endpoint: ${endpoint}`, result);
-
     if (!res.ok) {
       return {
         success: false,

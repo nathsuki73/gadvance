@@ -57,7 +57,6 @@ export default function QuizContainer({
           type === "pretest" ? "pre_test" : "post_test",
         );
 
-        console.log(response.data);
         if (cancelled) return;
 
         // Unpack the unified response server wrapper safely

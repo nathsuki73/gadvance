@@ -12,13 +12,6 @@ const SMTP_PORT = 465;
 export const sendOTPEmail = async (email: string, otp: string) => {
   // 1. DEVELOPMENT MODE: If no credentials exist, log to console
   if (!SMTP_USER || !SMTP_PASSWORD) {
-    console.log("-----------------------------------------");
-    console.log("📧 [MOCK EMAIL SERVICE]");
-    console.log(`To: ${email}`);
-    console.log(`Subject: Verify your Gadvance Account`);
-    console.log(`Your 6-digit OTP is: ${otp}`);
-    console.log("-----------------------------------------");
-
     return { success: true, message: "OTP logged to console (Dev Mode)" };
   }
 

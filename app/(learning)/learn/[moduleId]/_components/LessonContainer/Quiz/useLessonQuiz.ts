@@ -40,8 +40,7 @@ export function useLessonQuiz(
 
     async function loadQuiz() {
       const isCompletedLocal =
-        localStorage.getItem(`main_quiz_completed_${lessonBlockId}`) ===
-        "true";
+        localStorage.getItem(`main_quiz_completed_${lessonBlockId}`) === "true";
 
       if (isCompletedLocal) {
         if (!cancelled) {
@@ -135,7 +134,6 @@ export function useLessonQuiz(
 
     if (quiz.attemptId) {
       try {
-        console.log("Attempt id: " + quiz.attemptId);
         const response = await saveLessonQuizProgress(quiz.attemptId, {
           question_id: questionId,
           selected_choice_id: selectedChoiceId,
@@ -144,7 +142,10 @@ export function useLessonQuiz(
 
         if (response.success && response.data) {
           if (response.data.quiz_status === "completed") {
-            localStorage.setItem(`main_quiz_completed_${lessonBlockId}`, "true");
+            localStorage.setItem(
+              `main_quiz_completed_${lessonBlockId}`,
+              "true",
+            );
             setHasCompletedQuiz(true);
             setQuizState("completed");
             setIsSaving(false);

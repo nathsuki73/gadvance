@@ -31,7 +31,6 @@ export async function fetchOverview(lessonId: string): Promise<Lesson[]> {
 export async function fetchSubtopics(
   subtopicId: string,
 ): Promise<SubtopicItem[]> {
-  console.log("subtopic: " + subtopicId);
   const response = await fetch(
     `${API_BASE_URL}/lessons/${subtopicId}/subtopic`,
     {
@@ -53,6 +52,5 @@ export async function fetchSubtopics(
 
   // Assuming your API wraps the rows inside a 'data' array (e.g., payload.data = [...])
   // If your API returns the array directly as the top level, change this to: return payload;
-  console.log(payload.data);
   return payload.data || [];
 }

@@ -15,7 +15,6 @@ export async function handleRegistration(
   }
 
   try {
-    console.log("Target API URL:", `${baseUrl}/api/auth/signup`);
     const response = await fetch(`${baseUrl}/api/auth/signup`, {
       method: "POST",
       headers: {
