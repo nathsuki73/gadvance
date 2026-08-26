@@ -188,8 +188,6 @@ function sanitizeInlineItem(item: any): any {
 }
 
 function repairBoundarySpacing(items: any[]): any[] {
-  const isWordChar = (c: string) => /[A-Za-z0-9À-ÖØ-öø-ÿ]/.test(c);
-
   const getLastChar = (item: any): string => {
     if (!item) return "";
     if (item.type === "link") {
@@ -238,13 +236,9 @@ function repairBoundarySpacing(items: any[]): any[] {
     const lastChar = getLastChar(items[i]);
     const firstChar = getFirstChar(items[i + 1]);
 
+    // 🔑 Removed isWordChar restriction so punctuation/quotes like ” work correctly before links
     const needsSpace =
-      lastChar &&
-      firstChar &&
-      !/\s/.test(lastChar) &&
-      !/\s/.test(firstChar) &&
-      isWordChar(lastChar) &&
-      isWordChar(firstChar);
+      lastChar && firstChar && !/\s/.test(lastChar) && !/\s/.test(firstChar);
 
     if (needsSpace) {
       appendSpaceToLast(items[i]);
