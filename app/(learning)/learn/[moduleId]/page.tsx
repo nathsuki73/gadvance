@@ -21,6 +21,19 @@ type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
 };
 
+// helper — put above the component or in a utils file
+const getMaxUnlockedIndex = (items: SectionItem[], completed: Set<string>) => {
+  let idx = 0;
+  for (let i = 0; i < items.length; i++) {
+    if (completed.has(items[i].id)) {
+      idx = i + 1;
+    } else {
+      break;
+    }
+  }
+  return Math.min(idx, items.length - 1);
+};
+
 const LearnPage = ({ params }: LearnPageProps) => {
   const { moduleId } = use(params);
   const router = useRouter(); // 🔑 2. Initialize router
@@ -58,28 +71,41 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
         setModule(structure);
 
+        const completed = new Set<string>();
+        if (progressData?.success && Array.isArray(progressData.data)) {
+          progressData.data.forEach((record: ProgressRecord) => {
+            if (record.progress >= 100) completed.add(record.learning_item_id);
+          });
+        }
+        setCompletedItemIds(completed);
+
         const allItems = structure.sections?.flatMap((sec) => sec.items) ?? [];
 
         if (allItems.length > 0) {
-          const initialTarget = searchParams.get("item");
-          if (initialTarget) {
-            const foundItem = allItems.find(
-              (i) => i.id === initialTarget || i.content_id === initialTarget,
-            );
-            setActiveItem(foundItem || allItems[0]);
-          } else {
-            setActiveItem(allItems[0]);
-          }
-        }
+          const maxUnlockedIndex = getMaxUnlockedIndex(allItems, completed);
+          const allowedItem = allItems[maxUnlockedIndex];
 
-        if (progressData?.success && Array.isArray(progressData.data)) {
-          const completed = new Set<string>();
-          progressData.data.forEach((record: ProgressRecord) => {
-            if (record.progress >= 100) {
-              completed.add(record.learning_item_id);
+          const requestedId = searchParams.get("item");
+          const requestedItem = requestedId
+            ? allItems.find(
+                (i) => i.id === requestedId || i.content_id === requestedId,
+              )
+            : null;
+          const requestedIndex = requestedItem
+            ? allItems.findIndex((i) => i.id === requestedItem.id)
+            : -1;
+
+          if (requestedItem && requestedIndex <= maxUnlockedIndex) {
+            setActiveItem(requestedItem);
+          } else {
+            // no valid request, or it's beyond what they've unlocked — snap back
+            setActiveItem(allowedItem);
+            if (requestedId) {
+              router.replace(`/learn/${moduleId}?item=${allowedItem.id}`, {
+                scroll: false,
+              });
             }
-          });
-          setCompletedItemIds(completed);
+          }
         }
       } catch (err) {
         console.error("Error loading module structure:", err);
@@ -90,23 +116,39 @@ const LearnPage = ({ params }: LearnPageProps) => {
     };
 
     loadData();
-  }, [moduleId]); // 🔑 Remains safely decoupled from searchParams so API only calls once
+  }, [moduleId]);
 
   // 2. Synchronize activeItem instantly when query param changes
   useEffect(() => {
     if (!module) return;
     const allItems = module.sections?.flatMap((sec) => sec.items) ?? [];
-    if (allItems.length === 0) return;
+    if (allItems.length === 0 || !targetItemId) return;
 
-    if (targetItemId) {
-      const foundItem = allItems.find(
-        (i) => i.id === targetItemId || i.content_id === targetItemId,
-      );
-      if (foundItem && foundItem.id !== activeItem?.id) {
-        setActiveItem(foundItem);
-      }
+    const maxUnlockedIndex = getMaxUnlockedIndex(allItems, completedItemIds);
+    const foundItem = allItems.find(
+      (i) => i.id === targetItemId || i.content_id === targetItemId,
+    );
+    const foundIndex = foundItem
+      ? allItems.findIndex((i) => i.id === foundItem.id)
+      : -1;
+
+    if (foundItem && foundIndex <= maxUnlockedIndex) {
+      if (foundItem.id !== activeItem?.id) setActiveItem(foundItem);
+    } else if (foundItem) {
+      // requested item exists but isn't unlocked yet — bounce back
+      const allowedItem = allItems[maxUnlockedIndex];
+      router.replace(`/learn/${moduleId}?item=${allowedItem.id}`, {
+        scroll: false,
+      });
     }
-  }, [targetItemId, module, activeItem?.id]);
+  }, [
+    targetItemId,
+    module,
+    activeItem?.id,
+    completedItemIds,
+    moduleId,
+    router,
+  ]);
 
   // Touch latest visit tracking
   useEffect(() => {
