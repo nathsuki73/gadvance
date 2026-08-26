@@ -121,7 +121,8 @@ export default function ModuleSidebar({
           </div>
         </div>
 
-        <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto px-3 py-4">
+        <div className="flex-1 space-y-4 overflow-y-auto overflow-x-hidden px-3 py-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300">
+          {" "}
           {sections.map((section) => {
             const isExpanded = expandedSections.has(section.id);
             const items = section.items || [];
