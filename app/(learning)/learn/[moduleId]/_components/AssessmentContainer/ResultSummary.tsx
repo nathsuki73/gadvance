@@ -13,6 +13,8 @@ import { AssessmentSettings } from "./types";
 
 interface ResultsSummaryProps {
   scorePercentage: number;
+  score?: number; // 👈 Raw earned score
+  totalPoints?: number; // 👈 Total possible points
   correctCount: number;
   totalGraded: number;
   totalQuestions: number;
@@ -23,6 +25,8 @@ interface ResultsSummaryProps {
 
 export function ResultsSummary({
   scorePercentage,
+  score,
+  totalPoints,
   correctCount,
   totalGraded,
   totalQuestions,
@@ -31,7 +35,6 @@ export function ResultsSummary({
   onRetry,
 }: ResultsSummaryProps) {
   const isPassed = scorePercentage >= settings.passingScore;
-
   const hasAttemptsRemaining =
     settings.maxAttempts == null || settings.maxAttempts > 1;
 
@@ -43,11 +46,16 @@ export function ResultsSummary({
       .padStart(2, "0")}`;
   };
 
-  // SVG Ring Progress Dimensions
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset =
     circumference - (scorePercentage / 100) * circumference;
+
+  // Display raw score fallback to correct count if points aren't explicit
+  const displayScoreText =
+    score !== undefined && totalPoints !== undefined
+      ? `${score} / ${totalPoints}`
+      : `${correctCount} / ${totalGraded}`;
 
   return (
     <div className="overflow-hidden rounded-3xl border border-purple-100 bg-gradient-to-br from-purple-50/40 via-white to-purple-50/10 p-6 space-y-6 shadow-xs">
@@ -83,7 +91,6 @@ export function ResultsSummary({
           </div>
         </div>
 
-        {/* Retake button displays strictly for graded assessments if attempts remain */}
         {settings.type !== "poll" && hasAttemptsRemaining && (
           <button
             type="button"
@@ -97,7 +104,6 @@ export function ResultsSummary({
       </div>
 
       {settings.type === "poll" ? (
-        /* Poll Submission Confirmation Card */
         <div className="rounded-2xl border border-purple-200/80 bg-purple-50/50 p-6 text-center space-y-2">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 text-[#8b5cf6]">
             <CheckCircle2 size={24} />
@@ -111,8 +117,6 @@ export function ResultsSummary({
           </p>
         </div>
       ) : (
-        /* 🔑 Removed the allowReview condition so the score ring is ALWAYS visible */
-        /* Ring-Score & Key Metrics */
         <div className="flex flex-col sm:flex-row items-center justify-around gap-6 rounded-2xl border border-purple-100/80 bg-white/80 p-6 backdrop-blur-xs">
           <div className="relative flex items-center justify-center">
             <svg className="h-28 w-28 -rotate-90 transform">
@@ -149,7 +153,7 @@ export function ResultsSummary({
                 {scorePercentage}%
               </span>
               <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">
-                Score
+                Score %
               </span>
             </div>
           </div>
@@ -167,18 +171,16 @@ export function ResultsSummary({
               </span>
             </div>
 
+            {/* 🔑 Raw Score Box (e.g. 3/5) */}
             <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-100 bg-slate-50/50 px-6 py-3.5 min-w-[120px]">
               <div className="flex items-center gap-1.5 text-slate-700 mb-1">
                 <CheckCircle size={14} />
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
-                  Correct
+                  Score
                 </span>
               </div>
               <span className="text-xl font-bold text-slate-700">
-                {correctCount}{" "}
-                <span className="text-xs font-semibold text-zinc-400">
-                  / {totalGraded}
-                </span>
+                {displayScoreText}
               </span>
             </div>
           </div>

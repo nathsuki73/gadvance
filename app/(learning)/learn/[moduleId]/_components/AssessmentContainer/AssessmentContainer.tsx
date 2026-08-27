@@ -56,8 +56,10 @@ export default function AssessmentContainer({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // States to permanently hold the backend's official score calculations
+  // 🔑 Updated States to hold official backend score calculations & raw points
   const [savedScore, setSavedScore] = useState<number | null>(null);
+  const [savedRawScore, setSavedRawScore] = useState<number | null>(null);
+  const [savedTotalPoints, setSavedTotalPoints] = useState<number | null>(null);
   const [savedCorrectCount, setSavedCorrectCount] = useState<number | null>(
     null,
   );
@@ -109,6 +111,8 @@ export default function AssessmentContainer({
     setElapsedSeconds(0);
     setRemedialSuggestions([]);
     setSavedScore(null);
+    setSavedRawScore(null);
+    setSavedTotalPoints(null);
     setSavedCorrectCount(null);
     setQuestionTimes({});
     setAnsweredAtMap({});
@@ -127,6 +131,8 @@ export default function AssessmentContainer({
         const prevAttempt = (data as any).previous_attempt;
         if (prevAttempt) {
           setSavedScore(prevAttempt.score_percentage);
+          setSavedRawScore(prevAttempt.score ?? null);
+          setSavedTotalPoints(prevAttempt.total_points ?? null);
 
           if (Array.isArray(prevAttempt.answers)) {
             const correct = prevAttempt.answers.filter(
@@ -369,7 +375,6 @@ export default function AssessmentContainer({
     const updatedAnswers = { ...answers, [questionId]: choiceId };
     setAnswers(updatedAnswers);
 
-    // Record the exact click timestamp for this specific question
     setAnsweredAtMap((prev) => ({
       ...prev,
       [questionId]: prev[questionId] || new Date().toISOString(),
@@ -463,7 +468,6 @@ export default function AssessmentContainer({
         question_id: qId,
         choice_id: cId,
         time_spent_seconds: finalTimes[qId] || 0,
-        // Passes the distinct per-question timestamp recorded on click
         answered_at: answeredAtMap[qId] || new Date().toISOString(),
       }));
 
@@ -480,8 +484,14 @@ export default function AssessmentContainer({
 
         const backendScore =
           responseData?.score_percentage ?? (result as any).score_percentage;
+        const rawScore = responseData?.score ?? (result as any).score;
+        const totalPoints =
+          responseData?.total_points ?? (result as any).total_points;
+
         if (backendScore !== undefined) {
           setSavedScore(backendScore);
+          setSavedRawScore(rawScore);
+          setSavedTotalPoints(totalPoints);
           setSavedCorrectCount(Math.round((backendScore / 100) * totalGraded));
         }
 
@@ -578,6 +588,8 @@ export default function AssessmentContainer({
     questionStartRef.current = Date.now();
 
     setSavedScore(null);
+    setSavedRawScore(null);
+    setSavedTotalPoints(null);
     setSavedCorrectCount(null);
   };
 
@@ -660,6 +672,8 @@ export default function AssessmentContainer({
             {settings.showFinalResults && (
               <ResultsSummary
                 scorePercentage={displayScore}
+                score={savedRawScore ?? localCorrectCount}
+                totalPoints={savedTotalPoints ?? totalGraded}
                 correctCount={displayCorrectCount}
                 totalGraded={totalGraded}
                 totalQuestions={totalQuestions}
