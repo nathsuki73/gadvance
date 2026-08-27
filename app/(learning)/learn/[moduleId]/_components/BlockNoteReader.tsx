@@ -348,10 +348,12 @@ function sanitizeTableContent(content: any): any {
 
 interface BlockNoteReaderProps {
   initialContent?: any[];
+  onRendered?: () => void;
 }
 
 export default function BlockNoteReader({
   initialContent,
+  onRendered,
 }: BlockNoteReaderProps) {
   const schema = useMemo(() => getCustomSchema(), []);
   const isInitializedRef = useRef<boolean>(false);
@@ -378,12 +380,17 @@ export default function BlockNoteReader({
         if (sanitized.length > 0) {
           editor.replaceBlocks(editor.document, sanitized);
           isInitializedRef.current = true;
+
+          // 🔑 Trigger once blocks are inserted into the editor DOM
+          setTimeout(() => {
+            onRendered?.();
+          }, 100);
         }
       } catch (err) {
         console.warn("BlockNoteReader: Failed to load content blocks:", err);
       }
     }
-  }, [editor, initialContent]);
+  }, [editor, initialContent, onRendered]);
 
   return (
     <div className="w-full border-zinc-200/85 bg-white shadow-2xs overflow-x-auto">

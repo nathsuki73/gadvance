@@ -159,6 +159,36 @@ export default function PageContainer({
     };
   }, [handleScrollCheck]);
 
+  const scrollToHash = useCallback(() => {
+    const hash = window.location.hash;
+    if (!hash) return;
+
+    const blockId = hash.replace("#", "");
+    // BlockNote renders blocks with data-id attributes matching block IDs
+    const element =
+      document.getElementById(blockId) ||
+      document.querySelector(`[data-id="${blockId}"]`);
+
+    if (element && containerRef.current) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      // Optional: highlight effect
+      element.classList.add(
+        "bg-purple-50",
+        "transition-colors",
+        "duration-500",
+      );
+      setTimeout(() => {
+        element.classList.remove("bg-purple-50");
+      }, 2000);
+    }
+  }, []);
+
+  // Trigger on initial page load / hash change
+  useEffect(() => {
+    scrollToHash();
+  }, [scrollToHash, pageData]);
+
   if (loading || sessionStatus === "loading") {
     return (
       <div className="flex h-full w-full items-center justify-center bg-white p-6">
@@ -222,7 +252,10 @@ export default function PageContainer({
       <div className="mx-auto w-full max-w-4xl px-0 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
         <main className="min-h-[250px] w-full overflow-x-auto">
           {isBlockNoteContent ? (
-            <BlockNoteReader initialContent={pageData.content} />
+            <BlockNoteReader
+              initialContent={pageData.content}
+              onRendered={scrollToHash}
+            />
           ) : typeof pageData?.content === "string" &&
             pageData.content.length > 0 ? (
             <div
