@@ -56,7 +56,7 @@ export default function AssessmentContainer({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔑 NEW: States to permanently hold the backend's official score calculations
+  // States to permanently hold the backend's official score calculations
   const [savedScore, setSavedScore] = useState<number | null>(null);
   const [savedCorrectCount, setSavedCorrectCount] = useState<number | null>(
     null,
@@ -73,9 +73,12 @@ export default function AssessmentContainer({
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
-  // ⏱️ Timing Telemetry Refs & States
+  // ⏱️ Timing Telemetry & Click-Timestamp Tracking States
   const questionStartRef = useRef<number>(Date.now());
   const [questionTimes, setQuestionTimes] = useState<Record<string, number>>(
+    {},
+  );
+  const [answeredAtMap, setAnsweredAtMap] = useState<Record<string, string>>(
     {},
   );
 
@@ -108,6 +111,7 @@ export default function AssessmentContainer({
     setSavedScore(null);
     setSavedCorrectCount(null);
     setQuestionTimes({});
+    setAnsweredAtMap({});
 
     async function initAssessment() {
       if (!assessmentId) return;
@@ -119,7 +123,7 @@ export default function AssessmentContainer({
         const data = await getAssessmentViewData(assessmentId);
         if (isCancelled) return;
 
-        // 🔑 CHECK PREVIOUS ATTEMPT DATA ON PAGE LOAD
+        // Check previous attempt data on page load
         const prevAttempt = (data as any).previous_attempt;
         if (prevAttempt) {
           setSavedScore(prevAttempt.score_percentage);
@@ -348,14 +352,12 @@ export default function AssessmentContainer({
   const gradedQuestions = questions.filter((q: any) => !q.isPoll);
   const totalGraded = gradedQuestions.length;
 
-  // Local calculations (fallbacks if backend data is missing)
   const localCorrectCount = gradedQuestions.reduce((acc: number, q: any) => {
     return answers[q.id] === q.correctChoiceId ? acc + 1 : acc;
   }, 0);
   const localScorePercentage =
     totalGraded > 0 ? Math.round((localCorrectCount / totalGraded) * 100) : 100;
 
-  // 🔑 FINAL VALUES: Use backend scores if available, overriding local calculations
   const displayScore = savedScore !== null ? savedScore : localScorePercentage;
   const displayCorrectCount =
     savedCorrectCount !== null ? savedCorrectCount : localCorrectCount;
@@ -366,6 +368,13 @@ export default function AssessmentContainer({
 
     const updatedAnswers = { ...answers, [questionId]: choiceId };
     setAnswers(updatedAnswers);
+
+    // Record the exact click timestamp for this specific question
+    setAnsweredAtMap((prev) => ({
+      ...prev,
+      [questionId]: prev[questionId] || new Date().toISOString(),
+    }));
+
     triggerDraftSave(updatedAnswers, currentQuestionIndex);
   };
 
@@ -442,7 +451,6 @@ export default function AssessmentContainer({
       setIsSubmitting(true);
       recordCurrentQuestionTime();
 
-      // Compute final aggregated times
       const finalTimes = { ...questionTimes };
       const currentQ = questions[currentQuestionIndex];
       if (currentQ) {
@@ -455,7 +463,8 @@ export default function AssessmentContainer({
         question_id: qId,
         choice_id: cId,
         time_spent_seconds: finalTimes[qId] || 0,
-        answered_at: new Date().toISOString(),
+        // Passes the distinct per-question timestamp recorded on click
+        answered_at: answeredAtMap[qId] || new Date().toISOString(),
       }));
 
       const result = await submitAssessment({
@@ -469,7 +478,6 @@ export default function AssessmentContainer({
       if (result.success) {
         const responseData = result.data as any;
 
-        // 🔑 Capture Backend Score Instantly
         const backendScore =
           responseData?.score_percentage ?? (result as any).score_percentage;
         if (backendScore !== undefined) {
@@ -566,9 +574,9 @@ export default function AssessmentContainer({
     setElapsedSeconds(0);
     setStartTime(Date.now());
     setQuestionTimes({});
+    setAnsweredAtMap({});
     questionStartRef.current = Date.now();
 
-    // Clear saved scores
     setSavedScore(null);
     setSavedCorrectCount(null);
   };
