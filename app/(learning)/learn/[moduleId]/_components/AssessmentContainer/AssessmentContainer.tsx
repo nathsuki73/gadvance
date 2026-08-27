@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   AlertCircle,
   Clock,
@@ -73,6 +73,27 @@ export default function AssessmentContainer({
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
+  // ⏱️ Timing Telemetry Refs & States
+  const questionStartRef = useRef<number>(Date.now());
+  const [questionTimes, setQuestionTimes] = useState<Record<string, number>>(
+    {},
+  );
+
+  const recordCurrentQuestionTime = () => {
+    if (!assessment) return;
+    const currentQ = assessment.questions[currentQuestionIndex];
+    if (!currentQ) return;
+    const elapsed = Math.round((Date.now() - questionStartRef.current) / 1000);
+    setQuestionTimes((prev) => ({
+      ...prev,
+      [currentQ.id]: (prev[currentQ.id] || 0) + elapsed,
+    }));
+  };
+
+  useEffect(() => {
+    questionStartRef.current = Date.now();
+  }, [currentQuestionIndex]);
+
   useEffect(() => {
     let isCancelled = false;
 
@@ -86,6 +107,7 @@ export default function AssessmentContainer({
     setRemedialSuggestions([]);
     setSavedScore(null);
     setSavedCorrectCount(null);
+    setQuestionTimes({});
 
     async function initAssessment() {
       if (!assessmentId) return;
@@ -396,6 +418,7 @@ export default function AssessmentContainer({
 
   const handleNextQuestion = () => {
     if (!isLastQuestion) {
+      recordCurrentQuestionTime();
       const nextIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextIndex);
       triggerDraftSave(answers, nextIndex);
@@ -404,6 +427,7 @@ export default function AssessmentContainer({
 
   const handlePreviousQuestion = () => {
     if (!isFirstQuestion) {
+      recordCurrentQuestionTime();
       const prevIndex = currentQuestionIndex - 1;
       setCurrentQuestionIndex(prevIndex);
       triggerDraftSave(answers, prevIndex);
@@ -416,20 +440,30 @@ export default function AssessmentContainer({
 
     try {
       setIsSubmitting(true);
+      recordCurrentQuestionTime();
 
-      const formattedAnswers: AnswerPayload[] = Object.entries(answers).map(
-        ([qId, cId]) => ({
-          question_id: qId,
-          choice_id: cId,
-        }),
-      );
+      // Compute final aggregated times
+      const finalTimes = { ...questionTimes };
+      const currentQ = questions[currentQuestionIndex];
+      if (currentQ) {
+        finalTimes[currentQ.id] =
+          (finalTimes[currentQ.id] || 0) +
+          Math.round((Date.now() - questionStartRef.current) / 1000);
+      }
+
+      const formattedAnswers = Object.entries(answers).map(([qId, cId]) => ({
+        question_id: qId,
+        choice_id: cId,
+        time_spent_seconds: finalTimes[qId] || 0,
+        answered_at: new Date().toISOString(),
+      }));
 
       const result = await submitAssessment({
         assessmentId,
         moduleId,
         sectionId,
         sectionItemId: itemId,
-        answers: formattedAnswers,
+        answers: formattedAnswers as any,
       });
 
       if (result.success) {
@@ -483,7 +517,6 @@ export default function AssessmentContainer({
         }
 
         setSubmitted(true);
-        // setShowReview(true);
         onComplete();
       } else {
         alert(result.message || "Failed to save assessment progress.");
@@ -497,7 +530,6 @@ export default function AssessmentContainer({
   };
 
   const handleRetry = async () => {
-    // 🔑 Using != null safely checks for both null and undefined
     if (settings.maxAttempts != null) {
       if (settings.maxAttempts <= 1) {
         alert("You have reached the maximum allowed attempts.");
@@ -533,6 +565,8 @@ export default function AssessmentContainer({
     setCurrentQuestionIndex(0);
     setElapsedSeconds(0);
     setStartTime(Date.now());
+    setQuestionTimes({});
+    questionStartRef.current = Date.now();
 
     // Clear saved scores
     setSavedScore(null);
@@ -608,6 +642,7 @@ export default function AssessmentContainer({
             assessment={assessment}
             onStart={() => {
               setStartTime(Date.now());
+              questionStartRef.current = Date.now();
               setHasStarted(true);
               triggerDraftSave(answers, 0);
             }}
@@ -703,7 +738,6 @@ export default function AssessmentContainer({
             )}
 
             <div className="pt-4">
-              {/* 🔑 Check if passing is required. If required, they must pass or it must be a poll. If not required, they can always proceed. */}
               {isPoll || !settings.requirePassingToProceed || isPassed ? (
                 <button
                   type="button"
