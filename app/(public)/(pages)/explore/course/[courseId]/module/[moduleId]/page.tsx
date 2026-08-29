@@ -257,7 +257,11 @@ export default function ModulePage({
                           <div className="mt-6 sm:mt-8">
                             <button
                               type="button"
-                              onClick={() => router.push(`/learn/${mod.id}`)}
+                              onClick={() =>
+                                router.push(
+                                  `/explore/course/${courseId}/module/${mod.id}`,
+                                )
+                              }
                               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-purple-500/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] cursor-pointer"
                             >
                               {modProgress > 0
