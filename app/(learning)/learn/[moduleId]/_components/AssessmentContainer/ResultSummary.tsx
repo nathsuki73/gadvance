@@ -116,7 +116,7 @@ export function ResultsSummary({
       : `${correctCount} / ${totalGraded}`;
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-purple-100 bg-gradient-to-br from-purple-50/40 via-white to-purple-50/10 p-6 space-y-6 shadow-xs flex flex-col items-center text-center">
+    <div className="overflow-hidden p-6 space-y-6 flex flex-col items-center text-center">
       {settings.type === "poll" ? (
         <div className="w-full rounded-2xl border border-purple-200/80 bg-purple-50/50 p-6 text-center space-y-2">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 text-[#8b5cf6]">
