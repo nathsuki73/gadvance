@@ -237,7 +237,8 @@ export function ResultsSummary({
 
       {/* Unified Action Buttons Container */}
       <div className="flex flex-col gap-3 w-full pt-2">
-        {hasAttemptsRemaining && !isPassed && (
+        {/* 🔑 Removed '!isPassed' so Try Again shows up even if user successfully passed */}
+        {hasAttemptsRemaining && (
           <button
             type="button"
             onClick={onRetry}
