@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   AlertCircle,
   Clock,
@@ -9,6 +9,7 @@ import {
   Loader2,
   CheckCircle2,
 } from "lucide-react";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { AssessmentViewData } from "./types";
 import {
   getAssessmentViewData,
@@ -34,6 +35,21 @@ interface AssessmentContainerProps {
   onNavigate?: (targetId: string, blockId: string) => void;
 }
 
+// Wait this long after the LAST answer change before sending it to the
+// server. Any further changes within the window reset the timer, so only
+// the freshest snapshot ever actually gets sent — this is what makes the
+// old "which save landed last?" race impossible.
+const DRAFT_SAVE_DEBOUNCE_MS = 600;
+
+/**
+ * IMPORTANT: the parent (`LearnPage`) must render this with
+ * `key={activeItem.id}` — the same way it already does for `PageContainer`.
+ * That guarantees a full, clean remount every time the user switches to a
+ * different assessment item, which is what lets us delete all the manual
+ * "reset every piece of state" boilerplate that used to live at the top of
+ * the old data-loading effect. Fresh mount = fresh `useState` defaults, for
+ * free, with no room for a forgotten reset to leave stale state behind.
+ */
 export default function AssessmentContainer({
   itemId,
   sectionId = "",
@@ -44,19 +60,70 @@ export default function AssessmentContainer({
   onNext,
   onNavigate,
 }: AssessmentContainerProps) {
+  const queryClient = useQueryClient();
+
+  // ────────────────────────────────────────────────────────────────────
+  // 1. STATIC ASSESSMENT CONTENT — questions, choices, settings.
+  // Cached per assessmentId with an effectively infinite staleTime, exactly
+  // like PageContainer caches page content. The first time you open a given
+  // assessment this session it hits the network; every time after that
+  // (including navigating away and back) it's served straight from the
+  // query cache — no network call, no loading spinner.
+  //
+  // IMPORTANT: the key includes `itemId` and `type`, not just `assessmentId`.
+  // Different section items can point at the same underlying `assessmentId`
+  // while being different *versions* of it — e.g. a quiz vs. a poll variant
+  // of the same content. If the key were `assessmentId` alone, TanStack
+  // Query would treat those as the identical resource and silently reuse
+  // the first one's cached data for the second, never fetching the other
+  // version at all. Keying by the full (assessmentId, itemId, type) tuple
+  // guarantees each variant gets its own independent cache entry.
+  // ────────────────────────────────────────────────────────────────────
+  const viewQueryKey = ["assessmentView", assessmentId, itemId, type] as const;
+  const stateQueryKey = [
+    "assessmentState",
+    assessmentId,
+    itemId,
+    type,
+  ] as const;
+
+  const {
+    data: viewData,
+    isLoading: viewLoading,
+    error: viewError,
+  } = useQuery({
+    queryKey: viewQueryKey,
+    queryFn: () => getAssessmentViewData(assessmentId),
+    enabled: Boolean(assessmentId),
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 30,
+  });
+
+  // ────────────────────────────────────────────────────────────────────
+  // 2. PER-ATTEMPT STATE — draft answers, current index, completion status.
+  // Same caching strategy, same reasoning for the compound key above. Once
+  // this loads, our local useState below is seeded from it exactly once
+  // (this component is freshly mounted per item, so "once" really does
+  // mean once per visit).
+  // ────────────────────────────────────────────────────────────────────
+  const { data: stateData, isLoading: stateLoading } = useQuery({
+    queryKey: stateQueryKey,
+    queryFn: () => getAssessmentState(assessmentId, itemId),
+    enabled: Boolean(assessmentId) && Boolean(itemId),
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 30,
+  });
+
   const [assessment, setAssessment] = useState<AssessmentViewData | null>(null);
   const [hasStarted, setHasStarted] = useState<boolean>(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔑 Added state to toggle the Review view replacing the results summary
   const [isReviewActive, setIsReviewActive] = useState<boolean>(false);
 
-  // 🔑 Updated States to hold official backend score calculations & raw points
   const [savedScore, setSavedScore] = useState<number | null>(null);
   const [savedRawScore, setSavedRawScore] = useState<number | null>(null);
   const [savedTotalPoints, setSavedTotalPoints] = useState<number | null>(null);
@@ -75,7 +142,6 @@ export default function AssessmentContainer({
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
-  // ⏱️ Timing Telemetry & Click-Timestamp Tracking States
   const questionStartRef = useRef<number>(Date.now());
   const [questionTimes, setQuestionTimes] = useState<Record<string, number>>(
     {},
@@ -83,6 +149,150 @@ export default function AssessmentContainer({
   const [answeredAtMap, setAnsweredAtMap] = useState<Record<string, string>>(
     {},
   );
+
+  // Have we finished the one-time hydration from the two queries above?
+  // Guards against re-seeding local state if the queries ever re-resolve
+  // (e.g. a manual invalidateQueries elsewhere) after the user has already
+  // started typing/answering in this mounted instance.
+  const hasHydrated = useRef(false);
+
+  useEffect(() => {
+    if (hasHydrated.current) return;
+    if (!viewData || stateLoading) return;
+
+    const prevAttempt = (viewData as any).previous_attempt;
+    if (prevAttempt) {
+      setSavedScore(prevAttempt.score_percentage);
+      setSavedRawScore(prevAttempt.score ?? null);
+      setSavedTotalPoints(prevAttempt.total_points ?? null);
+
+      if (Array.isArray(prevAttempt.answers)) {
+        const correct = prevAttempt.answers.filter(
+          (a: any) => a.is_correct,
+        ).length;
+        setSavedCorrectCount(correct);
+      }
+
+      if (prevAttempt.remedial_suggestions) {
+        setRemedialSuggestions(prevAttempt.remedial_suggestions);
+      }
+    }
+
+    const stateRes = stateData as any;
+
+    if (stateRes?.success && stateRes.data) {
+      const {
+        draft_answers,
+        question_order,
+        current_index,
+        status,
+        poll_distributions,
+      } = stateRes.data;
+
+      let activeQuestions = [...viewData.questions];
+
+      if (question_order && question_order.length > 0) {
+        const orderedMap = new Map(
+          viewData.questions.map((q: (typeof viewData.questions)[number]) => [
+            q.id,
+            q,
+          ]),
+        );
+        const restoredQuestions = question_order
+          .map((qId: string) => orderedMap.get(qId))
+          .filter(
+            (
+              q: (typeof viewData.questions)[number] | undefined,
+            ): q is (typeof viewData.questions)[0] => Boolean(q),
+          );
+
+        if (restoredQuestions.length > 0) {
+          activeQuestions = restoredQuestions;
+        }
+      }
+
+      if (poll_distributions && Object.keys(poll_distributions).length > 0) {
+        activeQuestions = activeQuestions.map((q) => ({
+          ...q,
+          choices: q.choices.map((choice) => {
+            const c = choice as any;
+            const dist = poll_distributions[c.id];
+            if (typeof dist === "object" && dist !== null) {
+              return {
+                ...c,
+                votes: dist.votes ?? c.votes ?? 0,
+                percentage: dist.percentage ?? c.percentage ?? 0,
+              };
+            }
+            return c;
+          }),
+        }));
+      }
+
+      setAssessment({ ...viewData, questions: activeQuestions });
+
+      const restoredMap: Record<string, string> = {};
+      if (draft_answers) {
+        if (Array.isArray(draft_answers)) {
+          draft_answers.forEach((ans: any) => {
+            restoredMap[ans.question_id] = ans.choice_id;
+          });
+        } else if (
+          typeof draft_answers === "object" &&
+          draft_answers !== null
+        ) {
+          Object.assign(restoredMap, draft_answers);
+        }
+      }
+
+      if (Object.keys(restoredMap).length > 0) {
+        setAnswers(restoredMap);
+        setHasStarted(true);
+      }
+
+      if (
+        typeof current_index === "number" &&
+        current_index < activeQuestions.length
+      ) {
+        setCurrentQuestionIndex(current_index);
+        if (current_index > 0) setHasStarted(true);
+      }
+
+      if (status === "completed") {
+        setHasStarted(true);
+        setSubmitted(true);
+
+        if (viewData.settings.type === "poll") {
+          const allSubmittedMap: Record<string, boolean> = {};
+          activeQuestions.forEach((q) => {
+            allSubmittedMap[q.id] = true;
+          });
+          setSubmittedQuestions(allSubmittedMap);
+        }
+      } else if (
+        status === "in_progress" &&
+        Object.keys(restoredMap).length > 0
+      ) {
+        setHasStarted(true);
+      }
+    } else {
+      setAssessment(viewData);
+    }
+
+    hasHydrated.current = true;
+    setStartTime(Date.now());
+    questionStartRef.current = Date.now();
+  }, [viewData, stateData, stateLoading]);
+
+  useEffect(() => {
+    if (viewError) {
+      setError((viewError as any)?.message || "Failed to load assessment.");
+    }
+  }, [viewError]);
+
+  useEffect(() => {
+    questionStartRef.current = Date.now();
+  }, [currentQuestionIndex]);
 
   const recordCurrentQuestionTime = () => {
     if (!assessment) return;
@@ -94,179 +304,6 @@ export default function AssessmentContainer({
       [currentQ.id]: (prev[currentQ.id] || 0) + elapsed,
     }));
   };
-
-  useEffect(() => {
-    questionStartRef.current = Date.now();
-  }, [currentQuestionIndex]);
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    setHasStarted(false);
-    setCurrentQuestionIndex(0);
-    setAnswers({});
-    setSubmitted(false);
-    setIsReviewActive(false);
-    setSubmittedQuestions({});
-    setElapsedSeconds(0);
-    setRemedialSuggestions([]);
-    setSavedScore(null);
-    setSavedRawScore(null);
-    setSavedTotalPoints(null);
-    setSavedCorrectCount(null);
-    setQuestionTimes({});
-    setAnsweredAtMap({});
-
-    async function initAssessment() {
-      if (!assessmentId) return;
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const data = await getAssessmentViewData(assessmentId);
-        if (isCancelled) return;
-
-        // Check previous attempt data on page load
-        const prevAttempt = (data as any).previous_attempt;
-        if (prevAttempt) {
-          setSavedScore(prevAttempt.score_percentage);
-          setSavedRawScore(prevAttempt.score ?? null);
-          setSavedTotalPoints(prevAttempt.total_points ?? null);
-
-          if (Array.isArray(prevAttempt.answers)) {
-            const correct = prevAttempt.answers.filter(
-              (a: any) => a.is_correct,
-            ).length;
-            setSavedCorrectCount(correct);
-          }
-
-          if (prevAttempt.remedial_suggestions) {
-            setRemedialSuggestions(prevAttempt.remedial_suggestions);
-          }
-        }
-
-        const stateRes = await getAssessmentState(assessmentId, itemId);
-
-        if (stateRes.success && stateRes.data && !isCancelled) {
-          const {
-            draft_answers,
-            question_order,
-            current_index,
-            status,
-            poll_distributions,
-          } = stateRes.data as any;
-
-          let activeQuestions = [...data.questions];
-
-          if (question_order && question_order.length > 0) {
-            const orderedMap = new Map(
-              data.questions.map((q: (typeof data.questions)[number]) => [
-                q.id,
-                q,
-              ]),
-            );
-            const restoredQuestions = question_order
-              .map((qId: string) => orderedMap.get(qId))
-              .filter(
-                (
-                  q: (typeof data.questions)[number] | undefined,
-                ): q is (typeof data.questions)[0] => Boolean(q),
-              );
-
-            if (restoredQuestions.length > 0) {
-              activeQuestions = restoredQuestions;
-            }
-          }
-
-          if (
-            poll_distributions &&
-            Object.keys(poll_distributions).length > 0
-          ) {
-            activeQuestions = activeQuestions.map((q) => ({
-              ...q,
-              choices: q.choices.map((choice) => {
-                const c = choice as any;
-                const dist = poll_distributions[c.id];
-                if (typeof dist === "object" && dist !== null) {
-                  return {
-                    ...c,
-                    votes: dist.votes ?? c.votes ?? 0,
-                    percentage: dist.percentage ?? c.percentage ?? 0,
-                  };
-                }
-                return c;
-              }),
-            }));
-          }
-
-          setAssessment({
-            ...data,
-            questions: activeQuestions,
-          });
-
-          const restoredMap: Record<string, string> = {};
-          if (draft_answers) {
-            if (Array.isArray(draft_answers)) {
-              draft_answers.forEach((ans: any) => {
-                restoredMap[ans.question_id] = ans.choice_id;
-              });
-            } else if (
-              typeof draft_answers === "object" &&
-              draft_answers !== null
-            ) {
-              Object.assign(restoredMap, draft_answers);
-            }
-          }
-
-          if (Object.keys(restoredMap).length > 0) {
-            setAnswers(restoredMap);
-            setHasStarted(true);
-          }
-
-          if (
-            typeof current_index === "number" &&
-            current_index < activeQuestions.length
-          ) {
-            setCurrentQuestionIndex(current_index);
-            if (current_index > 0) {
-              setHasStarted(true);
-            }
-          }
-
-          if (status === "completed") {
-            setHasStarted(true);
-            setSubmitted(true);
-
-            if (data.settings.type === "poll") {
-              const allSubmittedMap: Record<string, boolean> = {};
-              activeQuestions.forEach((q) => {
-                allSubmittedMap[q.id] = true;
-              });
-              setSubmittedQuestions(allSubmittedMap);
-            }
-          } else if (
-            status === "in_progress" &&
-            Object.keys(restoredMap).length > 0
-          ) {
-            setHasStarted(true);
-          }
-        } else {
-          setAssessment(data);
-        }
-      } catch (err: any) {
-        if (!isCancelled) setError(err.message || "Failed to load assessment.");
-      } finally {
-        if (!isCancelled) setIsLoading(false);
-      }
-    }
-
-    initAssessment();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [assessmentId, itemId]);
 
   useEffect(() => {
     if (!hasStarted || submitted || !assessment?.settings) return;
@@ -285,31 +322,124 @@ export default function AssessmentContainer({
     }, 1000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasStarted, startTime, submitted, assessment]);
 
-  const triggerDraftSave = (
-    updatedAnswers: Record<string, string>,
-    targetIndex: number,
-  ) => {
-    if (!assessment) return;
+  // ────────────────────────────────────────────────────────────────────
+  // 3. DRAFT SAVE — debounced + race-safe.
+  //
+  // The old version fired `saveAssessmentDraft` on every single click with
+  // no debounce and no way to guarantee ordering, so a slow, stale request
+  // could resolve AFTER a newer one and silently overwrite it server-side.
+  //
+  // Fix: every call to `triggerDraftSave` just updates a ref with the
+  // latest snapshot and (re)starts a short timer. Only when the timer
+  // actually fires do we send anything — and since each call cancels the
+  // previous timer, only the LATEST snapshot is ever sent. `flushDraftSave`
+  // lets us skip the wait and send immediately when it matters (navigating
+  // questions, submitting) so a save is never left dangling when you leave.
+  // ────────────────────────────────────────────────────────────────────
+  const draftSaveMutation = useMutation({
+    mutationFn: (vars: {
+      formattedAnswers: AnswerPayload[];
+      questionOrder: string[];
+      targetIndex: number;
+    }) =>
+      saveAssessmentDraft(
+        assessmentId,
+        itemId,
+        vars.formattedAnswers,
+        vars.questionOrder,
+        vars.targetIndex,
+      ),
+    onError: (err) => console.error("Draft save failed:", err),
+  });
 
-    const formattedAnswers: AnswerPayload[] = Object.entries(
-      updatedAnswers,
-    ).map(([qId, cId]) => ({
-      question_id: qId,
-      choice_id: cId,
-    }));
+  const pendingDraftRef = useRef<{
+    updatedAnswers: Record<string, string>;
+    targetIndex: number;
+  } | null>(null);
+  const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const questionOrder = assessment.questions.map((q) => q.id);
+  const sendDraft = useCallback(
+    (updatedAnswers: Record<string, string>, targetIndex: number) => {
+      if (!assessment) return;
 
-    saveAssessmentDraft(
-      assessmentId,
-      itemId,
-      formattedAnswers,
-      questionOrder,
-      targetIndex,
-    ).catch((err) => console.error("Draft save failed:", err));
-  };
+      const formattedAnswers: AnswerPayload[] = Object.entries(
+        updatedAnswers,
+      ).map(([qId, cId]) => ({ question_id: qId, choice_id: cId }));
+
+      const questionOrder = assessment.questions.map((q) => q.id);
+
+      // Keep the query cache in sync too, so if this component ever gets
+      // revisited later in the session before a full reload, the cached
+      // state already reflects exactly what we just sent — not what the
+      // server had before this save.
+      queryClient.setQueryData(stateQueryKey, (old: any) => {
+        if (!old?.data) return old;
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            draft_answers: updatedAnswers,
+            current_index: targetIndex,
+            status: "in_progress",
+          },
+        };
+      });
+
+      draftSaveMutation.mutate({
+        formattedAnswers,
+        questionOrder,
+        targetIndex,
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [assessment, assessmentId, itemId, queryClient],
+  );
+
+  const triggerDraftSave = useCallback(
+    (updatedAnswers: Record<string, string>, targetIndex: number) => {
+      pendingDraftRef.current = { updatedAnswers, targetIndex };
+
+      if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+      draftTimerRef.current = setTimeout(() => {
+        if (pendingDraftRef.current) {
+          sendDraft(
+            pendingDraftRef.current.updatedAnswers,
+            pendingDraftRef.current.targetIndex,
+          );
+          pendingDraftRef.current = null;
+        }
+      }, DRAFT_SAVE_DEBOUNCE_MS);
+    },
+    [sendDraft],
+  );
+
+  const flushDraftSave = useCallback(() => {
+    if (draftTimerRef.current) {
+      clearTimeout(draftTimerRef.current);
+      draftTimerRef.current = null;
+    }
+    if (pendingDraftRef.current) {
+      sendDraft(
+        pendingDraftRef.current.updatedAnswers,
+        pendingDraftRef.current.targetIndex,
+      );
+      pendingDraftRef.current = null;
+    }
+  }, [sendDraft]);
+
+  // Make sure nothing is left un-sent if the user navigates away entirely
+  // (different item / unmount) while a debounce timer is still pending.
+  useEffect(() => {
+    return () => {
+      flushDraftSave();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const isLoading = viewLoading || (Boolean(itemId) && stateLoading);
 
   if (isLoading) {
     return (
@@ -434,7 +564,11 @@ export default function AssessmentContainer({
       recordCurrentQuestionTime();
       const nextIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextIndex);
+      // Flush immediately rather than debounce — we're navigating right
+      // now, so there's no "wait for more changes" upside, and we want the
+      // new index persisted before the user can click away again.
       triggerDraftSave(answers, nextIndex);
+      flushDraftSave();
     }
   };
 
@@ -444,6 +578,7 @@ export default function AssessmentContainer({
       const prevIndex = currentQuestionIndex - 1;
       setCurrentQuestionIndex(prevIndex);
       triggerDraftSave(answers, prevIndex);
+      flushDraftSave();
     }
   };
 
@@ -453,6 +588,15 @@ export default function AssessmentContainer({
 
     try {
       setIsSubmitting(true);
+      // Make sure any in-flight/pending draft save doesn't race the actual
+      // submission — cancel the debounce and don't bother sending it, since
+      // the submit payload below is a strict superset of that data anyway.
+      if (draftTimerRef.current) {
+        clearTimeout(draftTimerRef.current);
+        draftTimerRef.current = null;
+      }
+      pendingDraftRef.current = null;
+
       recordCurrentQuestionTime();
 
       const finalTimes = { ...questionTimes };
@@ -534,6 +678,15 @@ export default function AssessmentContainer({
         }
 
         setSubmitted(true);
+
+        // The server-side state for this assessment has now changed
+        // ("completed") — mark the cached state stale so a genuinely fresh
+        // visit later in the session (e.g. after a retake elsewhere) won't
+        // read a pre-submission snapshot.
+        queryClient.invalidateQueries({
+          queryKey: stateQueryKey,
+        });
+
         onComplete();
       } else {
         alert(result.message || "Failed to save assessment progress.");
@@ -547,11 +700,9 @@ export default function AssessmentContainer({
   };
 
   const handleRetry = async () => {
-    if (settings.maxAttempts != null) {
-      if (settings.maxAttempts <= 1) {
-        alert("You have reached the maximum allowed attempts.");
-        return;
-      }
+    if (settings.maxAttempts != null && settings.maxAttempts <= 1) {
+      alert("You have reached the maximum allowed attempts.");
+      return;
     }
 
     const res = await retakeAssessment(assessmentId, itemId);
@@ -590,6 +741,16 @@ export default function AssessmentContainer({
     setSavedRawScore(null);
     setSavedTotalPoints(null);
     setSavedCorrectCount(null);
+
+    // Bust both caches for this assessment so nothing stale (old draft
+    // answers, old completed status, old score) can resurface if the user
+    // navigates away and back within the session.
+    queryClient.invalidateQueries({
+      queryKey: stateQueryKey,
+    });
+    queryClient.invalidateQueries({
+      queryKey: viewQueryKey,
+    });
   };
 
   const formatTimerDisplay = () => {
@@ -664,6 +825,7 @@ export default function AssessmentContainer({
               questionStartRef.current = Date.now();
               setHasStarted(true);
               triggerDraftSave(answers, 0);
+              flushDraftSave();
             }}
           />
         ) : submitted ? (
