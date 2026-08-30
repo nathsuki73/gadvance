@@ -23,6 +23,7 @@ import {
 import { AssessmentStartScreen } from "./AssessmentStartScreen";
 import { QuestionCard } from "./QuestionCard";
 import { ResultsSummary } from "./ResultSummary";
+import { ReviewSubmission } from "./ReviewSubmission";
 import Link from "next/link";
 
 interface AssessmentContainerProps {
@@ -51,10 +52,12 @@ export default function AssessmentContainer({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState<boolean>(false);
-  const [showReview, setShowReview] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 🔑 Added state to toggle the Review view replacing the results summary
+  const [isReviewActive, setIsReviewActive] = useState<boolean>(false);
 
   // 🔑 Updated States to hold official backend score calculations & raw points
   const [savedScore, setSavedScore] = useState<number | null>(null);
@@ -106,7 +109,7 @@ export default function AssessmentContainer({
     setCurrentQuestionIndex(0);
     setAnswers({});
     setSubmitted(false);
-    setShowReview(false);
+    setIsReviewActive(false);
     setSubmittedQuestions({});
     setElapsedSeconds(0);
     setRemedialSuggestions([]);
@@ -237,7 +240,6 @@ export default function AssessmentContainer({
           if (status === "completed") {
             setHasStarted(true);
             setSubmitted(true);
-            setShowReview(false);
 
             if (data.settings.type === "poll") {
               const allSubmittedMap: Record<string, boolean> = {};
@@ -577,8 +579,8 @@ export default function AssessmentContainer({
 
     setAnswers({});
     setSubmitted(false);
+    setIsReviewActive(false);
     setSubmittedQuestions({});
-    setShowReview(false);
     setRemedialSuggestions([]);
     setCurrentQuestionIndex(0);
     setElapsedSeconds(0);
@@ -669,98 +671,76 @@ export default function AssessmentContainer({
           />
         ) : submitted ? (
           <div className="space-y-6">
-            {settings.showFinalResults && (
-              <ResultsSummary
-                scorePercentage={displayScore}
-                score={savedRawScore ?? localCorrectCount}
-                totalPoints={savedTotalPoints ?? totalGraded}
-                correctCount={displayCorrectCount}
-                totalGraded={totalGraded}
-                totalQuestions={totalQuestions}
-                elapsedSeconds={elapsedSeconds}
-                settings={settings}
-                onRetry={handleRetry}
-                onNext={onNext}
-                isPassed={isPassed}
-                isPoll={isPoll}
-              />
-            )}
-
-            {remedialSuggestions.length > 0 && (
-              <div className="rounded-2xl border border-purple-200/60 bg-purple-50/40 p-5 space-y-3">
-                <div className="flex items-center gap-2 text-purple-900">
-                  <BookOpenText size={18} className="text-[#8b5cf6]" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider">
-                    Recommended Study Sections (Review Material)
-                  </h3>
-                </div>
-                <p className="text-xs text-zinc-600">
-                  Based on your assessment results, focus on reviewing these
-                  targeted sections:
-                </p>
-                <div className="grid gap-2">
-                  {remedialSuggestions.map((item, idx) => {
-                    const reviewUrl = `/learn/${moduleId}?item=${item.page_id}#${item.block_id}`;
-
-                    return (
-                      <Link
-                        key={idx}
-                        href={reviewUrl}
-                        className="flex items-center justify-between rounded-xl border border-purple-200/80 bg-white p-3 text-xs font-semibold text-zinc-800 shadow-2xs transition-all hover:border-purple-400 hover:bg-purple-50/50"
-                      >
-                        <span className="flex items-center gap-2">
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-[10px] font-bold text-[#8b5cf6]">
-                            {idx + 1}
-                          </span>
-                          <span>Target Section Block #{idx + 1}</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-[#8b5cf6]">
-                          <span>Review Page</span>
-                          <ExternalLink size={13} />
-                        </span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {(settings.allowReview || isPoll) && (
-              <div className="space-y-4">
-                <button
-                  type="button"
-                  onClick={() => setShowReview((prev) => !prev)}
-                  className="flex w-full items-center justify-between rounded-2xl border border-zinc-200/80 bg-zinc-50/70 px-5 py-3.5 text-left transition-all hover:border-[#8b5cf6] hover:bg-[#7c3aed] cursor-pointer"
-                >
-                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-700">
-                    {isPoll ? "View Poll Results" : "Review Submission"}
-                  </span>
-                  <ChevronRight
-                    size={18}
-                    className={`text-zinc-500 transition-transform duration-200 ${
-                      showReview ? "rotate-90 text-[#8b5cf6]" : ""
-                    }`}
+            {!isReviewActive && (
+              <>
+                {settings.showFinalResults && (
+                  <ResultsSummary
+                    scorePercentage={displayScore}
+                    score={savedRawScore ?? localCorrectCount}
+                    totalPoints={savedTotalPoints ?? totalGraded}
+                    correctCount={displayCorrectCount}
+                    totalGraded={totalGraded}
+                    totalQuestions={totalQuestions}
+                    elapsedSeconds={elapsedSeconds}
+                    settings={settings}
+                    onRetry={handleRetry}
+                    onNext={onNext}
+                    isPassed={isPassed}
+                    isPoll={isPoll}
                   />
-                </button>
+                )}
 
-                {showReview && (
-                  <div className="space-y-6 pt-2">
-                    {questions.map((q, qIndex) => (
-                      <QuestionCard
-                        key={q.id}
-                        question={q}
-                        index={qIndex}
-                        selectedChoiceId={answers[q.id]}
-                        submitted={submitted}
-                        isQuestionSubmitted={true}
-                        settings={settings}
-                        onSelectChoice={handleSelectChoice}
-                      />
-                    ))}
+                {remedialSuggestions.length > 0 && (
+                  <div className="rounded-2xl border border-purple-200/60 bg-purple-50/40 p-5 space-y-3">
+                    <div className="flex items-center gap-2 text-purple-900">
+                      <BookOpenText size={18} className="text-[#8b5cf6]" />
+                      <h3 className="text-xs font-bold uppercase tracking-wider">
+                        Recommended Study Sections (Review Material)
+                      </h3>
+                    </div>
+                    <p className="text-xs text-zinc-600">
+                      Based on your assessment results, focus on reviewing these
+                      targeted sections:
+                    </p>
+                    <div className="grid gap-2">
+                      {remedialSuggestions.map((item, idx) => {
+                        const reviewUrl = `/learn/${moduleId}?item=${item.page_id}#${item.block_id}`;
+
+                        return (
+                          <Link
+                            key={idx}
+                            href={reviewUrl}
+                            className="flex items-center justify-between rounded-xl border border-purple-200/80 bg-white p-3 text-xs font-semibold text-zinc-800 shadow-2xs transition-all hover:border-purple-400 hover:bg-purple-50/50"
+                          >
+                            <span className="flex items-center gap-2">
+                              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-[10px] font-bold text-[#8b5cf6]">
+                                {idx + 1}
+                              </span>
+                              <span>Target Section Block #{idx + 1}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-[#8b5cf6]">
+                              <span>Review Page</span>
+                              <ExternalLink size={13} />
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
-              </div>
+              </>
             )}
+
+            <ReviewSubmission
+              questions={questions}
+              answers={answers}
+              submitted={submitted}
+              settings={settings}
+              isPoll={isPoll}
+              isReviewActive={isReviewActive}
+              onToggleReview={setIsReviewActive}
+              onSelectChoice={handleSelectChoice}
+            />
           </div>
         ) : (
           <div className="space-y-6">
