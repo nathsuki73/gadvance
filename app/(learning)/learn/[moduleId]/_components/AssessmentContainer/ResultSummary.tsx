@@ -255,7 +255,7 @@ export function ResultsSummary({
             onClick={onNext}
             className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-[#8b5cf6]/20 transition-all cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98]"
           >
-            <span>Continue to Next Item</span>
+            <span>Continue</span>
             <ChevronRight size={16} />
           </button>
         ) : (

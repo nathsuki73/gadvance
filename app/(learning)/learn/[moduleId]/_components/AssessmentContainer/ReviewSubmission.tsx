@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { ChevronRight, ArrowLeft } from "lucide-react";
 import { QuestionCard } from "./QuestionCard";
 import { AssessmentSettings, QuestionData } from "./types";
@@ -26,6 +26,27 @@ export function ReviewSubmission({
   onToggleReview,
   onSelectChoice,
 }: ReviewSubmissionProps) {
+  // 📱 Handle Mobile Browser Back Button behavior
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (isReviewActive) {
+        // If the review list is open, close it and stay on the results summary page
+        event.preventDefault();
+        onToggleReview(false);
+      }
+    };
+
+    if (isReviewActive) {
+      // Push a dummy history state when review opens so the back button catches it
+      window.history.pushState({ reviewOpen: true }, "");
+      window.addEventListener("popstate", handlePopState);
+    }
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [isReviewActive, onToggleReview]);
+
   if (!settings.allowReview && !isPoll) return null;
 
   if (isReviewActive) {
@@ -33,7 +54,13 @@ export function ReviewSubmission({
       <div className="space-y-6 w-full animate-in fade-in duration-200">
         <button
           type="button"
-          onClick={() => onToggleReview(false)}
+          onClick={() => {
+            // Standard click behavior: go back and pop history if needed
+            onToggleReview(false);
+            if (window.history.state?.reviewOpen) {
+              window.history.back();
+            }
+          }}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-800 transition-colors cursor-pointer mb-2"
         >
           <ArrowLeft size={15} />
@@ -59,7 +86,7 @@ export function ReviewSubmission({
   }
 
   return (
-    <div className="w-full flex justify-start pt-2">
+    <div className="w-full flex justify-end pt-2">
       <button
         type="button"
         onClick={() => onToggleReview(true)}
