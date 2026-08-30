@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   RotateCcw,
   CheckCircle2,
@@ -36,6 +36,10 @@ interface ResultsSummaryProps {
   moduleId?: string;
 }
 
+// Spring/overshoot easing — this cubic-bezier is what gives the "pop" feel
+const SPRING_EASE = "cubic-bezier(0.34,1.56,0.64,1)";
+const STAGGER_MS = 220; // delay between each remedial block appearing
+
 export function ResultsSummary({
   scorePercentage,
   score,
@@ -58,18 +62,41 @@ export function ResultsSummary({
   // ⏱️ State for toggling views ("score" vs "remedial")
   const [activeView, setActiveView] = useState<"score" | "remedial">("score");
 
+  // 🔑 Flips to true the FIRST time the remedial tab is activated, and then
+  // stays true forever — this is a one-shot switch, not a counter, so the
+  // list mounts (and animates) exactly once no matter how many times the
+  // user flips back and forth between tabs afterward.
+  const [remedialUnlocked, setRemedialUnlocked] = useState(false);
+  const hasActivatedRemedialOnce = useRef(false);
+
+  const activateRemedial = () => {
+    setActiveView("remedial");
+    setRemedialUnlocked(true);
+  };
+
   const hasAttemptsRemaining =
     settings.maxAttempts == null || settings.maxAttempts > 1;
 
   // 🔄 Auto-switch to Remedial view after 3 seconds if suggestions exist
   useEffect(() => {
-    if (remedialSuggestions.length > 0 && activeView === "score" && !isPoll) {
+    if (
+      remedialSuggestions.length > 0 &&
+      activeView === "score" &&
+      !isPoll &&
+      !hasActivatedRemedialOnce.current
+    ) {
       const timer = setTimeout(() => {
-        setActiveView("remedial");
+        activateRemedial();
       }, 3000);
       return () => clearTimeout(timer);
     }
   }, [remedialSuggestions, activeView, isPoll]);
+
+  useEffect(() => {
+    if (activeView === "remedial") {
+      hasActivatedRemedialOnce.current = true;
+    }
+  }, [activeView]);
 
   // Score Animation Loop
   useEffect(() => {
@@ -153,7 +180,7 @@ export function ResultsSummary({
           </button>
           <button
             type="button"
-            onClick={() => setActiveView("remedial")}
+            onClick={activateRemedial}
             className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
               activeView === "remedial"
                 ? "bg-[#8b5cf6] text-white shadow-2xs"
@@ -161,9 +188,7 @@ export function ResultsSummary({
             }`}
           >
             <BookOpenText size={12} />
-            <span>
-              Targeted Plan ({Math.min(remedialSuggestions.length, 3)})
-            </span>
+            <span>Study ({Math.min(remedialSuggestions.length, 3)})</span>
           </button>
         </div>
       )}
@@ -312,30 +337,17 @@ export function ResultsSummary({
                 : "opacity-0 z-0 pointer-events-none select-none"
             }`}
           >
-            {remedialSuggestions.slice(0, 3).map((item, idx) => {
-              const reviewUrl = `/learn/${moduleId}?item=${item.page_id}#${item.block_id}`;
-              return (
-                <Link
-                  key={idx}
-                  href={reviewUrl}
-                  className="group flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 text-xs font-semibold text-zinc-800 transition-all hover:border-[#8b5cf6] hover:shadow-xs w-full"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-[11px] font-bold text-[#8b5cf6]">
-                      {idx + 1}
-                    </span>
-                    <span className="text-zinc-800 group-hover:text-[#8b5cf6] transition-colors">
-                      Concept Review Module #{idx + 1}
-                    </span>
-                  </div>
-
-                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 px-3.5 py-2 text-xs font-bold text-[#8b5cf6] group-hover:bg-[#8b5cf6] group-hover:text-white transition-all">
-                    <span>Review Section</span>
-                    <ExternalLink size={13} />
-                  </span>
-                </Link>
-              );
-            })}
+            {/* 🔑 Mounted once, the first time this tab is activated, and
+                never remounted (no `key` churn) — so AnimatedRemedialList's
+                internal stagger effect runs exactly one time. Switching back
+                and forth to this tab afterward just toggles opacity on an
+                already-fully-visible, already-settled list. */}
+            {remedialUnlocked && (
+              <AnimatedRemedialList
+                suggestions={remedialSuggestions}
+                moduleId={moduleId}
+              />
+            )}
           </div>
         )}
       </div>
@@ -444,5 +456,82 @@ export function ResultsSummary({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Renders the remedial suggestion blocks one after another with a
+ * spring/overshoot pop-in. Mounted fresh (via a `key` change on the parent)
+ * every time the tab becomes active, so this effect always runs while the
+ * blocks are actually visible on screen.
+ */
+function AnimatedRemedialList({
+  suggestions,
+  moduleId,
+}: {
+  suggestions: Array<{
+    page_id: string;
+    block_id: string;
+    review_url?: string;
+  }>;
+  moduleId: string;
+}) {
+  const items = suggestions.slice(0, 3);
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    items.forEach((_, idx) => {
+      const t = setTimeout(() => {
+        setVisibleCount((prev) => Math.max(prev, idx + 1));
+      }, idx * STAGGER_MS);
+      timers.push(t);
+    });
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <>
+      {items.map((item, idx) => {
+        const reviewUrl = `/learn/${moduleId}?item=${item.page_id}#${item.block_id}`;
+        const isVisible = idx < visibleCount;
+
+        return (
+          <div
+            key={idx}
+            style={{
+              opacity: isVisible ? 1 : 0,
+              transform: isVisible
+                ? "scale(1) translateY(0px)"
+                : "scale(0.85) translateY(10px)",
+              transitionProperty: "opacity, transform",
+              transitionDuration: "550ms",
+              transitionTimingFunction: SPRING_EASE,
+              pointerEvents: isVisible ? "auto" : "none",
+            }}
+          >
+            <Link
+              href={reviewUrl}
+              className="group flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 text-xs font-semibold text-zinc-800 transition-all hover:border-[#8b5cf6] hover:shadow-xs w-full"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-[11px] font-bold text-[#8b5cf6]">
+                  {idx + 1}
+                </span>
+                <span className="text-zinc-800 group-hover:text-[#8b5cf6] transition-colors">
+                  Concept Review Module #{idx + 1}
+                </span>
+              </div>
+
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 px-3.5 py-2 text-xs font-bold text-[#8b5cf6] group-hover:bg-[#8b5cf6] group-hover:text-white transition-all">
+                <span>Review Section</span>
+                <ExternalLink size={13} />
+              </span>
+            </Link>
+          </div>
+        );
+      })}
+    </>
   );
 }
