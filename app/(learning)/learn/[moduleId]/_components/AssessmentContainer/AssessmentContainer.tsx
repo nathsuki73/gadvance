@@ -16,6 +16,7 @@ import {
   getAssessmentState,
   saveAssessmentDraft,
   submitAssessment,
+  submitPollVote,
   AnswerPayload,
   retakeAssessment,
 } from "./assessmentService";
@@ -35,21 +36,8 @@ interface AssessmentContainerProps {
   onNavigate?: (targetId: string, blockId: string) => void;
 }
 
-// Wait this long after the LAST answer change before sending it to the
-// server. Any further changes within the window reset the timer, so only
-// the freshest snapshot ever actually gets sent — this is what makes the
-// old "which save landed last?" race impossible.
 const DRAFT_SAVE_DEBOUNCE_MS = 600;
 
-/**
- * IMPORTANT: the parent (`LearnPage`) must render this with
- * `key={activeItem.id}` — the same way it already does for `PageContainer`.
- * That guarantees a full, clean remount every time the user switches to a
- * different assessment item, which is what lets us delete all the manual
- * "reset every piece of state" boilerplate that used to live at the top of
- * the old data-loading effect. Fresh mount = fresh `useState` defaults, for
- * free, with no room for a forgotten reset to leave stale state behind.
- */
 export default function AssessmentContainer({
   itemId,
   sectionId = "",
@@ -62,23 +50,6 @@ export default function AssessmentContainer({
 }: AssessmentContainerProps) {
   const queryClient = useQueryClient();
 
-  // ────────────────────────────────────────────────────────────────────
-  // 1. STATIC ASSESSMENT CONTENT — questions, choices, settings.
-  // Cached per assessmentId with an effectively infinite staleTime, exactly
-  // like PageContainer caches page content. The first time you open a given
-  // assessment this session it hits the network; every time after that
-  // (including navigating away and back) it's served straight from the
-  // query cache — no network call, no loading spinner.
-  //
-  // IMPORTANT: the key includes `itemId` and `type`, not just `assessmentId`.
-  // Different section items can point at the same underlying `assessmentId`
-  // while being different *versions* of it — e.g. a quiz vs. a poll variant
-  // of the same content. If the key were `assessmentId` alone, TanStack
-  // Query would treat those as the identical resource and silently reuse
-  // the first one's cached data for the second, never fetching the other
-  // version at all. Keying by the full (assessmentId, itemId, type) tuple
-  // guarantees each variant gets its own independent cache entry.
-  // ────────────────────────────────────────────────────────────────────
   const viewQueryKey = ["assessmentView", assessmentId, itemId, type] as const;
   const stateQueryKey = [
     "assessmentState",
@@ -99,13 +70,6 @@ export default function AssessmentContainer({
     gcTime: 1000 * 60 * 30,
   });
 
-  // ────────────────────────────────────────────────────────────────────
-  // 2. PER-ATTEMPT STATE — draft answers, current index, completion status.
-  // Same caching strategy, same reasoning for the compound key above. Once
-  // this loads, our local useState below is seeded from it exactly once
-  // (this component is freshly mounted per item, so "once" really does
-  // mean once per visit).
-  // ────────────────────────────────────────────────────────────────────
   const { data: stateData, isLoading: stateLoading } = useQuery({
     queryKey: stateQueryKey,
     queryFn: () => getAssessmentState(assessmentId, itemId),
@@ -150,10 +114,6 @@ export default function AssessmentContainer({
     {},
   );
 
-  // Have we finished the one-time hydration from the two queries above?
-  // Guards against re-seeding local state if the queries ever re-resolve
-  // (e.g. a manual invalidateQueries elsewhere) after the user has already
-  // started typing/answering in this mounted instance.
   const hasHydrated = useRef(false);
 
   useEffect(() => {
@@ -187,6 +147,7 @@ export default function AssessmentContainer({
         current_index,
         status,
         poll_distributions,
+        voted_question_ids,
       } = stateRes.data;
 
       let activeQuestions = [...viewData.questions];
@@ -248,6 +209,18 @@ export default function AssessmentContainer({
       if (Object.keys(restoredMap).length > 0) {
         setAnswers(restoredMap);
         setHasStarted(true);
+      }
+
+      // Restore per-question submitted/locked state from durable votes
+      const votedQuestionIds: string[] = voted_question_ids || [];
+      if (votedQuestionIds.length > 0) {
+        setSubmittedQuestions((prev) => {
+          const next = { ...prev };
+          votedQuestionIds.forEach((qId) => {
+            next[qId] = true;
+          });
+          return next;
+        });
       }
 
       if (
@@ -325,20 +298,6 @@ export default function AssessmentContainer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasStarted, startTime, submitted, assessment]);
 
-  // ────────────────────────────────────────────────────────────────────
-  // 3. DRAFT SAVE — debounced + race-safe.
-  //
-  // The old version fired `saveAssessmentDraft` on every single click with
-  // no debounce and no way to guarantee ordering, so a slow, stale request
-  // could resolve AFTER a newer one and silently overwrite it server-side.
-  //
-  // Fix: every call to `triggerDraftSave` just updates a ref with the
-  // latest snapshot and (re)starts a short timer. Only when the timer
-  // actually fires do we send anything — and since each call cancels the
-  // previous timer, only the LATEST snapshot is ever sent. `flushDraftSave`
-  // lets us skip the wait and send immediately when it matters (navigating
-  // questions, submitting) so a save is never left dangling when you leave.
-  // ────────────────────────────────────────────────────────────────────
   const draftSaveMutation = useMutation({
     mutationFn: (vars: {
       formattedAnswers: AnswerPayload[];
@@ -353,6 +312,12 @@ export default function AssessmentContainer({
         vars.targetIndex,
       ),
     onError: (err) => console.error("Draft save failed:", err),
+  });
+
+  const pollVoteMutation = useMutation({
+    mutationFn: (vars: { questionId: string; choiceId: string }) =>
+      submitPollVote(assessmentId, itemId, vars.questionId, vars.choiceId),
+    onError: (err) => console.error("Poll vote failed:", err),
   });
 
   const pendingDraftRef = useRef<{
@@ -371,10 +336,6 @@ export default function AssessmentContainer({
 
       const questionOrder = assessment.questions.map((q) => q.id);
 
-      // Keep the query cache in sync too, so if this component ever gets
-      // revisited later in the session before a full reload, the cached
-      // state already reflects exactly what we just sent — not what the
-      // server had before this save.
       queryClient.setQueryData(stateQueryKey, (old: any) => {
         if (!old?.data) return old;
         return {
@@ -430,8 +391,6 @@ export default function AssessmentContainer({
     }
   }, [sendDraft]);
 
-  // Make sure nothing is left un-sent if the user navigates away entirely
-  // (different item / unmount) while a debounce timer is still pending.
   useEffect(() => {
     return () => {
       flushDraftSave();
@@ -512,51 +471,60 @@ export default function AssessmentContainer({
     triggerDraftSave(updatedAnswers, currentQuestionIndex);
   };
 
-  const handleSubmitSinglePollVote = () => {
+  const handleSubmitSinglePollVote = async () => {
     if (!currentQuestion || !answers[currentQuestion.id]) return;
 
     const qId = currentQuestion.id;
     const choiceId = answers[qId];
 
+    // Optimistic UI update
     setSubmittedQuestions((prev) => ({ ...prev, [qId]: true }));
 
-    setAssessment((prev) => {
-      if (!prev) return null;
+    try {
+      const result = await pollVoteMutation.mutateAsync({
+        questionId: qId,
+        choiceId,
+      });
 
-      return {
-        ...prev,
-        questions: prev.questions.map((q) => {
-          if (q.id !== qId) return q;
+      queryClient.setQueryData(stateQueryKey, (old: any) => {
+        if (!old?.data) return old;
+        const votedSet = new Set(old.data.voted_question_ids || []);
+        votedSet.add(qId);
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            voted_question_ids: Array.from(votedSet),
+            poll_distributions: {
+              ...old.data.poll_distributions,
+              ...result.poll_distributions,
+            },
+          },
+        };
+      });
 
-          const updatedChoices = q.choices.map((choice) => {
-            const c = choice as any;
-            return {
-              ...c,
-              votes: c.id === choiceId ? (c.votes ?? 0) + 1 : (c.votes ?? 0),
-            };
-          });
-
-          const totalQVotes = updatedChoices.reduce(
-            (sum, c) => sum + ((c as any).votes ?? 0),
-            0,
-          );
-
+      if (result.poll_distributions) {
+        setAssessment((prev) => {
+          if (!prev) return null;
           return {
-            ...q,
-            choices: updatedChoices.map((choice) => {
-              const c = choice as any;
-              return {
-                ...c,
-                percentage:
-                  totalQVotes > 0
-                    ? Math.round(((c.votes ?? 0) / totalQVotes) * 100)
-                    : 0,
-              };
-            }),
+            ...prev,
+            questions: prev.questions.map((q) => ({
+              ...q,
+              choices: q.choices.map((choice) => {
+                const c = choice as any;
+                const dist = result.poll_distributions[c.id];
+                return dist
+                  ? { ...c, votes: dist.votes, percentage: dist.percentage }
+                  : c;
+              }),
+            })),
           };
-        }),
-      };
-    });
+        });
+      }
+    } catch (err) {
+      setSubmittedQuestions((prev) => ({ ...prev, [qId]: false }));
+      alert("Couldn't save your vote — please try again.");
+    }
   };
 
   const handleNextQuestion = () => {
@@ -564,9 +532,6 @@ export default function AssessmentContainer({
       recordCurrentQuestionTime();
       const nextIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextIndex);
-      // Flush immediately rather than debounce — we're navigating right
-      // now, so there's no "wait for more changes" upside, and we want the
-      // new index persisted before the user can click away again.
       triggerDraftSave(answers, nextIndex);
       flushDraftSave();
     }
@@ -588,9 +553,6 @@ export default function AssessmentContainer({
 
     try {
       setIsSubmitting(true);
-      // Make sure any in-flight/pending draft save doesn't race the actual
-      // submission — cancel the debounce and don't bother sending it, since
-      // the submit payload below is a strict superset of that data anyway.
       if (draftTimerRef.current) {
         clearTimeout(draftTimerRef.current);
         draftTimerRef.current = null;
@@ -687,21 +649,6 @@ export default function AssessmentContainer({
 
         setSubmitted(true);
 
-        // ── Persist the outcome of THIS submission into the query caches ──
-        // Local state (setRemedialSuggestions, setSavedScore, etc. above)
-        // only lasts as long as this component instance stays mounted. The
-        // moment the user navigates away and back — which now correctly
-        // remounts this component via `key={activeItem.id}` — all of that
-        // local state is gone, and the hydration effect rebuilds itself
-        // from viewQueryKey/stateQueryKey instead. If we don't write the
-        // remedial suggestions (and score/answers) into those caches here,
-        // they simply never make it into whatever the next mount reads,
-        // and silently disappear — which is exactly the bug being reported.
-        //
-        // We update `previous_attempt` on the VIEW cache specifically,
-        // because that's the field the hydration effect actually reads
-        // `remedial_suggestions` from (mirroring how it worked on initial
-        // page load, before any of this refactor).
         queryClient.setQueryData(viewQueryKey, (old: any) => {
           if (!old) return old;
           return {
@@ -735,10 +682,6 @@ export default function AssessmentContainer({
           };
         });
 
-        // Now that the caches already hold the correct data (no visible
-        // loading flash), it's safe to mark them stale too, so the next
-        // time this assessment loads fresh (e.g. a different session) it
-        // reconciles with whatever the server considers authoritative.
         queryClient.invalidateQueries({
           queryKey: stateQueryKey,
           refetchType: "none",
@@ -803,9 +746,6 @@ export default function AssessmentContainer({
     setSavedTotalPoints(null);
     setSavedCorrectCount(null);
 
-    // Bust both caches for this assessment so nothing stale (old draft
-    // answers, old completed status, old score) can resurface if the user
-    // navigates away and back within the session.
     queryClient.invalidateQueries({
       queryKey: stateQueryKey,
     });

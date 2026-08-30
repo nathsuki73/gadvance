@@ -333,7 +333,49 @@ export async function submitAssessment(payload: {
 }
 
 /**
- * 5. Reset Assessment Attempt for Retake
+ * 5. Submit Individual Poll Vote
+ */
+export async function submitPollVote(
+  assessmentId: string,
+  itemId: string,
+  questionId: string,
+  choiceId: string,
+): Promise<
+  ServiceResponse<{
+    poll_distributions: Record<string, { votes: number; percentage: number }>;
+  }>
+> {
+  const headers = await getAuthHeaders();
+
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/assessments/${assessmentId}/poll-vote`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          section_item_id: itemId,
+          question_id: questionId,
+          choice_id: choiceId,
+        }),
+      },
+    );
+
+    const json = await res.json();
+    return {
+      success: json.success ?? res.ok,
+      data: json.data ?? json,
+      poll_distributions: json.poll_distributions,
+      message: json.message,
+    };
+  } catch (error) {
+    console.error("[AssessmentViewService] Submit poll vote error:", error);
+    return { success: false, error: "Network error submitting poll vote." };
+  }
+}
+
+/**
+ * 6. Reset Assessment Attempt for Retake
  */
 export async function retakeAssessment(
   assessmentId: string,
