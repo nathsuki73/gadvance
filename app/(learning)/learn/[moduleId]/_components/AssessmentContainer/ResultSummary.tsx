@@ -5,23 +5,26 @@ import {
   RotateCcw,
   CheckCircle2,
   Info,
-  BarChart3,
   X,
   CheckCircle,
   Clock,
+  ChevronRight,
 } from "lucide-react";
 import { AssessmentSettings } from "./types";
 
 interface ResultsSummaryProps {
   scorePercentage: number;
-  score?: number; // Raw earned score
-  totalPoints?: number; // Total possible points
+  score?: number;
+  totalPoints?: number;
   correctCount: number;
   totalGraded: number;
   totalQuestions: number;
   elapsedSeconds: number;
   settings: AssessmentSettings;
   onRetry: () => void;
+  onNext: () => void;
+  isPassed: boolean;
+  isPoll: boolean;
 }
 
 export function ResultsSummary({
@@ -34,18 +37,21 @@ export function ResultsSummary({
   elapsedSeconds,
   settings,
   onRetry,
+  onNext,
+  isPassed,
+  isPoll,
 }: ResultsSummaryProps) {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [animatedPercentage, setAnimatedPercentage] = useState(0);
 
-  const isPassed = scorePercentage >= settings.passingScore;
   const hasAttemptsRemaining =
     settings.maxAttempts == null || settings.maxAttempts > 1;
 
   // 🌊 Custom Asymmetric Ease-In-Out animation loop using requestAnimationFrame
   useEffect(() => {
+    if (isPoll) return; // Skip percentage animation for polls
     let startTime: number | null = null;
-    const duration = 1300; // 1.3 seconds total
+    const duration = 1300;
 
     const animateScore = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
@@ -57,7 +63,6 @@ export function ResultsSummary({
           : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
       const currentVal = Math.round(customEase * scorePercentage);
-
       setAnimatedPercentage(currentVal);
 
       if (progress < 1) {
@@ -69,7 +74,7 @@ export function ResultsSummary({
 
     const frameId = requestAnimationFrame(animateScore);
     return () => cancelAnimationFrame(frameId);
-  }, [scorePercentage]);
+  }, [scorePercentage, isPoll]);
 
   const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60);
@@ -79,32 +84,23 @@ export function ResultsSummary({
       .padStart(2, "0")}`;
   };
 
-  // SVG Donut calculation with widened canvas and radius
   const radius = 58;
   const circumference = 2 * Math.PI * radius;
-
   const strokeDashoffset =
     circumference - (animatedPercentage / 100) * circumference;
-
   const passingScoreAngle = (settings.passingScore / 100) * 360;
 
-  // --- Passing-rate indicator geometry ---
-  // The donut's own SVG is rotated -90deg so 0% sits at 12 o'clock and
-  // progresses clockwise. We compute the indicator in plain (unrotated)
-  // coordinates using the same convention: 0deg = top, clockwise positive.
-  const donutCenter = 96; // half of the 192px (h-48/w-48) box
+  const donutCenter = 96;
   const passingAngleRad = (passingScoreAngle * Math.PI) / 180;
-  const tickStartR = radius + 6; // just outside the donut ring
-  const tickEndR = radius + 18; // end of the radial tick
-  const horizontalLength = 22; // length of the horizontal connector
+  const tickStartR = radius + 6;
+  const tickEndR = radius + 18;
+  const horizontalLength = 22;
 
   const tickX1 = donutCenter + tickStartR * Math.sin(passingAngleRad);
   const tickY1 = donutCenter - tickStartR * Math.cos(passingAngleRad);
   const tickX2 = donutCenter + tickEndR * Math.sin(passingAngleRad);
   const tickY2 = donutCenter - tickEndR * Math.cos(passingAngleRad);
 
-  // Flip the horizontal connector (and label) to whichever side of the
-  // donut the tick lands on, so it never runs off the left/right edge.
   const pointsRight = Math.sin(passingAngleRad) >= 0;
   const labelLineX = pointsRight
     ? tickX2 + horizontalLength
@@ -116,9 +112,9 @@ export function ResultsSummary({
       : `${correctCount} / ${totalGraded}`;
 
   return (
-    <div className="overflow-hidden p-6 space-y-6 flex flex-col items-center text-center">
-      {settings.type === "poll" ? (
-        <div className="w-full rounded-2xl border border-purple-200/80 bg-purple-50/50 p-6 text-center space-y-2">
+    <div className="overflow-hidden p-6 space-y-6 flex flex-col items-center text-center w-full max-w-md mx-auto">
+      {settings.type === "poll" && (
+        <div className="w-full rounded-2xl border border-purple-200/85 bg-purple-50/50 p-6 text-center space-y-2">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 text-[#8b5cf6]">
             <CheckCircle2 size={24} />
           </div>
@@ -130,12 +126,13 @@ export function ResultsSummary({
             below.
           </p>
         </div>
-      ) : (
+      )}
+
+      {settings.type !== "poll" && (
         <div className="flex flex-col items-center justify-center gap-6 w-full py-2">
-          {/* Donut with expanded canvas for generous inner spacing */}
+          {/* Donut Ring */}
           <div className="relative flex items-center justify-center">
             <svg className="h-48 w-48 -rotate-90 transform overflow-visible">
-              {/* 1. Thin Gray Background Circle */}
               <circle
                 cx="96"
                 cy="96"
@@ -145,7 +142,6 @@ export function ResultsSummary({
                 className="text-zinc-200/80"
                 fill="transparent"
               />
-              {/* 2. Custom Animated Purple Thick Donut Ring */}
               <circle
                 cx="96"
                 cy="96"
@@ -160,9 +156,6 @@ export function ResultsSummary({
               />
             </svg>
 
-            {/* 3. Passing indicator: radial tick + horizontal connector.
-                Rendered in an unrotated overlay (own trig) so the connector
-                stays truly horizontal and the label text is never sideways. */}
             <svg
               className="absolute inset-0 h-48 w-48 overflow-visible pointer-events-none"
               viewBox="0 0 192 192"
@@ -204,7 +197,6 @@ export function ResultsSummary({
               </span>
             </div>
 
-            {/* Inner Content with comfortable distance from the donut track */}
             <div className="absolute flex flex-col items-center justify-center text-center">
               <span className="text-3xl font-black tracking-tight text-[#8b5cf6]">
                 {animatedPercentage}%
@@ -225,7 +217,7 @@ export function ResultsSummary({
             </div>
           </div>
 
-          {/* Restored Friendly Status Details */}
+          {/* Status Details */}
           <div className="flex flex-col items-center justify-center space-y-2 text-center max-w-sm mt-1">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-[#8b5cf6] border border-purple-200">
               <CheckCircle size={13} />
@@ -240,20 +232,49 @@ export function ResultsSummary({
               . Click the info icon anytime to view detailed counts.
             </p>
           </div>
-
-          {/* Try Again Button placed cleanly below */}
-          {hasAttemptsRemaining && (
-            <button
-              type="button"
-              onClick={onRetry}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 px-5 py-2.5 text-xs font-bold text-[#8b5cf6] active:scale-[0.98] transition-all cursor-pointer shadow-xs mt-2"
-            >
-              <RotateCcw size={13} />
-              <span>Try Again</span>
-            </button>
-          )}
         </div>
       )}
+
+      {/* Unified Action Buttons Container */}
+      <div className="flex flex-col gap-3 w-full pt-2">
+        {hasAttemptsRemaining && !isPassed && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-purple-100 hover:bg-purple-200 px-6 py-3 text-xs font-bold uppercase tracking-wider text-[#8b5cf6] active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+          >
+            <RotateCcw size={16} />
+            <span>Try Again</span>
+          </button>
+        )}
+
+        {isPoll || !settings.requirePassingToProceed || isPassed ? (
+          <button
+            type="button"
+            onClick={onNext}
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-[#8b5cf6]/20 transition-all cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98]"
+          >
+            <span>Continue to Next Item</span>
+            <ChevronRight size={16} />
+          </button>
+        ) : (
+          <div className="space-y-2 text-center w-full">
+            <p className="text-xs font-medium text-rose-600">
+              This assessment requires a passing score of{" "}
+              {settings.passingScore}% to proceed. Please review the material
+              and retake the assessment.
+            </p>
+            <button
+              type="button"
+              disabled
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-zinc-200 px-6 py-3 text-xs font-bold uppercase tracking-wider text-zinc-400 cursor-not-allowed opacity-75"
+            >
+              <span>Progression Locked</span>
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Interactive Breakdown Modal */}
       {showBreakdown && (

@@ -680,6 +680,9 @@ export default function AssessmentContainer({
                 elapsedSeconds={elapsedSeconds}
                 settings={settings}
                 onRetry={handleRetry}
+                onNext={onNext}
+                isPassed={isPassed}
+                isPoll={isPoll}
               />
             )}
 
@@ -758,35 +761,6 @@ export default function AssessmentContainer({
                 )}
               </div>
             )}
-
-            <div className="pt-4">
-              {isPoll || !settings.requirePassingToProceed || isPassed ? (
-                <button
-                  type="button"
-                  onClick={onNext}
-                  className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-[#8b5cf6]/20 transition-all cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98]"
-                >
-                  <span>Continue to Next Item</span>
-                  <ChevronRight size={16} />
-                </button>
-              ) : (
-                <div className="space-y-2 text-center">
-                  <p className="text-xs font-medium text-rose-600">
-                    This assessment requires a passing score of{" "}
-                    {settings.passingScore}% to proceed. Please review the
-                    material and retake the assessment.
-                  </p>
-                  <button
-                    type="button"
-                    disabled
-                    className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-zinc-200 px-6 py-3 text-xs font-bold uppercase tracking-wider text-zinc-400 cursor-not-allowed opacity-75"
-                  >
-                    <span>Progression Locked (Passing Score Required)</span>
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         ) : (
           <div className="space-y-6">
