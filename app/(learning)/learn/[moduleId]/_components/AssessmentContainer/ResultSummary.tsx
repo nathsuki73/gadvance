@@ -9,8 +9,11 @@ import {
   CheckCircle,
   Clock,
   ChevronRight,
+  BookOpenText,
+  ExternalLink,
 } from "lucide-react";
 import { AssessmentSettings } from "./types";
+import Link from "next/link";
 
 interface ResultsSummaryProps {
   scorePercentage: number;
@@ -25,6 +28,12 @@ interface ResultsSummaryProps {
   onNext: () => void;
   isPassed: boolean;
   isPoll: boolean;
+  remedialSuggestions?: Array<{
+    page_id: string;
+    block_id: string;
+    review_url?: string;
+  }>;
+  moduleId?: string;
 }
 
 export function ResultsSummary({
@@ -40,16 +49,31 @@ export function ResultsSummary({
   onNext,
   isPassed,
   isPoll,
+  remedialSuggestions = [],
+  moduleId = "",
 }: ResultsSummaryProps) {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [animatedPercentage, setAnimatedPercentage] = useState(0);
 
+  // ⏱️ State for toggling views ("score" vs "remedial")
+  const [activeView, setActiveView] = useState<"score" | "remedial">("score");
+
   const hasAttemptsRemaining =
     settings.maxAttempts == null || settings.maxAttempts > 1;
 
-  // 🌊 Custom Asymmetric Ease-In-Out animation loop using requestAnimationFrame
+  // 🔄 Auto-switch to Remedial view after 3 seconds if suggestions exist
   useEffect(() => {
-    if (isPoll) return; // Skip percentage animation for polls
+    if (remedialSuggestions.length > 0 && activeView === "score" && !isPoll) {
+      const timer = setTimeout(() => {
+        setActiveView("remedial");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [remedialSuggestions, activeView, isPoll]);
+
+  // Score Animation Loop
+  useEffect(() => {
+    if (isPoll) return;
     let startTime: number | null = null;
     const duration = 1300;
 
@@ -113,131 +137,211 @@ export function ResultsSummary({
 
   return (
     <div className="overflow-hidden p-6 space-y-6 flex flex-col items-center text-center w-full max-w-md mx-auto">
-      {settings.type === "poll" && (
-        <div className="w-full rounded-2xl border border-purple-200/85 bg-purple-50/50 p-6 text-center space-y-2">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 text-[#8b5cf6]">
-            <CheckCircle2 size={24} />
-          </div>
-          <h3 className="text-sm font-bold text-[#8b5cf6]">
-            Thank you for participating!
-          </h3>
-          <p className="text-xs text-[#8b5cf6] max-w-md mx-auto leading-relaxed">
-            Your vote has been recorded and factored into the live class metrics
-            below.
-          </p>
+      {/* 1. Static View Switcher Tabs at the top */}
+      {remedialSuggestions.length > 0 && !isPoll && (
+        <div className="flex items-center justify-center gap-1.5 bg-zinc-100 p-1 rounded-2xl w-full max-w-xs shrink-0">
+          <button
+            type="button"
+            onClick={() => setActiveView("score")}
+            className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
+              activeView === "score"
+                ? "bg-white text-zinc-900 shadow-2xs"
+                : "text-zinc-500 hover:text-zinc-800"
+            }`}
+          >
+            Score Summary
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveView("remedial")}
+            className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
+              activeView === "remedial"
+                ? "bg-[#8b5cf6] text-white shadow-2xs"
+                : "text-zinc-500 hover:text-zinc-800"
+            }`}
+          >
+            <BookOpenText size={12} />
+            <span>
+              Targeted Plan ({Math.min(remedialSuggestions.length, 3)})
+            </span>
+          </button>
         </div>
       )}
 
-      {settings.type !== "poll" && (
-        <div className="flex flex-col items-center justify-center gap-6 w-full py-2">
-          {/* Donut Ring */}
-          <div className="relative flex items-center justify-center">
-            <svg className="h-48 w-48 -rotate-90 transform overflow-visible">
-              <circle
-                cx="96"
-                cy="96"
-                r={radius}
-                stroke="currentColor"
-                strokeWidth="4"
-                className="text-zinc-200/80"
-                fill="transparent"
-              />
-              <circle
-                cx="96"
-                cy="96"
-                r={radius}
-                stroke="currentColor"
-                strokeWidth="10"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-                className="text-[#8b5cf6] transition-all duration-300 ease-out"
-                fill="transparent"
-              />
-            </svg>
-
-            <svg
-              className="absolute inset-0 h-48 w-48 overflow-visible pointer-events-none"
-              viewBox="0 0 192 192"
-            >
-              <line
-                x1={tickX1}
-                y1={tickY1}
-                x2={tickX2}
-                y2={tickY2}
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                className="text-zinc-400 transition-all duration-700"
-              />
-              <line
-                x1={tickX2}
-                y1={tickY2}
-                x2={labelLineX}
-                y2={tickY2}
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                className="text-zinc-400 transition-all duration-700"
-              />
-            </svg>
-
-            <div
-              className="absolute transition-all duration-700 pointer-events-none"
-              style={{
-                left: labelLineX,
-                top: tickY2,
-                transform: pointsRight
-                  ? "translate(4px, -50%)"
-                  : "translate(calc(-100% - 4px), -50%)",
-              }}
-            >
-              <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase bg-white px-1.5 py-0.5 rounded shadow-2xs border border-zinc-200/60 whitespace-nowrap">
-                Passing ({settings.passingScore}%)
-              </span>
+      {/* 2. Stabilized Content Area (CSS Grid Stack to lock container height) */}
+      <div className="grid grid-cols-1 grid-rows-1 w-full items-center justify-items-center">
+        {/* View A: Score Summary */}
+        <div
+          className={`col-start-1 row-start-1 w-full transition-opacity duration-300 flex flex-col items-center space-y-6 ${
+            activeView === "score"
+              ? "opacity-100 z-10 pointer-events-auto"
+              : "opacity-0 z-0 pointer-events-none select-none"
+          }`}
+        >
+          {settings.type === "poll" && (
+            <div className="w-full rounded-2xl border border-purple-200/85 bg-purple-50/50 p-6 text-center space-y-2">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 text-[#8b5cf6]">
+                <CheckCircle2 size={24} />
+              </div>
+              <h3 className="text-sm font-bold text-[#8b5cf6]">
+                Thank you for participating!
+              </h3>
+              <p className="text-xs text-[#8b5cf6] max-w-md mx-auto leading-relaxed">
+                Your vote has been recorded and factored into the live class
+                metrics below.
+              </p>
             </div>
+          )}
 
-            <div className="absolute flex flex-col items-center justify-center text-center">
-              <span className="text-3xl font-black tracking-tight text-[#8b5cf6]">
-                {animatedPercentage}%
-              </span>
-              <div className="flex items-center gap-1 mt-0.5">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                  Score
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowBreakdown(true)}
-                  className="text-zinc-400 hover:text-[#8b5cf6] transition-colors cursor-pointer"
-                  title="View Exact Score Breakdown"
+          {settings.type !== "poll" && (
+            <div className="flex flex-col items-center justify-center gap-6 w-full py-2">
+              {/* Donut Ring */}
+              <div className="relative flex items-center justify-center">
+                <svg className="h-48 w-48 -rotate-90 transform overflow-visible">
+                  <circle
+                    cx="96"
+                    cy="96"
+                    r={radius}
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    className="text-zinc-200/80"
+                    fill="transparent"
+                  />
+                  <circle
+                    cx="96"
+                    cy="96"
+                    r={radius}
+                    stroke="currentColor"
+                    strokeWidth="10"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={strokeDashoffset}
+                    strokeLinecap="round"
+                    className="text-[#8b5cf6] transition-all duration-300 ease-out"
+                    fill="transparent"
+                  />
+                </svg>
+
+                <svg
+                  className="absolute inset-0 h-48 w-48 overflow-visible pointer-events-none"
+                  viewBox="0 0 192 192"
                 >
-                  <Info size={12} />
-                </button>
+                  <line
+                    x1={tickX1}
+                    y1={tickY1}
+                    x2={tickX2}
+                    y2={tickY2}
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    className="text-zinc-400 transition-all duration-700"
+                  />
+                  <line
+                    x1={tickX2}
+                    y1={tickY2}
+                    x2={labelLineX}
+                    y2={tickY2}
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    className="text-zinc-400 transition-all duration-700"
+                  />
+                </svg>
+
+                <div
+                  className="absolute transition-all duration-700 pointer-events-none"
+                  style={{
+                    left: labelLineX,
+                    top: tickY2,
+                    transform: pointsRight
+                      ? "translate(4px, -50%)"
+                      : "translate(calc(-100% - 4px), -50%)",
+                  }}
+                >
+                  <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase bg-white px-1.5 py-0.5 rounded shadow-2xs border border-zinc-200/60 whitespace-nowrap">
+                    Passing ({settings.passingScore}%)
+                  </span>
+                </div>
+
+                <div className="absolute flex flex-col items-center justify-center text-center">
+                  <span className="text-3xl font-black tracking-tight text-[#8b5cf6]">
+                    {animatedPercentage}%
+                  </span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                      Score
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowBreakdown(true)}
+                      className="text-zinc-400 hover:text-[#8b5cf6] transition-colors cursor-pointer"
+                      title="View Exact Score Breakdown"
+                    >
+                      <Info size={12} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Details */}
+              <div className="flex flex-col items-center justify-center space-y-2 text-center max-w-sm mt-1">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-[#8b5cf6] border border-purple-200">
+                  <CheckCircle size={13} />
+                  <span>
+                    {isPassed ? "Goal Achieved!" : "Good Progress Made!"}
+                  </span>
+                </span>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  The indicator line on your score ring highlights your target
+                  milestone of{" "}
+                  <span className="font-bold text-zinc-800">
+                    {settings.passingScore}%
+                  </span>
+                  . Click the info icon anytime to view detailed counts.
+                </p>
               </div>
             </div>
-          </div>
-
-          {/* Status Details */}
-          <div className="flex flex-col items-center justify-center space-y-2 text-center max-w-sm mt-1">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-[#8b5cf6] border border-purple-200">
-              <CheckCircle size={13} />
-              <span>{isPassed ? "Goal Achieved!" : "Good Progress Made!"}</span>
-            </span>
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              The indicator line on your score ring highlights your target
-              milestone of{" "}
-              <span className="font-bold text-zinc-800">
-                {settings.passingScore}%
-              </span>
-              . Click the info icon anytime to view detailed counts.
-            </p>
-          </div>
+          )}
         </div>
-      )}
 
-      {/* Unified Action Buttons Container */}
-      <div className="flex flex-col gap-3 w-full pt-2">
-        {/* 🔑 Removed '!isPassed' so Try Again shows up even if user successfully passed */}
+        {/* View B: Targeted Plan (Vertical List Stack) */}
+        {remedialSuggestions.length > 0 && !isPoll && (
+          <div
+            className={`col-start-1 row-start-1 w-full transition-opacity duration-300 flex flex-col space-y-2.5 ${
+              activeView === "remedial"
+                ? "opacity-100 z-10 pointer-events-auto"
+                : "opacity-0 z-0 pointer-events-none select-none"
+            }`}
+          >
+            {remedialSuggestions.slice(0, 3).map((item, idx) => {
+              const reviewUrl = `/learn/${moduleId}?item=${item.page_id}#${item.block_id}`;
+              return (
+                <Link
+                  key={idx}
+                  href={reviewUrl}
+                  className="group flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 text-xs font-semibold text-zinc-800 transition-all hover:border-[#8b5cf6] hover:shadow-xs w-full"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-[11px] font-bold text-[#8b5cf6]">
+                      {idx + 1}
+                    </span>
+                    <span className="text-zinc-800 group-hover:text-[#8b5cf6] transition-colors">
+                      Concept Review Module #{idx + 1}
+                    </span>
+                  </div>
+
+                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 px-3.5 py-2 text-xs font-bold text-[#8b5cf6] group-hover:bg-[#8b5cf6] group-hover:text-white transition-all">
+                    <span>Review Section</span>
+                    <ExternalLink size={13} />
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 3. Static Action Buttons Container (Locked at the bottom) */}
+      <div className="flex flex-col gap-3 w-full pt-2 shrink-0">
         {hasAttemptsRemaining && (
           <button
             type="button"
@@ -263,7 +367,7 @@ export function ResultsSummary({
             <p className="text-xs font-medium text-rose-600">
               This assessment requires a passing score of{" "}
               {settings.passingScore}% to proceed. Please review the material
-              and retake the assessment.
+              and retake.
             </p>
             <button
               type="button"
@@ -277,7 +381,7 @@ export function ResultsSummary({
         )}
       </div>
 
-      {/* Interactive Breakdown Modal */}
+      {/* Breakdown Modal */}
       {showBreakdown && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl border border-zinc-200 space-y-4 text-left">

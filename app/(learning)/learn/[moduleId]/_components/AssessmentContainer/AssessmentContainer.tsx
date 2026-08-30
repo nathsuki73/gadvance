@@ -8,8 +8,6 @@ import {
   ChevronLeft,
   Loader2,
   CheckCircle2,
-  BookOpenText,
-  ExternalLink,
 } from "lucide-react";
 import { AssessmentViewData } from "./types";
 import {
@@ -24,7 +22,6 @@ import { AssessmentStartScreen } from "./AssessmentStartScreen";
 import { QuestionCard } from "./QuestionCard";
 import { ResultsSummary } from "./ResultSummary";
 import { ReviewSubmission } from "./ReviewSubmission";
-import Link from "next/link";
 
 interface AssessmentContainerProps {
   itemId: string;
@@ -687,46 +684,9 @@ export default function AssessmentContainer({
                     onNext={onNext}
                     isPassed={isPassed}
                     isPoll={isPoll}
+                    remedialSuggestions={remedialSuggestions}
+                    moduleId={moduleId}
                   />
-                )}
-
-                {remedialSuggestions.length > 0 && (
-                  <div className="rounded-2xl border border-purple-200/60 bg-purple-50/40 p-5 space-y-3">
-                    <div className="flex items-center gap-2 text-purple-900">
-                      <BookOpenText size={18} className="text-[#8b5cf6]" />
-                      <h3 className="text-xs font-bold uppercase tracking-wider">
-                        Recommended Study Sections (Review Material)
-                      </h3>
-                    </div>
-                    <p className="text-xs text-zinc-600">
-                      Based on your assessment results, focus on reviewing these
-                      targeted sections:
-                    </p>
-                    <div className="grid gap-2">
-                      {remedialSuggestions.map((item, idx) => {
-                        const reviewUrl = `/learn/${moduleId}?item=${item.page_id}#${item.block_id}`;
-
-                        return (
-                          <Link
-                            key={idx}
-                            href={reviewUrl}
-                            className="flex items-center justify-between rounded-xl border border-purple-200/80 bg-white p-3 text-xs font-semibold text-zinc-800 shadow-2xs transition-all hover:border-purple-400 hover:bg-purple-50/50"
-                          >
-                            <span className="flex items-center gap-2">
-                              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-[10px] font-bold text-[#8b5cf6]">
-                                {idx + 1}
-                              </span>
-                              <span>Target Section Block #{idx + 1}</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1 text-[#8b5cf6]">
-                              <span>Review Page</span>
-                              <ExternalLink size={13} />
-                            </span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
                 )}
               </>
             )}
