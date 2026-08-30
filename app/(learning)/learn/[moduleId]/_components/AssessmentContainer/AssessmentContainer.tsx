@@ -631,21 +631,29 @@ export default function AssessmentContainer({
         const totalPoints =
           responseData?.total_points ?? (result as any).total_points;
 
+        const finalRemedialSuggestions: Array<{
+          page_id: string;
+          block_id: string;
+          review_url: string;
+        }> =
+          responseData?.remedial_suggestions ??
+          (Array.isArray((result.data as any)?.remedial_suggestions)
+            ? (result.data as any).remedial_suggestions
+            : []);
+
+        const finalCorrectCount =
+          backendScore !== undefined
+            ? Math.round((backendScore / 100) * totalGraded)
+            : displayCorrectCount;
+
         if (backendScore !== undefined) {
           setSavedScore(backendScore);
           setSavedRawScore(rawScore);
           setSavedTotalPoints(totalPoints);
-          setSavedCorrectCount(Math.round((backendScore / 100) * totalGraded));
+          setSavedCorrectCount(finalCorrectCount);
         }
 
-        if (responseData?.remedial_suggestions) {
-          setRemedialSuggestions(responseData.remedial_suggestions);
-        } else if (
-          result.data &&
-          Array.isArray((result.data as any).remedial_suggestions)
-        ) {
-          setRemedialSuggestions((result.data as any).remedial_suggestions);
-        }
+        setRemedialSuggestions(finalRemedialSuggestions);
 
         if (result.poll_distributions && assessment) {
           const distributions = result.poll_distributions;
@@ -679,12 +687,65 @@ export default function AssessmentContainer({
 
         setSubmitted(true);
 
-        // The server-side state for this assessment has now changed
-        // ("completed") — mark the cached state stale so a genuinely fresh
-        // visit later in the session (e.g. after a retake elsewhere) won't
-        // read a pre-submission snapshot.
+        // ── Persist the outcome of THIS submission into the query caches ──
+        // Local state (setRemedialSuggestions, setSavedScore, etc. above)
+        // only lasts as long as this component instance stays mounted. The
+        // moment the user navigates away and back — which now correctly
+        // remounts this component via `key={activeItem.id}` — all of that
+        // local state is gone, and the hydration effect rebuilds itself
+        // from viewQueryKey/stateQueryKey instead. If we don't write the
+        // remedial suggestions (and score/answers) into those caches here,
+        // they simply never make it into whatever the next mount reads,
+        // and silently disappear — which is exactly the bug being reported.
+        //
+        // We update `previous_attempt` on the VIEW cache specifically,
+        // because that's the field the hydration effect actually reads
+        // `remedial_suggestions` from (mirroring how it worked on initial
+        // page load, before any of this refactor).
+        queryClient.setQueryData(viewQueryKey, (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            previous_attempt: {
+              score_percentage: backendScore,
+              score: rawScore,
+              total_points: totalPoints,
+              answers: formattedAnswers.map((a) => ({
+                question_id: a.question_id,
+                choice_id: a.choice_id,
+                is_correct:
+                  gradedQuestions.find((q: any) => q.id === a.question_id)
+                    ?.correctChoiceId === a.choice_id,
+              })),
+              remedial_suggestions: finalRemedialSuggestions,
+            },
+          };
+        });
+
+        queryClient.setQueryData(stateQueryKey, (old: any) => {
+          if (!old?.data) return old;
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              draft_answers: answers,
+              current_index: currentQuestionIndex,
+              status: "completed",
+            },
+          };
+        });
+
+        // Now that the caches already hold the correct data (no visible
+        // loading flash), it's safe to mark them stale too, so the next
+        // time this assessment loads fresh (e.g. a different session) it
+        // reconciles with whatever the server considers authoritative.
         queryClient.invalidateQueries({
           queryKey: stateQueryKey,
+          refetchType: "none",
+        });
+        queryClient.invalidateQueries({
+          queryKey: viewQueryKey,
+          refetchType: "none",
         });
 
         onComplete();
