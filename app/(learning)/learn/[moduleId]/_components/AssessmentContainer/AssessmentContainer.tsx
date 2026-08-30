@@ -208,7 +208,6 @@ export default function AssessmentContainer({
 
       if (Object.keys(restoredMap).length > 0) {
         setAnswers(restoredMap);
-        setHasStarted(true);
       }
 
       // Restore per-question submitted/locked state from durable votes
@@ -228,7 +227,6 @@ export default function AssessmentContainer({
         current_index < activeQuestions.length
       ) {
         setCurrentQuestionIndex(current_index);
-        if (current_index > 0) setHasStarted(true);
       }
 
       if (status === "completed") {
@@ -242,10 +240,7 @@ export default function AssessmentContainer({
           });
           setSubmittedQuestions(allSubmittedMap);
         }
-      } else if (
-        status === "in_progress" &&
-        Object.keys(restoredMap).length > 0
-      ) {
+      } else if (status === "in_progress") {
         setHasStarted(true);
       }
     } else {
@@ -731,6 +726,7 @@ export default function AssessmentContainer({
 
     setAnswers({});
     setSubmitted(false);
+    setHasStarted(true);
     setIsReviewActive(false);
     setSubmittedQuestions({});
     setRemedialSuggestions([]);
@@ -746,11 +742,36 @@ export default function AssessmentContainer({
     setSavedTotalPoints(null);
     setSavedCorrectCount(null);
 
+    await queryClient.cancelQueries({ queryKey: stateQueryKey });
+    await queryClient.cancelQueries({ queryKey: viewQueryKey });
+
+    queryClient.setQueryData(stateQueryKey, (old: any) => ({
+      success: true,
+      data: {
+        ...(old?.data ?? {}),
+        attempt_id: (res as any).attempt_id ?? old?.data?.attempt_id ?? null,
+        status: "in_progress",
+        draft_answers: {},
+        question_order: [],
+        current_index: 0,
+        voted_question_ids: [],
+        poll_distributions: {},
+      },
+    }));
+
+    queryClient.setQueryData(viewQueryKey, (old: any) => {
+      if (!old) return old;
+      const { previous_attempt, ...rest } = old;
+      return rest;
+    });
+
     queryClient.invalidateQueries({
       queryKey: stateQueryKey,
+      refetchType: "none",
     });
     queryClient.invalidateQueries({
       queryKey: viewQueryKey,
+      refetchType: "none",
     });
   };
 
