@@ -752,6 +752,7 @@ export default function AssessmentContainer({
               isQuestionSubmitted={isCurrentQuestionSubmitted}
               settings={settings}
               onSelectChoice={handleSelectChoice}
+              showQuestionNumber={false}
             />
 
             <div className="flex items-center justify-between border-t border-zinc-100 pt-4">

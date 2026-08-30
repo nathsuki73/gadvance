@@ -1,13 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  CheckCircle2,
-  XCircle,
-  BarChart3,
-  BookOpen,
-  Check,
-} from "lucide-react";
+import { CheckCircle2, XCircle, BarChart3, Check } from "lucide-react";
 import { Question, AssessmentSettings, BloomLevel } from "./types";
 
 const BLOOM_BADGES: Record<BloomLevel, { label: string; style: string }> = {
@@ -44,6 +38,7 @@ interface QuestionCardProps {
   submitted: boolean;
   isQuestionSubmitted?: boolean;
   settings: AssessmentSettings;
+  showQuestionNumber?: boolean; // 👈 Added parameter for on/off switch
   onSelectChoice: (questionId: string, choiceId: string) => void;
 }
 
@@ -54,6 +49,7 @@ export function QuestionCard({
   submitted,
   isQuestionSubmitted = false,
   settings,
+  showQuestionNumber = true, // 👈 Default to true if not specified
   onSelectChoice,
 }: QuestionCardProps) {
   const isPoll = settings.type === "poll" || question.isPoll;
@@ -80,25 +76,17 @@ export function QuestionCard({
     Boolean(showFeedback && selectedChoiceId);
 
   return (
-    <div className="space-y-4 rounded-2xl border border-zinc-200/70 bg-zinc-50/50 p-5">
+    <div className="space-y-4">
       {/* Question Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#8b5cf6]">
-              Question {index + 1}
-            </span>
-            {/* {isPoll && (
-              <span className="rounded-md border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-[#8b5cf6]">
-                Opinion Poll
+          {showQuestionNumber && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#8b5cf6]">
+                Question {index + 1}
               </span>
-            )}
-            {isTestMode && (
-              <span className="rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700">
-                Strict Test
-              </span>
-            )} */}
-          </div>
+            </div>
+          )}
           <h3 className="text-sm font-semibold text-zinc-900 leading-relaxed">
             {question.text}
           </h3>
@@ -113,8 +101,8 @@ export function QuestionCard({
         )}
       </div>
 
-      {/* Choice Options */}
-      <div className="space-y-2.5">
+      {/* Choice Options (Minimalist List Style) */}
+      <div className="space-y-2">
         {question.choices.map((choice) => {
           const isSelected = selectedChoiceId === choice.id;
           const isChoiceCorrect =
@@ -125,37 +113,29 @@ export function QuestionCard({
           const votesCount = choice.votes ?? (isSelected ? 1 : 0);
           const percent = choice.percentage ?? 0;
 
-          let containerStyle =
-            "border-zinc-200 bg-white text-zinc-700 hover:border-purple-300 hover:bg-purple-50/30";
-          let radioCircleStyle = "border-zinc-300 bg-white";
+          let textStyle = "text-zinc-700 hover:text-zinc-950";
+          let radioCircleStyle =
+            "border-zinc-300 bg-transparent text-transparent";
 
           if (isSelected) {
-            containerStyle =
-              "border-purple-600 bg-purple-50/50 text-purple-950 font-medium shadow-2xs";
+            textStyle = "text-purple-950 font-semibold";
             radioCircleStyle = "border-purple-600 bg-purple-600 text-white";
           }
 
           if ((showFeedback || showTestFeedback) && !isPoll) {
             if (isChoiceCorrect) {
-              containerStyle =
-                "border-emerald-500 bg-emerald-50/50 text-emerald-950 font-medium";
+              textStyle = "text-emerald-950 font-semibold";
               radioCircleStyle = "border-emerald-500 bg-emerald-500 text-white";
             } else if (isSelected && !isChoiceCorrect) {
-              containerStyle =
-                "border-rose-500 bg-rose-50/50 text-rose-950 font-medium";
+              textStyle =
+                "text-rose-950 font-medium line-through decoration-rose-400";
               radioCircleStyle = "border-rose-500 bg-rose-500 text-white";
             }
           }
 
-          if (showPollDistribution) {
-            if (isSelected) {
-              containerStyle =
-                "border-purple-500/80 bg-purple-50/20 text-purple-950 font-semibold shadow-xs";
-              radioCircleStyle = "border-purple-600 bg-purple-600 text-white";
-            } else {
-              containerStyle = "border-zinc-200/80 bg-white text-zinc-700";
-              radioCircleStyle = "border-zinc-300 bg-white";
-            }
+          if (showPollDistribution && isSelected) {
+            textStyle = "text-purple-950 font-semibold";
+            radioCircleStyle = "border-purple-600 bg-purple-600 text-white";
           }
 
           return (
@@ -164,24 +144,22 @@ export function QuestionCard({
                 type="button"
                 onClick={() => onSelectChoice(question.id, choice.id)}
                 disabled={isLocked}
-                className={`relative overflow-hidden flex flex-1 items-start justify-between gap-3 rounded-xl border p-3.5 text-left text-xs transition-all cursor-pointer disabled:cursor-default min-h-[48px] ${containerStyle}`}
+                className={`relative overflow-hidden flex flex-1 items-center justify-between gap-3 py-2.5 px-2 text-left text-xs transition-colors cursor-pointer disabled:cursor-default rounded-lg hover:bg-zinc-50 ${textStyle}`}
               >
-                {/* Background Progress Bar */}
+                {/* Background Progress Bar for Polls */}
                 {showPollDistribution && (
                   <div
-                    className={`absolute inset-y-0 left-0 transition-all duration-700 ease-out rounded-lg pointer-events-none ${
-                      isSelected
-                        ? "bg-purple-200/60 border-r border-purple-400/40"
-                        : "bg-zinc-100/90"
+                    className={`absolute inset-y-0 left-0 transition-all duration-700 ease-out rounded-lg pointer-events-none opacity-25 ${
+                      isSelected ? "bg-purple-400" : "bg-zinc-200"
                     }`}
                     style={{ width: `${percent}%` }}
                   />
                 )}
 
-                {/* Option Label & Radio */}
-                <div className="relative z-10 flex items-start gap-3 pr-2 min-w-0 flex-1">
+                {/* Option Label & Radio/Checkbox Indicator */}
+                <div className="relative z-10 flex items-center gap-3 pr-2 min-w-0 flex-1">
                   <div
-                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all mt-0.5 ${radioCircleStyle}`}
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all ${radioCircleStyle}`}
                   >
                     {isSelected &&
                       !showPollDistribution &&
@@ -198,17 +176,17 @@ export function QuestionCard({
                       isSelected &&
                       !isChoiceCorrect && <XCircle size={10} strokeWidth={3} />}
                   </div>
-                  <span className="font-medium whitespace-normal break-words text-left">
+                  <span className="whitespace-normal break-words text-left">
                     {choice.text}
                   </span>
                 </div>
 
-                {/* Minimalist Vote Count Inside Box */}
+                {/* Vote Count / Feedback Icons */}
                 <div className="relative z-10 flex items-center gap-2 shrink-0">
                   {showPollDistribution && (
                     <span
-                      className={`text-[11px] font-semibold transition-opacity duration-300 ${
-                        isSelected ? "text-[#8b5cf6]" : "text-zinc-500"
+                      className={`text-[11px] font-medium transition-opacity duration-300 ${
+                        isSelected ? "text-[#8b5cf6]" : "text-zinc-400"
                       }`}
                     >
                       {votesCount} {votesCount === 1 ? "vote" : "votes"}
@@ -226,10 +204,10 @@ export function QuestionCard({
                 </div>
               </button>
 
-              {/* 🔑 Minimalist Percentage Badge Outside Option Box */}
+              {/* Percentage Badge for Polls */}
               {showPollDistribution && (
                 <div
-                  className={`w-12 shrink-0 text-right font-mono text-xs font-bold ${
+                  className={`w-12 shrink-0 text-right font-mono text-xs font-semibold ${
                     isSelected ? "text-[#8b5cf6]" : "text-zinc-400"
                   }`}
                 >
@@ -243,9 +221,9 @@ export function QuestionCard({
 
       {/* Immediate Remediation & Feedback */}
       {(showFeedback || showTestFeedback) && !isPoll && (
-        <div className="space-y-2.5 border-t border-zinc-200/60 pt-3">
+        <div className="space-y-2.5 pt-2">
           <div
-            className={`flex items-center gap-1.5 text-xs font-bold ${
+            className={`flex items-center gap-1.5 text-xs font-semibold ${
               isCorrect ? "text-emerald-700" : "text-rose-700"
             }`}
           >
@@ -263,7 +241,7 @@ export function QuestionCard({
           </div>
 
           {question.explanation && (
-            <p className="rounded-xl border border-zinc-200/60 bg-white p-3 text-xs leading-relaxed text-zinc-600">
+            <p className="text-xs leading-relaxed text-zinc-500 pl-6 border-l-2 border-zinc-200">
               <strong>Explanation:</strong> {question.explanation}
             </p>
           )}
@@ -271,7 +249,7 @@ export function QuestionCard({
       )}
 
       {showPollDistribution && (
-        <div className="flex items-center gap-2 border-t border-zinc-200/60 pt-2 text-[11px] font-medium text-[#8b5cf6]">
+        <div className="flex items-center gap-2 pt-1 text-[11px] font-medium text-[#8b5cf6]">
           <BarChart3 size={14} className="text-[#8b5cf6] shrink-0" />
           <span>Total votes calculated across all learner submissions.</span>
         </div>
