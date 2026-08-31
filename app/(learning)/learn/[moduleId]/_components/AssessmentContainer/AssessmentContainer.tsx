@@ -10,7 +10,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { AssessmentViewData } from "./types";
+import { AssessmentViewData, Choice } from "./types";
 import {
   getAssessmentViewData,
   getAssessmentState,
@@ -505,12 +505,21 @@ export default function AssessmentContainer({
             ...prev,
             questions: prev.questions.map((q) => ({
               ...q,
-              choices: q.choices.map((choice) => {
-                const c = choice as any;
-                const dist = result.poll_distributions[c.id];
+              choices: q.choices.map((choice: Choice) => {
+                // Tell TypeScript that poll_distributions is a record mapping choice IDs to vote stats
+                const pollDistributions = result.poll_distributions as
+                  | Record<string, { votes: number; percentage: number }>
+                  | undefined;
+
+                const dist = pollDistributions?.[choice.id];
+
                 return dist
-                  ? { ...c, votes: dist.votes, percentage: dist.percentage }
-                  : c;
+                  ? {
+                      ...choice,
+                      votes: dist.votes,
+                      percentage: dist.percentage,
+                    }
+                  : choice;
               }),
             })),
           };

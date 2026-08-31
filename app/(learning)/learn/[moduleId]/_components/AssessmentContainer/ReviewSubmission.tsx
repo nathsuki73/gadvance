@@ -3,10 +3,10 @@
 import React, { useEffect } from "react";
 import { ChevronRight, ArrowLeft } from "lucide-react";
 import { QuestionCard } from "./QuestionCard";
-import { AssessmentSettings, QuestionData } from "./types";
+import { AssessmentSettings, Question } from "./types";
 
 interface ReviewSubmissionProps {
-  questions: QuestionData[];
+  questions: Question[];
   answers: Record<string, string>;
   submitted: boolean;
   settings: AssessmentSettings;
