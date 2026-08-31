@@ -461,9 +461,7 @@ export function ResultsSummary({
 
 /**
  * Renders the remedial suggestion blocks one after another with a
- * spring/overshoot pop-in. Mounted fresh (via a `key` change on the parent)
- * every time the tab becomes active, so this effect always runs while the
- * blocks are actually visible on screen.
+ * spring/overshoot pop-in without sequence numbers.
  */
 function AnimatedRemedialList({
   suggestions,
@@ -473,6 +471,8 @@ function AnimatedRemedialList({
     page_id: string;
     block_id: string;
     review_url?: string;
+    title?: string;
+    excerpt?: string;
   }>;
   moduleId: string;
 }) {
@@ -492,46 +492,69 @@ function AnimatedRemedialList({
   }, []);
 
   return (
-    <>
-      {items.map((item, idx) => {
-        const reviewUrl = `/learn/${moduleId}?item=${item.page_id}#${item.block_id}`;
-        const isVisible = idx < visibleCount;
+    <div className="space-y-4 w-full">
+      {/* Friendly Explanatory Header */}
+      <div className="space-y-1 px-1 text-left">
+        <h3 className="text-sm sm:text-base font-bold text-zinc-800">
+          Let&apos;s review these key concepts
+        </h3>
+        <p className="text-xs text-zinc-500">
+          Click any section below to jump straight to the exact concept you
+          missed.
+        </p>
+      </div>
 
-        return (
-          <div
-            key={idx}
-            style={{
-              opacity: isVisible ? 1 : 0,
-              transform: isVisible
-                ? "scale(1) translateY(0px)"
-                : "scale(0.85) translateY(10px)",
-              transitionProperty: "opacity, transform",
-              transitionDuration: "550ms",
-              transitionTimingFunction: SPRING_EASE,
-              pointerEvents: isVisible ? "auto" : "none",
-            }}
-          >
-            <Link
-              href={reviewUrl}
-              className="group flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 text-xs font-semibold text-zinc-800 transition-all hover:border-[#8b5cf6] hover:shadow-xs w-full"
+      {/* Vertical List Stack */}
+      <div className="space-y-3">
+        {items.map((item, idx) => {
+          const reviewUrl = `/learn/${moduleId}?item=${item.page_id}#${item.block_id}`;
+          const isVisible = idx < visibleCount;
+
+          const displayTitle = item.title || "Concept Review Section";
+          const displaySubtitle =
+            item.excerpt || "Click to review specific concept block";
+
+          return (
+            <div
+              key={idx}
+              style={{
+                opacity: isVisible ? 1 : 0,
+                transform: isVisible
+                  ? "scale(1) translateY(0px)"
+                  : "scale(0.85) translateY(10px)",
+                transitionProperty: "opacity, transform",
+                transitionDuration: "550ms",
+                transitionTimingFunction: SPRING_EASE,
+                pointerEvents: isVisible ? "auto" : "none",
+              }}
             >
-              <div className="flex items-center gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-[11px] font-bold text-[#8b5cf6]">
-                  {idx + 1}
-                </span>
-                <span className="text-zinc-800 group-hover:text-[#8b5cf6] transition-colors">
-                  Concept Review Module #{idx + 1}
-                </span>
-              </div>
+              <Link
+                href={reviewUrl}
+                className="group relative flex items-center justify-between rounded-2xl border-2 border-zinc-200/80 bg-white p-4 text-xs font-medium text-zinc-800 transition-all hover:border-[#8b5cf6] hover:bg-purple-50/20 hover:shadow-md hover:-translate-y-0.5 cursor-pointer w-full text-left"
+              >
+                <div className="flex items-center gap-3.5 pr-2">
+                  <div>
+                    <span className="block font-bold text-zinc-900 group-hover:text-[#8b5cf6] transition-colors text-xs sm:text-sm line-clamp-1">
+                      {displayTitle}
+                    </span>
+                    <span className="block text-[11px] text-zinc-400 font-normal mt-0.5 line-clamp-1">
+                      {displaySubtitle}
+                    </span>
+                  </div>
+                </div>
 
-              <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 px-3.5 py-2 text-xs font-bold text-[#8b5cf6] group-hover:bg-[#8b5cf6] group-hover:text-white transition-all">
-                <span>Review Section</span>
-                <ExternalLink size={13} />
-              </span>
-            </Link>
-          </div>
-        );
-      })}
-    </>
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 px-3.5 py-2 text-xs font-bold text-[#8b5cf6] group-hover:bg-[#8b5cf6] group-hover:text-white transition-all shadow-xs shrink-0">
+                  <span>Review</span>
+                  <ExternalLink
+                    size={13}
+                    className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  />
+                </span>
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
