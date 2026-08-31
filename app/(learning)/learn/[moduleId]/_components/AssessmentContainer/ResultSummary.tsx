@@ -376,17 +376,12 @@ export function ResultsSummary({
           </button>
         ) : (
           <div className="space-y-2 text-center w-full">
-            <p className="text-xs font-medium text-rose-600">
-              This assessment requires a passing score of{" "}
-              {settings.passingScore}% to proceed. Please review the material
-              and retake.
-            </p>
             <button
               type="button"
               disabled
               className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-zinc-200 px-6 py-3 text-xs font-bold uppercase tracking-wider text-zinc-400 cursor-not-allowed opacity-75"
             >
-              <span>Progression Locked</span>
+              <span>Continue</span>
               <ChevronRight size={16} />
             </button>
           </div>
