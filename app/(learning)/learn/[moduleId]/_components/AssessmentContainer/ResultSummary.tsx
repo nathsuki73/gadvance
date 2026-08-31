@@ -408,9 +408,7 @@ export function ResultsSummary({
 
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50/40 border border-purple-100 text-xs">
-                <span className="font-medium text-zinc-600">
-                  Points Earned / Total
-                </span>
+                <span className="font-medium text-zinc-600">Score</span>
                 <span className="font-mono font-bold text-zinc-900">
                   {displayScoreText}
                 </span>
