@@ -282,9 +282,12 @@ export function ResultsSummary({
                       : "translate(calc(-100% - 4px), -50%)",
                   }}
                 >
-                  <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase bg-white px-1.5 py-0.5 rounded shadow-2xs border border-zinc-200/60 whitespace-nowrap">
-                    Passing ({settings.passingScore}%)
-                  </span>
+                  <div className="inline-flex flex-col items-center text-[10px] font-bold tracking-wider text-zinc-500 uppercase bg-white px-2 py-1 rounded shadow-2xs border border-zinc-200/60 leading-tight text-center">
+                    <span>Passing</span>
+                    <span className="text-zinc-800 font-black">
+                      {settings.passingScore}%
+                    </span>
+                  </div>
                 </div>
 
                 <div className="absolute flex flex-col items-center justify-center text-center">
