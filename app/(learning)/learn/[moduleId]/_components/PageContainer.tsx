@@ -172,15 +172,29 @@ export default function PageContainer({
     if (element && containerRef.current) {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
 
-      // Optional: highlight effect
+      // Minimal adaptive highlight with generous padding, rounded corners, and a pulsing border
       element.classList.add(
-        "bg-purple-50",
-        "transition-colors",
+        "p-4", // Adds padding so letters aren't squished against the border
+        "my-2", // Adds breathing room above and below the block
+        "rounded-xl", // Modern smooth rounded corners
+        "border-2", // Clean, minimal structural border
+        "border-purple-400/60", // Soft purple accent color
+        "bg-purple-50/40", // Extremely light translucent background
+        "animate-pulse", // Gentle pulsing effect
+        "transition-all",
         "duration-500",
       );
+
       setTimeout(() => {
-        element.classList.remove("bg-purple-50");
-      }, 2000);
+        element.classList.remove(
+          "p-4",
+          "my-2",
+          "border-2",
+          "border-purple-400/60",
+          "bg-purple-50/40",
+          "animate-pulse",
+        );
+      }, 2500); // Cleans up after 2.5 seconds
     }
   }, []);
 
