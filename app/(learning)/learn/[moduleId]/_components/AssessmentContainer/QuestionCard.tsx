@@ -87,7 +87,7 @@ export function QuestionCard({
               </span>
             </div>
           )}
-          <h3 className="text-sm font-semibold text-zinc-900 leading-relaxed">
+          <h3 className="text-md font-semibold text-zinc-900 leading-relaxed">
             {question.text}
           </h3>
         </div>
@@ -144,7 +144,7 @@ export function QuestionCard({
                 type="button"
                 onClick={() => onSelectChoice(question.id, choice.id)}
                 disabled={isLocked}
-                className={`relative overflow-hidden flex flex-1 items-center justify-between gap-3 py-2.5 px-2 text-left text-xs transition-colors cursor-pointer disabled:cursor-default rounded-lg hover:bg-zinc-50 ${textStyle}`}
+                className={`relative overflow-hidden flex flex-1 items-center justify-between gap-3 py-2.5 px-2 text-left text-md transition-colors cursor-pointer disabled:cursor-default rounded-lg hover:bg-zinc-50 ${textStyle}`}
               >
                 {/* Background Progress Bar for Polls */}
                 {showPollDistribution && (

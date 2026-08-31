@@ -796,7 +796,7 @@ export default function AssessmentContainer({
       : 0;
 
   return (
-    <div className="flex h-[100dvh] flex-col justify-between overflow-x-hidden overflow-y-auto bg-white font-sans antialiased">
+    <div className="flex h-[100dvh] flex-col overflow-x-hidden overflow-y-auto bg-white font-sans antialiased">
       <div className="border-b border-zinc-100 bg-white px-4 py-3 sm:px-8 sm:py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
           {hasStarted && Boolean(settings.timeLimitMinutes) && !submitted && (
@@ -838,7 +838,7 @@ export default function AssessmentContainer({
         )}
       </div>
 
-      <div className="mx-auto my-auto w-full max-w-3xl p-4 sm:p-8">
+      <div className="mx-auto w-full max-w-2xl px-4 pt-4 pb-12 sm:px-6 lg:px-8">
         {!hasStarted ? (
           <AssessmentStartScreen
             assessment={assessment}
