@@ -65,8 +65,6 @@ export async function fetchStaticTest(
   moduleId: string,
   type: "pre_test" | "post_test" = "pre_test",
 ): Promise<{ success: boolean; data?: StaticTest; error?: string }> {
-  console.log("fetchStaticTest called securely on the server");
-
   const backendType = type === "pre_test" ? "pre_test" : "post_test";
 
   // Use the internal engine wrapper to automatically inject your laravelJwt string header!

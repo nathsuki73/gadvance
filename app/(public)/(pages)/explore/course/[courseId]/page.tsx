@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import React, { useEffect, useState, use, useCallback, useRef } from "react";
 import { notFound, usePathname, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import CourseOverviewHeader from "./_components/CourseOverviewHeader";
@@ -8,12 +8,11 @@ import { getLearningPlanDetails } from "../../service";
 
 import type { LearningPlan, CoursePageProps, Enrollment } from "./types";
 import { useSession } from "next-auth/react";
-import { getMyEnrollment } from "./service";
 import CoursePageSkeleton from "./_components/CoursePageSkeleton";
+import { forceSignOut } from "@/app/lib/api-client";
 
-const CoursePage = ({ params }: CoursePageProps) => {
-  const { status } = useSession();
-  const isLoggedIn = status === "authenticated";
+export default function CoursePage({ params }: CoursePageProps) {
+  const { status, data: session } = useSession();
 
   const resolvedParams = use(params);
   const courseId = resolvedParams.courseId;
@@ -21,50 +20,82 @@ const CoursePage = ({ params }: CoursePageProps) => {
   const [learningPlan, setLearningPlan] = useState<LearningPlan | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(false);
-
-  // 1. Store the full enrollment object here instead of just a boolean
   const [enrollmentData, setEnrollmentData] = useState<Enrollment | null>(null);
 
   const router = useRouter();
   const pathname = usePathname();
+
+  // Guard ref to ensure the API fetch runs strictly once per component mount
+  const hasFetchedRef = useRef(false);
+
+  // Clean and unified authentication state check for both Google and Credentials sign-ins
+  const isFullyAuthenticated =
+    status === "authenticated" &&
+    Boolean(session?.laravelJwt && !session?.error);
+
+  // Centralized guard function: purges session if token is dead/invalid
+  const ensureValidSession = useCallback(async (): Promise<boolean> => {
+    if (!isFullyAuthenticated) {
+      await forceSignOut();
+      return false;
+    }
+    return true;
+  }, [isFullyAuthenticated]);
+
+  // 1. Light Tab Focus Listener: Runs ONLY when user switches back to this tab
+  useEffect(() => {
+    const handleTabFocus = () => {
+      if (document.visibilityState === "visible") {
+        ensureValidSession();
+      }
+    };
+
+    window.addEventListener("focus", handleTabFocus);
+    document.addEventListener("visibilitychange", handleTabFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleTabFocus);
+      document.removeEventListener("visibilitychange", handleTabFocus);
+    };
+  }, [ensureValidSession]);
 
   const handleBackToCourse = () => {
     const courseLink = pathname.split("/course")[0];
     router.push(courseLink);
   };
 
+  // 2. Fetch course details safely without double-fetching loops
   useEffect(() => {
-    if (status === "loading") return;
+    if (!courseId) return;
 
-    const fetchCourseAndEnrollment = async () => {
+    // Prevent duplicate fetches on initial render cycles & React Strict Mode
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+
+    const fetchCourseDetails = async () => {
       try {
         setDataLoading(true);
+        setError(false);
 
-        // 1. If your service already returns the model data, 'res' IS the course structure!
+        // Single fetch for both course details and enrollment status!
         const courseData = await getLearningPlanDetails(courseId);
-        console.log("Course Data:", courseData);
 
-        // 2. Direct assignment works perfectly without checking for data wrappers
-        setLearningPlan(courseData);
-
-        if (isLoggedIn) {
-          const enrollmentResult = await getMyEnrollment(courseId);
-          if (enrollmentResult.success && enrollmentResult.data) {
-            setEnrollmentData(enrollmentResult.data as Enrollment);
-          }
+        if (courseData) {
+          setLearningPlan(courseData);
+          setEnrollmentData(courseData.enrollment ?? null);
+        } else {
+          setError(true);
         }
       } catch (err) {
-        console.error("Fetch error:", err);
+        console.error("Course fetch error:", err);
         setError(true);
       } finally {
         setDataLoading(false);
       }
     };
 
-    if (courseId) {
-      fetchCourseAndEnrollment();
-    }
-  }, [courseId, status, isLoggedIn]);
+    fetchCourseDetails();
+  }, [courseId]);
 
   if (status === "loading" || dataLoading) {
     return <CoursePageSkeleton />;
@@ -76,12 +107,11 @@ const CoursePage = ({ params }: CoursePageProps) => {
 
   return (
     <main className="min-h-screen bg-white text-zinc-900 selection:bg-sky-100 selection:text-primary">
-      {/* Navigation Header */}
-      <nav className="sticky top-0 z-50 border-b border-zinc-50 bg-white/80 backdrop-blur-md">
+      <nav className="sticky top-0 z-40 border-b border-zinc-50 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
           <button
             onClick={handleBackToCourse}
-            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary"
+            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary cursor-pointer"
           >
             <ArrowLeft
               size={16}
@@ -93,15 +123,12 @@ const CoursePage = ({ params }: CoursePageProps) => {
         </div>
       </nav>
 
-      {/* Hero Header Section */}
-      {/* 2. Pass the parsed enrollment down as a prop */}
       <CourseOverviewHeader
         course={learningPlan}
-        isLoggedIn={isLoggedIn}
-        initialEnrollment={enrollmentData}
+        isLoggedIn={isFullyAuthenticated}
+        initialEnrollment={isFullyAuthenticated ? enrollmentData : null}
+        onRequireAuth={ensureValidSession}
       />
     </main>
   );
-};
-
-export default CoursePage;
+}

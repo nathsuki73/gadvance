@@ -23,7 +23,7 @@ const CourseModulePreview = ({
   if (modulesList.length === 0) {
     return (
       <div className="text-center py-12 text-zinc-400 font-light lowercase">
-        no curriculum modules found for this learning plan.
+        no modules found for this learning plan.
       </div>
     );
   }

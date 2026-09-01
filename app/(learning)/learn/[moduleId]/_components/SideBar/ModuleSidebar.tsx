@@ -1,91 +1,66 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
-import SideBarNavItem from "./_components/SideBarNavItem";
+import { ArrowLeft, ChevronDown, ChevronRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Section, SectionItem } from "../../service";
+import SideBarNavItem from "./_components/SideBarNavItem";
 import { DonutProgress } from "./_components/DonutProgress";
 
-type LessonBlock = { id: string; title: string };
-export type LearningItem = {
-  id: string;
-  title: string;
-  type: "pretest" | "lesson" | "posttest";
-  order: number;
-  lesson_blocks?: LessonBlock[];
-
-  // progress
-  totalSteps?: number;
-  completedSteps?: number;
-};
-
-type Props = {
+type ModuleSidebarProps = {
   courseId: string;
   moduleId: string;
   structureTitle?: string;
-  items: LearningItem[];
-  activeItem: LearningItem;
-  activeBlockId?: string;
-  onNavigate: (item: LearningItem, blockId?: string) => void;
+  sections: Section[];
+  activeItem: SectionItem | null;
+  completedItemIds?: Set<string>;
+  onSelect: (item: SectionItem) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
 };
 
-const DOT_COLORS: Record<
-  LearningItem["type"],
-  { active: string; inactive: string }
-> = {
-  pretest: { active: "bg-violet-500", inactive: "bg-violet-200" },
-  lesson: { active: "bg-blue-500", inactive: "bg-blue-200" },
-  posttest: { active: "bg-amber-500", inactive: "bg-amber-200" },
-};
-
 export default function ModuleSidebar({
   courseId,
   moduleId,
   structureTitle,
-  items = [],
+  sections = [],
   activeItem,
-  activeBlockId,
-  onNavigate,
+  completedItemIds = new Set(),
+  onSelect,
   isCollapsed,
   onToggleCollapse,
   mobileOpen,
   onCloseMobile,
-}: Props) {
+}: ModuleSidebarProps) {
   const router = useRouter();
-  const [expanded, setExpanded] = useState<Set<string>>(
-    new Set([activeItem.id]),
+
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    () => new Set(sections.map((s) => s.id)),
   );
+
   const collapsedView = isCollapsed && !mobileOpen;
 
-  const go = (item: LearningItem, blockId?: string) => {
-    if (item.type === "lesson") {
-      setExpanded((prev) => {
-        if (prev.has(item.id)) return prev;
-        const next = new Set(prev);
-        next.add(item.id);
-        return next;
-      });
-    }
-
-    onNavigate(item, blockId);
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) {
+        next.delete(sectionId);
+      } else {
+        next.add(sectionId);
+      }
+      return next;
+    });
   };
 
-  const openLesson = (item: LearningItem) => {
-    const alreadyOpen = expanded.has(item.id);
-    if (!alreadyOpen) {
-      setExpanded((prev) => new Set(prev).add(item.id));
-      go(item, "overview");
-    } else {
-      setExpanded((prev) => {
-        const next = new Set(prev);
-        next.delete(item.id);
-        return next;
-      });
-    }
+  const allItems = sections.flatMap((sec) => sec.items || []);
+
+  const checkIsItemUnlocked = (itemId: string): boolean => {
+    const idx = allItems.findIndex((i) => i.id === itemId);
+    if (idx <= 0) return true;
+    const prevItem = allItems[idx - 1];
+    return completedItemIds.has(prevItem.id);
   };
 
   return (
@@ -93,119 +68,130 @@ export default function ModuleSidebar({
       {mobileOpen && (
         <button
           onClick={onCloseMobile}
-          className="fixed inset-0 z-40 bg-zinc-950/30 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-zinc-950/30 backdrop-blur-xs lg:hidden"
           aria-label="Close navigation sidebar"
         />
       )}
 
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-dvh w-72.5 flex-col border-r border-zinc-200 bg-zinc-50/80 backdrop-blur-md transition-all duration-300 ease-in-out sm:w-80 ${
+        className={`fixed left-0 top-0 z-50 flex h-dvh w-72 flex-col border-r border-zinc-200 bg-zinc-50/90 backdrop-blur-md transition-all duration-300 ease-in-out sm:w-80 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 ${isCollapsed ? "lg:w-16" : "lg:w-80"}`}
       >
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-zinc-200 bg-white/80 px-4">
           <div className="flex w-full items-center justify-between gap-2 lg:hidden">
-            <span className="max-w-55 truncate text-sm font-semibold lowercase text-zinc-900">
+            <span className="max-w-[200px] truncate text-sm font-semibold text-zinc-900">
               {structureTitle}
             </span>
             <button
               onClick={onCloseMobile}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 cursor-pointer"
               aria-label="Close menu"
             >
-              ✕
+              <X size={16} />
             </button>
           </div>
+
           <div className="hidden w-full items-center justify-between lg:flex">
-            {!isCollapsed && (
-              <div className="min-w-0 pr-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
-                  curriculum
-                </p>
-                <h2 className="truncate text-sm font-semibold leading-snug text-zinc-800">
-                  {structureTitle}
-                </h2>
-              </div>
+            {!isCollapsed ? (
+              <>
+                <div className="min-w-0 pr-2">
+                  <h2 className="truncate text-sm font-semibold leading-snug text-zinc-800">
+                    {structureTitle}
+                  </h2>
+                </div>
+                <button
+                  onClick={onToggleCollapse}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50 transition-colors cursor-pointer"
+                  aria-label="Collapse sidebar"
+                >
+                  ‹
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={onToggleCollapse}
+                className="mx-auto flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50 transition-colors cursor-pointer"
+                aria-label="Expand sidebar"
+                title="Expand sidebar"
+              >
+                ›
+              </button>
             )}
-            <button
-              onClick={onToggleCollapse}
-              className={`flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-500 ${isCollapsed ? "mx-auto" : ""}`}
-              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {isCollapsed ? "›" : "‹"}
-            </button>
           </div>
         </div>
 
-        <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {items.map((item, i) => {
-            const colors = DOT_COLORS[item.type];
-            const blocks = item.lesson_blocks ?? [];
-            const hasBlocks = item.type === "lesson";
-            const isOpen = expanded.has(item.id);
+        <div className="flex-1 space-y-4 overflow-y-auto overflow-x-hidden px-3 py-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300">
+          {" "}
+          {sections.map((section) => {
+            const isExpanded = expandedSections.has(section.id);
+            const items = section.items || [];
+            const completedCount = items.filter((i) =>
+              completedItemIds.has(i.id),
+            ).length;
 
             return (
-              <div key={item.id}>
-                <SideBarNavItem
-                  index={i}
-                  label={item.title}
-                  sublabel={
-                    hasBlocks ? `${blocks.length + 2} steps` : item.type
-                  }
-                  dotColor={colors.active}
-                  dotColorInactive={colors.inactive}
-                  active={item.id === activeItem.id && !activeBlockId}
-                  collapsed={collapsedView}
-                  trailing={
-                    hasBlocks && !collapsedView
-                      ? isOpen
-                        ? "▾"
-                        : "▸"
-                      : undefined
-                  }
-                  icon={
-                    item.totalSteps ? (
+              <div key={section.id} className="space-y-1">
+                {!collapsedView ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(section.id)}
+                    className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-zinc-200/50 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
                       <DonutProgress
-                        totalSteps={item.totalSteps}
-                        completedSteps={item.completedSteps ?? 0}
-                        size={collapsedView ? 22 : 20}
-                        strokeWidth={2}
+                        totalSteps={items.length}
+                        completedSteps={completedCount}
+                        size={18}
+                        strokeWidth={2.5}
                       />
-                    ) : undefined
-                  }
-                  onClick={() => (hasBlocks ? openLesson(item) : go(item))}
-                />
+                      <h3 className="truncate text-xs font-bold text-zinc-800">
+                        {section.title}
+                      </h3>
+                    </div>
 
-                {hasBlocks && isOpen && !collapsedView && (
-                  <div className="ml-4 mt-1 space-y-1 border-l border-zinc-200 pl-3">
-                    <SubRow
-                      label="Overview"
-                      active={
-                        item.id === activeItem.id &&
-                        activeBlockId === "overview"
-                      }
-                      onClick={() => go(item, "overview")}
-                    />
+                    <div className="flex items-center shrink-0 text-zinc-400">
+                      {isExpanded ? (
+                        <ChevronDown size={14} />
+                      ) : (
+                        <ChevronRight size={14} />
+                      )}
+                    </div>
+                  </button>
+                ) : (
+                  <div className="h-px w-8 bg-zinc-200 mx-auto my-2" />
+                )}
 
-                    {blocks.map((block) => (
-                      <SubRow
-                        key={block.id}
-                        label={block.title}
-                        active={
-                          item.id === activeItem.id &&
-                          activeBlockId === block.id
-                        }
-                        onClick={() => go(item, block.id)}
-                      />
-                    ))}
+                {(isExpanded || collapsedView) && (
+                  <div
+                    className={!collapsedView ? "space-y-1 pl-1" : "space-y-1"}
+                  >
+                    {items.map((item, itemIdx) => {
+                      const isUnlocked = checkIsItemUnlocked(item.id);
+                      const isCompleted = completedItemIds.has(item.id);
+                      const isActive = activeItem?.id === item.id;
 
-                    <SubRow
-                      label="Quiz"
-                      active={
-                        item.id === activeItem.id && activeBlockId === "quiz"
-                      }
-                      onClick={() => go(item, "quiz")}
-                    />
+                      return (
+                        <SideBarNavItem
+                          key={item.id}
+                          index={itemIdx + 1}
+                          label={item.title}
+                          itemType={item.item_type}
+                          assessmentType={item.assessment_type}
+                          active={isActive}
+                          locked={!isUnlocked}
+                          completed={isCompleted}
+                          collapsed={collapsedView}
+                          onClick={() => {
+                            if (isUnlocked) {
+                              // 🔑 FIX: Just call the parent! The parent instantly swaps the view
+                              // and updates the URL bar without triggering a reload.
+                              onSelect(item);
+                            }
+                          }}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -219,49 +205,19 @@ export default function ModuleSidebar({
               router.push(`/explore/course/${courseId}/module/${moduleId}`)
             }
             aria-label="Exit module"
-            className={`flex items-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition-colors hover:bg-zinc-50 ${
+            className={`flex items-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition-colors hover:bg-zinc-50 cursor-pointer ${
               collapsedView
                 ? "h-10 w-full justify-center"
-                : "w-1/3 gap-2 px-3 py-2.5"
+                : "w-full justify-center gap-2 px-3 py-2.5"
             }`}
           >
             <ArrowLeft size={16} className="shrink-0" />
             {!collapsedView && (
-              <span className="text-xs font-medium">Exit</span>
+              <span className="text-xs font-medium">Exit Module</span>
             )}
           </button>
         </div>
       </aside>
     </>
-  );
-}
-
-function SubRow({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors ${
-        active
-          ? "bg-purple-50/70 text-[#8b5cf6]"
-          : "text-zinc-500 hover:bg-zinc-200/40 hover:text-zinc-800"
-      }`}
-    >
-      <span
-        className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? "bg-blue-500" : "bg-zinc-300"}`}
-      />
-      <span
-        className={`truncate text-[11.5px] ${active ? "font-semibold" : "font-normal"}`}
-      >
-        {label}
-      </span>
-    </button>
   );
 }

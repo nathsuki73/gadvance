@@ -45,9 +45,9 @@ const ActionConfirmationDialog = ({
               </>
             ) : (
               <>
-                leave this{" "}
+                remove this{" "}
                 <span className="italic font-serif text-[#e05353]">
-                  curriculum?
+                  Learning Plan?
                 </span>
               </>
             )}
@@ -55,8 +55,8 @@ const ActionConfirmationDialog = ({
 
           <p className="mt-4 text-base text-zinc-400 font-light leading-relaxed lowercase">
             {isEnroll
-              ? "you will be officially enrolled in this professional curriculum and gain access to its structured learning modules."
-              : "your enrollment progress will be removed from this curriculum and you will lose access to its learning pathway."}
+              ? "you will be officially enrolled in this learning plan  and gain access to its structured learning modules."
+              : "your enrollment will be removed from this learning plan and you will lose access to its modules."}
           </p>
         </div>
 
@@ -92,13 +92,6 @@ const ActionConfirmationDialog = ({
                 ? "enroll"
                 : "unenroll"}
           </button>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-8 pt-6 border-t border-zinc-100 text-center">
-          <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-widest">
-            gadvance philippines
-          </p>
         </div>
       </div>
     </div>,

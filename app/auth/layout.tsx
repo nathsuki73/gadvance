@@ -1,6 +1,8 @@
 "use client";
 
+import { Suspense } from "react";
 import { SessionProvider } from "next-auth/react";
+import { ToastProvider } from "../components/context/ToastContext";
 
 export default function AuthLayout({
   children,
@@ -8,8 +10,12 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SessionProvider>
-      <div className="">{children}</div>
-    </SessionProvider>
+    <ToastProvider>
+      <SessionProvider>
+        <Suspense fallback={null}>
+          <div className="">{children}</div>
+        </Suspense>
+      </SessionProvider>
+    </ToastProvider>
   );
 }

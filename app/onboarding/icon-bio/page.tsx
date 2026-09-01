@@ -1,297 +1,193 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { finishOnBoarding } from "../../(public)/actions/onboarding"; // Ensure path is correct
-import logoIcon from "@/app/assets/logo.ico";
-import imageCompression from "browser-image-compression";
 import Image from "next/image";
+import { useToast } from "@/app/components/context/ToastContext";
+import { StepHeader } from "../_components/StepHeader";
+import { OnboardingActions } from "../_components/OnboardingActions";
+import {
+  OnboardingP3,
+  ONBOARDING_CACHE_KEYS,
+  getOnboardingCache,
+  setOnboardingCache,
+  clearOnboardingCache,
+  saveOnboardingProfile,
+} from "../service";
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+interface CustomSessionUser {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  status?: string;
+}
 
-const IconBio = () => {
+export default function AvatarAndBio() {
   const { data: session, update } = useSession();
   const router = useRouter();
+  const { showToast } = useToast();
 
-  const [loading, setLoading] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
-  const [bio, setBio] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const buildAvatarPath = (file: File) => {
-    const emailKey =
-      session?.user?.email
-        ?.split("@")[0]
-        ?.toLowerCase()
-        .replace(/[^a-z0-9]+/g, "_") || "user";
-    const extension =
-      file.name.split(".").pop()?.toLowerCase() ||
-      (file.type === "image/png" ? "png" : "jpg");
-    const timestamp = Math.floor(Date.now() / 1000);
+  // Restore cached bio & avatar preview directly on initial state creation
+  const [bio, setBio] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    const p3 = getOnboardingCache<OnboardingP3>(ONBOARDING_CACHE_KEYS.p3);
+    return p3?.bio || "";
+  });
 
-    return `/storage/uploads/avatars/avatar_${emailKey}_${timestamp}.${extension}`;
-  };
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const p3 = getOnboardingCache<OnboardingP3>(ONBOARDING_CACHE_KEYS.p3);
+    return p3?.avatarPreviewUrl || null;
+  });
 
-  useEffect(() => {
-    const saved = localStorage.getItem("onboarding_p3");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setAvatarPreview(parsed.avatarBase64 || parsed.avatarPreview || null);
-        setAvatarBase64(parsed.avatarBase64 || null);
-        setBio(parsed.bio || "");
-      } catch (e) {
-        /* ignore */
-      }
-    }
-  }, []);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const nextAvatarPath = buildAvatarPath(file);
-
-    const options = {
-      maxSizeMB: 0.4,
-      maxWidthOrHeight: 800,
-      useWebWorker: true,
-    };
-
-    try {
-      const compressedFile = await imageCompression(file, options);
-      const bitmap = await createImageBitmap(compressedFile);
-      const canvas = document.createElement("canvas");
-      canvas.width = bitmap.width;
-      canvas.height = bitmap.height;
-
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(bitmap, 0, 0);
-      }
-
-      const webpBase64 = canvas.toDataURL("image/webp", 0.75);
-
-      setAvatarBase64(webpBase64);
-      setAvatarPreview(webpBase64);
-
-      const existing = localStorage.getItem("onboarding_p3");
-      const parsed = existing ? JSON.parse(existing) : {};
-      localStorage.setItem(
-        "onboarding_p3",
-        JSON.stringify({
-          ...parsed,
-          avatarBase64: webpBase64,
-          avatarPreview: webpBase64,
-          avatarPath: nextAvatarPath,
-        }),
-      );
-    } catch (error) {
-      console.error("WebP conversion failed:", error);
-      alert("Could not process the image. Please try a different photo.");
+    if (!file.type.startsWith("image/")) {
+      showToast("Please upload a valid image file (JPG or PNG).", "warning");
+      return;
     }
+
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
   };
 
-  const handleBack = () => {
+  const handleBack = (): void => {
+    setOnboardingCache<OnboardingP3>(ONBOARDING_CACHE_KEYS.p3, {
+      bio,
+      avatarPreviewUrl: avatarPreview || undefined,
+    });
     router.back();
   };
 
-  const handleFinalSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleFinalSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ): Promise<void> => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // 1. GATHER DATA FROM ALL PAGES
-      const p1 = JSON.parse(localStorage.getItem("onboarding_p1") || "{}");
-      const p2 = JSON.parse(localStorage.getItem("onboarding_p2") || "{}");
+      const response = await saveOnboardingProfile(bio, avatarFile);
 
-      const extractedBirthday = String(
-        p1.birthday || p1.date_of_birth || p1.dob || "",
-      ).trim();
-
-      // 2. CONSTRUCT COMPLETE PAYLOAD
-      const finalPayload = {
-        firstName: String(p1.firstName || ""),
-        middleName: String(p1.middleName || ""),
-        lastName: String(p1.lastName || ""),
-        age: String(p1.age || ""),
-        gender: String(p1.gender || ""),
-        birthday: extractedBirthday,
-        date_of_birth: extractedBirthday,
-        birth_date: extractedBirthday,
-        phone: String(p2.phone || ""),
-        addressLine: String(p2.addressLine || ""),
-        city: String(p2.city || ""),
-        state: String(p2.state || ""),
-        country: String(p2.country || ""),
-        postalCode: String(p2.postalCode || ""),
-        bio: bio,
-        avatar: avatarBase64,
-      };
-
-      // 3. CALL SERVER ACTION
-      const result = await finishOnBoarding(finalPayload);
-
-      if (!result.success) {
-        alert(result.error || "Failed to save profile");
+      if (!response.success) {
+        showToast(
+          response.message || "Failed to finalize profile setup.",
+          "error",
+        );
         setLoading(false);
         return;
       }
 
-      // Clear local storage completely
-      localStorage.removeItem("onboarding_p1");
-      localStorage.removeItem("onboarding_p2");
-      localStorage.removeItem("onboarding_p3");
+      showToast("Profile set up successfully!", "success");
+      clearOnboardingCache();
 
-      // 4. UPDATE SESSION ENGINE
-      // Force NextAuth to inject 'active' status and preserve credentials structures
-      const nextStatus = (result.user?.status ?? "active").trim().toLowerCase();
-      await update({
-        user: {
-          ...session?.user,
-          status: nextStatus,
-          laravelJwt: session?.laravelJwt,
-        },
-      });
+      // 1. Update NextAuth session status
+      const updatedUser: CustomSessionUser = {
+        ...(session?.user as CustomSessionUser),
+        status: "active",
+      };
+      await update({ user: updatedUser });
 
-      // 5. BREAK OUT OF LOGIC LOOP
-      // Give the encrypted session state cookies 200ms to settle,
-      // then force an absolute browser refresh directly into your workspace layout.
-      setTimeout(() => {
-        window.location.href = "/workspace";
-      }, 200);
-
-    } catch (error) {
-      console.error("Onboarding Finalize Error:", error);
-      alert("Something went wrong. Please try again.");
-    } finally {
+      // 2. Refresh router cache & navigate
+      router.refresh();
+      router.push("/workspace");
+    } catch (error: unknown) {
+      console.error("Onboarding Submit Error:", error);
+      showToast("Something went wrong. Please try again.", "error");
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex bg-white font-sans text-zinc-900 overflow-hidden">
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 md:px-24 lg:px-32 py-12 relative z-10 bg-white">
-        <div className="absolute top-8 left-8 flex items-center gap-3">
-          <div className="relative h-7 w-7">
-            <Image
-              width={100}
-              height={100}
-              src={logoIcon.src}
-              alt="GADvance"
-              className="object-contain"
-            />
-          </div>
-          <span className="text-lg font-semibold tracking-tight">GADvance</span>
-        </div>
+    <>
+      <StepHeader
+        step={3}
+        title="Avatar & Bio"
+        subtitle="Finalize your profile setup."
+      />
 
-        <div className="w-full max-w-md mx-auto lg:mx-0">
-          <div className="mb-10">
-            <span className="text-[10px] font-bold text-[#8b5cf6] uppercase tracking-[0.4em]">
-              step 03 / 03
-            </span>
-            <h1 className="text-3xl font-bold text-zinc-900 mt-2 tracking-tight">
-              Avatar & Bio
-            </h1>
-            <p className="text-zinc-400 text-sm font-light mt-2">
-              Finalize your profile setup.
-            </p>
-          </div>
+      <form className="space-y-6" onSubmit={handleFinalSubmit}>
+        {/* Profile Photo Section */}
+        <div>
+          <label className="block text-[10px] font-bold text-zinc-400 mb-3 uppercase tracking-widest">
+            Profile Photo
+          </label>
 
-          <form className="space-y-6" onSubmit={handleFinalSubmit}>
-            <div>
-              <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
-                Profile Photo
-              </label>
-              <div className="flex items-center gap-4">
-                <div className="h-20 w-20 rounded-full bg-zinc-50 border border-zinc-100 overflow-hidden flex items-center justify-center relative">
-                  {avatarPreview ? (
-                    <Image
-                      width={100}
-                      height={100}
-                      src={avatarPreview}
-                      alt="avatar"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-zinc-300 text-[10px] uppercase font-bold tracking-tighter">
-                      No photo
-                    </span>
-                  )}
-                </div>
-                <div className="grow">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-violet-50 file:text-[#8b5cf6] hover:file:bg-violet-100 cursor-pointer"
-                  />
-                  <p className="text-[11px] text-zinc-400 mt-2">
-                    JPG or PNG accepted.
-                  </p>
-                </div>
+          <div className="flex items-center gap-5">
+            <div className="relative h-24 w-24 rounded-full bg-zinc-100 border border-zinc-200/60 flex items-center justify-center overflow-hidden shrink-0">
+              {avatarPreview ? (
+                <Image
+                  src={avatarPreview}
+                  alt="Profile Avatar Preview"
+                  fill
+                  sizes="96px"
+                  className="object-cover"
+                />
+              ) : (
+                <span className="text-[10px] font-bold text-zinc-300 uppercase text-center tracking-wider leading-tight px-2">
+                  No Photo
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/png, image/jpeg"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-violet-50 hover:bg-violet-100 text-[#8b5cf6] font-semibold text-xs px-4 py-2.5 rounded-full transition-colors active:scale-95"
+                >
+                  Choose File
+                </button>
+                <span className="text-xs text-zinc-500 font-normal truncate max-w-[150px] sm:max-w-xs">
+                  {avatarFile ? avatarFile.name : "No file chosen"}
+                </span>
               </div>
+              <p className="text-[11px] text-zinc-400 font-light">
+                JPG or PNG accepted.
+              </p>
             </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
-                Short Bio
-                <span className="text-red-500 ml-1">*</span>
-              </label>
-              <textarea
-                name="bio"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                required
-                placeholder="Tell us a bit about yourself..."
-                className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50 text-sm h-28 resize-none"
-              />
-            </div>
-
-            <div className="flex gap-4 mt-4">
-              <button
-                type="button"
-                onClick={handleBack}
-                disabled={loading}
-                className="w-1/3 border border-zinc-100 text-zinc-400 px-6 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-zinc-50 transition-all disabled:opacity-50"
-              >
-                Back
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-2/3 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70"
-              >
-                {loading ? "Saving..." : "Finish Profile Setup"}
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
-      </div>
 
-      <div
-        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
-        style={{ clipPath: "ellipse(100% 100% at 100% 50%)" }}
-      >
-        <div className="text-center px-12 relative z-10">
-          <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">
-            Ready to <br />
-            <span className="font-semibold italic font-serif">
-              get started?
-            </span>
-          </h2>
-          <p className="text-white/80 text-sm leading-relaxed max-w-sm mx-auto font-light lowercase">
-            Once you finish, you will have full access to our workspace and
-            learning modules.
-          </p>
+        {/* Short Bio Field (Optional) */}
+        <div>
+          <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+            Short Bio
+          </label>
+          <textarea
+            value={bio}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+              setBio(e.target.value)
+            }
+            rows={5}
+            placeholder="Tell us a bit about yourself..."
+            className="w-full rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#8b5cf6] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all resize-none"
+          />
         </div>
-        <div className="absolute bottom-12 text-center text-[10px] tracking-[0.4em] text-white/40 uppercase">
-          © 2026 gadvance
-        </div>
-      </div>
-    </div>
+
+        <OnboardingActions
+          onBack={handleBack}
+          nextLabel="Finish Profile Setup"
+          loading={loading}
+          loadingLabel="Saving Profile..."
+        />
+      </form>
+    </>
   );
-};
-
-export default IconBio;
+}

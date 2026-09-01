@@ -1,34 +1,3 @@
-"use server";
-
-type ForgotPasswordOtpResult =
-  | { success: true; message?: string }
-  | { success: false; error: string; statusCode?: number; debug?: string };
-
-type VerifyForgotPasswordOtpResult =
-  | {
-      success: true;
-      message?: string;
-      resetToken?: string | null;
-      resetTokenExpiresInSeconds?: number | null;
-    }
-  | {
-      success: false;
-      error: string;
-      attemptsLeft?: number;
-      blockSecondsRemaining?: number;
-      statusCode?: number;
-      debug?: string;
-    };
-
-type ChangePasswordResult =
-  | { success: true; message?: string }
-  | {
-      success: false;
-      error: string;
-      statusCode?: number;
-      debug?: string;
-    };
-
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
 
 function getRequiredApiBaseUrl() {
@@ -39,53 +8,76 @@ function getRequiredApiBaseUrl() {
   return apiBaseUrl;
 }
 
-export async function sendForgotPasswordOtp(
+type ForgotPasswordLinkResult =
+  | {
+      success: true;
+      message?: string;
+    }
+  | {
+      success: false;
+      error: string;
+      statusCode?: number;
+      debug?: string;
+    };
+
+type ChangePasswordResult =
+  | {
+      success: true;
+      message?: string;
+    }
+  | {
+      success: false;
+      error: string;
+      statusCode?: number;
+      debug?: string;
+    };
+
+/**
+ * Request a password reset email.
+ *
+ * The backend should always return a generic response
+ * to prevent email enumeration.
+ */
+export async function sendForgotPasswordLink(
   email: string,
-): Promise<ForgotPasswordOtpResult> {
+): Promise<ForgotPasswordLinkResult> {
   try {
     const baseUrl = getRequiredApiBaseUrl();
-    const response = await fetch(`${baseUrl}/api/auth/password/change/otp`, {
+
+    const response = await fetch(`${baseUrl}/api/auth/password/forgot`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
       body: JSON.stringify({
-        email,
+        email: email.trim().toLowerCase(),
       }),
       cache: "no-store",
     });
 
-    type ForgotPasswordOtpPayload = {
+    type ForgotPasswordPayload = {
       success?: boolean;
-      error?: string;
       message?: string;
+      error?: string;
       debug?: string;
-      errors?: Record<string, string[] | undefined>;
     };
 
-    let payload: ForgotPasswordOtpPayload = {};
+    let payload: ForgotPasswordPayload = {};
+
     try {
-      payload = (await response.json()) as ForgotPasswordOtpPayload;
+      payload = (await response.json()) as ForgotPasswordPayload;
     } catch {
       payload = {};
     }
 
     if (!response.ok || payload.success === false) {
-      const firstValidationError = payload.errors
-        ? Object.values(payload.errors).find(
-            (messages): messages is string[] =>
-              Array.isArray(messages) && messages.length > 0,
-          )?.[0]
-        : undefined;
-
       return {
         success: false,
         error:
-          firstValidationError ||
           payload.error ||
           payload.message ||
-          "Failed to send password reset OTP.",
+          "Failed to send password reset link.",
         statusCode: response.status,
         debug: payload.debug,
       };
@@ -93,118 +85,43 @@ export async function sendForgotPasswordOtp(
 
     return {
       success: true,
-      message: payload.message || "Password reset OTP sent successfully.",
+      message:
+        payload.message ||
+        "If an account exists for this email, a password reset link has been sent.",
     };
   } catch (error) {
-    console.error("Forgot Password OTP Error:", error);
+    console.error("Forgot Password Link Error:", error);
 
     return {
       success: false,
-      error: "Failed to send password reset OTP. Please try again.",
+      error: "Failed to send password reset link. Please try again.",
       debug: error instanceof Error ? error.message : String(error),
     };
   }
 }
 
-export async function verifyForgotPasswordOtp(
-  email: string,
-  otp: string,
-): Promise<VerifyForgotPasswordOtpResult> {
-  try {
-    const baseUrl = getRequiredApiBaseUrl();
-    const response = await fetch(
-      `${baseUrl}/api/auth/password/change/otp/verify`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          otp,
-        }),
-        cache: "no-store",
-      },
-    );
-
-    type VerifyForgotPasswordOtpPayload = {
-      success?: boolean;
-      error?: string;
-      message?: string;
-      debug?: string;
-      statusCode?: number;
-      attemptsLeft?: number;
-      blockSecondsRemaining?: number;
-      reset_token?: string | null;
-      reset_token_expires_in_seconds?: number | null;
-      errors?: Record<string, string[] | undefined>;
-    };
-
-    let payload: VerifyForgotPasswordOtpPayload = {};
-    try {
-      payload = (await response.json()) as VerifyForgotPasswordOtpPayload;
-    } catch {
-      payload = {};
-    }
-
-    if (!response.ok || payload.success === false) {
-      const firstValidationError = payload.errors
-        ? Object.values(payload.errors).find(
-            (messages): messages is string[] =>
-              Array.isArray(messages) && messages.length > 0,
-          )?.[0]
-        : undefined;
-
-      return {
-        success: false,
-        error:
-          firstValidationError ||
-          payload.error ||
-          payload.message ||
-          "Invalid OTP. Please try again.",
-        attemptsLeft: payload.attemptsLeft,
-        blockSecondsRemaining: payload.blockSecondsRemaining,
-        statusCode: response.status,
-        debug: payload.debug,
-      };
-    }
-
-    return {
-      success: true,
-      message: payload.message || "Password reset OTP verified successfully.",
-      resetToken: payload.reset_token ?? null,
-      resetTokenExpiresInSeconds:
-        payload.reset_token_expires_in_seconds ?? null,
-    };
-  } catch (error) {
-    console.error("Forgot Password OTP Verify Error:", error);
-
-    return {
-      success: false,
-      error: "Failed to verify password reset OTP. Please try again.",
-      debug: error instanceof Error ? error.message : String(error),
-    };
-  }
-}
-
+/**
+ * Change the user's password using the reset token
+ * received from the password reset email.
+ */
 export async function changeForgotPassword(
-  email: string,
-  resetToken: string,
+  resetId: string,
+  token: string,
   password: string,
   passwordConfirmation: string,
 ): Promise<ChangePasswordResult> {
   try {
     const baseUrl = getRequiredApiBaseUrl();
-    const response = await fetch(`${baseUrl}/api/auth/password/change`, {
+
+    const response = await fetch(`${baseUrl}/api/auth/password/reset`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
       body: JSON.stringify({
-        email,
-        reset_token: resetToken,
+        reset_id: resetId,
+        token: token,
         password,
         password_confirmation: passwordConfirmation,
       }),
@@ -213,13 +130,13 @@ export async function changeForgotPassword(
 
     type ChangePasswordPayload = {
       success?: boolean;
-      error?: string;
       message?: string;
+      error?: string;
       debug?: string;
-      errors?: Record<string, string[] | undefined>;
     };
 
     let payload: ChangePasswordPayload = {};
+
     try {
       payload = (await response.json()) as ChangePasswordPayload;
     } catch {
@@ -227,20 +144,9 @@ export async function changeForgotPassword(
     }
 
     if (!response.ok || payload.success === false) {
-      const firstValidationError = payload.errors
-        ? Object.values(payload.errors).find(
-            (messages): messages is string[] =>
-              Array.isArray(messages) && messages.length > 0,
-          )?.[0]
-        : undefined;
-
       return {
         success: false,
-        error:
-          firstValidationError ||
-          payload.error ||
-          payload.message ||
-          "Failed to change password.",
+        error: payload.error || payload.message || "Failed to change password.",
         statusCode: response.status,
         debug: payload.debug,
       };

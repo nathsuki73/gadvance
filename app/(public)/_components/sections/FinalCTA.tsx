@@ -80,15 +80,15 @@ const FinalCTA = () => {
             </span>
             <ArrowUpRight
               size={20}
-              className="transition-transform group-hover:-translate-y-1 group-hover:translate-x-1"
+              // className="transition-transform group-hover:-translate-y-1 group-hover:translate-x-1"
             />
           </button>
 
-          <button className="w-full rounded-full border border-zinc-200 bg-white px-10 py-5 text-zinc-600 transition-all hover:border-zinc-300 hover:bg-zinc-50 active:scale-95 sm:w-auto">
+          {/* <button className="w-full rounded-full border border-zinc-200 bg-white px-10 py-5 text-zinc-600 transition-all hover:border-zinc-300 hover:bg-zinc-50 active:scale-95 sm:w-auto">
             <span className="text-lg font-medium lowercase">
               contact our partnership team
             </span>
-          </button>
+          </button> */}
         </div>
       </div>
     </section>

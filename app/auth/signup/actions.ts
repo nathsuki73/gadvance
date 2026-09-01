@@ -1,42 +1,20 @@
-"use server";
-
-type VerifyOtpResult =
-  | {
-      success: true;
-      token?: string | null;
-      user?: unknown;
-      user_profile?: unknown;
-      message?: string;
-    }
-  | {
-      success: false;
-      error: string;
-      attemptsLeft?: number;
-      blockSecondsRemaining?: number;
-    };
-
 type RegistrationResult =
   | { success: true; message?: string }
   | { success: false; error: string; statusCode?: number; debug?: string };
-
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
-
-function getRequiredApiBaseUrl() {
-  if (!apiBaseUrl) {
-    throw new Error("Missing API URL. Set NEXT_PUBLIC_API_URL.");
-  }
-
-  return apiBaseUrl;
-}
 
 export async function handleRegistration(
   email: string,
   password: string,
   passwordConfirmation: string,
-  birthday?: string, // 🎯 Captures the string parameter safely from SignUp.tsx
+  birthday?: string,
 ): Promise<RegistrationResult> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  if (!baseUrl) {
+    throw new Error("Missing API URL. Set NEXT_PUBLIC_API_URL.");
+  }
+
   try {
-    const baseUrl = getRequiredApiBaseUrl();
     const response = await fetch(`${baseUrl}/api/auth/signup`, {
       method: "POST",
       headers: {
@@ -47,9 +25,8 @@ export async function handleRegistration(
         email,
         password,
         password_confirmation: passwordConfirmation,
-        birthday: birthday || null, // 🎯 FIX: Changed 'date_of_birth' to 'birthday' to pass Laravel Request validation rules!
+        birthday: birthday || null,
       }),
-      cache: "no-store",
     });
 
     type RegistrationPayload = {
@@ -94,61 +71,7 @@ export async function handleRegistration(
     return {
       success: false,
       error:
-        error instanceof Error
-          ? error.stack || error.message
-          : JSON.stringify(error),
+        error instanceof Error ? error.message : "Network connection failed.",
     };
-  }
-}
-
-export async function verifyOTP(
-  email: string,
-  userSubmittedOtp: string,
-): Promise<VerifyOtpResult> {
-  try {
-    const baseUrl = getRequiredApiBaseUrl();
-    const response = await fetch(`${baseUrl}/api/auth/signup/complete`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        otp: userSubmittedOtp,
-      }),
-      cache: "no-store",
-    });
-
-    const result = (await response.json()) as {
-      success?: boolean;
-      error?: string;
-      message?: string;
-      token?: string | null;
-      user?: unknown;
-      user_profile?: unknown;
-      attemptsLeft?: number;
-      blockSecondsRemaining?: number;
-    };
-
-    if (response.ok && result.success) {
-      return {
-        success: true,
-        token: result.token,
-        user: result.user,
-        user_profile: result.user_profile,
-        message: result.message,
-      };
-    }
-
-    return {
-      success: false,
-      error: result.error || result.message || "OTP verification failed.",
-      attemptsLeft: result.attemptsLeft,
-      blockSecondsRemaining: result.blockSecondsRemaining,
-    };
-  } catch (error) {
-    console.error("Verification Error:", error);
-    return { success: false, error: "An error occurred during verification." };
   }
 }

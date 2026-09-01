@@ -29,9 +29,5 @@ export const GoogleButton = ({ onClick }: { onClick: () => void }) => (
       </svg>
       <span>Sign in with Google</span>
     </button>
-
-    <p className="text-xs text-gray-500 mt-2 text-center">
-      Institutional Google accounts only
-    </p>
   </div>
 );

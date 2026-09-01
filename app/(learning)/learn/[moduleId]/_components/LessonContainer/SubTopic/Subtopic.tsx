@@ -5,6 +5,7 @@ import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import SubtopicSkeleton from "./SubtopicSkeleton";
+import rehypeRaw from "rehype-raw";
 
 export type SubtopicItem = {
   id: string;
@@ -203,6 +204,7 @@ export default function Subtopic({ subtopics }: SubtopicProps) {
                     </blockquote>
                   ) : (
                     <ReactMarkdown
+                      rehypePlugins={[rehypeRaw]}
                       remarkPlugins={[remarkGfm]}
                       components={{
                         hr: () => (

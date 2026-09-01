@@ -1,0 +1,259 @@
+"use client";
+
+import React from "react";
+import { CheckCircle2, XCircle, BarChart3, Check } from "lucide-react";
+import { Question, AssessmentSettings, BloomLevel } from "./types";
+
+const BLOOM_BADGES: Record<BloomLevel, { label: string; style: string }> = {
+  1: {
+    label: "L1: Remember",
+    style: "bg-blue-50 text-blue-700 border-blue-200/60",
+  },
+  2: {
+    label: "L2: Understand",
+    style: "bg-sky-50 text-sky-700 border-sky-200/60",
+  },
+  3: {
+    label: "L3: Apply",
+    style: "bg-emerald-50 text-emerald-700 border-emerald-200/60",
+  },
+  4: {
+    label: "L4: Analyze",
+    style: "bg-amber-50 text-amber-700 border-amber-200/60",
+  },
+  5: {
+    label: "L5: Evaluate",
+    style: "bg-purple-50 text-purple-700 border-purple-200/60",
+  },
+  6: {
+    label: "L6: Create",
+    style: "bg-rose-50 text-rose-700 border-rose-200/60",
+  },
+};
+
+interface QuestionCardProps {
+  question: Question;
+  index: number;
+  selectedChoiceId?: string;
+  submitted: boolean;
+  isQuestionSubmitted?: boolean;
+  settings: AssessmentSettings;
+  showQuestionNumber?: boolean; // 👈 Added parameter for on/off switch
+  onSelectChoice: (questionId: string, choiceId: string) => void;
+}
+
+export function QuestionCard({
+  question,
+  index,
+  selectedChoiceId,
+  submitted,
+  isQuestionSubmitted = false,
+  settings,
+  showQuestionNumber = true, // 👈 Default to true if not specified
+  onSelectChoice,
+}: QuestionCardProps) {
+  const isPoll = settings.type === "poll" || question.isPoll;
+  const isTestMode = settings.type === "test";
+
+  const isCorrect = selectedChoiceId === question.correctChoiceId;
+  const bloomInfo = question.bloomLevel
+    ? BLOOM_BADGES[question.bloomLevel]
+    : null;
+
+  const showPollDistribution = isPoll && (submitted || isQuestionSubmitted);
+  const canShowReview = settings.allowReview;
+
+  const showFeedback =
+    !isPoll &&
+    !isTestMode &&
+    Boolean(selectedChoiceId) &&
+    (submitted || settings.showFeedbackImmediately);
+
+  const showTestFeedback = canShowReview && isTestMode && submitted;
+  const isLocked =
+    submitted ||
+    isQuestionSubmitted ||
+    Boolean(showFeedback && selectedChoiceId);
+
+  return (
+    <div className="space-y-4">
+      {/* Question Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 space-y-1">
+          {showQuestionNumber && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#8b5cf6]">
+                Question {index + 1}
+              </span>
+            </div>
+          )}
+          <h3 className="text-md font-semibold text-zinc-900 leading-relaxed">
+            {question.text}
+          </h3>
+        </div>
+
+        {bloomInfo && (
+          <span
+            className={`shrink-0 rounded-lg border px-2 py-0.5 text-[10px] font-semibold ${bloomInfo.style}`}
+          >
+            {bloomInfo.label}
+          </span>
+        )}
+      </div>
+
+      {/* Choice Options (Minimalist List Style) */}
+      <div className="space-y-2">
+        {question.choices.map((choice) => {
+          const isSelected = selectedChoiceId === choice.id;
+          const isChoiceCorrect =
+            (question.correctChoiceId
+              ? question.correctChoiceId === choice.id
+              : false) ||
+            Boolean(choice.isCorrect || (choice as any).is_correct);
+          const votesCount = choice.votes ?? (isSelected ? 1 : 0);
+          const percent = choice.percentage ?? 0;
+
+          let textStyle = "text-zinc-700 hover:text-zinc-950";
+          let radioCircleStyle =
+            "border-zinc-300 bg-transparent text-transparent";
+
+          if (isSelected) {
+            textStyle = "text-purple-950 font-semibold";
+            radioCircleStyle = "border-purple-600 bg-purple-600 text-white";
+          }
+
+          if ((showFeedback || showTestFeedback) && !isPoll) {
+            if (isChoiceCorrect) {
+              textStyle = "text-emerald-950 font-semibold";
+              radioCircleStyle = "border-emerald-500 bg-emerald-500 text-white";
+            } else if (isSelected && !isChoiceCorrect) {
+              textStyle =
+                "text-rose-950 font-medium line-through decoration-rose-400";
+              radioCircleStyle = "border-rose-500 bg-rose-500 text-white";
+            }
+          }
+
+          if (showPollDistribution && isSelected) {
+            textStyle = "text-purple-950 font-semibold";
+            radioCircleStyle = "border-purple-600 bg-purple-600 text-white";
+          }
+
+          return (
+            <div key={choice.id} className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => onSelectChoice(question.id, choice.id)}
+                disabled={isLocked}
+                className={`relative overflow-hidden flex flex-1 items-center justify-between gap-3 py-2.5 px-2 text-left text-md transition-colors cursor-pointer disabled:cursor-default rounded-lg hover:bg-zinc-50 ${textStyle}`}
+              >
+                {/* Background Progress Bar for Polls */}
+                {showPollDistribution && (
+                  <div
+                    className={`absolute inset-y-0 left-0 transition-all duration-700 ease-out rounded-lg pointer-events-none opacity-25 ${
+                      isSelected ? "bg-purple-400" : "bg-zinc-200"
+                    }`}
+                    style={{ width: `${percent}%` }}
+                  />
+                )}
+
+                {/* Option Label & Radio/Checkbox Indicator */}
+                <div className="relative z-10 flex items-center gap-3 pr-2 min-w-0 flex-1">
+                  <div
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all ${radioCircleStyle}`}
+                  >
+                    {isSelected &&
+                      !showPollDistribution &&
+                      !(showFeedback || showTestFeedback) && (
+                        <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                      )}
+                    {showPollDistribution && isSelected && (
+                      <Check size={10} strokeWidth={3} />
+                    )}
+                    {(showFeedback || showTestFeedback) && isChoiceCorrect && (
+                      <Check size={10} strokeWidth={3} />
+                    )}
+                    {(showFeedback || showTestFeedback) &&
+                      isSelected &&
+                      !isChoiceCorrect && <XCircle size={10} strokeWidth={3} />}
+                  </div>
+                  <span className="whitespace-normal break-words text-left">
+                    {choice.text}
+                  </span>
+                </div>
+
+                {/* Vote Count / Feedback Icons */}
+                <div className="relative z-10 flex items-center gap-2 shrink-0">
+                  {showPollDistribution && (
+                    <span
+                      className={`text-[11px] font-medium transition-opacity duration-300 ${
+                        isSelected ? "text-[#8b5cf6]" : "text-zinc-400"
+                      }`}
+                    >
+                      {votesCount} {votesCount === 1 ? "vote" : "votes"}
+                    </span>
+                  )}
+
+                  {(showFeedback || showTestFeedback) && isChoiceCorrect && (
+                    <CheckCircle2 size={16} className="text-emerald-600" />
+                  )}
+                  {(showFeedback || showTestFeedback) &&
+                    isSelected &&
+                    !isChoiceCorrect && (
+                      <XCircle size={16} className="text-rose-600" />
+                    )}
+                </div>
+              </button>
+
+              {/* Percentage Badge for Polls */}
+              {showPollDistribution && (
+                <div
+                  className={`w-12 shrink-0 text-right font-mono text-xs font-semibold ${
+                    isSelected ? "text-[#8b5cf6]" : "text-zinc-400"
+                  }`}
+                >
+                  {percent}%
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Immediate Remediation & Feedback */}
+      {(showFeedback || showTestFeedback) && !isPoll && (
+        <div className="space-y-2.5 pt-2">
+          <div
+            className={`flex items-center gap-1.5 text-xs font-semibold ${
+              isCorrect ? "text-emerald-700" : "text-rose-700"
+            }`}
+          >
+            {isCorrect ? (
+              <>
+                <CheckCircle2 size={15} />
+                <span>Correct Answer</span>
+              </>
+            ) : (
+              <>
+                <XCircle size={15} />
+                <span>Incorrect Answer</span>
+              </>
+            )}
+          </div>
+
+          {question.explanation && (
+            <p className="text-xs leading-relaxed text-zinc-500 pl-6 border-l-2 border-zinc-200">
+              <strong>Explanation:</strong> {question.explanation}
+            </p>
+          )}
+        </div>
+      )}
+
+      {showPollDistribution && (
+        <div className="flex items-center gap-2 pt-1 text-[11px] font-medium text-[#8b5cf6]">
+          <BarChart3 size={14} className="text-[#8b5cf6] shrink-0" />
+          <span>Total votes calculated across all learner submissions.</span>
+        </div>
+      )}
+    </div>
+  );
+}

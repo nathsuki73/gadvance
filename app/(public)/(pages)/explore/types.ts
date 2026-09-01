@@ -9,7 +9,6 @@ export type LearningModule = {
   image?: string | null;
 };
 
-
 export type LearningPlan = {
   id: string;
   title: string;
@@ -23,6 +22,8 @@ export type LearningPlan = {
   icon?: CourseIconType;
   duration?: string;
   enrolled?: number;
+  organization_id?: string | null; // 👈 Add this property
+  is_public?: boolean;
 };
 
 export type CourseCardProps = {

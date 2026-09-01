@@ -20,15 +20,16 @@ const LogoutConfirmationDialog = ({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-900/10 backdrop-blur-md p-4 animate-fade-in">
       {/* Container Card matching GADVance structure but toned down */}
       <div className="w-full max-w-md rounded-[24px] border border-zinc-100 bg-white p-10 shadow-xl shadow-zinc-200/40 transition-all">
-        
         {/* Content Layout */}
         <div className="text-center mb-8">
           <h2 className="text-3xl font-light tracking-tight text-zinc-900 leading-tight lowercase">
-            ready to <span className="italic font-serif text-[#e05353]">sign out?</span>
+            ready to{" "}
+            <span className="italic font-serif text-[#e05353]">sign out?</span>
           </h2>
 
           <p className="mt-4 text-base text-zinc-400 font-light leading-relaxed lowercase">
-            you will need to enter your account credentials to access your professional workspace again.
+            you will need to enter your account credentials to access your
+            professional workspace again.
           </p>
         </div>
 
@@ -52,16 +53,9 @@ const LogoutConfirmationDialog = ({
             Sign out
           </button>
         </div>
-
-        {/* Subtle branding anchor matching the curriculum card footer layout */}
-        <div className="mt-8 pt-6 border-t border-zinc-100 text-center">
-          <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-widest">
-            gadvance philippines
-          </p>
-        </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };
 

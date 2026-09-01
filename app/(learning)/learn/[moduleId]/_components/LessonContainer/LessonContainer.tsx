@@ -1,36 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import TopicOverview from "./Overview/TopicOverview";
-import { ModuleStructureItem } from "../../service";
 import { fetchOverview, fetchSubtopics } from "./service";
 import { Lesson } from "./Overview/types";
 import Subtopic, { SubtopicItem } from "./SubTopic/Subtopic";
 import { LessonQuiz as MainLessonQuiz } from "./Quiz/LessonQuiz";
 import { LessonQuiz as MiniQuiz } from "./SubTopic/MiniQuiz/LessonQuiz";
-import { ArrowRight, PlayCircle, SkipForward } from "lucide-react";
+import { ArrowRight, PlayCircle } from "lucide-react";
+import { ModuleStructure } from "../../service";
 
 type LessonContainerProps = {
-  lessonItems?: ModuleStructureItem[];
+  lessonItems?: ModuleStructure[];
   lessonId: string;
   activeBlockId: string | undefined;
-  onContinue: () => void;
-  handleNextSubRow: () => void;
-  // 💡 Added: Callback prop to bubble up live BKT updates to the main page shell
-  onBktUpdate?: (lessonBlockId: string, currentPLt: number) => void;
+  onContinueAction: () => void;
+  handleNextSubRowAction: () => void;
+  onLessonStepCompleteAction?: (lessonId: string, stepId: string) => void;
+  onBktUpdateAction?: (lessonBlockId: string, currentPLt: number) => void;
 };
 
 export default function LessonContainer({
   lessonItems,
   lessonId,
   activeBlockId,
-  handleNextSubRow,
-  onContinue,
-  onBktUpdate, // 💡 Accept it here
+  onContinueAction,
+  handleNextSubRowAction,
+  onLessonStepCompleteAction,
+  onBktUpdateAction,
 }: LessonContainerProps) {
   // Cache the overviews in an object keyed by lessonId
   const [overviewsCache, setOverviewsCache] = useState<
-    Record<string, ModuleStructureItem>
+    Record<string, ModuleStructure>
   >({});
 
   const [subtopicsCache, setSubtopicsCache] = useState<
@@ -39,12 +40,53 @@ export default function LessonContainer({
 
   const [lastActiveBlockId, setLastActiveBlockId] =
     useState<string>("overview");
+  const [isMainQuizCompleted, setIsMainQuizCompleted] = useState(false);
+  const [completedMiniQuizBlocks, setCompletedMiniQuizBlocks] = useState<
+    Set<string>
+  >(new Set());
+  const topAnchorRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setIsMainQuizCompleted(false);
+    setCompletedMiniQuizBlocks(new Set());
+
+    const isMainCompletedLocal =
+      localStorage.getItem(`main_quiz_completed_${lessonId}`) === "true";
+    if (isMainCompletedLocal) {
+      setIsMainQuizCompleted(true);
+    }
+  }, [lessonId]);
 
   const currentEffectiveBlock = activeBlockId || lastActiveBlockId;
 
   if (activeBlockId && activeBlockId !== lastActiveBlockId) {
     setLastActiveBlockId(activeBlockId);
   }
+
+  // 💡 FIX 1: Restore completion status from localStorage when activeBlockId changes/mounts
+  useEffect(() => {
+    if (
+      !currentEffectiveBlock ||
+      currentEffectiveBlock === "overview" ||
+      currentEffectiveBlock === "quiz"
+    ) {
+      return;
+    }
+
+    const isCompletedInStorage =
+      localStorage.getItem(`quiz_completed_${currentEffectiveBlock}`) ===
+        "true" ||
+      !!localStorage.getItem(`quiz_result_${currentEffectiveBlock}`);
+
+    if (isCompletedInStorage) {
+      setCompletedMiniQuizBlocks((prev) => {
+        if (prev.has(currentEffectiveBlock)) return prev;
+        const next = new Set(prev);
+        next.add(currentEffectiveBlock);
+        return next;
+      });
+    }
+  }, [currentEffectiveBlock]);
 
   useEffect(() => {
     // If we already have the data for this lessonId, don't refetch
@@ -65,7 +107,7 @@ export default function LessonContainer({
           [lessonId]: {
             ...currentLessonItem,
             description: apiDescription,
-          } as ModuleStructureItem,
+          } as ModuleStructure,
         }));
       } catch (error) {
         console.error("Failed to fetch lesson overview:", error);
@@ -76,7 +118,6 @@ export default function LessonContainer({
   }, [lessonId, lessonItems, overviewsCache]);
 
   useEffect(() => {
-    // Only run if we have a valid activeBlockId, and it's not a generic view or already cached
     if (
       !activeBlockId ||
       activeBlockId === "overview" ||
@@ -88,11 +129,7 @@ export default function LessonContainer({
 
     const fetchLessonSubtopics = async () => {
       try {
-        console.log("ACTIVE BLOCK ID:" + activeBlockId);
-        console.log("LESSON ID:" + lessonId);
-        // Fetch subtopics specific to this active block item
         const data: SubtopicItem[] = await fetchSubtopics(activeBlockId);
-        console.log("DATA: a" + data);
         setSubtopicsCache((prev) => ({
           ...prev,
           [activeBlockId]: data,
@@ -114,14 +151,57 @@ export default function LessonContainer({
     currentEffectiveBlock &&
     currentEffectiveBlock !== "overview" &&
     currentEffectiveBlock !== "quiz";
+  const isCurrentMiniQuizCompleted =
+    isSubtopic && currentEffectiveBlock
+      ? completedMiniQuizBlocks.has(currentEffectiveBlock)
+      : true;
+  const isNextStepDisabled = Boolean(isSubtopic && !isCurrentMiniQuizCompleted);
 
   const knownBlockIds = Object.keys(subtopicsCache);
 
+  const scrollToTopOfSection = () => {
+    requestAnimationFrame(() => {
+      topAnchorRef.current?.scrollIntoView({
+        behavior: "auto",
+        block: "start",
+      });
+    });
+  };
+
+  const handleNextAction = () => {
+    const currentStepId = currentEffectiveBlock || "overview";
+    if (currentStepId !== "quiz") {
+      onLessonStepCompleteAction?.(lessonId, currentStepId);
+    }
+    handleNextSubRowAction();
+    scrollToTopOfSection();
+  };
+
+  // 💡 FIX 2: Helper function to register completion in state AND localStorage
+  const handleMiniQuizCompletion = (blockId: string, currentPLt?: number) => {
+    localStorage.setItem(`quiz_completed_${blockId}`, "true");
+    setCompletedMiniQuizBlocks((prev) => {
+      if (prev.has(blockId)) return prev;
+      const next = new Set(prev);
+      next.add(blockId);
+      return next;
+    });
+
+    if (currentPLt !== undefined && onBktUpdateAction) {
+      onBktUpdateAction(blockId, currentPLt);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-full w-full justify-between p-6">
+      <div ref={topAnchorRef} />
+
       {/* 1. Overview View */}
       <div className={`flex-1 w-full ${isOverview ? "" : "hidden"}`}>
-        <TopicOverview overview={currentOverview} onContinue={onContinue} />
+        <TopicOverview
+          overview={currentOverview}
+          onContinue={handleNextAction}
+        />
       </div>
 
       {/* 2. Subtopic View */}
@@ -143,29 +223,58 @@ export default function LessonContainer({
                 key={blockId}
                 className={currentEffectiveBlock === blockId ? "" : "hidden"}
               >
-                {/* 💡 Forward the onBktUpdate listener straight into the MiniQuiz component */}
-                <MiniQuiz lessonBlockId={blockId} onBktUpdate={onBktUpdate} />
+                <MiniQuiz
+                  lessonBlockId={blockId}
+                  onBktUpdate={(bId, score) =>
+                    handleMiniQuizCompletion(bId, score)
+                  }
+                  completedAction={() => handleMiniQuizCompletion(blockId)}
+                />
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* 3. Quiz View (Stays mounted, retains state) */}
+      {/* 3. Quiz View */}
       <div className={`flex-1 w-full ${isQuiz ? "" : "hidden"}`}>
-        <MainLessonQuiz lessonBlockId={lessonId} isActive={isQuiz} />
+        <MainLessonQuiz
+          lessonBlockId={lessonId}
+          isActive={isQuiz}
+          action={() => {
+            localStorage.setItem(`main_quiz_completed_${lessonId}`, "true");
+            setIsMainQuizCompleted(true);
+            onLessonStepCompleteAction?.(lessonId, "quiz");
+          }}
+        />
+
+        {isMainQuizCompleted && (
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={onContinueAction}
+              className="group inline-flex items-center gap-2 rounded-lg bg-[#8b5cf6] px-6 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#7c3aed] focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:ring-offset-2 cursor-pointer"
+            >
+              <span>Next Lesson</span>
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Persistent Navigation Footer (Hidden during active Quiz to avoid duplicate next-buttons) */}
+      {/* Persistent Navigation Footer */}
       {!isQuiz && (
         <div className="mt-6 flex justify-center shrink-0">
           <button
-            onClick={isOverview ? onContinue : handleNextSubRow}
-            className="group inline-flex items-center gap-2 px-6 py-2.5 bg- text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            disabled={isNextStepDisabled}
+            onClick={handleNextAction}
+            className={`group inline-flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:ring-offset-2 ${
+              isNextStepDisabled
+                ? "cursor-not-allowed bg-zinc-300 text-zinc-500"
+                : "cursor-pointer bg-[#8b5cf6] text-white hover:bg-[#7c3aed]"
+            }`}
           >
             <span>{isOverview ? "Start Lesson" : "Next Step"}</span>
 
-            {/* Dynamic Icon with hover animation */}
             {isOverview ? (
               <PlayCircle className="w-4 h-4 transition-transform group-hover:scale-110" />
             ) : (

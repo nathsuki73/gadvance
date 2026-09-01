@@ -1,0 +1,79 @@
+// app/(workspace)/organization/page.tsx
+"use client";
+
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Building2, ArrowRight, ArrowLeft } from "lucide-react";
+
+export default function JoinOrganizationPage() {
+  const router = useRouter();
+  const [code, setCode] = useState("");
+
+  const handleSubmitCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (code.length === 6) {
+      router.push(`/workspace/organization/join?code=${code}`);
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-white text-zinc-900 font-sans relative">
+      {/* Sticky Top Navigation Bar */}
+      <nav className="sticky top-0 z-40 border-b border-zinc-50 bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
+          <button
+            onClick={() => router.back()}
+            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary-hover cursor-pointer"
+          >
+            <ArrowLeft
+              size={16}
+              className="transition-transform duration-300 group-hover:-translate-x-1"
+            />
+            <span className="lowercase font-medium">back</span>
+          </button>
+        </div>
+      </nav>
+
+      <div className="mx-auto max-w-xl px-6 py-16 md:py-24">
+        {/* Onboarding Flow - Type Code Page */}
+        <div className="flex flex-col items-center text-center space-y-8">
+          <div className="p-4 rounded-2xl bg-primary/10 text-primary">
+            <Building2 size={32} />
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+              Join an Organization
+            </h1>
+            <p className="text-xs text-zinc-400 font-light leading-relaxed max-w-sm mx-auto">
+              Enter your 6-digit invitation code below to find and connect with
+              your institution.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmitCode} className="w-full space-y-6 pt-2">
+            <div>
+              <input
+                type="text"
+                maxLength={6}
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                placeholder="ABC123"
+                className="w-full text-center text-3xl font-mono tracking-[0.3em] uppercase py-4 border-b-2 border-zinc-200 bg-transparent focus:outline-none focus:border-primary transition-colors placeholder:text-zinc-200 placeholder:tracking-[0.3em]"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={code.length !== 6}
+              className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover disabled:opacity-30 text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] shadow-sm shadow-violet-100 cursor-pointer"
+            >
+              <span>Continue</span>
+              <ArrowRight size={14} />
+            </button>
+          </form>
+        </div>
+      </div>
+    </main>
+  );
+}

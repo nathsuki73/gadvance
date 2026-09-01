@@ -1,48 +1,54 @@
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
-export interface ModuleStructureItem {
+export interface SectionItem {
   id: string;
-  type: "pretest" | "lesson" | "posttest";
+  section_id?: string;
+  item_type: "page" | "assessment" | string;
+  content_id?: string | null;
   title: string;
-  order: number;
-  description?: string;
-  lesson_blocks?: {
-    id: string;
-    title: string;
-  }[];
+  order_index?: number;
+  assessment_type?: string | null;
+}
+
+export interface Section {
+  id: string;
+  module_id?: string;
+  title: string;
+  description?: string | null;
+  order_index?: number;
+  items: SectionItem[];
 }
 
 export interface ModuleStructure {
   courseId: string;
   id: string;
   title: string;
-  items: ModuleStructureItem[];
+  description: string;
+  sections: Section[];
 }
 
-interface LaravelModuleStructure {
-  learning_plan_id: string;
+interface LaravelModuleData {
+  learning_plan_id?: string;
+  learning_plans?: Array<{ id: string }>;
   id: string;
   title: string;
-  items: ModuleStructureItem[];
+  description?: string;
+  sections?: Section[];
 }
 
 export async function getModuleStructure(
   moduleId: string,
 ): Promise<ModuleStructure> {
-  const response = await fetch(
-    `${API_BASE_URL}/modules/${moduleId}/structure`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-      cache: "no-store",
+  const response = await fetch(`${API_BASE_URL}/modules/${moduleId}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
     },
-  );
+    cache: "no-store",
+  });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-
     throw new Error(
       errorData.message ||
         `Failed to fetch module structure: ${response.status}`,
@@ -50,12 +56,23 @@ export async function getModuleStructure(
   }
 
   const payload = await response.json();
-  const laravelData: LaravelModuleStructure = payload.data;
-  console.log(laravelData);
+  const laravelData = payload.data || payload;
+
+  let courseId =
+    laravelData.learning_plan_id || laravelData.learning_plans?.[0]?.id || "";
+
+  if (!courseId && typeof window !== "undefined") {
+    const match = window.location.pathname.match(/\/course\/([^/]+)/);
+    if (match) {
+      courseId = match[1];
+    }
+  }
+
   return {
-    courseId: laravelData.learning_plan_id,
+    courseId,
     id: laravelData.id,
     title: laravelData.title,
-    items: laravelData.items,
+    description: laravelData.description || "",
+    sections: laravelData.sections || [],
   };
 }

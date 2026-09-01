@@ -1,59 +1,164 @@
-"use server";
-
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { apiFetch } from "@/app/lib/api-client";
 import { UserProfile } from "./types";
 import { ApiResponse } from "./api-response-type";
 
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
+export interface JoinedOrganization {
+  id: string;
+  name: string;
+  title?: string;
+  description: string;
+  role_name?: string;
+  members_count?: number;
+  membersCount?: number;
+}
+
+export type StudentCertificate = {
+  id: string;
+  verify_code: string;
+  azure_file_path: string;
+  created_at: string;
+  learning_plan?: {
+    title: string;
+  };
+  template?: any;
+};
 
 export const getUserProfile = async (): Promise<ApiResponse<UserProfile>> => {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.laravelJwt) {
-    return {
-      success: false,
-      error: "Unauthorized",
-    };
-  }
-
   try {
-    const response = await fetch(`${API_BASE_URL}/profile`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${session.laravelJwt}`,
-      },
-    });
+    const response = await apiFetch("/api/profile", { method: "GET" });
+
+    if (!response) {
+      return { success: false, error: "Unauthorized" };
+    }
 
     const result = await response.json();
     const profileData = result?.data ?? result;
 
     if (!response.ok) {
-      return {
-        success: false,
-        error: result.message || "Request failed",
-      };
+      return { success: false, error: result.message || "Request failed" };
     }
 
     if (!profileData || typeof profileData !== "object") {
+      return { success: false, error: "Profile data missing" };
+    }
+
+    return { success: true, data: profileData as UserProfile };
+  } catch (error) {
+    console.error("Profile fetch error:", error);
+    return { success: false, error: "Network error" };
+  }
+};
+
+export const getJoinedOrganizations = async (): Promise<
+  ApiResponse<JoinedOrganization[]>
+> => {
+  try {
+    const response = await apiFetch("/api/organizations", { method: "GET" });
+
+    if (!response) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const result = await response.json();
+
+    if (!response.ok) {
       return {
         success: false,
-        error: "Profile data missing",
+        error: result.message || "Failed to fetch organizations",
       };
     }
 
-    return {
-      success: true,
-      data: profileData as UserProfile,
-    };
+    const orgs = Array.isArray(result) ? result : result.data || [];
+    return { success: true, data: orgs };
   } catch (error) {
-    console.error("Profile fetch error:", error);
+    console.error("Joined organizations fetch error:", error);
+    return { success: false, error: "Network error" };
+  }
+};
 
-    return {
-      success: false,
-      error: "Network error",
-    };
+export const leaveOrganization = async (
+  organizationId: string,
+): Promise<ApiResponse<null>> => {
+  try {
+    const response = await apiFetch("/api/organizations/leave", {
+      method: "POST",
+      body: JSON.stringify({ organization_id: organizationId }),
+    });
+
+    if (!response) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: result.message || "Failed to leave organization",
+      };
+    }
+
+    return { success: true, data: null };
+  } catch (error) {
+    console.error("Leave organization error:", error);
+    return { success: false, error: "Network error" };
+  }
+};
+
+export const getStudentCertificates = async (): Promise<
+  ApiResponse<StudentCertificate[]>
+> => {
+  try {
+    const response = await apiFetch("/api/certificates", { method: "GET" });
+
+    if (!response) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: result.message || "Failed to fetch certificates",
+      };
+    }
+
+    const certs = Array.isArray(result) ? result : result.data || [];
+    return { success: true, data: certs };
+  } catch (error) {
+    console.error("Student certificates fetch error:", error);
+    return { success: false, error: "Network error" };
+  }
+};
+
+export const sendCertificateEmail = async (
+  certificateId: string,
+): Promise<ApiResponse<null>> => {
+  try {
+    const response = await apiFetch(
+      `/api/certificates/${certificateId}/email`,
+      {
+        method: "POST",
+      },
+    );
+
+    if (!response) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: result.message || "Failed to send certificate email",
+      };
+    }
+
+    return { success: true, data: null };
+  } catch (error) {
+    console.error("Send certificate email error:", error);
+    return { success: false, error: "Network error" };
   }
 };

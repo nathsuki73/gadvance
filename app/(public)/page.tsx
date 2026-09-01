@@ -6,7 +6,6 @@ import TheChallengeSection from "./_components/sections/Challenge";
 import TheVisionSection from "./_components/sections/Vision";
 import WhyItMattersSection from "./_components/sections/Why";
 import FinalCTA from "./_components/sections/FinalCTA";
-import CurriculumAccess from "./_components/sections/CurriculumnAccess";
 
 export default function Home() {
   return (
@@ -15,7 +14,6 @@ export default function Home() {
       <TheChallengeSection />
       <TheVisionSection />
       <WhyItMattersSection />
-      <CurriculumAccess />
       <FinalCTA />
     </main>
   );

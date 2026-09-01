@@ -1,10 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchLessonQuiz, saveLessonQuizProgress } from "./service";
 import { BackendOptionResponse, BackendQuestionResponse, Quiz } from "./types";
 
 export type QuizState = "loading" | "ready" | "started" | "completed" | "error";
 
-export function useLessonQuiz(lessonBlockId: string, isActive: boolean) {
+export function useLessonQuiz(
+  lessonBlockId: string,
+  isActive: boolean,
+  action?: () => void,
+) {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [quizState, setQuizState] = useState<QuizState>("ready");
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -12,16 +16,41 @@ export function useLessonQuiz(lessonBlockId: string, isActive: boolean) {
   const [submitted, setSubmitted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasCompletedQuiz, setHasCompletedQuiz] = useState(false);
+  const hasNotifiedCompletedRef = useRef(false);
+
+  useEffect(() => {
+    setHasCompletedQuiz(false);
+    hasNotifiedCompletedRef.current = false;
+  }, [lessonBlockId]);
 
   useEffect(() => {
     // 🌟 1. Safe early return: If it's not active, do ABSOLUTELY NOTHING.
     // No setStates are called here, completely satisfying the React compiler.
     if (!isActive) return;
 
+    // Keep lesson quiz result sticky after first completion.
+    // This mirrors the revisit behavior of pretest/posttest results screens.
+    if (hasCompletedQuiz) {
+      setQuizState("completed");
+      return;
+    }
+
     let cancelled = false;
 
     async function loadQuiz() {
-      setQuizState("loading");
+      const isCompletedLocal =
+        localStorage.getItem(`main_quiz_completed_${lessonBlockId}`) === "true";
+
+      if (isCompletedLocal) {
+        if (!cancelled) {
+          setHasCompletedQuiz(true);
+          setQuizState("completed");
+        }
+      } else {
+        setQuizState("loading");
+      }
+
       setError(null);
 
       try {
@@ -40,7 +69,9 @@ export function useLessonQuiz(lessonBlockId: string, isActive: boolean) {
           setAnswers(data.previouslySavedAnswers);
         }
 
-        if (data.status === "completed") {
+        if (data.status === "completed" || isCompletedLocal) {
+          localStorage.setItem(`main_quiz_completed_${lessonBlockId}`, "true");
+          setHasCompletedQuiz(true);
           setQuizState("completed");
         } else if ((data.currentIndex ?? 0) > 0) {
           setCurrentQuestion(data.currentIndex ?? 0);
@@ -50,8 +81,13 @@ export function useLessonQuiz(lessonBlockId: string, isActive: boolean) {
         }
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Failed to load quiz.");
-        setQuizState("error");
+        if (isCompletedLocal) {
+          setHasCompletedQuiz(true);
+          setQuizState("completed");
+        } else {
+          setError(err instanceof Error ? err.message : "Failed to load quiz.");
+          setQuizState("error");
+        }
       }
     }
 
@@ -60,11 +96,20 @@ export function useLessonQuiz(lessonBlockId: string, isActive: boolean) {
     return () => {
       cancelled = true;
     };
-  }, [lessonBlockId, isActive]);
+  }, [lessonBlockId, isActive, hasCompletedQuiz]);
 
   // Use state variables derived directly during render phase if not active
   // This effectively mocks the "ready" state safely without using setState!
   const effectiveQuizState = isActive ? quizState : "ready";
+
+  useEffect(() => {
+    if (!isActive || quizState !== "completed") return;
+    if (hasNotifiedCompletedRef.current) return;
+
+    hasNotifiedCompletedRef.current = true;
+    localStorage.setItem(`main_quiz_completed_${lessonBlockId}`, "true");
+    action?.();
+  }, [action, isActive, lessonBlockId, quizState]);
 
   const score = useMemo(() => {
     if (!quiz) return 0;
@@ -89,7 +134,6 @@ export function useLessonQuiz(lessonBlockId: string, isActive: boolean) {
 
     if (quiz.attemptId) {
       try {
-        console.log("Attempt id: " + quiz.attemptId);
         const response = await saveLessonQuizProgress(quiz.attemptId, {
           question_id: questionId,
           selected_choice_id: selectedChoiceId,
@@ -98,6 +142,11 @@ export function useLessonQuiz(lessonBlockId: string, isActive: boolean) {
 
         if (response.success && response.data) {
           if (response.data.quiz_status === "completed") {
+            localStorage.setItem(
+              `main_quiz_completed_${lessonBlockId}`,
+              "true",
+            );
+            setHasCompletedQuiz(true);
             setQuizState("completed");
             setIsSaving(false);
             return;
@@ -143,6 +192,8 @@ export function useLessonQuiz(lessonBlockId: string, isActive: boolean) {
     setTimeout(() => {
       setIsSaving(false);
       if (isLastQuestion) {
+        localStorage.setItem(`main_quiz_completed_${lessonBlockId}`, "true");
+        setHasCompletedQuiz(true);
         setQuizState("completed");
       } else {
         setCurrentQuestion((prev) => prev + 1);

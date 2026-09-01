@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Quiz } from "../../Quiz/types";
 import { fetchMiniQuiz, saveMiniQuizProgress } from "./service";
 
@@ -9,6 +9,7 @@ export type QuizState = "loading" | "ready" | "started" | "completed" | "error";
 export function useLessonQuiz(
   lessonBlockId: string,
   onBktUpdate?: (lessonBlockId: string, currentPLt: number) => void,
+  completedAction?: () => void,
 ) {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [quizState, setQuizState] = useState<QuizState>("loading");
@@ -17,12 +18,28 @@ export function useLessonQuiz(
   const [submitted, setSubmitted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasNotifiedCompletedRef = useRef(false);
+
+  useEffect(() => {
+    hasNotifiedCompletedRef.current = false;
+  }, [lessonBlockId]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadQuiz() {
-      setQuizState("loading");
+      // 💡 1. FAST LOCAL CHECK: Instant load on refresh/mount if cached in localStorage
+      const isCompletedLocal =
+        localStorage.getItem(`quiz_completed_${lessonBlockId}`) === "true";
+
+      if (isCompletedLocal) {
+        if (!cancelled) {
+          setQuizState("completed");
+        }
+      } else {
+        setQuizState("loading");
+      }
+
       setError(null);
 
       try {
@@ -41,7 +58,9 @@ export function useLessonQuiz(
           setAnswers(data.previouslySavedAnswers as Record<string, string>);
         }
 
-        if (data.status === "completed") {
+        // 💡 2. SYNC CHECK: If backend or local storage says completed
+        if (data.status === "completed" || isCompletedLocal) {
+          localStorage.setItem(`quiz_completed_${lessonBlockId}`, "true");
           setQuizState("completed");
         } else if (
           data.previouslySavedAnswers &&
@@ -54,8 +73,16 @@ export function useLessonQuiz(
         }
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Failed to load quiz.");
-        setQuizState("error");
+
+        // If network request fails but local cache says completed, don't show error state
+        if (isCompletedLocal) {
+          setQuizState("completed");
+        } else {
+          setError(
+            err instanceof Error ? err.message : "Failed to load quiz.",
+          );
+          setQuizState("error");
+        }
       }
     }
 
@@ -65,23 +92,34 @@ export function useLessonQuiz(
     };
   }, [lessonBlockId]);
 
+  useEffect(() => {
+    if (quizState !== "completed") return;
+    if (hasNotifiedCompletedRef.current) return;
+
+    hasNotifiedCompletedRef.current = true;
+
+    // 💡 3. PERSISTENCE LOCK: Ensure localStorage is set when transition happens
+    localStorage.setItem(`quiz_completed_${lessonBlockId}`, "true");
+    completedAction?.();
+  }, [completedAction, quizState, lessonBlockId]);
+
   const score = useMemo(() => {
     if (!quiz) return 0;
     return quiz.questions.reduce((total, question) => {
-      return total + (answers[question.id] === question.correctAnswer ? 1 : 0);
+      return (
+        total + (answers[question.id] === question.correctAnswer ? 1 : 0)
+      );
     }, 0);
   }, [answers, quiz]);
 
   const startQuiz = () => setQuizState("started");
 
   const selectAnswer = (questionId: string, choiceId: string) => {
-    // Only allow changing answer if we haven't locked it in yet
     if (submitted) return;
     setAnswers((prev) => ({ ...prev, [questionId]: choiceId }));
   };
 
   const goToNextQuestion = async () => {
-    // 1. Guard check: Ensure quiz exists and an answer was actually picked
     if (!quiz) return;
 
     const questionId = quiz.questions[currentQuestion].id;
@@ -92,14 +130,14 @@ export function useLessonQuiz(
     const nextIndexPointer = currentQuestion + 1;
     const activeAttemptId = quiz.attemptId;
 
-    // 2. OPTIMISTIC UI SHIFT: Change local state immediately
+    // 💡 4. LAST QUESTION COMPLETION: Persist immediately before API finishes
     if (isLastQuestion) {
+      localStorage.setItem(`quiz_completed_${lessonBlockId}`, "true");
       setQuizState("completed");
     } else {
       setCurrentQuestion((prev) => prev + 1);
     }
 
-    // 3. BACKGROUND SYNC: Fire network request to server without blocking the UI
     if (activeAttemptId) {
       setIsSaving(true);
       try {

@@ -2,18 +2,23 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GoogleButton } from "@/app/components/ui/GoogleButton";
 import { handleSignIn } from "../../lib/auth";
 import { handleRegistration } from "./actions";
 import { z } from "zod";
-import { useSession } from "next-auth/react";
-import logoIcon from "@/app/assets/logo.ico";
+import { signOut, useSession } from "next-auth/react";
+import { useToast } from "@/app/components/context/ToastContext";
+import { OnboardingLogo } from "@/app/onboarding/_components/OnboardingLogo";
+import { Eye, EyeOff } from "lucide-react";
 
 const signUpSchema = z
   .object({
-    email: z.string().email("Invalid email address"),
+    email: z
+      .string()
+      .trim()
+      .min(1, "Email address is required")
+      .email("Please enter a valid email address (e.g., name@example.com)"),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
@@ -28,9 +33,18 @@ const signUpSchema = z
 
 const SignUp = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
+
+  const { showToast } = useToast();
   const { data: session, status } = useSession();
+
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0); // ⏱️ Cooldown state in seconds
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -38,34 +52,65 @@ const SignUp = () => {
     confirmPassword: "",
   });
 
+  // ⏱️ Handle Button Cooldown Countdown Loop
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (cooldown > 0) {
+      timer = setInterval(() => {
+        setCooldown((prev) => (prev > 1 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
   useEffect(() => {
     if (status === "authenticated") {
+      const justLoggedOut = searchParams.get("loggedOut") === "1";
+      if (justLoggedOut) {
+        signOut({ redirect: false }).finally(() => {
+          window.location.href = "/auth/signin";
+        });
+        return;
+      }
       if (session?.user?.status === "onboarding") {
         router.push("/onboarding");
+      } else if (callbackUrl) {
+        router.push(callbackUrl);
       } else {
         router.push("/workspace");
       }
     }
-  }, [status, session, router]);
+  }, [status, session, router, searchParams, callbackUrl]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (errors[e.target.name]) {
-      setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
+    const { name, value } = e.target;
+    // Disallow capital casing on email as user types
+    const processedValue = name === "email" ? value.toLowerCase() : value;
+    setFormData({ ...formData, [name]: processedValue });
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (loading || cooldown > 0) return;
+
     setErrors({});
 
     const result = signUpSchema.safeParse(formData);
     if (!result.success) {
-      const formattedErrors: Record<string, string> = {};
+      const fieldErrors: Record<string, string> = {};
       result.error.issues.forEach((issue) => {
-        formattedErrors[String(issue.path[0])] = issue.message;
+        if (issue.path[0]) {
+          fieldErrors[issue.path[0] as string] = issue.message;
+        }
       });
-      setErrors(formattedErrors);
+      setErrors(fieldErrors);
+
+      const firstErrorMessage = result.error.issues[0]?.message;
+      showToast(firstErrorMessage || "Please check the form inputs.", "error");
       return;
     }
 
@@ -73,57 +118,87 @@ const SignUp = () => {
 
     try {
       const response = await handleRegistration(
-        formData.email,
+        formData.email.trim(),
         formData.password,
         formData.confirmPassword,
       );
-      if (response.success) {
-        setLoading(false);
+
+      if (response?.success) {
+        showToast(
+          "Verification link sent! Please check your inbox.",
+          "success",
+        );
+
+        const cleanEmail = formData.email.trim();
+
+        Object.keys(sessionStorage).forEach((key) => {
+          if (key.startsWith("magic_link_expiry_")) {
+            sessionStorage.removeItem(key);
+          }
+        });
+
+        sessionStorage.setItem("pending_verification_email", cleanEmail);
+
+        const callbackParam = callbackUrl
+          ? `&callbackUrl=${encodeURIComponent(callbackUrl)}`
+          : "";
+
         router.push(
-          `/auth/verify-otp?context=signup&email=${encodeURIComponent(
-            formData.email,
-          )}`,
+          `/auth/verify-link?email=${encodeURIComponent(cleanEmail)}${callbackParam}`,
         );
       } else {
         setLoading(false);
-        setErrors({ form: response.error || "An error occurred" });
+        const errorMessage = response?.error || "Registration failed.";
+
+        // ⏱️ Extract the exact remaining seconds from Laravel's rate limit error message
+        const secondsMatch = errorMessage.match(/(\d+)\s*seconds?/i);
+        if (secondsMatch) {
+          const exactSeconds = parseInt(secondsMatch[1], 10);
+          setCooldown(exactSeconds);
+        } else if (
+          errorMessage.toLowerCase().includes("seconds") ||
+          errorMessage.toLowerCase().includes("too many")
+        ) {
+          setCooldown(60); // Fallback to 60s if no number is matched
+        }
+
+        setErrors({ form: errorMessage });
+        showToast(errorMessage, "error");
       }
     } catch (err) {
       setLoading(false);
       console.error("Registration Error:", err);
-      setErrors({ form: "Connection failed. Check your network." });
+      const networkErrorMessage =
+        "Connection failed. Please check your network.";
+      setErrors({ form: networkErrorMessage });
+      showToast(networkErrorMessage, "error");
     }
   };
+
+  const signInHref = callbackUrl
+    ? `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
+    : "/auth/signin";
 
   return (
     <div className="min-h-screen flex bg-white font-sans text-zinc-900 overflow-hidden">
       {/* Left Side: Form Section */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 md:px-24 lg:px-32 py-12 relative z-10 bg-white">
-        {/* Logo - Top Left */}
         <div className="absolute top-8 left-8 flex items-center gap-3">
-          <div className="relative h-7 w-7">
-            <Image
-              src={logoIcon.src}
-              alt="GADVance logo"
-              fill
-              className="object-contain"
-            />
-          </div>
-          <span className="text-lg font-semibold tracking-tight">GADvance</span>
+          <OnboardingLogo />
         </div>
 
         <div className="w-full max-w-md mx-auto lg:mx-0">
           {status === "loading" ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p className="text-sm text-zinc-400 font-medium tracking-tight">
-                Verifying session...
+            <div className="flex flex-col items-center justify-center py-12 opacity-0">
+              <div className="w-6 h-6 mb-4"></div>
+              <p className="text-sm text-transparent font-medium tracking-tight">
+                Loading...
               </p>
             </div>
           ) : session ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-3xl font-bold text-zinc-900 mb-2 tracking-tight">
-                Welcome back!
+                Welcome!
               </h1>
               <p className="text-zinc-400 mb-10 text-sm lowercase font-light">
                 Redirecting to your workspace...
@@ -138,14 +213,7 @@ const SignUp = () => {
                 Fill in the details to secure your account
               </p>
 
-              {errors.form && (
-                <div className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-red-600">
-                  {errors.form}
-                </div>
-              )}
-
               <form className="space-y-4" onSubmit={handleSubmit}>
-                {/* Email Address Input */}
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                     Email Address
@@ -154,12 +222,12 @@ const SignUp = () => {
                   <input
                     name="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="sample@example.com"
                     value={formData.email}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 rounded-xl border ${
                       errors.email ? "border-red-400" : "border-zinc-100"
-                    } focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
+                    } focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
                   />
                   {errors.email && (
                     <p className="text-[9px] text-red-500 font-bold mt-1.5 uppercase tracking-wider">
@@ -168,41 +236,77 @@ const SignUp = () => {
                   )}
                 </div>
 
-                {/* Password Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                       Password
                       <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <input
-                      name="password"
-                      type="password"
-                      placeholder="Password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 rounded-xl border ${
-                        errors.password ? "border-red-400" : "border-zinc-100"
-                      } focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
-                    />
+                    <div className="relative">
+                      <input
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 pr-10 rounded-xl border ${
+                          errors.password ? "border-red-400" : "border-zinc-100"
+                        } focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showPassword ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                    </div>
                   </div>
+
                   <div>
                     <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
                       Confirm Password
                       <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <input
-                      name="confirmPassword"
-                      type="password"
-                      placeholder="Confirm Password"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 rounded-xl border ${
-                        errors.confirmPassword
-                          ? "border-red-400"
-                          : "border-zinc-100"
-                      } focus:outline-none focus:ring-4 focus:ring-sky-50/50 focus:border-[#00A8CC] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
-                    />
+                    <div className="relative">
+                      <input
+                        name="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm Password"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 pr-10 rounded-xl border ${
+                          errors.confirmPassword
+                            ? "border-red-400"
+                            : "border-zinc-100"
+                        } focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
+                        aria-label={
+                          showConfirmPassword
+                            ? "Hide confirm password"
+                            : "Show confirm password"
+                        }
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 {(errors.password || errors.confirmPassword) && (
@@ -211,12 +315,17 @@ const SignUp = () => {
                   </p>
                 )}
 
+                {/* Submit Button with Dynamic Cooldown Countdown text */}
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full bg-primary hover:bg-primary-hover text-white px-8 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-sky-100 active:scale-[0.98] disabled:opacity-70 mt-2"
+                  disabled={loading || cooldown > 0}
+                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-3.5 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed mt-2 cursor-pointer"
                 >
-                  {loading ? "Creating Account..." : "Create account"}
+                  {loading
+                    ? "Creating Account..."
+                    : cooldown > 0
+                      ? `Try again in ${cooldown}s`
+                      : "Create account"}
                 </button>
 
                 <div className="relative flex items-center py-2">
@@ -236,8 +345,8 @@ const SignUp = () => {
             <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mt-8 text-center">
               Already have an account?{" "}
               <Link
-                href="/auth/signin"
-                className="text-primary hover:underline transition-colors"
+                href={signInHref}
+                className="text-[#8b5cf6] hover:underline transition-colors"
               >
                 sign in
               </Link>
@@ -248,10 +357,8 @@ const SignUp = () => {
 
       {/* Right Side: Decorative Panel */}
       <div
-        className="hidden lg:flex lg:w-1/2 bg-primary flex-col items-center justify-center p-12 text-white relative"
-        style={{
-          clipPath: "ellipse(100% 100% at 100% 50%)",
-        }}
+        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
+        style={{ clipPath: "ellipse(100% 100% at 100% 50%)" }}
       >
         <div className="text-center px-12 relative z-10">
           <h2 className="text-4xl md:text-5xl font-light mb-8 leading-[1.1] tracking-tight">

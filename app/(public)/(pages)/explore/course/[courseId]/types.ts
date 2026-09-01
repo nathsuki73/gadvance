@@ -18,15 +18,16 @@ export type LearningPlan = {
   title: string;
   description?: string;
   image?: string | null;
-
-  modules?: LearningModule[]; // Ready to use!
+  modules?: LearningModule[];
   lessons?: LearningModule[];
-
-  // optional frontend presentation fields
   accent?: string;
   tag?: string;
   duration?: string;
   enrollments_count?: number;
+  progress?: {
+    percentage: number;
+  } | null;
+  enrollment?: Enrollment | null;
 };
 
 export type CoursePageProps = {
@@ -57,6 +58,7 @@ export type ApiOptions = {
 };
 
 export type EnrollmentResponse = {
+  id: string;
   message?: string;
   data?: Enrollment | null;
 };
