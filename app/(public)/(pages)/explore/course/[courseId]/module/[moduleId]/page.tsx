@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, use, useRef } from "react";
 import { notFound, usePathname, useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   ArrowLeft,
   Loader2,
@@ -78,8 +77,6 @@ export default function ModulePage({
   const [error, setError] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
-  const overviewTouchStartX = useRef<number | null>(null);
-  const listTouchStartX = useRef<number | null>(null);
   const overviewRef = useRef<HTMLDivElement | null>(null);
   const listScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -108,7 +105,7 @@ export default function ModulePage({
 
           if (Array.isArray(rawModules) && rawModules.length > 0) {
             const moduleRequests = rawModules.map((m: any) =>
-              getModule(m.id || m.module_id || ""),
+              getModule(m.id || m.module_id || "")
             );
             const settled = await Promise.all(moduleRequests);
             const valid = settled
@@ -157,7 +154,7 @@ export default function ModulePage({
     overviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // Center active card smoothly in track
+  // Smooth centering animation triggered solely by arrow buttons/clicks
   useEffect(() => {
     if (listScrollRef.current) {
       const container = listScrollRef.current;
@@ -171,28 +168,6 @@ export default function ModulePage({
       }
     }
   }, [activeIndex]);
-
-  const handleOverviewTouchStart = (e: React.TouchEvent) => {
-    overviewTouchStartX.current = e.targetTouches[0].clientX;
-  };
-  const handleOverviewTouchEnd = (e: React.TouchEvent) => {
-    if (!overviewTouchStartX.current) return;
-    const distance = overviewTouchStartX.current - e.changedTouches[0].clientX;
-    if (distance > 50) handleNext();
-    else if (distance < -50) handlePrev();
-    overviewTouchStartX.current = null;
-  };
-
-  const handleListTouchStart = (e: React.TouchEvent) => {
-    listTouchStartX.current = e.targetTouches[0].clientX;
-  };
-  const handleListTouchEnd = (e: React.TouchEvent) => {
-    if (!listTouchStartX.current) return;
-    const distance = listTouchStartX.current - e.changedTouches[0].clientX;
-    if (distance > 50) handleNext();
-    else if (distance < -50) handlePrev();
-    listTouchStartX.current = null;
-  };
 
   if (loading) {
     return (
@@ -226,23 +201,19 @@ export default function ModulePage({
 
         {/* ─── SLIDING CONTENT CARD (OVERVIEW HEADER) ─── */}
         <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-12 pt-4 sm:pt-8">
-          <div
-            onTouchStart={handleOverviewTouchStart}
-            onTouchEnd={handleOverviewTouchEnd}
-            className="w-full overflow-hidden rounded-3xl touch-pan-y"
-          >
+          <div className="w-full overflow-hidden rounded-3xl">
             <div
               className="flex w-full transition-transform duration-500 ease-out"
               style={{ transform: `translateX(-${activeIndex * 100}%)` }}
             >
-              {modules.map((mod, idx) => {
+              {modules.map((mod) => {
                 const modProgress = mod.progress?.percentage || 0;
                 const modSections = mod.sections || [];
                 const modSectionsCount = modSections.length;
 
                 return (
                   <div key={mod.id} className="w-full shrink-0">
-                    <div className="rounded-3xl  bg-white p-5 sm:p-8 md:p-12">
+                    <div className="rounded-3xl bg-white p-5 sm:p-8 md:p-12">
                       <div className="grid gap-8 sm:gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
                         {/* Left Column */}
                         <div>
@@ -307,16 +278,14 @@ export default function ModulePage({
                                 Overview
                               </h2>
                               <p className="text-xs text-zinc-400 font-light mt-0.5">
-                                A structured overview of the lessons and
-                                assessments.
+                                A structured overview of the lessons and assessments.
                               </p>
                             </div>
                           </div>
 
-                          {/* Added slim webkit scrollbar classes here */}
                           <div className="space-y-3 sm:space-y-4 max-h-[350px] overflow-y-auto overflow-x-hidden pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300">
                             {modSections.length > 0 ? (
-                              modSections.map((sec: Section, sIdx: number) => (
+                              modSections.map((sec: Section) => (
                                 <div
                                   key={sec.id}
                                   className="rounded-2xl border border-zinc-200/80 bg-white overflow-hidden shadow-xs"
@@ -337,7 +306,7 @@ export default function ModulePage({
                                           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2">
                                             {getItemIcon(
                                               item.item_type,
-                                              item.assessment_type,
+                                              item.assessment_type
                                             )}
                                             <span className="font-medium text-zinc-600 truncate">
                                               {item.title}
@@ -403,16 +372,14 @@ export default function ModulePage({
                   <ChevronLeft size={20} strokeWidth={2.4} />
                 </button>
 
-                {/* Module Cards Track */}
+                {/* Module Cards Track (Fixed wide 2-column layout on desktop, 1 per view on mobile, swipe disabled) */}
                 <div
                   ref={listScrollRef}
-                  onTouchStart={handleListTouchStart}
-                  onTouchEnd={handleListTouchEnd}
                   style={{
                     scrollbarWidth: "none",
                     msOverflowStyle: "none",
                   }}
-                  className="flex-1 flex gap-3 sm:gap-5 overflow-x-auto pb-4 pt-1 px-2 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden"
+                  className="flex-1 flex gap-4 sm:gap-6 overflow-hidden pb-4 pt-1 px-2 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden"
                 >
                   {modules.map((m, idx) => {
                     const isCurrent = idx === activeIndex;
@@ -420,7 +387,7 @@ export default function ModulePage({
                     const totalLessons =
                       m.sections?.reduce(
                         (acc, sec) => acc + (sec.items?.length || 0),
-                        0,
+                        0
                       ) || 0;
 
                     return (
@@ -428,23 +395,23 @@ export default function ModulePage({
                         key={m.id}
                         type="button"
                         onClick={() => handleSelectModule(idx)}
-                        className={`group relative flex flex-col justify-between rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-left transition-all duration-300 cursor-pointer snap-center flex-[0_0_80%] sm:flex-[0_0_calc((100%-1.25rem)/2)] lg:flex-[0_0_calc((100%-2.5rem)/3)] h-[195px] sm:h-[220px] overflow-hidden ${
+                        className={`group relative flex flex-col justify-between rounded-3xl p-6 sm:p-7 text-left transition-all duration-300 cursor-pointer snap-center flex-[0_0_100%] sm:flex-[0_0_calc((100%-1.5rem)/2)] h-[210px] sm:h-[225px] overflow-hidden ${
                           isCurrent
-                            ? "bg-purple-50/70 border-2 border-[#8b5cf6] shadow-lg shadow-purple-500/10 scale-[1.01]"
-                            : "bg-zinc-50/70 border border-zinc-200/80 hover:bg-white hover:border-zinc-300 hover:shadow-md"
+                            ? "bg-white border-2 border-[#8b5cf6] shadow-lg shadow-purple-500/10"
+                            : "bg-white/80 border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md"
                         }`}
                       >
                         <div className="w-full min-w-0 overflow-hidden">
                           {/* Top Badges */}
                           <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
                             <span
-                              className={`font-mono text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg shrink-0 ${
+                              className={`font-mono text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 sm:py-1 rounded-lg shrink-0 ${
                                 isCurrent
                                   ? "bg-[#8b5cf6] text-white"
-                                  : "bg-zinc-200/70 text-zinc-600 group-hover:bg-zinc-200"
+                                  : "bg-zinc-100 text-zinc-600 group-hover:bg-zinc-200/80"
                               }`}
                             >
-                              Module {(idx + 1).toString().padStart(2, "0")}
+                              MODULE {(idx + 1).toString().padStart(2, "0")}
                             </span>
 
                             {modProgress === 100 ? (
@@ -459,12 +426,12 @@ export default function ModulePage({
                           </div>
 
                           {/* Title */}
-                          <h4 className="text-sm sm:text-base font-bold text-zinc-900 group-hover:text-[#8b5cf6] transition-colors truncate block w-full">
+                          <h4 className="text-base sm:text-lg font-bold text-zinc-900 group-hover:text-[#8b5cf6] transition-colors truncate block w-full mt-1">
                             {m.title}
                           </h4>
 
                           {/* Fixed 2-line height Description with ellipsis */}
-                          <p className="mt-1.5 sm:mt-2 text-[11px] sm:text-xs font-light leading-relaxed text-zinc-500 h-8 sm:h-9 line-clamp-2 break-all overflow-hidden text-ellipsis">
+                          <p className="mt-1.5 sm:mt-2 text-xs font-light leading-relaxed text-zinc-500 h-9 line-clamp-2 break-all overflow-hidden text-ellipsis">
                             {m.about ||
                               m.description ||
                               "this is a test description for the module card. it should be truncated after 2 lines and show an ellipsis if it exceeds the height limit."}
@@ -472,26 +439,17 @@ export default function ModulePage({
                         </div>
 
                         {/* Card Bottom Meta */}
-                        <div className="w-full mt-3 sm:mt-4 pt-2.5 sm:pt-4 border-t border-zinc-200/60 flex items-center justify-between text-[10px] sm:text-[11px] text-zinc-400 shrink-0">
-                          <div className="flex items-center gap-2.5 sm:gap-3 truncate pr-1">
+                        <div className="w-full mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400 shrink-0">
+                          <div className="flex items-center gap-3 truncate pr-1">
                             <span className="flex items-center gap-1 shrink-0">
                               <BookOpen size={13} className="text-[#8b5cf6]" />
-                              {m.sections?.length || 0} Sections
+                              {m.sections?.length == 1 ? `${m.sections?.length} Section` : `${m.sections?.length} Sections`}
                             </span>
                             <span className="flex items-center gap-1 shrink-0">
                               <Layers size={13} className="text-[#8b5cf6]" />
-                              {totalLessons} Lessons
+                              {totalLessons == 1 ? `${totalLessons} Lesson` : `${totalLessons} Lessons`}
                             </span>
                           </div>
-
-                          <ChevronRight
-                            size={14}
-                            className={`shrink-0 transition-transform duration-200 ${
-                              isCurrent
-                                ? "text-[#8b5cf6] translate-x-1"
-                                : "text-zinc-300 group-hover:text-zinc-600 group-hover:translate-x-1"
-                            }`}
-                          />
                         </div>
                       </button>
                     );
@@ -514,7 +472,7 @@ export default function ModulePage({
                 </button>
               </div>
 
-              {/* Expanding Dots Indicator Centered Below Carousel */}
+              {/* ─── EXPANDING DOTS INDICATOR ─── */}
               <div className="flex items-center justify-center gap-2 pt-2">
                 {modules.map((_, idx) => (
                   <button
