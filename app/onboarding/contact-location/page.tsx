@@ -26,15 +26,28 @@ import {
 const COUNTRIES = ["Philippines"];
 const DIAL_CODES = ["+63"];
 
+const formatPhoneNumber = (value: string): string => {
+  let digits = value.replace(/\D/g, "");
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  digits = digits.slice(0, 10);
+
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+};
+
 export default function ContactLocation() {
   const router = useRouter();
   const { showToast } = useToast();
 
-  const [formData, setFormData] = useState<ContactLocationData>(() =>
-    getInitialContactData(),
-  );
+  const [formData, setFormData] = useState<ContactLocationData>(() => {
+    const initial = getInitialContactData();
+    return {
+      ...initial,
+      phoneNumber: formatPhoneNumber(initial.phoneNumber || ""),
+    };
+  });
 
-  // Search queries for the searchable dropdowns
   const [regionQuery, setRegionQuery] = useState(formData.regionName || "");
   const [provinceQuery, setProvinceQuery] = useState(
     formData.provinceName || "",
@@ -44,16 +57,13 @@ export default function ContactLocation() {
     formData.barangayName || "",
   );
 
-  // 1. Fetch Regions
   const regions = useMemo<RegionItem[]>(() => fetchRegions(), []);
 
-  // 2. Cascading Provinces based on selected Region
   const provinces = useMemo<ProvinceItem[]>(
     () => (formData.regionCode ? fetchProvinces(formData.regionCode) : []),
     [formData.regionCode]
   );
 
-  // 3. Find selected province object to check if it's an HUC (Highly Urbanized City)
   const selectedProvince = useMemo(
     () => provinces.find((p) => p.provCode === formData.provinceCode),
     [provinces, formData.provinceCode]
@@ -61,7 +71,6 @@ export default function ContactLocation() {
 
   const isHUC = selectedProvince?.cityClass === "HUC";
 
-  // 4. Cascading Municipalities/Cities based on selected Province
   const muncities = useMemo<MunCityItem[]>(
     () => (formData.provinceCode ? fetchMunCities(formData.provinceCode) : []),
     [formData.provinceCode]
@@ -71,7 +80,6 @@ export default function ContactLocation() {
     ? muncities[0]?.munCityCode
     : formData.munCityCode;
 
-  // 5. Cascading Barangays based on selected City
   const barangays = useMemo<BarangayItem[]>(
     () => (effectiveMunCityCode ? fetchBarangays(effectiveMunCityCode) : []),
     [effectiveMunCityCode]
@@ -79,7 +87,16 @@ export default function ContactLocation() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    if (name === "postalCode") {
+      const sanitized = value.replace(/\D/g, "").slice(0, 4);
+      setFormData((prev) => ({ ...prev, postalCode: sanitized }));
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, phoneNumber: formatPhoneNumber(value) }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -95,18 +112,46 @@ export default function ContactLocation() {
       return showToast("Please select a Barangay.", "warning");
     if (!formData.address.trim())
       return showToast("Please enter your Address Line.", "warning");
-    if (!formData.postalCode.trim())
-      return showToast("Please enter your Postal Code.", "warning");
-    if (!formData.phoneNumber.trim())
-      return showToast("Please enter your Phone Number.", "warning");
 
-    saveContactData(formData);
+    // ─── POSTAL CODE VALIDATION ───
+    const trimmedPostal = formData.postalCode.trim();
+    if (!trimmedPostal) {
+      return showToast("Please enter your Postal Code.", "warning");
+    }
+    if (!/^\d{4}$/.test(trimmedPostal)) {
+      return showToast("Postal Code must be exactly 4 numeric digits.", "warning");
+    }
+
+    // ─── CELLPHONE NUMBER VALIDATION ───
+    const rawDigits = formData.phoneNumber.replace(/\D/g, "");
+    if (!rawDigits) {
+      return showToast("Please enter your Phone Number.", "warning");
+    }
+    if (!/^9\d{9}$/.test(rawDigits)) {
+      return showToast(
+        "Mobile Number must be 10 digits starting with 9 (e.g., 912-345-6789).",
+        "warning"
+      );
+    }
+
+    // Pass only the raw 10 digits to prevent duplicate '+63'
+    saveContactData({
+      ...formData,
+      postalCode: trimmedPostal,
+      address: formData.address.trim(),
+      phoneNumber: rawDigits,
+    });
+
     showToast("Contact information saved!", "success");
     router.push("/onboarding/icon-bio");
   };
 
   const handleBack = () => {
-    saveContactData(formData);
+    const rawDigits = formData.phoneNumber.replace(/\D/g, "");
+    saveContactData({
+      ...formData,
+      phoneNumber: rawDigits,
+    });
     router.back();
   };
 
@@ -271,6 +316,7 @@ export default function ContactLocation() {
             </label>
             <input
               type="text"
+              inputMode="numeric"
               name="postalCode"
               value={formData.postalCode}
               onChange={handleChange}
@@ -287,9 +333,7 @@ export default function ContactLocation() {
               setFormData((prev) => ({ ...prev, phoneDialCode: code }))
             }
             phoneNumber={formData.phoneNumber}
-            onPhoneNumberChange={(value) =>
-              setFormData((prev) => ({ ...prev, phoneNumber: value }))
-            }
+            onPhoneNumberChange={handlePhoneChange}
           />
         </div>
 

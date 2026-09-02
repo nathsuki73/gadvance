@@ -59,7 +59,7 @@ export function PhoneInput({
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-1.5 border-r border-zinc-200/80 px-2.5 sm:px-3 py-3.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100/60 transition-all"
+            className="flex items-center gap-1.5 border-r border-zinc-200/80 px-2.5 sm:px-3 py-3.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100/60 transition-all cursor-pointer"
           >
             <span>{dialCode}</span>
             <ChevronDown
@@ -79,7 +79,7 @@ export function PhoneInput({
                     onDialCodeChange(code);
                     setIsOpen(false);
                   }}
-                  className="flex w-full items-center justify-center rounded-lg py-2 text-xs font-semibold bg-violet-50/70 text-[#8b5cf6] hover:bg-violet-100 hover:text-[#8b5cf6] transition-colors"
+                  className="flex w-full items-center justify-center rounded-lg py-2 text-xs font-semibold bg-violet-50/70 text-[#8b5cf6] hover:bg-violet-100 hover:text-[#8b5cf6] transition-colors cursor-pointer"
                 >
                   {code}
                 </button>
@@ -90,12 +90,11 @@ export function PhoneInput({
 
         <input
           type="tel"
+          inputMode="numeric"
           value={phoneNumber}
-          onChange={(e) =>
-            onPhoneNumberChange(e.target.value.replace(/\D/g, ""))
-          }
-          placeholder="917 123 4567"
-          maxLength={10}
+          onChange={(e) => onPhoneNumberChange(e.target.value)}
+          placeholder="912-345-6789"
+          maxLength={12}
           className={
             isProfileUpdate
               ? "w-full bg-transparent px-3.5 py-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none"
