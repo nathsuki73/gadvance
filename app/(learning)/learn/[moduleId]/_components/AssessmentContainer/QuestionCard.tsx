@@ -63,17 +63,18 @@ export function QuestionCard({
   const showPollDistribution = isPoll && (submitted || isQuestionSubmitted);
   const canShowReview = settings.allowReview;
 
-  const showFeedback =
+  const showReviewFeedback = !isPoll && submitted && canShowReview;
+  const showImmediateFeedback =
     !isPoll &&
     !isTestMode &&
     Boolean(selectedChoiceId) &&
-    (submitted || settings.showFeedbackImmediately);
+    settings.showFeedbackImmediately;
 
-  const showTestFeedback = canShowReview && isTestMode && submitted;
+  const shouldDisplayFeedback = showReviewFeedback || showImmediateFeedback;
   const isLocked =
     submitted ||
     isQuestionSubmitted ||
-    Boolean(showFeedback && selectedChoiceId);
+    Boolean(shouldDisplayFeedback && selectedChoiceId);
 
   return (
     <div className="space-y-4">
@@ -122,7 +123,7 @@ export function QuestionCard({
             radioCircleStyle = "border-purple-600 bg-purple-600 text-white";
           }
 
-          if ((showFeedback || showTestFeedback) && !isPoll) {
+          if (shouldDisplayFeedback && !isPoll) {
             if (isChoiceCorrect) {
               textStyle = "text-emerald-950 font-semibold";
               radioCircleStyle = "border-emerald-500 bg-emerald-500 text-white";
@@ -163,16 +164,16 @@ export function QuestionCard({
                   >
                     {isSelected &&
                       !showPollDistribution &&
-                      !(showFeedback || showTestFeedback) && (
+                      !shouldDisplayFeedback && (
                         <div className="h-1.5 w-1.5 rounded-full bg-white" />
                       )}
                     {showPollDistribution && isSelected && (
                       <Check size={10} strokeWidth={3} />
                     )}
-                    {(showFeedback || showTestFeedback) && isChoiceCorrect && (
+                    {shouldDisplayFeedback && isChoiceCorrect && (
                       <Check size={10} strokeWidth={3} />
                     )}
-                    {(showFeedback || showTestFeedback) &&
+                    {shouldDisplayFeedback &&
                       isSelected &&
                       !isChoiceCorrect && <XCircle size={10} strokeWidth={3} />}
                   </div>
@@ -193,14 +194,12 @@ export function QuestionCard({
                     </span>
                   )}
 
-                  {(showFeedback || showTestFeedback) && isChoiceCorrect && (
+                  {shouldDisplayFeedback && isChoiceCorrect && (
                     <CheckCircle2 size={16} className="text-emerald-600" />
                   )}
-                  {(showFeedback || showTestFeedback) &&
-                    isSelected &&
-                    !isChoiceCorrect && (
-                      <XCircle size={16} className="text-rose-600" />
-                    )}
+                  {shouldDisplayFeedback && isSelected && !isChoiceCorrect && (
+                    <XCircle size={16} className="text-rose-600" />
+                  )}
                 </div>
               </button>
 
@@ -220,7 +219,7 @@ export function QuestionCard({
       </div>
 
       {/* Immediate Remediation & Feedback */}
-      {(showFeedback || showTestFeedback) && !isPoll && (
+      {shouldDisplayFeedback && !isPoll && (
         <div className="space-y-2.5 pt-2">
           <div
             className={`flex items-center gap-1.5 text-xs font-semibold ${

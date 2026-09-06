@@ -134,6 +134,19 @@ export default function AssessmentContainer({
           (a: any) => a.is_correct,
         ).length;
         setSavedCorrectCount(correct);
+
+        const pastAnswersMap: Record<string, string> = {};
+        prevAttempt.answers.forEach((ans: any) => {
+          const qId = ans.question_id;
+          const cId = ans.choice_id ?? ans.selected_option_id;
+          if (qId && cId) {
+            pastAnswersMap[qId] = String(cId);
+          }
+        });
+
+        if (Object.keys(pastAnswersMap).length > 0) {
+          setAnswers((prev) => ({ ...pastAnswersMap, ...prev }));
+        }
       }
 
       if (prevAttempt.remedial_suggestions) {
