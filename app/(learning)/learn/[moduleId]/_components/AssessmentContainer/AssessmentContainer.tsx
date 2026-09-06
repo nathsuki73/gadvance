@@ -166,22 +166,22 @@ export default function AssessmentContainer({
         voted_question_ids,
       } = stateRes.data;
 
-      // 🔑 Option 4: Reconcile ordered list against existing database questions
+      // Reconcile saved question order against live database questions
       let activeQuestions = [...availableQuestions];
 
       if (Array.isArray(question_order) && question_order.length > 0) {
-        const restored = question_order
+        const restoredQuestions = question_order
           .map((qId: string) => validQuestionMap.get(qId))
           .filter(Boolean) as typeof availableQuestions;
 
-        const restoredIdSet = new Set(restored.map((q) => q.id));
-        const unlistedQuestions = availableQuestions.filter(
-          (q) => !restoredIdSet.has(q.id),
+        const existingIdSet = new Set(restoredQuestions.map((q) => q.id));
+        const newQuestions = availableQuestions.filter(
+          (q) => !existingIdSet.has(q.id),
         );
 
-        const reconciled = [...restored, ...unlistedQuestions];
-        if (reconciled.length > 0) {
-          activeQuestions = reconciled;
+        const merged = [...restoredQuestions, ...newQuestions];
+        if (merged.length > 0) {
+          activeQuestions = merged;
         }
       }
 
@@ -206,7 +206,7 @@ export default function AssessmentContainer({
 
       setAssessment({ ...viewData, questions: activeQuestions });
 
-      // 🔑 Option 4: Discard draft answers for questions that were deleted
+      // Discard draft answers for questions that were deleted
       const restoredMap: Record<string, string> = {};
       if (draft_answers) {
         if (Array.isArray(draft_answers)) {
@@ -228,7 +228,7 @@ export default function AssessmentContainer({
       }
 
       if (Object.keys(restoredMap).length > 0) {
-        setAnswers(restoredMap);
+        setAnswers((prev) => ({ ...prev, ...restoredMap }));
       }
 
       // Restore per-question vote status (discard deleted IDs)
@@ -245,7 +245,7 @@ export default function AssessmentContainer({
         });
       }
 
-      // 🔑 Safely clamp current question index
+      // Safely clamp index against activeQuestions
       if (activeQuestions.length > 0) {
         const safeIndex =
           typeof current_index === "number"
