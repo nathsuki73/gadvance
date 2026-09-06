@@ -66,7 +66,7 @@ export default function AssessmentContainer({
     queryKey: viewQueryKey,
     queryFn: () => getAssessmentViewData(assessmentId),
     enabled: Boolean(assessmentId),
-    staleTime: Infinity,
+    staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
   });
 
@@ -74,7 +74,7 @@ export default function AssessmentContainer({
     queryKey: stateQueryKey,
     queryFn: () => getAssessmentState(assessmentId, itemId),
     enabled: Boolean(assessmentId) && Boolean(itemId),
-    staleTime: Infinity,
+    staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
   });
 
@@ -120,6 +120,9 @@ export default function AssessmentContainer({
     if (hasHydrated.current) return;
     if (!viewData || stateLoading) return;
 
+    const availableQuestions = viewData.questions || [];
+    const validQuestionMap = new Map(availableQuestions.map((q) => [q.id, q]));
+
     const prevAttempt = (viewData as any).previous_attempt;
     if (prevAttempt) {
       setSavedScore(prevAttempt.score_percentage);
@@ -150,28 +153,26 @@ export default function AssessmentContainer({
         voted_question_ids,
       } = stateRes.data;
 
-      let activeQuestions = [...viewData.questions];
+      // 🔑 Option 4: Reconcile ordered list against existing database questions
+      let activeQuestions = [...availableQuestions];
 
-      if (question_order && question_order.length > 0) {
-        const orderedMap = new Map(
-          viewData.questions.map((q: (typeof viewData.questions)[number]) => [
-            q.id,
-            q,
-          ]),
+      if (Array.isArray(question_order) && question_order.length > 0) {
+        const restored = question_order
+          .map((qId: string) => validQuestionMap.get(qId))
+          .filter(Boolean) as typeof availableQuestions;
+
+        const restoredIdSet = new Set(restored.map((q) => q.id));
+        const unlistedQuestions = availableQuestions.filter(
+          (q) => !restoredIdSet.has(q.id),
         );
-        const restoredQuestions = question_order
-          .map((qId: string) => orderedMap.get(qId))
-          .filter(
-            (
-              q: (typeof viewData.questions)[number] | undefined,
-            ): q is (typeof viewData.questions)[0] => Boolean(q),
-          );
 
-        if (restoredQuestions.length > 0) {
-          activeQuestions = restoredQuestions;
+        const reconciled = [...restored, ...unlistedQuestions];
+        if (reconciled.length > 0) {
+          activeQuestions = reconciled;
         }
       }
 
+      // Reconcile poll distributions
       if (poll_distributions && Object.keys(poll_distributions).length > 0) {
         activeQuestions = activeQuestions.map((q) => ({
           ...q,
@@ -192,17 +193,24 @@ export default function AssessmentContainer({
 
       setAssessment({ ...viewData, questions: activeQuestions });
 
+      // 🔑 Option 4: Discard draft answers for questions that were deleted
       const restoredMap: Record<string, string> = {};
       if (draft_answers) {
         if (Array.isArray(draft_answers)) {
           draft_answers.forEach((ans: any) => {
-            restoredMap[ans.question_id] = ans.choice_id;
+            if (ans?.question_id && validQuestionMap.has(ans.question_id)) {
+              restoredMap[ans.question_id] = ans.choice_id;
+            }
           });
         } else if (
           typeof draft_answers === "object" &&
           draft_answers !== null
         ) {
-          Object.assign(restoredMap, draft_answers);
+          Object.entries(draft_answers).forEach(([qId, cId]) => {
+            if (validQuestionMap.has(qId)) {
+              restoredMap[qId] = String(cId);
+            }
+          });
         }
       }
 
@@ -210,23 +218,29 @@ export default function AssessmentContainer({
         setAnswers(restoredMap);
       }
 
-      // Restore per-question submitted/locked state from durable votes
-      const votedQuestionIds: string[] = voted_question_ids || [];
-      if (votedQuestionIds.length > 0) {
+      // Restore per-question vote status (discard deleted IDs)
+      const validVotedIds: string[] = (voted_question_ids || []).filter(
+        (qId: string) => validQuestionMap.has(qId),
+      );
+      if (validVotedIds.length > 0) {
         setSubmittedQuestions((prev) => {
           const next = { ...prev };
-          votedQuestionIds.forEach((qId) => {
+          validVotedIds.forEach((qId) => {
             next[qId] = true;
           });
           return next;
         });
       }
 
-      if (
-        typeof current_index === "number" &&
-        current_index < activeQuestions.length
-      ) {
-        setCurrentQuestionIndex(current_index);
+      // 🔑 Safely clamp current question index
+      if (activeQuestions.length > 0) {
+        const safeIndex =
+          typeof current_index === "number"
+            ? Math.min(Math.max(0, current_index), activeQuestions.length - 1)
+            : 0;
+        setCurrentQuestionIndex(safeIndex);
+      } else {
+        setCurrentQuestionIndex(0);
       }
 
       if (status === "completed") {
@@ -408,7 +422,13 @@ export default function AssessmentContainer({
     );
   }
 
-  if (error || !assessment) {
+  // Guard against missing assessment or zero questions available
+  if (
+    error ||
+    !assessment ||
+    !assessment.questions ||
+    assessment.questions.length === 0
+  ) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white p-6">
         <div className="w-full max-w-md rounded-3xl border border-zinc-200/80 bg-white p-8 text-center shadow-xl shadow-zinc-200/50">
@@ -419,7 +439,10 @@ export default function AssessmentContainer({
             Assessment Unavailable
           </h2>
           <p className="text-xs leading-relaxed text-zinc-500">
-            {error || "Could not retrieve assessment information."}
+            {error ||
+              (!assessment?.questions?.length
+                ? "This assessment currently has no available questions."
+                : "Could not retrieve assessment information.")}
           </p>
         </div>
       </div>
@@ -430,12 +453,19 @@ export default function AssessmentContainer({
   const isPoll = settings.type === "poll";
 
   const totalQuestions = questions.length;
-  const currentQuestion = questions[currentQuestionIndex];
-  const isFirstQuestion = currentQuestionIndex === 0;
-  const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
-  const isCurrentAnswered = Boolean(answers[currentQuestion?.id]);
+  const safeQuestionIndex = Math.min(
+    Math.max(0, currentQuestionIndex),
+    Math.max(0, totalQuestions - 1),
+  );
+  const currentQuestion = questions[safeQuestionIndex];
+
+  const isFirstQuestion = safeQuestionIndex === 0;
+  const isLastQuestion = safeQuestionIndex === totalQuestions - 1;
+  const isCurrentAnswered = Boolean(
+    currentQuestion && answers[currentQuestion.id],
+  );
   const isCurrentQuestionSubmitted = Boolean(
-    submittedQuestions[currentQuestion?.id],
+    currentQuestion && submittedQuestions[currentQuestion.id],
   );
 
   const gradedQuestions = questions.filter((q: any) => !q.isPoll);
@@ -463,7 +493,7 @@ export default function AssessmentContainer({
       [questionId]: prev[questionId] || new Date().toISOString(),
     }));
 
-    triggerDraftSave(updatedAnswers, currentQuestionIndex);
+    triggerDraftSave(updatedAnswers, safeQuestionIndex);
   };
 
   const handleSubmitSinglePollVote = async () => {
@@ -472,7 +502,6 @@ export default function AssessmentContainer({
     const qId = currentQuestion.id;
     const choiceId = answers[qId];
 
-    // Optimistic UI update
     setSubmittedQuestions((prev) => ({ ...prev, [qId]: true }));
 
     try {
@@ -506,7 +535,6 @@ export default function AssessmentContainer({
             questions: prev.questions.map((q) => ({
               ...q,
               choices: q.choices.map((choice: Choice) => {
-                // Tell TypeScript that poll_distributions is a record mapping choice IDs to vote stats
                 const pollDistributions = result.poll_distributions as
                   | Record<string, { votes: number; percentage: number }>
                   | undefined;
@@ -534,7 +562,7 @@ export default function AssessmentContainer({
   const handleNextQuestion = () => {
     if (!isLastQuestion) {
       recordCurrentQuestionTime();
-      const nextIndex = currentQuestionIndex + 1;
+      const nextIndex = safeQuestionIndex + 1;
       setCurrentQuestionIndex(nextIndex);
       triggerDraftSave(answers, nextIndex);
       flushDraftSave();
@@ -544,7 +572,7 @@ export default function AssessmentContainer({
   const handlePreviousQuestion = () => {
     if (!isFirstQuestion) {
       recordCurrentQuestionTime();
-      const prevIndex = currentQuestionIndex - 1;
+      const prevIndex = safeQuestionIndex - 1;
       setCurrentQuestionIndex(prevIndex);
       triggerDraftSave(answers, prevIndex);
       flushDraftSave();
@@ -566,19 +594,23 @@ export default function AssessmentContainer({
       recordCurrentQuestionTime();
 
       const finalTimes = { ...questionTimes };
-      const currentQ = questions[currentQuestionIndex];
+      const currentQ = questions[safeQuestionIndex];
       if (currentQ) {
         finalTimes[currentQ.id] =
           (finalTimes[currentQ.id] || 0) +
           Math.round((Date.now() - questionStartRef.current) / 1000);
       }
 
-      const formattedAnswers = Object.entries(answers).map(([qId, cId]) => ({
-        question_id: qId,
-        choice_id: cId,
-        time_spent_seconds: finalTimes[qId] || 0,
-        answered_at: answeredAtMap[qId] || new Date().toISOString(),
-      }));
+      // Filter submission answers to only valid questions
+      const validQuestionsMap = new Map(questions.map((q) => [q.id, true]));
+      const formattedAnswers = Object.entries(answers)
+        .filter(([qId]) => validQuestionsMap.has(qId))
+        .map(([qId, cId]) => ({
+          question_id: qId,
+          choice_id: cId,
+          time_spent_seconds: finalTimes[qId] || 0,
+          answered_at: answeredAtMap[qId] || new Date().toISOString(),
+        }));
 
       const result = await submitAssessment({
         assessmentId,
@@ -680,7 +712,7 @@ export default function AssessmentContainer({
             data: {
               ...old.data,
               draft_answers: answers,
-              current_index: currentQuestionIndex,
+              current_index: safeQuestionIndex,
               status: "completed",
             },
           };
@@ -801,7 +833,7 @@ export default function AssessmentContainer({
 
   const currentProgressPercent =
     totalQuestions > 0
-      ? Math.round(((currentQuestionIndex + 1) / totalQuestions) * 100)
+      ? Math.round(((safeQuestionIndex + 1) / totalQuestions) * 100)
       : 0;
 
   return (
@@ -833,7 +865,7 @@ export default function AssessmentContainer({
           <div className="mx-auto mt-3 max-w-3xl space-y-1.5">
             <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-400">
               <span>
-                Question {currentQuestionIndex + 1} of {totalQuestions}
+                Question {safeQuestionIndex + 1} of {totalQuestions}
               </span>
               <span>{currentProgressPercent}%</span>
             </div>
@@ -895,12 +927,18 @@ export default function AssessmentContainer({
               onSelectChoice={handleSelectChoice}
             />
           </div>
+        ) : !currentQuestion ? (
+          <div className="py-12 text-center text-xs text-zinc-500">
+            Question not found or removed.
+          </div>
         ) : (
           <div className="space-y-6">
             <QuestionCard
               question={currentQuestion}
-              index={currentQuestionIndex}
-              selectedChoiceId={answers[currentQuestion.id]}
+              index={safeQuestionIndex}
+              selectedChoiceId={
+                currentQuestion ? answers[currentQuestion.id] : undefined
+              }
               submitted={submitted}
               isQuestionSubmitted={isCurrentQuestionSubmitted}
               settings={settings}
