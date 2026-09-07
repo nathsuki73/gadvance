@@ -131,7 +131,7 @@ const CoursesPage = () => {
                 className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   filter === "all"
                     ? "bg-primary text-white shadow-xs"
-                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/80"
+                    : "text-zinc-500 hover:text-[#8b5cf6] hover:bg-zinc-100/80"
                 }`}
               >
                 <LayoutGrid size={13} />
@@ -144,7 +144,7 @@ const CoursesPage = () => {
                 className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   filter === "public"
                     ? "bg-primary text-white shadow-xs"
-                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/80"
+                    : "text-zinc-500 hover:text-[#8b5cf6] hover:bg-zinc-100/80"
                 }`}
               >
                 <Globe2 size={13} />
@@ -158,7 +158,7 @@ const CoursesPage = () => {
                   className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     filter === "organization"
                       ? "bg-primary text-white shadow-xs"
-                      : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/80"
+                      : "text-zinc-500 hover:text-[#8b5cf6] hover:bg-zinc-100/80"
                   }`}
                 >
                   <Building2 size={13} />
