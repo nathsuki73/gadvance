@@ -36,7 +36,6 @@ interface AssessmentContainerProps {
   onNavigate?: (targetId: string, blockId: string) => void;
 }
 
-// Background autosave interval (25 seconds)
 const AUTOSAVE_INTERVAL_MS = 25000;
 
 export default function AssessmentContainer({
@@ -58,6 +57,8 @@ export default function AssessmentContainer({
     itemId,
     type,
   ] as const;
+
+  const storageDraftKey = `local_draft_${assessmentId}_${itemId}`;
 
   const {
     data: viewData,
@@ -103,7 +104,6 @@ export default function AssessmentContainer({
   const [submittedQuestions, setSubmittedQuestions] = useState<
     Record<string, boolean>
   >({});
-
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
@@ -117,7 +117,7 @@ export default function AssessmentContainer({
 
   const hasHydrated = useRef(false);
 
-  // Synchronized refs to avoid rebuilding callbacks and timers
+  // Synchronized refs to guarantee unmount / timer handlers access the latest state
   const answersRef = useRef(answers);
   answersRef.current = answers;
 
@@ -138,6 +138,7 @@ export default function AssessmentContainer({
   const hasStartedRef = useRef(hasStarted);
   hasStartedRef.current = hasStarted;
 
+  // Hydration logic
   useEffect(() => {
     if (hasHydrated.current) return;
     if (!viewData || stateLoading) return;
@@ -145,8 +146,25 @@ export default function AssessmentContainer({
     const availableQuestions = viewData.questions || [];
     const validQuestionMap = new Map(availableQuestions.map((q) => [q.id, q]));
 
+    const stateRes = stateData as any;
+    const currentStatus = stateRes?.data?.status ?? "not_started";
+    const isCurrentlyActive = currentStatus === "in_progress";
+
+    // 1. Read cached localStorage answers first
+    let localSavedAnswers: Record<string, string> = {};
+    try {
+      const stored = localStorage.getItem(storageDraftKey);
+      if (stored) {
+        localSavedAnswers = JSON.parse(stored);
+      }
+    } catch {
+      // LocalStorage unavailable
+    }
+
     const prevAttempt = (viewData as any).previous_attempt;
-    if (prevAttempt) {
+
+    // 2. Only hydrate previous attempt if this user is NOT actively taking/retaking
+    if (prevAttempt && !isCurrentlyActive) {
       setSavedScore(prevAttempt.score_percentage);
       setSavedRawScore(prevAttempt.score ?? null);
       setSavedTotalPoints(prevAttempt.total_points ?? null);
@@ -167,7 +185,7 @@ export default function AssessmentContainer({
         });
 
         if (Object.keys(pastAnswersMap).length > 0) {
-          setAnswers((prev) => ({ ...pastAnswersMap, ...prev }));
+          setAnswers(pastAnswersMap);
         }
       }
 
@@ -175,8 +193,6 @@ export default function AssessmentContainer({
         setRemedialSuggestions(prevAttempt.remedial_suggestions);
       }
     }
-
-    const stateRes = stateData as any;
 
     if (stateRes?.success && stateRes.data) {
       const {
@@ -199,7 +215,6 @@ export default function AssessmentContainer({
         const newQuestions = availableQuestions.filter(
           (q) => !existingIdSet.has(q.id),
         );
-
         const merged = [...restoredQuestions, ...newQuestions];
         if (merged.length > 0) {
           activeQuestions = merged;
@@ -226,7 +241,8 @@ export default function AssessmentContainer({
 
       setAssessment({ ...viewData, questions: activeQuestions });
 
-      const restoredMap: Record<string, string> = {};
+      // 3. Reconcile Server drafts + LocalStorage drafts
+      const restoredMap: Record<string, string> = { ...localSavedAnswers };
       if (draft_answers) {
         if (Array.isArray(draft_answers)) {
           draft_answers.forEach((ans: any) => {
@@ -246,7 +262,15 @@ export default function AssessmentContainer({
         }
       }
 
-      if (Object.keys(restoredMap).length > 0) {
+      if (isCurrentlyActive) {
+        setAnswers(restoredMap);
+        setSavedScore(null);
+        setSavedRawScore(null);
+        setSavedTotalPoints(null);
+        setSavedCorrectCount(null);
+        setSubmitted(false);
+        setHasStarted(true);
+      } else if (Object.keys(restoredMap).length > 0) {
         setAnswers((prev) => ({ ...prev, ...restoredMap }));
       }
 
@@ -286,6 +310,7 @@ export default function AssessmentContainer({
         }
       } else if (status === "in_progress") {
         setHasStarted(true);
+        setSubmitted(false);
       }
     } else {
       setAssessment(viewData);
@@ -294,7 +319,7 @@ export default function AssessmentContainer({
     hasHydrated.current = true;
     setStartTime(Date.now());
     questionStartRef.current = Date.now();
-  }, [viewData, stateData, stateLoading]);
+  }, [viewData, stateData, stateLoading, storageDraftKey]);
 
   useEffect(() => {
     if (viewError) {
@@ -365,7 +390,6 @@ export default function AssessmentContainer({
     onError: (err) => console.error("Poll vote failed:", err),
   });
 
-  // Stable draft sender — does NOT depend on assessment or answers objects
   const sendDraft = useCallback(
     (currentAnswers: Record<string, string>, targetIndex: number) => {
       if (isPollRef.current || submittedRef.current || !hasStartedRef.current)
@@ -400,7 +424,7 @@ export default function AssessmentContainer({
     [assessmentId, itemId, queryClient],
   );
 
-  // Periodic autosave - Starts ONCE when the assessment begins, never restarts on option clicks
+  // Periodic autosave to Redis every 25 seconds
   useEffect(() => {
     if (!hasStarted || submitted || isPollRef.current) return;
 
@@ -410,6 +434,19 @@ export default function AssessmentContainer({
 
     return () => clearInterval(timer);
   }, [hasStarted, submitted, sendDraft]);
+
+  // Flush to server when component unmounts (user navigates to another page)
+  useEffect(() => {
+    return () => {
+      if (
+        hasStartedRef.current &&
+        !submittedRef.current &&
+        !isPollRef.current
+      ) {
+        sendDraft(answersRef.current, currentIndexRef.current);
+      }
+    };
+  }, [sendDraft]);
 
   const isLoading = viewLoading || (Boolean(itemId) && stateLoading);
 
@@ -485,11 +522,19 @@ export default function AssessmentContainer({
     savedCorrectCount !== null ? savedCorrectCount : localCorrectCount;
   const isPassed = displayScore >= settings.passingScore;
 
-  // 100% LOCAL: Only updates state. No API call made here whatsoever.
+  // Fast local selection: Updates React state and LocalStorage immediately
   const handleSelectChoice = (questionId: string, choiceId: string) => {
     if (submitted || submittedQuestions[questionId]) return;
 
-    setAnswers((prev) => ({ ...prev, [questionId]: choiceId }));
+    const nextAnswers = { ...answers, [questionId]: choiceId };
+    setAnswers(nextAnswers);
+
+    // Write to LocalStorage instantly so navigating away never drops this answer
+    try {
+      localStorage.setItem(storageDraftKey, JSON.stringify(nextAnswers));
+    } catch {
+      // Storage unavailable
+    }
 
     setAnsweredAtMap((prev) => ({
       ...prev,
@@ -560,7 +605,6 @@ export default function AssessmentContainer({
     }
   };
 
-  // Only saves when changing questions
   const handleNextQuestion = () => {
     if (!isLastQuestion) {
       recordCurrentQuestionTime();
@@ -643,6 +687,11 @@ export default function AssessmentContainer({
         setRemedialSuggestions(finalRemedialSuggestions);
         setSubmitted(true);
 
+        // Clear local draft cache on submission
+        try {
+          localStorage.removeItem(storageDraftKey);
+        } catch {}
+
         queryClient.setQueryData(viewQueryKey, (old: any) => {
           if (!old) return old;
           return {
@@ -709,6 +758,11 @@ export default function AssessmentContainer({
       return;
     }
 
+    // Clear local storage draft
+    try {
+      localStorage.removeItem(storageDraftKey);
+    } catch {}
+
     if (settings.maxAttempts != null) {
       setAssessment((prev) =>
         prev
@@ -760,8 +814,10 @@ export default function AssessmentContainer({
 
     queryClient.setQueryData(viewQueryKey, (old: any) => {
       if (!old) return old;
-      const { previous_attempt, ...rest } = old;
-      return rest;
+      const copy = { ...old };
+      delete copy.previous_attempt;
+      copy.user_has_completed = false;
+      return copy;
     });
 
     queryClient.invalidateQueries({
@@ -845,7 +901,6 @@ export default function AssessmentContainer({
               setStartTime(Date.now());
               questionStartRef.current = Date.now();
               setHasStarted(true);
-              sendDraft(answers, 0);
             }}
           />
         ) : submitted ? (
