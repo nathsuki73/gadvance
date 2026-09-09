@@ -22,9 +22,9 @@ import SearchBar from "./SearchBar";
 import LogoutConfirmationDialog from "./LogoutConfirmation";
 import { useQuery } from "@tanstack/react-query";
 import { getUserProfile } from "../../service";
+import { apiFetch } from "@/app/lib/api-client";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
-const SEARCH_DEBOUNCE_MS = 250;
+const SEARCH_DEBOUNCE_MS = 3000;
 
 const AUTH_NAVS = [
   { href: "/workspace", label: "Workspace" },
@@ -57,8 +57,9 @@ function resolveAvatarSrc(avatar?: string | null): string | null {
     return trimmed;
   }
 
+  const apiBase = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
   const storagePath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-  return API_BASE_URL ? `${API_BASE_URL}${storagePath}` : storagePath;
+  return apiBase ? `${apiBase}${storagePath}` : storagePath;
 }
 
 function getInitials(name?: string | null): string {
@@ -85,14 +86,14 @@ export default function AuthHeader() {
 
   const [avatarFallbackIndex, setAvatarFallbackIndex] = useState(0);
 
-  // Search
+  // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const userEmail = session?.user?.email;
 
-  // 🎯 Shared React Query profile fetch (deduplicates requests with WorkspacePage)
+  // 🎯 Shared React Query profile fetch
   const { data: profileResponse } = useQuery({
     queryKey: ["userProfile", userEmail],
     queryFn: async () => {
@@ -160,40 +161,53 @@ export default function AuthHeader() {
   const activeAvatarSource =
     currentUser.avatarSources[avatarFallbackIndex] ?? null;
 
-  // Debounced global search
-  useEffect(() => {
-    if (searchQuery.trim().length === 0) {
-      return;
+  // Unified search change handler to prevent cascading effect updates
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (!value.trim()) {
+      setSearchResults([]);
+      setIsSearchOpen(false);
     }
+  };
+
+  // Debounced global search using apiFetch (only runs when query exists)
+  useEffect(() => {
+    const cleanQuery = searchQuery.trim();
+
+    if (!cleanQuery) return;
+
+    const controller = new AbortController();
 
     const timeoutId = setTimeout(async () => {
-      if (!API_BASE_URL || !session?.laravelJwt) return;
-
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/global-search?q=${encodeURIComponent(searchQuery)}`,
-          {
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${session.laravelJwt}`,
-            },
-          },
+        const res = await apiFetch(
+          `/api/global-search?q=${encodeURIComponent(cleanQuery)}&portal=student`,
+          { signal: controller.signal },
         );
 
-        if (!response.ok) return;
+        if (!res || !res.ok) {
+          setSearchResults([]);
+          return;
+        }
 
-        const payload = await response.json();
+        const payload = await res.json();
         const results = Array.isArray(payload) ? payload : payload?.data;
 
         setSearchResults(Array.isArray(results) ? results : []);
         setIsSearchOpen(true);
-      } catch (error) {
-        console.error("Global search fetch failed:", error);
+      } catch (error: unknown) {
+        if ((error as Error)?.name !== "AbortError") {
+          console.error("Global search fetch failed:", error);
+          setSearchResults([]);
+        }
       }
     }, SEARCH_DEBOUNCE_MS);
 
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, session]);
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [searchQuery]);
 
   // Close all overlays on outside click
   useEffect(() => {
@@ -216,6 +230,7 @@ export default function AuthHeader() {
         setShowProfileDropdown(false);
       } else {
         setSearchQuery("");
+        setSearchResults([]);
         setIsSearchOpen(false);
       }
       return next;
@@ -253,6 +268,8 @@ export default function AuthHeader() {
   const handleResultClick = (url: string) => {
     closeAllOverlays();
     setSearchQuery("");
+    setSearchResults([]);
+    setIsSearchOpen(false);
     router.push(url);
   };
 
@@ -333,7 +350,7 @@ export default function AuthHeader() {
           <div className="hidden sm:block sm:flex-1 sm:max-w-md relative">
             <SearchBar
               value={searchQuery}
-              onChange={setSearchQuery}
+              onChange={handleSearchChange}
               id="desktop-search-input"
             />
             {renderSearchDropdown()}
@@ -371,7 +388,6 @@ export default function AuthHeader() {
                 className="relative rounded-full p-2 text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
               >
                 <Bell className="h-5 w-5" strokeWidth={1.8} />
-                {/* <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#a78bfa]" /> */}
               </button>
 
               <Notification
@@ -458,7 +474,7 @@ export default function AuthHeader() {
           <div className="relative w-full max-w-md">
             <SearchBar
               value={searchQuery}
-              onChange={setSearchQuery}
+              onChange={handleSearchChange}
               id="mobile-search-input"
             />
             {renderSearchDropdown()}
