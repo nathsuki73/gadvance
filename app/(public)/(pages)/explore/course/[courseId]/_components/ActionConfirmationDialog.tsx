@@ -60,8 +60,8 @@ const ActionConfirmationDialog = ({
           </p>
         </div>
 
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
+        {/* Actions: flex-col-reverse places Confirm (enroll) at the top and Cancel at the bottom on mobile; sm:flex-row keeps Cancel on the left and Confirm on the right for larger screens */}
+        <div className="flex flex-col-reverse sm:flex-row items-center gap-4 w-full">
           {/* Cancel */}
           <button
             onClick={onClose}

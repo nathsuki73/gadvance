@@ -36,7 +36,7 @@ interface AssessmentContainerProps {
   onNavigate?: (targetId: string, blockId: string) => void;
 }
 
-const DRAFT_SAVE_DEBOUNCE_MS = 600;
+const AUTOSAVE_INTERVAL_MS = 25000;
 
 export default function AssessmentContainer({
   itemId,
@@ -58,6 +58,8 @@ export default function AssessmentContainer({
     type,
   ] as const;
 
+  const storageDraftKey = `local_draft_${assessmentId}_${itemId}`;
+
   const {
     data: viewData,
     isLoading: viewLoading,
@@ -66,7 +68,7 @@ export default function AssessmentContainer({
     queryKey: viewQueryKey,
     queryFn: () => getAssessmentViewData(assessmentId),
     enabled: Boolean(assessmentId),
-    staleTime: Infinity,
+    staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
   });
 
@@ -74,7 +76,7 @@ export default function AssessmentContainer({
     queryKey: stateQueryKey,
     queryFn: () => getAssessmentState(assessmentId, itemId),
     enabled: Boolean(assessmentId) && Boolean(itemId),
-    staleTime: Infinity,
+    staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
   });
 
@@ -102,7 +104,6 @@ export default function AssessmentContainer({
   const [submittedQuestions, setSubmittedQuestions] = useState<
     Record<string, boolean>
   >({});
-
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
@@ -116,12 +117,54 @@ export default function AssessmentContainer({
 
   const hasHydrated = useRef(false);
 
+  // Synchronized refs to guarantee unmount / timer handlers access the latest state
+  const answersRef = useRef(answers);
+  answersRef.current = answers;
+
+  const currentIndexRef = useRef(currentQuestionIndex);
+  currentIndexRef.current = currentQuestionIndex;
+
+  const questionsRef = useRef<string[]>([]);
+  if (assessment?.questions) {
+    questionsRef.current = assessment.questions.map((q) => q.id);
+  }
+
+  const isPollRef = useRef(false);
+  isPollRef.current = assessment?.settings?.type === "poll";
+
+  const submittedRef = useRef(submitted);
+  submittedRef.current = submitted;
+
+  const hasStartedRef = useRef(hasStarted);
+  hasStartedRef.current = hasStarted;
+
+  // Hydration logic
   useEffect(() => {
     if (hasHydrated.current) return;
     if (!viewData || stateLoading) return;
 
+    const availableQuestions = viewData.questions || [];
+    const validQuestionMap = new Map(availableQuestions.map((q) => [q.id, q]));
+
+    const stateRes = stateData as any;
+    const currentStatus = stateRes?.data?.status ?? "not_started";
+    const isCurrentlyActive = currentStatus === "in_progress";
+
+    // 1. Read cached localStorage answers first
+    let localSavedAnswers: Record<string, string> = {};
+    try {
+      const stored = localStorage.getItem(storageDraftKey);
+      if (stored) {
+        localSavedAnswers = JSON.parse(stored);
+      }
+    } catch {
+      // LocalStorage unavailable
+    }
+
     const prevAttempt = (viewData as any).previous_attempt;
-    if (prevAttempt) {
+
+    // 2. Only hydrate previous attempt if this user is NOT actively taking/retaking
+    if (prevAttempt && !isCurrentlyActive) {
       setSavedScore(prevAttempt.score_percentage);
       setSavedRawScore(prevAttempt.score ?? null);
       setSavedTotalPoints(prevAttempt.total_points ?? null);
@@ -131,14 +174,25 @@ export default function AssessmentContainer({
           (a: any) => a.is_correct,
         ).length;
         setSavedCorrectCount(correct);
+
+        const pastAnswersMap: Record<string, string> = {};
+        prevAttempt.answers.forEach((ans: any) => {
+          const qId = ans.question_id;
+          const cId = ans.choice_id ?? ans.selected_option_id;
+          if (qId && cId) {
+            pastAnswersMap[qId] = String(cId);
+          }
+        });
+
+        if (Object.keys(pastAnswersMap).length > 0) {
+          setAnswers(pastAnswersMap);
+        }
       }
 
       if (prevAttempt.remedial_suggestions) {
         setRemedialSuggestions(prevAttempt.remedial_suggestions);
       }
     }
-
-    const stateRes = stateData as any;
 
     if (stateRes?.success && stateRes.data) {
       const {
@@ -150,25 +204,20 @@ export default function AssessmentContainer({
         voted_question_ids,
       } = stateRes.data;
 
-      let activeQuestions = [...viewData.questions];
+      let activeQuestions = [...availableQuestions];
 
-      if (question_order && question_order.length > 0) {
-        const orderedMap = new Map(
-          viewData.questions.map((q: (typeof viewData.questions)[number]) => [
-            q.id,
-            q,
-          ]),
-        );
+      if (Array.isArray(question_order) && question_order.length > 0) {
         const restoredQuestions = question_order
-          .map((qId: string) => orderedMap.get(qId))
-          .filter(
-            (
-              q: (typeof viewData.questions)[number] | undefined,
-            ): q is (typeof viewData.questions)[0] => Boolean(q),
-          );
+          .map((qId: string) => validQuestionMap.get(qId))
+          .filter(Boolean) as typeof availableQuestions;
 
-        if (restoredQuestions.length > 0) {
-          activeQuestions = restoredQuestions;
+        const existingIdSet = new Set(restoredQuestions.map((q) => q.id));
+        const newQuestions = availableQuestions.filter(
+          (q) => !existingIdSet.has(q.id),
+        );
+        const merged = [...restoredQuestions, ...newQuestions];
+        if (merged.length > 0) {
+          activeQuestions = merged;
         }
       }
 
@@ -192,41 +241,60 @@ export default function AssessmentContainer({
 
       setAssessment({ ...viewData, questions: activeQuestions });
 
-      const restoredMap: Record<string, string> = {};
+      // 3. Reconcile Server drafts + LocalStorage drafts
+      const restoredMap: Record<string, string> = { ...localSavedAnswers };
       if (draft_answers) {
         if (Array.isArray(draft_answers)) {
           draft_answers.forEach((ans: any) => {
-            restoredMap[ans.question_id] = ans.choice_id;
+            if (ans?.question_id && validQuestionMap.has(ans.question_id)) {
+              restoredMap[ans.question_id] = ans.choice_id;
+            }
           });
         } else if (
           typeof draft_answers === "object" &&
           draft_answers !== null
         ) {
-          Object.assign(restoredMap, draft_answers);
+          Object.entries(draft_answers).forEach(([qId, cId]) => {
+            if (validQuestionMap.has(qId)) {
+              restoredMap[qId] = String(cId);
+            }
+          });
         }
       }
 
-      if (Object.keys(restoredMap).length > 0) {
+      if (isCurrentlyActive) {
         setAnswers(restoredMap);
+        setSavedScore(null);
+        setSavedRawScore(null);
+        setSavedTotalPoints(null);
+        setSavedCorrectCount(null);
+        setSubmitted(false);
+        setHasStarted(true);
+      } else if (Object.keys(restoredMap).length > 0) {
+        setAnswers((prev) => ({ ...prev, ...restoredMap }));
       }
 
-      // Restore per-question submitted/locked state from durable votes
-      const votedQuestionIds: string[] = voted_question_ids || [];
-      if (votedQuestionIds.length > 0) {
+      const validVotedIds: string[] = (voted_question_ids || []).filter(
+        (qId: string) => validQuestionMap.has(qId),
+      );
+      if (validVotedIds.length > 0) {
         setSubmittedQuestions((prev) => {
           const next = { ...prev };
-          votedQuestionIds.forEach((qId) => {
+          validVotedIds.forEach((qId) => {
             next[qId] = true;
           });
           return next;
         });
       }
 
-      if (
-        typeof current_index === "number" &&
-        current_index < activeQuestions.length
-      ) {
-        setCurrentQuestionIndex(current_index);
+      if (activeQuestions.length > 0) {
+        const safeIndex =
+          typeof current_index === "number"
+            ? Math.min(Math.max(0, current_index), activeQuestions.length - 1)
+            : 0;
+        setCurrentQuestionIndex(safeIndex);
+      } else {
+        setCurrentQuestionIndex(0);
       }
 
       if (status === "completed") {
@@ -242,6 +310,7 @@ export default function AssessmentContainer({
         }
       } else if (status === "in_progress") {
         setHasStarted(true);
+        setSubmitted(false);
       }
     } else {
       setAssessment(viewData);
@@ -250,7 +319,7 @@ export default function AssessmentContainer({
     hasHydrated.current = true;
     setStartTime(Date.now());
     questionStartRef.current = Date.now();
-  }, [viewData, stateData, stateLoading]);
+  }, [viewData, stateData, stateLoading, storageDraftKey]);
 
   useEffect(() => {
     if (viewError) {
@@ -273,6 +342,7 @@ export default function AssessmentContainer({
     }));
   };
 
+  // Timer Tick
   useEffect(() => {
     if (!hasStarted || submitted || !assessment?.settings) return;
 
@@ -291,7 +361,12 @@ export default function AssessmentContainer({
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasStarted, startTime, submitted, assessment]);
+  }, [
+    hasStarted,
+    startTime,
+    submitted,
+    assessment?.settings?.timeLimitMinutes,
+  ]);
 
   const draftSaveMutation = useMutation({
     mutationFn: (vars: {
@@ -315,21 +390,16 @@ export default function AssessmentContainer({
     onError: (err) => console.error("Poll vote failed:", err),
   });
 
-  const pendingDraftRef = useRef<{
-    updatedAnswers: Record<string, string>;
-    targetIndex: number;
-  } | null>(null);
-  const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const sendDraft = useCallback(
-    (updatedAnswers: Record<string, string>, targetIndex: number) => {
-      if (!assessment) return;
+    (currentAnswers: Record<string, string>, targetIndex: number) => {
+      if (isPollRef.current || submittedRef.current || !hasStartedRef.current)
+        return;
 
       const formattedAnswers: AnswerPayload[] = Object.entries(
-        updatedAnswers,
+        currentAnswers,
       ).map(([qId, cId]) => ({ question_id: qId, choice_id: cId }));
 
-      const questionOrder = assessment.questions.map((q) => q.id);
+      const questionOrder = questionsRef.current;
 
       queryClient.setQueryData(stateQueryKey, (old: any) => {
         if (!old?.data) return old;
@@ -337,7 +407,7 @@ export default function AssessmentContainer({
           ...old,
           data: {
             ...old.data,
-            draft_answers: updatedAnswers,
+            draft_answers: currentAnswers,
             current_index: targetIndex,
             status: "in_progress",
           },
@@ -351,47 +421,32 @@ export default function AssessmentContainer({
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [assessment, assessmentId, itemId, queryClient],
+    [assessmentId, itemId, queryClient],
   );
 
-  const triggerDraftSave = useCallback(
-    (updatedAnswers: Record<string, string>, targetIndex: number) => {
-      pendingDraftRef.current = { updatedAnswers, targetIndex };
+  // Periodic autosave to Redis every 25 seconds
+  useEffect(() => {
+    if (!hasStarted || submitted || isPollRef.current) return;
 
-      if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
-      draftTimerRef.current = setTimeout(() => {
-        if (pendingDraftRef.current) {
-          sendDraft(
-            pendingDraftRef.current.updatedAnswers,
-            pendingDraftRef.current.targetIndex,
-          );
-          pendingDraftRef.current = null;
-        }
-      }, DRAFT_SAVE_DEBOUNCE_MS);
-    },
-    [sendDraft],
-  );
+    const timer = setInterval(() => {
+      sendDraft(answersRef.current, currentIndexRef.current);
+    }, AUTOSAVE_INTERVAL_MS);
 
-  const flushDraftSave = useCallback(() => {
-    if (draftTimerRef.current) {
-      clearTimeout(draftTimerRef.current);
-      draftTimerRef.current = null;
-    }
-    if (pendingDraftRef.current) {
-      sendDraft(
-        pendingDraftRef.current.updatedAnswers,
-        pendingDraftRef.current.targetIndex,
-      );
-      pendingDraftRef.current = null;
-    }
-  }, [sendDraft]);
+    return () => clearInterval(timer);
+  }, [hasStarted, submitted, sendDraft]);
 
+  // Flush to server when component unmounts (user navigates to another page)
   useEffect(() => {
     return () => {
-      flushDraftSave();
+      if (
+        hasStartedRef.current &&
+        !submittedRef.current &&
+        !isPollRef.current
+      ) {
+        sendDraft(answersRef.current, currentIndexRef.current);
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [sendDraft]);
 
   const isLoading = viewLoading || (Boolean(itemId) && stateLoading);
 
@@ -408,7 +463,12 @@ export default function AssessmentContainer({
     );
   }
 
-  if (error || !assessment) {
+  if (
+    error ||
+    !assessment ||
+    !assessment.questions ||
+    assessment.questions.length === 0
+  ) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white p-6">
         <div className="w-full max-w-md rounded-3xl border border-zinc-200/80 bg-white p-8 text-center shadow-xl shadow-zinc-200/50">
@@ -419,7 +479,10 @@ export default function AssessmentContainer({
             Assessment Unavailable
           </h2>
           <p className="text-xs leading-relaxed text-zinc-500">
-            {error || "Could not retrieve assessment information."}
+            {error ||
+              (!assessment?.questions?.length
+                ? "This assessment currently has no available questions."
+                : "Could not retrieve assessment information.")}
           </p>
         </div>
       </div>
@@ -430,12 +493,19 @@ export default function AssessmentContainer({
   const isPoll = settings.type === "poll";
 
   const totalQuestions = questions.length;
-  const currentQuestion = questions[currentQuestionIndex];
-  const isFirstQuestion = currentQuestionIndex === 0;
-  const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
-  const isCurrentAnswered = Boolean(answers[currentQuestion?.id]);
+  const safeQuestionIndex = Math.min(
+    Math.max(0, currentQuestionIndex),
+    Math.max(0, totalQuestions - 1),
+  );
+  const currentQuestion = questions[safeQuestionIndex];
+
+  const isFirstQuestion = safeQuestionIndex === 0;
+  const isLastQuestion = safeQuestionIndex === totalQuestions - 1;
+  const isCurrentAnswered = Boolean(
+    currentQuestion && answers[currentQuestion.id],
+  );
   const isCurrentQuestionSubmitted = Boolean(
-    submittedQuestions[currentQuestion?.id],
+    currentQuestion && submittedQuestions[currentQuestion.id],
   );
 
   const gradedQuestions = questions.filter((q: any) => !q.isPoll);
@@ -452,18 +522,24 @@ export default function AssessmentContainer({
     savedCorrectCount !== null ? savedCorrectCount : localCorrectCount;
   const isPassed = displayScore >= settings.passingScore;
 
+  // Fast local selection: Updates React state and LocalStorage immediately
   const handleSelectChoice = (questionId: string, choiceId: string) => {
     if (submitted || submittedQuestions[questionId]) return;
 
-    const updatedAnswers = { ...answers, [questionId]: choiceId };
-    setAnswers(updatedAnswers);
+    const nextAnswers = { ...answers, [questionId]: choiceId };
+    setAnswers(nextAnswers);
+
+    // Write to LocalStorage instantly so navigating away never drops this answer
+    try {
+      localStorage.setItem(storageDraftKey, JSON.stringify(nextAnswers));
+    } catch {
+      // Storage unavailable
+    }
 
     setAnsweredAtMap((prev) => ({
       ...prev,
       [questionId]: prev[questionId] || new Date().toISOString(),
     }));
-
-    triggerDraftSave(updatedAnswers, currentQuestionIndex);
   };
 
   const handleSubmitSinglePollVote = async () => {
@@ -472,7 +548,6 @@ export default function AssessmentContainer({
     const qId = currentQuestion.id;
     const choiceId = answers[qId];
 
-    // Optimistic UI update
     setSubmittedQuestions((prev) => ({ ...prev, [qId]: true }));
 
     try {
@@ -506,7 +581,6 @@ export default function AssessmentContainer({
             questions: prev.questions.map((q) => ({
               ...q,
               choices: q.choices.map((choice: Choice) => {
-                // Tell TypeScript that poll_distributions is a record mapping choice IDs to vote stats
                 const pollDistributions = result.poll_distributions as
                   | Record<string, { votes: number; percentage: number }>
                   | undefined;
@@ -534,20 +608,14 @@ export default function AssessmentContainer({
   const handleNextQuestion = () => {
     if (!isLastQuestion) {
       recordCurrentQuestionTime();
-      const nextIndex = currentQuestionIndex + 1;
-      setCurrentQuestionIndex(nextIndex);
-      triggerDraftSave(answers, nextIndex);
-      flushDraftSave();
+      setCurrentQuestionIndex((prev) => prev + 1);
     }
   };
 
   const handlePreviousQuestion = () => {
     if (!isFirstQuestion) {
       recordCurrentQuestionTime();
-      const prevIndex = currentQuestionIndex - 1;
-      setCurrentQuestionIndex(prevIndex);
-      triggerDraftSave(answers, prevIndex);
-      flushDraftSave();
+      setCurrentQuestionIndex((prev) => prev - 1);
     }
   };
 
@@ -557,28 +625,25 @@ export default function AssessmentContainer({
 
     try {
       setIsSubmitting(true);
-      if (draftTimerRef.current) {
-        clearTimeout(draftTimerRef.current);
-        draftTimerRef.current = null;
-      }
-      pendingDraftRef.current = null;
-
       recordCurrentQuestionTime();
 
       const finalTimes = { ...questionTimes };
-      const currentQ = questions[currentQuestionIndex];
+      const currentQ = questions[safeQuestionIndex];
       if (currentQ) {
         finalTimes[currentQ.id] =
           (finalTimes[currentQ.id] || 0) +
           Math.round((Date.now() - questionStartRef.current) / 1000);
       }
 
-      const formattedAnswers = Object.entries(answers).map(([qId, cId]) => ({
-        question_id: qId,
-        choice_id: cId,
-        time_spent_seconds: finalTimes[qId] || 0,
-        answered_at: answeredAtMap[qId] || new Date().toISOString(),
-      }));
+      const validQuestionsMap = new Map(questions.map((q) => [q.id, true]));
+      const formattedAnswers = Object.entries(answers)
+        .filter(([qId]) => validQuestionsMap.has(qId))
+        .map(([qId, cId]) => ({
+          question_id: qId,
+          choice_id: cId,
+          time_spent_seconds: finalTimes[qId] || 0,
+          answered_at: answeredAtMap[qId] || new Date().toISOString(),
+        }));
 
       const result = await submitAssessment({
         assessmentId,
@@ -620,38 +685,12 @@ export default function AssessmentContainer({
         }
 
         setRemedialSuggestions(finalRemedialSuggestions);
-
-        if (result.poll_distributions && assessment) {
-          const distributions = result.poll_distributions;
-
-          setAssessment((prev) => {
-            if (!prev) return null;
-            return {
-              ...prev,
-              questions: prev.questions.map((q) => ({
-                ...q,
-                choices: q.choices.map((choice) => {
-                  const c = choice as any;
-                  const dist = distributions[c.id];
-                  if (typeof dist === "object" && dist !== null) {
-                    return {
-                      ...c,
-                      votes: dist.votes ?? c.votes ?? 0,
-                      percentage: dist.percentage ?? c.percentage ?? 0,
-                    };
-                  }
-                  return {
-                    ...c,
-                    votes: typeof dist === "number" ? dist : (c.votes ?? 0),
-                    percentage: c.percentage ?? 0,
-                  };
-                }),
-              })),
-            };
-          });
-        }
-
         setSubmitted(true);
+
+        // Clear local draft cache on submission
+        try {
+          localStorage.removeItem(storageDraftKey);
+        } catch {}
 
         queryClient.setQueryData(viewQueryKey, (old: any) => {
           if (!old) return old;
@@ -680,7 +719,7 @@ export default function AssessmentContainer({
             data: {
               ...old.data,
               draft_answers: answers,
-              current_index: currentQuestionIndex,
+              current_index: safeQuestionIndex,
               status: "completed",
             },
           };
@@ -718,6 +757,11 @@ export default function AssessmentContainer({
       alert(res.error || "Failed to retake assessment.");
       return;
     }
+
+    // Clear local storage draft
+    try {
+      localStorage.removeItem(storageDraftKey);
+    } catch {}
 
     if (settings.maxAttempts != null) {
       setAssessment((prev) =>
@@ -770,8 +814,10 @@ export default function AssessmentContainer({
 
     queryClient.setQueryData(viewQueryKey, (old: any) => {
       if (!old) return old;
-      const { previous_attempt, ...rest } = old;
-      return rest;
+      const copy = { ...old };
+      delete copy.previous_attempt;
+      copy.user_has_completed = false;
+      return copy;
     });
 
     queryClient.invalidateQueries({
@@ -801,7 +847,7 @@ export default function AssessmentContainer({
 
   const currentProgressPercent =
     totalQuestions > 0
-      ? Math.round(((currentQuestionIndex + 1) / totalQuestions) * 100)
+      ? Math.round(((safeQuestionIndex + 1) / totalQuestions) * 100)
       : 0;
 
   return (
@@ -833,7 +879,7 @@ export default function AssessmentContainer({
           <div className="mx-auto mt-3 max-w-3xl space-y-1.5">
             <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-400">
               <span>
-                Question {currentQuestionIndex + 1} of {totalQuestions}
+                Question {safeQuestionIndex + 1} of {totalQuestions}
               </span>
               <span>{currentProgressPercent}%</span>
             </div>
@@ -855,8 +901,6 @@ export default function AssessmentContainer({
               setStartTime(Date.now());
               questionStartRef.current = Date.now();
               setHasStarted(true);
-              triggerDraftSave(answers, 0);
-              flushDraftSave();
             }}
           />
         ) : submitted ? (
@@ -895,12 +939,18 @@ export default function AssessmentContainer({
               onSelectChoice={handleSelectChoice}
             />
           </div>
+        ) : !currentQuestion ? (
+          <div className="py-12 text-center text-xs text-zinc-500">
+            Question not found or removed.
+          </div>
         ) : (
           <div className="space-y-6">
             <QuestionCard
               question={currentQuestion}
-              index={currentQuestionIndex}
-              selectedChoiceId={answers[currentQuestion.id]}
+              index={safeQuestionIndex}
+              selectedChoiceId={
+                currentQuestion ? answers[currentQuestion.id] : undefined
+              }
               submitted={submitted}
               isQuestionSubmitted={isCurrentQuestionSubmitted}
               settings={settings}

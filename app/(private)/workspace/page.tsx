@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/app/components/context/ToastContext";
 import {
   PlayCircle,
   ArrowRight,
@@ -29,6 +30,7 @@ export default function WorkspacePage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const userEmail = session?.user?.email;
 
@@ -43,8 +45,8 @@ export default function WorkspacePage() {
         return res.data;
       },
       enabled: status === "authenticated",
-      staleTime: 1000 * 60 * 2, // <-- Change from 0 to 2 minutes
-      refetchOnWindowFocus: false, // <-- Prevents refetching just by clicking back onto the tab
+      staleTime: 1000 * 60 * 2,
+      refetchOnWindowFocus: false,
     });
 
   // 2. Fetch Joined Organizations Query
@@ -65,20 +67,25 @@ export default function WorkspacePage() {
     staleTime: 1000 * 60 * 2,
   });
 
-  // 3. Mutation for Leaving Organization
+  // 3. Mutation for Leaving Organization with Toast Notifications
   const leaveOrgMutation = useMutation({
-    mutationFn: (orgId: string) => leaveOrganization(orgId),
-    onSuccess: (res) => {
+    mutationFn: ({ orgId }: { orgId: string; orgName: string }) =>
+      leaveOrganization(orgId),
+    onSuccess: (res, variables) => {
       if (res.success) {
+        showToast(`Success! You have successfully left the organization "${variables.orgName}"`, "success");
         queryClient.invalidateQueries({
           queryKey: ["joinedOrganizations", userEmail],
         });
       } else {
-        alert(res.error || "Could not leave organization. Please try again.");
+        showToast(
+          res.error || "Could not leave organization. Please try again.",
+          "error",
+        );
       }
     },
     onError: () => {
-      alert("An unexpected error occurred. Please try again.");
+      showToast("An unexpected error occurred. Please try again.", "error");
     },
   });
 
@@ -100,7 +107,7 @@ export default function WorkspacePage() {
   const joinedOrganizations = joinedOrgsResponse ?? [];
   const hasOrganizations = joinedOrganizations.length > 0;
 
-  // 🎯 Dynamic Extraction of Modules (handles recently_viewed_modules or active_module)
+  // Dynamic Extraction of Modules
   const rawModules =
     profile?.recently_viewed_modules &&
     profile.recently_viewed_modules.length > 0
@@ -117,10 +124,9 @@ export default function WorkspacePage() {
     href: `/learn/${m.id}`,
   }));
 
+  // Browser confirm dialog removed
   const handleLeaveOrganization = (orgId: string, orgName: string) => {
-    if (confirm(`Are you sure you want to leave ${orgName}?`)) {
-      leaveOrgMutation.mutate(orgId);
-    }
+    leaveOrgMutation.mutate({ orgId, orgName });
   };
 
   return (
@@ -387,7 +393,6 @@ function RecentlyViewedSection({
 }: RecentlyViewedSectionProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // 🎯 Reset carousel index to 0 whenever module list updates (so the most recently visited module appears at the front)
   useEffect(() => {
     setCurrentIndex(0);
   }, [modules]);
@@ -415,7 +420,6 @@ function RecentlyViewedSection({
 
   return (
     <div className="rounded-2xl border border-purple-200/50 bg-white/90 p-8 relative overflow-hidden flex flex-col justify-between min-h-[280px] shadow-xs">
-      {/* Slide Counter / Header Row */}
       {modules.length > 1 && (
         <div className="flex items-center justify-between border-b border-[#8b5cf6] pb-3 mb-4">
           <span className="text-[10px] font-bold tracking-wider text-[#8b5cf6] uppercase">
@@ -441,7 +445,6 @@ function RecentlyViewedSection({
         </div>
       )}
 
-      {/* Module Card Main Content */}
       <div className="space-y-4 w-full">
         <h3 className="text-2xl font-semibold tracking-tight text-zinc-900 leading-tight">
           {currentModule.title}
@@ -467,7 +470,6 @@ function RecentlyViewedSection({
         </p>
       </div>
 
-      {/* Footer Navigation & Indicator */}
       <div className="pt-6 mt-auto flex items-center justify-between">
         <button
           onClick={() => onNavigate(currentModule.href)}

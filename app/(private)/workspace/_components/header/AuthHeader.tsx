@@ -13,6 +13,8 @@ import {
   LogOut,
   Settings,
   User2Icon,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 
 import Notification from "../Notification";
@@ -22,8 +24,8 @@ import SearchBar from "./SearchBar";
 import LogoutConfirmationDialog from "./LogoutConfirmation";
 import { useQuery } from "@tanstack/react-query";
 import { getUserProfile } from "../../service";
+import { apiFetch } from "@/app/lib/api-client";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
 const SEARCH_DEBOUNCE_MS = 250;
 
 const AUTH_NAVS = [
@@ -57,8 +59,9 @@ function resolveAvatarSrc(avatar?: string | null): string | null {
     return trimmed;
   }
 
+  const apiBase = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
   const storagePath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-  return API_BASE_URL ? `${API_BASE_URL}${storagePath}` : storagePath;
+  return apiBase ? `${apiBase}${storagePath}` : storagePath;
 }
 
 function getInitials(name?: string | null): string {
@@ -75,8 +78,10 @@ export default function AuthHeader() {
   const { data: session } = useSession();
 
   const headerRef = useRef<HTMLElement>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const activeAbortControllerRef = useRef<AbortController | null>(null);
 
-  // Overlay visibility — only one should be open at a time
+  // Overlay states
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -85,14 +90,15 @@ export default function AuthHeader() {
 
   const [avatarFallbackIndex, setAvatarFallbackIndex] = useState(0);
 
-  // Search
+  // Search states
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const userEmail = session?.user?.email;
 
-  // 🎯 Shared React Query profile fetch (deduplicates requests with WorkspacePage)
   const { data: profileResponse } = useQuery({
     queryKey: ["userProfile", userEmail],
     queryFn: async () => {
@@ -160,42 +166,84 @@ export default function AuthHeader() {
   const activeAvatarSource =
     currentUser.avatarSources[avatarFallbackIndex] ?? null;
 
-  // Debounced global search
-  useEffect(() => {
-    if (searchQuery.trim().length === 0) {
+  // Search fetch runner
+  const executeSearch = async (queryToRun: string) => {
+    const cleanQuery = queryToRun.trim();
+
+    if (!cleanQuery) {
+      setSearchResults([]);
+      setIsSearchOpen(false);
+      setIsSearching(false);
+      setHasSearched(false);
       return;
     }
 
-    const timeoutId = setTimeout(async () => {
-      if (!API_BASE_URL || !session?.laravelJwt) return;
+    if (activeAbortControllerRef.current) {
+      activeAbortControllerRef.current.abort();
+    }
 
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/global-search?q=${encodeURIComponent(searchQuery)}`,
-          {
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${session.laravelJwt}`,
-            },
-          },
-        );
+    const controller = new AbortController();
+    activeAbortControllerRef.current = controller;
 
-        if (!response.ok) return;
+    setIsSearching(true);
+    setIsSearchOpen(true);
 
-        const payload = await response.json();
-        const results = Array.isArray(payload) ? payload : payload?.data;
+    try {
+      const res = await apiFetch(
+        `/api/global-search?q=${encodeURIComponent(cleanQuery)}&portal=student`,
+        { signal: controller.signal },
+      );
 
-        setSearchResults(Array.isArray(results) ? results : []);
-        setIsSearchOpen(true);
-      } catch (error) {
-        console.error("Global search fetch failed:", error);
+      if (!res || !res.ok) {
+        setSearchResults([]);
+        return;
       }
+
+      const payload = await res.json();
+      const results = Array.isArray(payload) ? payload : payload?.data;
+
+      setSearchResults(Array.isArray(results) ? results : []);
+    } catch (error: unknown) {
+      if ((error as Error)?.name !== "AbortError") {
+        console.error("Global search fetch failed:", error);
+        setSearchResults([]);
+      }
+    } finally {
+      setIsSearching(false);
+      setHasSearched(true);
+    }
+  };
+
+  // Search input change handler
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+
+    if (!value.trim()) {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      if (activeAbortControllerRef.current)
+        activeAbortControllerRef.current.abort();
+      setSearchResults([]);
+      setIsSearchOpen(false);
+      setIsSearching(false);
+      setHasSearched(false);
+      return;
+    }
+
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+
+    debounceTimerRef.current = setTimeout(() => {
+      executeSearch(value);
     }, SEARCH_DEBOUNCE_MS);
+  };
 
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, session]);
+  // Form submit handler (triggers immediate execution when pressing Enter)
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    executeSearch(searchQuery);
+  };
 
-  // Close all overlays on outside click
+  // Outside click listener
   useEffect(() => {
     const handleClickOutside = (e: PointerEvent) => {
       if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
@@ -216,7 +264,10 @@ export default function AuthHeader() {
         setShowProfileDropdown(false);
       } else {
         setSearchQuery("");
+        setSearchResults([]);
         setIsSearchOpen(false);
+        setIsSearching(false);
+        setHasSearched(false);
       }
       return next;
     });
@@ -253,6 +304,10 @@ export default function AuthHeader() {
   const handleResultClick = (url: string) => {
     closeAllOverlays();
     setSearchQuery("");
+    setSearchResults([]);
+    setIsSearchOpen(false);
+    setIsSearching(false);
+    setHasSearched(false);
     router.push(url);
   };
 
@@ -286,27 +341,67 @@ export default function AuthHeader() {
     );
 
   const renderSearchDropdown = () => {
-    if (!isSearchOpen || searchResults.length === 0) return null;
+    if (!isSearchOpen) return null;
 
     return (
-      <div className="absolute top-full left-0 mt-2 w-full max-w-[400px] rounded-2xl border border-zinc-100 bg-white p-2 shadow-2xl z-50 max-h-[350px] overflow-y-auto">
-        {searchResults.map((item, index) => (
-          <button
-            key={`${item.url}-${index}`}
-            type="button"
-            onClick={() => handleResultClick(item.url)}
-            className="flex w-full flex-col gap-0.5 rounded-xl px-4 py-2 text-left text-sm hover:bg-zinc-50 transition-all group"
-          >
-            <span className="font-semibold text-zinc-800 group-hover:text-primary transition-colors">
-              {item.title}
-            </span>
-            {item.description && (
-              <p className="text-xs text-zinc-400 truncate w-full">
-                {item.description}
-              </p>
-            )}
-          </button>
-        ))}
+      <div className="absolute top-full left-0 mt-2 w-full max-w-[420px] rounded-2xl border border-zinc-100 bg-white p-2 shadow-2xl z-50 max-h-[350px] overflow-y-auto">
+        {/* Loading Skeleton / Spinner State */}
+        {isSearching && (
+          <div className="flex flex-col gap-2 p-2">
+            <div className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-500">
+              <Loader2 className="h-4 w-4 animate-spin text-[#8b5cf6]" />
+              <span>Searching titles and courses...</span>
+            </div>
+            <div className="space-y-2 px-1">
+              <div className="h-9 w-full rounded-xl bg-zinc-100 animate-pulse" />
+              <div className="h-9 w-4/5 rounded-xl bg-zinc-100 animate-pulse" />
+            </div>
+          </div>
+        )}
+
+        {/* Results Found */}
+        {!isSearching && searchResults.length > 0 && (
+          <div className="flex flex-col gap-0.5">
+            {searchResults.map((item, index) => (
+              <button
+                key={`${item.url}-${index}`}
+                type="button"
+                onClick={() => handleResultClick(item.url)}
+                className="flex w-full flex-col gap-0.5 rounded-xl px-4 py-2.5 text-left text-sm hover:bg-zinc-50 transition-all group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-zinc-800 group-hover:text-[#8b5cf6] transition-colors">
+                    {item.title}
+                  </span>
+                  <span className="text-[10px] bg-zinc-100 group-hover:bg-[#8b5cf6]/10 group-hover:text-[#8b5cf6] text-zinc-500 rounded-md px-1.5 py-0.5 font-medium transition-colors">
+                    {item.type}
+                  </span>
+                </div>
+                {item.description && (
+                  <p className="text-xs text-zinc-400 truncate w-full">
+                    {item.description}
+                  </p>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isSearching && hasSearched && searchResults.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-6 px-4 text-center">
+            <div className="p-2.5 rounded-full bg-zinc-50 mb-2">
+              <AlertCircle className="h-5 w-5 text-zinc-400" />
+            </div>
+            <p className="text-sm font-semibold text-zinc-700">
+              No results found
+            </p>
+            <p className="text-xs text-zinc-400 mt-1 max-w-[240px]">
+              We couldn&apos;t find anything matching &ldquo;
+              {searchQuery.trim()}&rdquo;
+            </p>
+          </div>
+        )}
       </div>
     );
   };
@@ -331,12 +426,14 @@ export default function AuthHeader() {
         <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
           {/* Desktop search */}
           <div className="hidden sm:block sm:flex-1 sm:max-w-md relative">
-            <SearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
-              id="desktop-search-input"
-            />
-            {renderSearchDropdown()}
+            <form onSubmit={handleSearchSubmit} className="relative w-full">
+              <SearchBar
+                value={searchQuery}
+                onChange={handleSearchChange}
+                id="desktop-search-input"
+              />
+              {renderSearchDropdown()}
+            </form>
           </div>
 
           {/* Mobile search toggle */}
@@ -371,7 +468,6 @@ export default function AuthHeader() {
                 className="relative rounded-full p-2 text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
               >
                 <Bell className="h-5 w-5" strokeWidth={1.8} />
-                {/* <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#a78bfa]" /> */}
               </button>
 
               <Notification
@@ -456,12 +552,14 @@ export default function AuthHeader() {
       >
         <div className="border-t border-zinc-100 pt-3 flex justify-center">
           <div className="relative w-full max-w-md">
-            <SearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
-              id="mobile-search-input"
-            />
-            {renderSearchDropdown()}
+            <form onSubmit={handleSearchSubmit} className="relative w-full">
+              <SearchBar
+                value={searchQuery}
+                onChange={handleSearchChange}
+                id="mobile-search-input"
+              />
+              {renderSearchDropdown()}
+            </form>
           </div>
         </div>
       </div>

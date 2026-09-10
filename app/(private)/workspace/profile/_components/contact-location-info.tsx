@@ -26,6 +26,16 @@ import {
 const COUNTRIES = ["Philippines"];
 const DIAL_CODES = ["+63"];
 
+const formatPhoneNumber = (value: string): string => {
+  let digits = value.replace(/\D/g, "");
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  digits = digits.slice(0, 10);
+
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+};
+
 interface ContactLocationInfoProps {
   initialData?: ProfileData;
   onSuccess?: () => void;
@@ -215,7 +225,8 @@ export default function ContactLocationInfo({
 
       // 5. PHONE NUMBER CLEANING
       const rawPhone = initialData.phone || "";
-      const cleanedPhone = rawPhone.replace(/^\+63\s?/, "");
+      const cleanedPhone = rawPhone.replace(/^\+63\s?/, "").replace(/\D/g, "");
+      const formattedPhone = formatPhoneNumber(cleanedPhone);
 
       // SET STATE & SEARCH QUERIES
       setFormData({
@@ -229,9 +240,9 @@ export default function ContactLocationInfo({
         barangayCode: brgyCode,
         barangayName: brgyName,
         address: initialData.address_line || "",
-        postalCode: initialData.postal_code || "",
+        postalCode: (initialData.postal_code || "").replace(/\D/g, "").slice(0, 4),
         phoneDialCode: "+63",
-        phoneNumber: cleanedPhone,
+        phoneNumber: formattedPhone,
       });
 
       setRegionQuery(regName);
@@ -243,7 +254,18 @@ export default function ContactLocationInfo({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    // Strip non-digits in real time for postal code
+    if (name === "postalCode") {
+      const sanitized = value.replace(/\D/g, "").slice(0, 4);
+      setFormData((prev) => ({ ...prev, postalCode: sanitized }));
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Real-time formatting into XXX-XXX-XXXX
+  const handlePhoneChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, phoneNumber: formatPhoneNumber(value) }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -259,10 +281,27 @@ export default function ContactLocationInfo({
       return showToast("Please select a Barangay.", "warning");
     if (!formData.address.trim())
       return showToast("Please enter your Address Line.", "warning");
-    if (!formData.postalCode.trim())
+
+    // ─── POSTAL CODE VALIDATION ───
+    const trimmedPostal = formData.postalCode.trim();
+    if (!trimmedPostal) {
       return showToast("Please enter your Postal Code.", "warning");
-    if (!formData.phoneNumber.trim())
+    }
+    if (!/^\d{4}$/.test(trimmedPostal)) {
+      return showToast("Postal Code must be exactly 4 numeric digits.", "warning");
+    }
+
+    // ─── PHONE NUMBER VALIDATION ───
+    const rawDigits = formData.phoneNumber.replace(/\D/g, "");
+    if (!rawDigits) {
       return showToast("Please enter your Phone Number.", "warning");
+    }
+    if (!/^9\d{9}$/.test(rawDigits)) {
+      return showToast(
+        "Mobile Number must be 10 digits starting with 9 (e.g., 912-345-6789).",
+        "warning"
+      );
+    }
 
     setIsSaving(true);
 
@@ -286,9 +325,10 @@ export default function ContactLocationInfo({
         barangay_name: formData.barangayName,
         barangay_code: formData.barangayCode,
         barangayCode: formData.barangayCode,
-        address_line: formData.address,
-        postal_code: formData.postalCode,
-        phone: `${formData.phoneDialCode} ${formData.phoneNumber.trim()}`,
+        address_line: formData.address.trim(),
+        postal_code: trimmedPostal,
+        // Sends single prefix standard format: "+639XXXXXXXXX"
+        phone: `${formData.phoneDialCode}${rawDigits}`,
       };
 
       const response = await apiFetch("/api/user/profile/update", {
@@ -484,6 +524,7 @@ export default function ContactLocationInfo({
           </label>
           <input
             type="text"
+            inputMode="numeric"
             name="postalCode"
             value={formData.postalCode}
             onChange={handleChange}
@@ -500,9 +541,7 @@ export default function ContactLocationInfo({
             setFormData((prev) => ({ ...prev, phoneDialCode: code }))
           }
           phoneNumber={formData.phoneNumber}
-          onPhoneNumberChange={(value) =>
-            setFormData((prev) => ({ ...prev, phoneNumber: value }))
-          }
+          onPhoneNumberChange={handlePhoneChange}
           isProfileUpdate={true}
         />
       </div>
@@ -512,7 +551,7 @@ export default function ContactLocationInfo({
         <button
           type="submit"
           disabled={isSaving}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-70 active:scale-[0.98]"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-70 active:scale-[0.98] cursor-pointer"
         >
           {isSaving ? (
             <>
