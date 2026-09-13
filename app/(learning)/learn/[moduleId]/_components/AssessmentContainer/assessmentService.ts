@@ -1,4 +1,4 @@
-import { getSession } from "next-auth/react";
+import { apiFetch } from "@/app/lib/api-client";
 import {
   AssessmentViewData,
   Question,
@@ -6,10 +6,6 @@ import {
   AssessmentMode,
   AssessmentSettings,
 } from "./types";
-
-// Safe API Base URL resolution (prevents double '/api/api' path issues)
-const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const API_BASE_URL = `${rawBaseUrl.replace(/\/$/, "")}/api`;
 
 export type AnswerPayload = {
   question_id: string;
@@ -49,25 +45,6 @@ export type ServiceResponse<T> = {
   poll_distributions?: Record<string, PollDistributionItem | number>;
 };
 
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
-
-  try {
-    const session = await getSession();
-    const token = (session as any)?.laravelJwt;
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-  } catch (error) {
-    console.error("[AssessmentViewService] Auth error:", error);
-  }
-
-  return headers;
-}
-
 function shuffleArray<T>(arr: T[]): T[] {
   const shuffled = [...arr];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -78,7 +55,6 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 function normalizeAssessmentData(payload: any, id: string): AssessmentViewData {
-  // Unpack data wrapper if present
   const data = payload?.data ?? payload;
   const settingsObj = data.settings || {};
   const mode: AssessmentMode =
@@ -144,8 +120,8 @@ function normalizeAssessmentData(payload: any, id: string): AssessmentViewData {
       text: o.optionText || o.option_text || o.text || "",
       isCorrect: Boolean(o.isCorrect ?? o.is_correct),
       explanation: o.explanation || "",
-      votes: o.votes ?? 0, // 🔑 Map true vote count from backend DB
-      percentage: o.percentage ?? 0, // 🔑 Map true percentage from backend DB
+      votes: o.votes ?? 0,
+      percentage: o.percentage ?? 0,
     }));
 
     if (shuffleOptions) {
@@ -207,15 +183,13 @@ export async function getAssessmentViewData(
     }
   }
 
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_BASE_URL}/assessments/${id}`, {
+  const res = await apiFetch(`/api/assessments/${id}`, {
     method: "GET",
-    headers,
   });
 
-  if (!res.ok) {
+  if (!res || !res.ok) {
     throw new Error(
-      `Assessment #${id} not found or inaccessible (HTTP ${res.status}).`,
+      `Assessment #${id} not found or inaccessible (HTTP ${res?.status ?? "unknown"}).`,
     );
   }
 
@@ -230,17 +204,18 @@ export async function getAssessmentState(
   assessmentId: string,
   sectionItemId: string,
 ): Promise<ServiceResponse<AssessmentStateData>> {
-  const headers = await getAuthHeaders();
-
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/assessments/${assessmentId}/state?section_item_id=${sectionItemId}`,
+    const res = await apiFetch(
+      `/api/assessments/${assessmentId}/state?section_item_id=${sectionItemId}`,
       {
         method: "GET",
-        headers,
         cache: "no-store",
       },
     );
+
+    if (!res || !res.ok) {
+      return { success: false, error: "Failed to fetch assessment state." };
+    }
 
     const json = await res.json();
     return json;
@@ -263,22 +238,20 @@ export async function saveAssessmentDraft(
   questionOrder: string[] = [],
   currentIndex: number = 0,
 ): Promise<ServiceResponse<void>> {
-  const headers = await getAuthHeaders();
-
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/assessments/${assessmentId}/save-draft`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          section_item_id: sectionItemId,
-          answers,
-          question_order: questionOrder,
-          current_index: currentIndex,
-        }),
-      },
-    );
+    const res = await apiFetch(`/api/assessments/${assessmentId}/save-draft`, {
+      method: "POST",
+      body: JSON.stringify({
+        section_item_id: sectionItemId,
+        answers,
+        question_order: questionOrder,
+        current_index: currentIndex,
+      }),
+    });
+
+    if (!res || !res.ok) {
+      return { success: false, error: "Failed to save draft." };
+    }
 
     const json = await res.json();
     return json;
@@ -300,14 +273,11 @@ export async function submitAssessment(payload: {
 }): Promise<
   ServiceResponse<SubmissionResultData & { remedial_suggestions?: any[] }>
 > {
-  const headers = await getAuthHeaders();
-
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/assessments/${payload.assessmentId}/submit`,
+    const res = await apiFetch(
+      `/api/assessments/${payload.assessmentId}/submit`,
       {
         method: "POST",
-        headers,
         body: JSON.stringify({
           module_id: payload.moduleId,
           section_id: payload.sectionId,
@@ -317,9 +287,12 @@ export async function submitAssessment(payload: {
       },
     );
 
+    if (!res || !res.ok) {
+      return { success: false, error: "Failed to submit assessment." };
+    }
+
     const json = await res.json();
 
-    // 🔑 FIX: Ensure Laravel's returned root 'data' or top-level properties are accessible
     return {
       success: json.success ?? res.ok,
       data: json.data ?? json,
@@ -345,21 +318,19 @@ export async function submitPollVote(
     poll_distributions: Record<string, { votes: number; percentage: number }>;
   }>
 > {
-  const headers = await getAuthHeaders();
-
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/assessments/${assessmentId}/poll-vote`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          section_item_id: itemId,
-          question_id: questionId,
-          choice_id: choiceId,
-        }),
-      },
-    );
+    const res = await apiFetch(`/api/assessments/${assessmentId}/poll-vote`, {
+      method: "POST",
+      body: JSON.stringify({
+        section_item_id: itemId,
+        question_id: questionId,
+        choice_id: choiceId,
+      }),
+    });
+
+    if (!res || !res.ok) {
+      return { success: false, error: "Failed to submit poll vote." };
+    }
 
     const json = await res.json();
     return {
@@ -381,17 +352,15 @@ export async function retakeAssessment(
   assessmentId: string,
   sectionItemId: string,
 ): Promise<ServiceResponse<void>> {
-  const headers = await getAuthHeaders();
-
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/assessments/${assessmentId}/retake`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ section_item_id: sectionItemId }),
-      },
-    );
+    const res = await apiFetch(`/api/assessments/${assessmentId}/retake`, {
+      method: "POST",
+      body: JSON.stringify({ section_item_id: sectionItemId }),
+    });
+
+    if (!res || !res.ok) {
+      return { success: false, error: "Failed to reset assessment." };
+    }
 
     const json = await res.json();
     return json;
