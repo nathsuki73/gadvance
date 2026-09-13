@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, useCallback } from "react";
+import { use, useState, useCallback, useMemo } from "react";
 import { useRouter, notFound, useSearchParams } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,13 +8,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import ModuleSidebar from "./_components/SideBar/ModuleSidebar";
 import AssessmentContainer from "./_components/AssessmentContainer/AssessmentContainer";
 import PageContainer from "./_components/PageContainer";
-import { getModuleStructure, ModuleStructure, SectionItem } from "./service";
+import { SectionItem, useModuleStructure } from "./service";
 import {
-  getLearningProgress,
   saveLearningProgress,
   ProgressRecord,
   syncLearningPlanProgress,
 } from "./service-user-progress";
+import { useLearningProgressQuery } from "./service";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
@@ -39,112 +39,59 @@ const LearnPage = ({ params }: LearnPageProps) => {
   const searchParams = useSearchParams();
   const targetItemId = searchParams.get("item");
 
-  const [module, setModule] = useState<ModuleStructure | null>(null);
-  const [activeItem, setActiveItem] = useState<SectionItem | null>(null);
-  const [completedItemIds, setCompletedItemIds] = useState<Set<string>>(
-    new Set(),
-  );
-
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  // 🔑 React Query hooks manage fetching and deduplication automatically
+  const {
+    data: module,
+    isLoading: moduleLoading,
+    error: moduleError,
+  } = useModuleStructure(moduleId);
 
-  // 1. Load module structure and progress ONCE on initial mount
-  useEffect(() => {
-    if (!moduleId) return;
+  const { data: progressData, isLoading: progressLoading } =
+    useLearningProgressQuery(moduleId);
 
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(false);
+  const loading = moduleLoading || progressLoading;
+  const error = Boolean(moduleError);
 
-        const [structure, progressData] = await Promise.all([
-          getModuleStructure(moduleId),
-          getLearningProgress(moduleId),
-        ]);
-
-        setModule(structure);
-
-        const completed = new Set<string>();
-        if (progressData?.success && Array.isArray(progressData.data)) {
-          progressData.data.forEach((record: ProgressRecord) => {
-            if (record.progress >= 100) completed.add(record.learning_item_id);
-          });
-        }
-        setCompletedItemIds(completed);
-
-        const allItems = structure.sections?.flatMap((sec) => sec.items) ?? [];
-
-        if (allItems.length > 0) {
-          const maxUnlockedIndex = getMaxUnlockedIndex(allItems, completed);
-          const allowedItem = allItems[maxUnlockedIndex];
-
-          const requestedId = searchParams.get("item");
-          const requestedItem = requestedId
-            ? allItems.find(
-                (i) => i.id === requestedId || i.content_id === requestedId,
-              )
-            : null;
-          const requestedIndex = requestedItem
-            ? allItems.findIndex((i) => i.id === requestedItem.id)
-            : -1;
-
-          if (requestedItem && requestedIndex <= maxUnlockedIndex) {
-            setActiveItem(requestedItem);
-          } else {
-            setActiveItem(allowedItem);
-            if (requestedId) {
-              router.replace(`/learn/${moduleId}?item=${allowedItem.id}`, {
-                scroll: false,
-              });
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error loading module structure:", err);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [moduleId]);
-
-  // 2. Synchronize activeItem instantly when query param changes
-  useEffect(() => {
-    if (!module) return;
-    const allItems = module.sections?.flatMap((sec) => sec.items) ?? [];
-    if (allItems.length === 0 || !targetItemId) return;
-
-    const maxUnlockedIndex = getMaxUnlockedIndex(allItems, completedItemIds);
-    const foundItem = allItems.find(
-      (i) => i.id === targetItemId || i.content_id === targetItemId,
-    );
-    const foundIndex = foundItem
-      ? allItems.findIndex((i) => i.id === foundItem.id)
-      : -1;
-
-    if (foundItem && foundIndex <= maxUnlockedIndex) {
-      if (foundItem.id !== activeItem?.id) setActiveItem(foundItem);
-    } else if (foundItem) {
-      const allowedItem = allItems[maxUnlockedIndex];
-      router.replace(`/learn/${moduleId}?item=${allowedItem.id}`, {
-        scroll: false,
+  // 🔑 Derived via useMemo safely without cascading renders
+  const completedItemIds = useMemo(() => {
+    const completed = new Set<string>();
+    if (progressData?.success && Array.isArray(progressData.data)) {
+      progressData.data.forEach((record: ProgressRecord) => {
+        if (record.progress >= 100) completed.add(record.learning_item_id);
       });
     }
-  }, [
-    targetItemId,
-    module,
-    activeItem?.id,
-    completedItemIds,
-    moduleId,
-    router,
-  ]);
+    return completed;
+  }, [progressData]);
 
-  const allItems = module?.sections?.flatMap((sec) => sec.items) ?? [];
+  const allItems = useMemo(() => {
+    return module?.sections?.flatMap((sec) => sec.items) ?? [];
+  }, [module]);
+
+  // 🔑 Derived activeItem using useMemo instead of useEffect + setState
+  const activeItem = useMemo(() => {
+    if (allItems.length === 0) return null;
+
+    const maxUnlockedIndex = getMaxUnlockedIndex(allItems, completedItemIds);
+    const allowedItem = allItems[maxUnlockedIndex];
+
+    const requestedItem = targetItemId
+      ? allItems.find(
+          (i) => i.id === targetItemId || i.content_id === targetItemId,
+        )
+      : null;
+    const requestedIndex = requestedItem
+      ? allItems.findIndex((i) => i.id === requestedItem.id)
+      : -1;
+
+    if (requestedItem && requestedIndex <= maxUnlockedIndex) {
+      return requestedItem;
+    }
+
+    return allowedItem;
+  }, [allItems, completedItemIds, targetItemId]);
 
   const handleSelectItem = (item: SectionItem) => {
     setMobileSidebarOpen(false);
@@ -153,7 +100,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   const handleItemComplete = useCallback(
     async (itemId: string, progressValue = 100) => {
-      if (!activeItem || !moduleId) return;
+      if (!activeItem || !moduleId || !module) return;
 
       const sectionId =
         activeItem.section_id ||
@@ -161,10 +108,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
           ?.id;
 
       if (!sectionId) return;
-
-      if (progressValue >= 100) {
-        setCompletedItemIds((prev) => new Set(prev).add(itemId));
-      }
 
       await saveLearningProgress({
         module_id: moduleId,
@@ -179,6 +122,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
         await syncLearningPlanProgress(learningPlanId);
       }
 
+      queryClient.invalidateQueries({
+        queryKey: ["learningProgress", moduleId],
+      });
       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
     },
     [activeItem, module, moduleId, queryClient],
