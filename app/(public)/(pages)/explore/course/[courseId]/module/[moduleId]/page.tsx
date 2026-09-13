@@ -88,7 +88,12 @@ export default function ModulePage({
     router.push(courseLink);
   };
 
+  const hasFetchedRef = useRef(false);
+
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+
     const fetchAllModules = async () => {
       try {
         setLoading(true);
@@ -100,32 +105,21 @@ export default function ModulePage({
         }
 
         if (derivedCourseId) {
+          // 🔑 Directly call the single unified details endpoint
           const courseRes = await getLearningPlanDetails(derivedCourseId);
-          const rawModules = courseRes?.data?.modules || [];
+          const rawModules =
+            courseRes?.modules || (courseRes as any)?.data?.modules || [];
 
           if (Array.isArray(rawModules) && rawModules.length > 0) {
-            const moduleRequests = rawModules.map((m: any) =>
-              getModule(m.id || m.module_id || "")
+            setModules(rawModules as ModuleResponse[]);
+            const idx = rawModules.findIndex(
+              (m: any) => String(m.id || m.module_id) === String(moduleId),
             );
-            const settled = await Promise.all(moduleRequests);
-            const valid = settled
-              .filter((res) => res.success && res.data)
-              .map((res) => res.data as ModuleResponse);
-
-            if (valid.length > 0) {
-              setModules(valid);
-              const idx = valid.findIndex((m) => m.id === moduleId);
-              setActiveIndex(idx >= 0 ? idx : 0);
-              return;
-            }
+            setActiveIndex(idx >= 0 ? idx : 0);
+            setLoading(false);
+            return;
           }
         }
-
-        const result = await getModule(moduleId);
-        if (!result.success || !result.data)
-          throw new Error("Failed to fetch module");
-        setModules([result.data as ModuleResponse]);
-        setActiveIndex(0);
       } catch (err) {
         console.error("Failed to load modules:", err);
         setError(true);
@@ -278,7 +272,8 @@ export default function ModulePage({
                                 Overview
                               </h2>
                               <p className="text-xs text-zinc-400 font-light mt-0.5">
-                                A structured overview of the lessons and assessments.
+                                A structured overview of the lessons and
+                                assessments.
                               </p>
                             </div>
                           </div>
@@ -306,7 +301,7 @@ export default function ModulePage({
                                           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2">
                                             {getItemIcon(
                                               item.item_type,
-                                              item.assessment_type
+                                              item.assessment_type,
                                             )}
                                             <span className="font-medium text-zinc-600 truncate">
                                               {item.title}
@@ -387,7 +382,7 @@ export default function ModulePage({
                     const totalLessons =
                       m.sections?.reduce(
                         (acc, sec) => acc + (sec.items?.length || 0),
-                        0
+                        0,
                       ) || 0;
 
                     return (
@@ -443,11 +438,15 @@ export default function ModulePage({
                           <div className="flex items-center gap-3 truncate pr-1">
                             <span className="flex items-center gap-1 shrink-0">
                               <BookOpen size={13} className="text-[#8b5cf6]" />
-                              {m.sections?.length == 1 ? `${m.sections?.length} Section` : `${m.sections?.length} Sections`}
+                              {m.sections?.length == 1
+                                ? `${m.sections?.length} Section`
+                                : `${m.sections?.length} Sections`}
                             </span>
                             <span className="flex items-center gap-1 shrink-0">
                               <Layers size={13} className="text-[#8b5cf6]" />
-                              {totalLessons == 1 ? `${totalLessons} Lesson` : `${totalLessons} Lessons`}
+                              {totalLessons == 1
+                                ? `${totalLessons} Lesson`
+                                : `${totalLessons} Lessons`}
                             </span>
                           </div>
                         </div>
