@@ -102,7 +102,6 @@ export default function PageContainer({
     ? "Unable to load page content. Please try again."
     : null;
 
-  // Track scroll position without firing onComplete
   const handleScrollCheck = useCallback(() => {
     if (isCompleted) {
       setScrollProgress(100);
@@ -132,7 +131,6 @@ export default function PageContainer({
       ? docTotalScrollable
       : elTotalScrollable;
 
-    // If page has no scroll, allow button click immediately
     if (totalScrollable <= 10) {
       setScrollProgress(100);
       return;
@@ -164,7 +162,6 @@ export default function PageContainer({
     if (!hash) return;
 
     const blockId = hash.replace("#", "");
-    // BlockNote renders blocks with data-id attributes matching block IDs
     const element =
       document.getElementById(blockId) ||
       document.querySelector(`[data-id="${blockId}"]`);
@@ -172,15 +169,14 @@ export default function PageContainer({
     if (element && containerRef.current) {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
 
-      // Minimal adaptive highlight with generous padding, rounded corners, and a pulsing border
       element.classList.add(
-        "p-4", // Adds padding so letters aren't squished against the border
-        "my-2", // Adds breathing room above and below the block
-        "rounded-xl", // Modern smooth rounded corners
-        "border-2", // Clean, minimal structural border
-        "border-purple-400/60", // Soft purple accent color
-        "bg-purple-50/40", // Extremely light translucent background
-        "animate-pulse", // Gentle pulsing effect
+        "p-4",
+        "my-2",
+        "rounded-xl",
+        "border-2",
+        "border-purple-400/60",
+        "bg-purple-50/40",
+        "animate-pulse",
         "transition-all",
         "duration-500",
       );
@@ -194,11 +190,10 @@ export default function PageContainer({
           "bg-purple-50/40",
           "animate-pulse",
         );
-      }, 2500); // Cleans up after 2.5 seconds
+      }, 2500);
     }
   }, []);
 
-  // Trigger on initial page load / hash change
   useEffect(() => {
     scrollToHash();
   }, [scrollToHash, pageData]);
@@ -246,7 +241,6 @@ export default function PageContainer({
 
   const canNavigateNext = isCompleted || displayProgress >= 85;
 
-  // Complete and advance ONLY on explicit user click
   const handleButtonClick = () => {
     if (!canNavigateNext) return;
 
@@ -328,7 +322,6 @@ export default function PageContainer({
               />
             </svg>
 
-            {/* Always downward facing arrow */}
             <ArrowDown
               size={18}
               className={`transition-colors duration-200 ${

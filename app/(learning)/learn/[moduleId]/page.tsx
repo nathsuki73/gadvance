@@ -1,7 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, useCallback, useRef } from "react";
-// 🔑 1. Import useRouter
+import { use, useEffect, useState, useCallback } from "react";
 import { useRouter, notFound, useSearchParams } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,7 +20,6 @@ type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
 };
 
-// helper — put above the component or in a utils file
 const getMaxUnlockedIndex = (items: SectionItem[], completed: Set<string>) => {
   let idx = 0;
   for (let i = 0; i < items.length; i++) {
@@ -36,7 +34,7 @@ const getMaxUnlockedIndex = (items: SectionItem[], completed: Set<string>) => {
 
 const LearnPage = ({ params }: LearnPageProps) => {
   const { moduleId } = use(params);
-  const router = useRouter(); // 🔑 2. Initialize router
+  const router = useRouter();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const targetItemId = searchParams.get("item");
@@ -52,8 +50,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-
-  const touchedItemIds = useRef<Set<string>>(new Set());
 
   // 1. Load module structure and progress ONCE on initial mount
   useEffect(() => {
@@ -98,7 +94,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
           if (requestedItem && requestedIndex <= maxUnlockedIndex) {
             setActiveItem(requestedItem);
           } else {
-            // no valid request, or it's beyond what they've unlocked — snap back
             setActiveItem(allowedItem);
             if (requestedId) {
               router.replace(`/learn/${moduleId}?item=${allowedItem.id}`, {
@@ -135,7 +130,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
     if (foundItem && foundIndex <= maxUnlockedIndex) {
       if (foundItem.id !== activeItem?.id) setActiveItem(foundItem);
     } else if (foundItem) {
-      // requested item exists but isn't unlocked yet — bounce back
       const allowedItem = allItems[maxUnlockedIndex];
       router.replace(`/learn/${moduleId}?item=${allowedItem.id}`, {
         scroll: false,
@@ -150,42 +144,8 @@ const LearnPage = ({ params }: LearnPageProps) => {
     router,
   ]);
 
-  // Touch latest visit tracking
-  useEffect(() => {
-    if (!moduleId || !activeItem || !module) return;
-
-    const itemId = activeItem.id;
-    if (touchedItemIds.current.has(itemId)) return;
-
-    const sectionId =
-      activeItem.section_id ||
-      module?.sections?.find((sec) => sec.items?.some((i) => i.id === itemId))
-        ?.id;
-
-    if (!sectionId) return;
-
-    const touchModuleVisit = async () => {
-      touchedItemIds.current.add(itemId);
-      const isAlreadyCompleted = completedItemIds.has(itemId);
-
-      const response = await saveLearningProgress({
-        module_id: moduleId,
-        section_id: sectionId,
-        learning_item_id: itemId,
-        progress: isAlreadyCompleted ? 100 : 0,
-      });
-
-      if (response.success) {
-        queryClient.invalidateQueries({ queryKey: ["userProfile"] });
-      }
-    };
-
-    touchModuleVisit();
-  }, [moduleId, activeItem, module, completedItemIds, queryClient]);
-
   const allItems = module?.sections?.flatMap((sec) => sec.items) ?? [];
 
-  // 🔑 3. Let Next.js handle Sidebar routing smoothly
   const handleSelectItem = (item: SectionItem) => {
     setMobileSidebarOpen(false);
     router.push(`/learn/${moduleId}?item=${item.id}`, { scroll: false });
@@ -206,7 +166,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
         setCompletedItemIds((prev) => new Set(prev).add(itemId));
       }
 
-      // 1. Save the specific item progress
       await saveLearningProgress({
         module_id: moduleId,
         section_id: sectionId,
@@ -214,7 +173,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
         progress: progressValue,
       });
 
-      // 🚀 2. Trigger the Learning Plan milestone sync (updates overall course percentage & status)
       const learningPlanId =
         (module as any)?.learning_plan_id || module?.courseId;
       if (learningPlanId && progressValue >= 100) {
@@ -226,7 +184,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
     [activeItem, module, moduleId, queryClient],
   );
 
-  // 🔑 4. Let Next.js handle Next Button routing smoothly
   const handleNext = () => {
     if (!activeItem) return;
 
@@ -237,7 +194,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
     }
   };
 
-  // 🔑 5. Let Next.js handle Remedial Hash Navigation smoothly
   const handleNavigateTo = (targetId: string, blockId?: string) => {
     const foundItem = allItems.find(
       (i) => i.id === targetId || i.content_id === targetId,

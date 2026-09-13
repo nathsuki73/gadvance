@@ -117,7 +117,6 @@ export default function AssessmentContainer({
 
   const hasHydrated = useRef(false);
 
-  // Synchronized refs to guarantee unmount / timer handlers access the latest state
   const answersRef = useRef(answers);
   answersRef.current = answers;
 
@@ -138,7 +137,6 @@ export default function AssessmentContainer({
   const hasStartedRef = useRef(hasStarted);
   hasStartedRef.current = hasStarted;
 
-  // Hydration logic
   useEffect(() => {
     if (hasHydrated.current) return;
     if (!viewData || stateLoading) return;
@@ -150,20 +148,16 @@ export default function AssessmentContainer({
     const currentStatus = stateRes?.data?.status ?? "not_started";
     const isCurrentlyActive = currentStatus === "in_progress";
 
-    // 1. Read cached localStorage answers first
     let localSavedAnswers: Record<string, string> = {};
     try {
       const stored = localStorage.getItem(storageDraftKey);
       if (stored) {
         localSavedAnswers = JSON.parse(stored);
       }
-    } catch {
-      // LocalStorage unavailable
-    }
+    } catch {}
 
     const prevAttempt = (viewData as any).previous_attempt;
 
-    // 2. Only hydrate previous attempt if this user is NOT actively taking/retaking
     if (prevAttempt && !isCurrentlyActive) {
       setSavedScore(prevAttempt.score_percentage);
       setSavedRawScore(prevAttempt.score ?? null);
@@ -241,7 +235,6 @@ export default function AssessmentContainer({
 
       setAssessment({ ...viewData, questions: activeQuestions });
 
-      // 3. Reconcile Server drafts + LocalStorage drafts
       const restoredMap: Record<string, string> = { ...localSavedAnswers };
       if (draft_answers) {
         if (Array.isArray(draft_answers)) {
@@ -342,7 +335,6 @@ export default function AssessmentContainer({
     }));
   };
 
-  // Timer Tick
   useEffect(() => {
     if (!hasStarted || submitted || !assessment?.settings) return;
 
@@ -424,7 +416,6 @@ export default function AssessmentContainer({
     [assessmentId, itemId, queryClient],
   );
 
-  // Periodic autosave to Redis every 25 seconds
   useEffect(() => {
     if (!hasStarted || submitted || isPollRef.current) return;
 
@@ -435,7 +426,6 @@ export default function AssessmentContainer({
     return () => clearInterval(timer);
   }, [hasStarted, submitted, sendDraft]);
 
-  // Flush to server when component unmounts (user navigates to another page)
   useEffect(() => {
     return () => {
       if (
@@ -522,19 +512,15 @@ export default function AssessmentContainer({
     savedCorrectCount !== null ? savedCorrectCount : localCorrectCount;
   const isPassed = displayScore >= settings.passingScore;
 
-  // Fast local selection: Updates React state and LocalStorage immediately
   const handleSelectChoice = (questionId: string, choiceId: string) => {
     if (submitted || submittedQuestions[questionId]) return;
 
     const nextAnswers = { ...answers, [questionId]: choiceId };
     setAnswers(nextAnswers);
 
-    // Write to LocalStorage instantly so navigating away never drops this answer
     try {
       localStorage.setItem(storageDraftKey, JSON.stringify(nextAnswers));
-    } catch {
-      // Storage unavailable
-    }
+    } catch {}
 
     setAnsweredAtMap((prev) => ({
       ...prev,
@@ -687,7 +673,6 @@ export default function AssessmentContainer({
         setRemedialSuggestions(finalRemedialSuggestions);
         setSubmitted(true);
 
-        // Clear local draft cache on submission
         try {
           localStorage.removeItem(storageDraftKey);
         } catch {}
@@ -758,7 +743,6 @@ export default function AssessmentContainer({
       return;
     }
 
-    // Clear local storage draft
     try {
       localStorage.removeItem(storageDraftKey);
     } catch {}
