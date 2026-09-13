@@ -105,10 +105,9 @@ export default function ModulePage({
         }
 
         if (derivedCourseId) {
-          // 🔑 Directly call the single unified details endpoint
           const courseRes = await getLearningPlanDetails(derivedCourseId);
-          const rawModules =
-            courseRes?.modules || (courseRes as any)?.data?.modules || [];
+
+          const rawModules = courseRes.data?.modules || [];
 
           if (Array.isArray(rawModules) && rawModules.length > 0) {
             setModules(rawModules as ModuleResponse[]);
