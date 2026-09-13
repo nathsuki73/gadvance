@@ -1,14 +1,21 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Clock3, Users, BookOpen, LockKeyhole, BadgeCheck, ChevronRight } from "lucide-react";
+import {
+  Clock3,
+  Users,
+  BookOpen,
+  LockKeyhole,
+  BadgeCheck,
+  ChevronRight,
+} from "lucide-react";
 import ActionConfirmationDialog from "./ActionConfirmationDialog";
 import EnrollmentRequiredDialog from "./EnrollmentRequiredDialog";
 import { useCourseEnrollment } from "../_hooks/useCourseEnrollment";
 import type { Enrollment, LearningPlan } from "../types";
 import { useQueryClient } from "@tanstack/react-query";
-import { getModule } from "../module/[moduleId]/service";
+// ❌ Removed `getModule` import completely!
 
 type CourseOverviewHeaderProps = {
   course: LearningPlan;
@@ -34,7 +41,6 @@ const CourseOverviewHeader = ({
     showActionDialog,
     dialogVariant,
     isEnrolled,
-    progress: fallbackProgress,
     setShowActionDialog,
     handlePrimaryAction,
     handleUnenrollClick,
@@ -52,71 +58,21 @@ const CourseOverviewHeader = ({
   const modules = course.modules || [];
   const hasModules = Array.isArray(modules) && modules.length > 0;
 
-  // Track live progress map across all individual modules
-  const [moduleProgressMap, setModuleProgressMap] = useState<Record<string, number>>({});
-  const [loadingProgress, setLoadingProgress] = useState(false);
-
-  useEffect(() => {
-    if (!isEnrolled || !hasModules) return;
-
-    const fetchAllModuleProgress = async () => {
-      setLoadingProgress(true);
-      try {
-        const results = await Promise.all(
-          modules.map(async (mod: any) => {
-            const modId = mod.id || mod.module_id;
-            if (!modId) return { id: "", pct: 0 };
-
-            // 1. Direct progress value if available
-            if (typeof mod.progress?.percentage === "number") {
-              return { id: modId, pct: mod.progress.percentage };
-            }
-            if (typeof mod.progress === "number") {
-              return { id: modId, pct: mod.progress };
-            }
-
-            // 2. Fetch live progress from module service
-            try {
-              const res = await getModule(modId);
-              const pct = res?.data?.progress?.percentage ?? 0;
-              return { id: modId, pct };
-            } catch {
-              return { id: modId, pct: 0 };
-            }
-          })
-        );
-
-        const progressLookup: Record<string, number> = {};
-        results.forEach((item) => {
-          if (item.id) progressLookup[item.id] = item.pct;
-        });
-
-        setModuleProgressMap(progressLookup);
-      } catch (err) {
-        console.error("Failed to compute combined learning plan progress:", err);
-      } finally {
-        setLoadingProgress(false);
-      }
-    };
-
-    fetchAllModuleProgress();
-  }, [isEnrolled, hasModules, modules]);
-
-  // 🎯 Combined average progress across all modules
+  // 🎯 Combined average progress calculated instantly from props in memory
   const displayProgress = useMemo(() => {
     if (!isEnrolled || modules.length === 0) return 0;
 
-    const keys = Object.keys(moduleProgressMap);
-    if (keys.length > 0) {
-      const total = modules.reduce((sum: number, mod: any) => {
-        const modId = mod.id || mod.module_id;
-        return sum + (moduleProgressMap[modId] ?? 0);
-      }, 0);
-      return Math.round(total / modules.length);
+    // If your backend provides an overall course progress object:
+    if (typeof course.progress?.percentage === "number") {
+      return course.progress.percentage;
     }
 
-    return typeof fallbackProgress === "number" ? fallbackProgress : 0;
-  }, [isEnrolled, modules, moduleProgressMap, fallbackProgress]);
+    // Otherwise compute average from the module percentages
+    const total = modules.reduce((sum: number, mod: any) => {
+      return sum + (mod.progress?.percentage ?? 0);
+    }, 0);
+    return Math.round(total / modules.length);
+  }, [isEnrolled, modules, course.progress]);
 
   const executeGuardedAction = async (action: () => void) => {
     if (onRequireAuth) {
@@ -216,11 +172,7 @@ const CourseOverviewHeader = ({
                 <StatCard
                   icon={<Clock3 className="h-4 w-4" />}
                   label="progress"
-                  value={
-                    loadingProgress && Object.keys(moduleProgressMap).length === 0
-                      ? "..."
-                      : `${displayProgress}%`
-                  }
+                  value={`${displayProgress}%`}
                 />
               )}
             </div>
@@ -242,9 +194,8 @@ const CourseOverviewHeader = ({
                 <div className="flex flex-col space-y-1">
                   {modules.map((module: any, index: number) => {
                     const moduleId = module.id || module.module_id;
-                    const modProgress =
-                      moduleProgressMap[moduleId] ??
-                      (module.progress?.percentage || module.progress || 0);
+                    // 🔑 Read progress directly from memory payload!
+                    const modProgress = module.progress?.percentage ?? 0;
                     const isCompleted = modProgress >= 100;
 
                     return (
@@ -318,7 +269,8 @@ const CourseOverviewHeader = ({
                     No modules published yet
                   </p>
                   <p className="mt-1 text-[11px] font-light text-zinc-400">
-                    Course content is being prepared and will appear here once released.
+                    Course content is being prepared and will appear here once
+                    released.
                   </p>
                 </div>
               )}

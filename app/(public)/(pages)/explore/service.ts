@@ -88,20 +88,19 @@ export const getLearningPlanDetails = async (
       image: (item.image as string | null | undefined) ?? null,
     });
 
-    const normalizeLessonsFromGroups = (data: Record<string, unknown>) => {
-      const sectionGroups = Array.isArray(data.section_groups)
-        ? data.section_groups
-        : [];
-
-      return sectionGroups.flatMap((group) => {
-        const groupRecord = group as Record<string, unknown>;
-        const sections = Array.isArray(groupRecord.sections)
-          ? groupRecord.sections
-          : [];
-
-        return sections.map(normalizeLesson);
-      });
-    };
+    // 🔑 Dedicated module normalizer that preserves progress and other fields
+    const normalizeModule = (item: Record<string, unknown>) => ({
+      ...item,
+      id: String(item.id ?? item.module_id ?? ""),
+      title: String(item.title ?? ""),
+      description:
+        (item.description as string | undefined) ||
+        (item.about as string | undefined) ||
+        "",
+      progress: (item.progress as { percentage?: number } | undefined) ?? {
+        percentage: 0,
+      },
+    });
 
     const normalize = (data: Record<string, unknown>): LearningPlan => ({
       id: String(data.id ?? data.course_id ?? data.learning_plan_id ?? ""),
@@ -112,13 +111,13 @@ export const getLearningPlanDetails = async (
         (data.about as string | undefined) ||
         "",
       modules: Array.isArray(data.modules)
-        ? data.modules.map(normalizeLesson)
+        ? data.modules.map(normalizeModule) // 👈 Use normalizeModule here!
         : [],
       lessons: Array.isArray(data.lessons)
         ? data.lessons.map(normalizeLesson)
         : Array.isArray(data.modules)
           ? data.modules.map(normalizeLesson)
-          : normalizeLessonsFromGroups(data),
+          : [],
     });
 
     const detailsEndpoint = `/api/learning-plans/${courseId}/details`;
