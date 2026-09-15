@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn as nextAuthSignIn, signOut, useSession } from "next-auth/react";
@@ -11,7 +11,8 @@ import { useToast } from "@/app/components/context/ToastContext";
 import { OnboardingLogo } from "@/app/onboarding/_components/OnboardingLogo";
 import { Eye, EyeOff } from "lucide-react";
 
-const SignIn = () => {
+// 1. Inner component handling all the sign-in logic and search parameters
+const SignInContent = () => {
   const { data: session, status } = useSession();
   const { showToast } = useToast();
   const router = useRouter();
@@ -318,6 +319,21 @@ const SignIn = () => {
         }}
       />
     </div>
+  );
+};
+
+// 2. Main exported component with Suspense wrapper to handle search parameters cleanly
+const SignIn = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="w-6 h-6 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      }
+    >
+      <SignInContent />
+    </Suspense>
   );
 };
 
