@@ -42,9 +42,9 @@ const Footer = () => {
     <footer className="bg-white border-t border-zinc-100 py-10 sm:py-12 overflow-hidden">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
         {/* Main Grid */}
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8 items-start">
-          {/* Brand Identity Section (4 Cols Desktop) */}
-          <div className="flex flex-col space-y-4 lg:col-span-4">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-8 items-start">
+          {/* Brand Identity */}
+          <div className="flex flex-col space-y-4 sm:col-span-2 lg:col-span-6">
             <div className="flex items-center gap-3">
               <div className="relative h-8 w-8 shrink-0">
                 <Image
@@ -55,55 +55,61 @@ const Footer = () => {
                   sizes="32px"
                 />
               </div>
+
               <span className="text-xl font-semibold tracking-tight text-zinc-900 lowercase">
                 gadvance
               </span>
             </div>
-            <p className="text-zinc-500 text-sm leading-relaxed max-w-sm font-light lowercase">
+
+            <p className="max-w-md text-sm font-light leading-relaxed text-zinc-500 lowercase">
               providing the tools and education needed to advance gender
               equality within the philippine workplace and beyond.
             </p>
+
             <div className="flex gap-2.5 pt-1">
               {socialLinks.map(({ name, Icon }) => (
                 <button
                   key={name}
                   type="button"
                   onClick={() => handleSocialClick(name)}
-                  className="w-9 h-9 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-400 hover:text-[#8b5cf6] hover:bg-violet-50 transition-all duration-300 touch-manipulation focus:outline-none border border-zinc-100"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-100 bg-zinc-50 text-zinc-400 transition-all duration-300 hover:bg-violet-50 hover:text-[#8b5cf6] focus:outline-none touch-manipulation"
                   aria-label={name}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="h-4 w-4" />
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Programs Links (2 Cols Desktop) */}
-          <div className="lg:col-span-2">
-            <h4 className="text-xs font-bold text-zinc-900 mb-4 uppercase tracking-[0.2em]">
+          {/* Programs */}
+          <div className="lg:col-span-3">
+            <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-zinc-900">
               programs
             </h4>
-            <ul className="space-y-2.5 text-sm text-zinc-500 font-light lowercase">
+
+            <ul className="space-y-2.5 text-sm font-light text-zinc-500 lowercase">
               <li>
                 <Link
                   href="/leadership"
-                  className="hover:text-[#8b5cf6] transition-colors"
+                  className="transition-colors hover:text-[#8b5cf6]"
                 >
                   women in leadership
                 </Link>
               </li>
+
               <li>
                 <Link
                   href="/advocacy"
-                  className="hover:text-[#8b5cf6] transition-colors"
+                  className="transition-colors hover:text-[#8b5cf6]"
                 >
                   workplace advocacy
                 </Link>
               </li>
+
               <li>
                 <Link
                   href="/mental-health"
-                  className="hover:text-[#8b5cf6] transition-colors"
+                  className="transition-colors hover:text-[#8b5cf6]"
                 >
                   mental health
                 </Link>
@@ -111,32 +117,35 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Resources Links (2 Cols Desktop) */}
-          <div className="lg:col-span-2">
-            <h4 className="text-xs font-bold text-zinc-900 mb-4 uppercase tracking-[0.2em]">
+          {/* Resources */}
+          <div className="lg:col-span-3">
+            <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-zinc-900">
               resources
             </h4>
-            <ul className="space-y-2.5 text-sm text-zinc-500 font-light lowercase">
+
+            <ul className="space-y-2.5 text-sm font-light text-zinc-500 lowercase">
               <li>
                 <Link
                   href="/articles-and-news"
-                  className="hover:text-[#8b5cf6] transition-colors"
+                  className="transition-colors hover:text-[#8b5cf6]"
                 >
                   articles & news
                 </Link>
               </li>
+
               <li>
                 <Link
                   href="/community-forum"
-                  className="hover:text-[#8b5cf6] transition-colors"
+                  className="transition-colors hover:text-[#8b5cf6]"
                 >
                   community forum
                 </Link>
               </li>
+
               <li>
                 <Link
                   href="/support"
-                  className="hover:text-[#8b5cf6] transition-colors"
+                  className="transition-colors hover:text-[#8b5cf6]"
                 >
                   help center
                 </Link>
