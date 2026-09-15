@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   Search,
   Building2,
@@ -21,14 +22,40 @@ const CourseGrid = () => {
   const { data: session } = useSession();
   const isAuthenticated = !!session?.user;
 
-  const [query, setQuery] = useState("");
-  const [activeSearch, setActiveSearch] = useState("");
-  const [filter, setFilter] = useState<FilterType>("all");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Read initial values from URL search params on mount
+  const initialSearch = searchParams.get("search") || "";
+  const initialFilter = (searchParams.get("filter") as FilterType) || "all";
+
+  const [query, setQuery] = useState(initialSearch);
+  const [activeSearch, setActiveSearch] = useState(initialSearch);
+  const [filter, setFilter] = useState<FilterType>(initialFilter);
+
+  // Helper function to update the URL parameters cleanly without loops
+  const updateUrlParams = (newSearch: string, newFilter: FilterType) => {
+    const params = new URLSearchParams();
+
+    if (newSearch) {
+      params.set("search", newSearch);
+    }
+    if (newFilter && newFilter !== "all") {
+      params.set("filter", newFilter);
+    }
+
+    const queryStr = params.toString();
+    const newUrl = queryStr ? `${pathname}?${queryStr}` : pathname;
+
+    router.replace(newUrl, { scroll: false });
+  };
 
   // Automatically reset filter back to 'all' if user logs out while on 'organization' tab
   useEffect(() => {
     if (!isAuthenticated && filter === "organization") {
       setFilter("all");
+      updateUrlParams(activeSearch, "all");
     }
   }, [isAuthenticated, filter]);
 
@@ -55,7 +82,14 @@ const CourseGrid = () => {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setActiveSearch(query.trim());
+    const trimmedQuery = query.trim();
+    setActiveSearch(trimmedQuery);
+    updateUrlParams(trimmedQuery, filter);
+  };
+
+  const handleFilterChange = (selectedFilter: FilterType) => {
+    setFilter(selectedFilter);
+    updateUrlParams(activeSearch, selectedFilter);
   };
 
   // Reset all search and filter controls to default state
@@ -63,6 +97,7 @@ const CourseGrid = () => {
     setQuery("");
     setActiveSearch("");
     setFilter("all");
+    router.replace(pathname, { scroll: false });
   };
 
   const isFiltered = activeSearch !== "" || filter !== "all";
@@ -106,6 +141,7 @@ const CourseGrid = () => {
                 onClick={() => {
                   setQuery("");
                   setActiveSearch("");
+                  updateUrlParams("", filter);
                 }}
                 className="absolute right-3 text-zinc-400 hover:text-zinc-600 transition-colors"
                 title="Clear input"
@@ -121,7 +157,7 @@ const CourseGrid = () => {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setFilter("all")}
+              onClick={() => handleFilterChange("all")}
               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filter === "all"
                   ? "bg-primary text-white shadow-xs"
@@ -134,7 +170,7 @@ const CourseGrid = () => {
 
             <button
               type="button"
-              onClick={() => setFilter("public")}
+              onClick={() => handleFilterChange("public")}
               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filter === "public"
                   ? "bg-primary text-white shadow-xs"
@@ -145,11 +181,10 @@ const CourseGrid = () => {
               <span>Public</span>
             </button>
 
-            {/* Conditionally render Organization tab ONLY when signed in */}
             {isAuthenticated && (
               <button
                 type="button"
-                onClick={() => setFilter("organization")}
+                onClick={() => handleFilterChange("organization")}
                 className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   filter === "organization"
                     ? "bg-primary text-white shadow-xs"
@@ -162,7 +197,6 @@ const CourseGrid = () => {
             )}
           </div>
 
-          {/* Reset Button (Only visible when search or filter is active) */}
           {isFiltered && (
             <button
               type="button"
@@ -175,7 +209,6 @@ const CourseGrid = () => {
           )}
         </div>
 
-        {/* 🔍 Search Results Indicator Banner */}
         {activeSearch && (
           <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-purple-50/60 border border-purple-100/80 text-xs">
             <span className="text-zinc-600 font-medium">
@@ -189,6 +222,7 @@ const CourseGrid = () => {
               onClick={() => {
                 setQuery("");
                 setActiveSearch("");
+                updateUrlParams("", filter);
               }}
               className="text-zinc-400 hover:text-primary-hover transition-colors"
               title="Clear search"
