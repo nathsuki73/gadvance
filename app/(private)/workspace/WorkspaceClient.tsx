@@ -273,14 +273,6 @@ function InstitutionSection({
             Your Joined Organizations ({organizations.length})
           </span>
         </div>
-
-        <button
-          onClick={onExploreOrgs}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-hover transition-colors cursor-pointer"
-        >
-          <Plus size={14} />
-          <span>Find More</span>
-        </button>
       </div>
 
       <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
