@@ -425,7 +425,7 @@ export default function AuthHeader() {
 
         <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
           {/* Desktop search */}
-          <div className="hidden sm:block sm:flex-1 sm:max-w-md relative">
+          <div className="hidden md:block md:flex-1 md:max-w-md relative">
             <form onSubmit={handleSearchSubmit} className="relative w-full">
               <SearchBar
                 value={searchQuery}
@@ -440,7 +440,7 @@ export default function AuthHeader() {
           <button
             type="button"
             onClick={toggleSearch}
-            className="rounded-full p-2 text-zinc-600 hover:bg-zinc-100 sm:hidden"
+            className="rounded-full p-2 text-zinc-600 hover:bg-zinc-100 md:hidden"
           >
             {showSearch ? (
               <X className="h-5 w-5" />
@@ -450,7 +450,7 @@ export default function AuthHeader() {
           </button>
 
           {/* Desktop nav */}
-          <nav className="hidden items-center gap-6 xl:flex">
+          <nav className="hidden items-center gap-6 md:flex">
             {AUTH_NAVS.map((link) => (
               <NavLink key={link.href} href={link.href}>
                 {link.label}
@@ -460,7 +460,7 @@ export default function AuthHeader() {
 
           <div className="flex items-center gap-2 border-l border-zinc-100 pl-4 md:pl-4">
             {/* Notifications */}
-            <div className="relative">
+            {/* <div className="relative">
               <button
                 type="button"
                 onClick={toggleNotifications}
@@ -474,10 +474,10 @@ export default function AuthHeader() {
                 open={showNotifications}
                 onCloseAction={() => setShowNotifications(false)}
               />
-            </div>
+            </div> */}
 
             {/* Profile dropdown */}
-            <div className="relative hidden xl:block">
+            <div className="relative hidden md:block">
               <button
                 type="button"
                 onClick={toggleProfileDropdown}
@@ -530,7 +530,7 @@ export default function AuthHeader() {
             <button
               type="button"
               onClick={toggleMobileMenu}
-              className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-50 xl:hidden"
+              className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-50 md:hidden"
             >
               {showMobileMenu ? (
                 <X className="h-6 w-6" />
@@ -566,7 +566,7 @@ export default function AuthHeader() {
 
       {/* Mobile menu */}
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out xl:hidden ${
+        className={`overflow-hidden transition-all duration-300 ease-in-out md:hidden ${
           showMobileMenu ? "max-h-150 opacity-100 mt-4" : "max-h-0 opacity-0"
         }`}
       >
