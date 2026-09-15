@@ -143,42 +143,6 @@ const Footer = () => {
               </li>
             </ul>
           </div>
-
-          {/* Compact Newsletter Box (4 Cols Desktop) */}
-          <div className="bg-gradient-to-br from-violet-50/60 via-zinc-50 to-white rounded-2xl p-5 border border-violet-100 shadow-sm sm:col-span-2 lg:col-span-4 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <Send size={14} className="text-[#8b5cf6]" />
-                <h4 className="text-xs font-bold text-zinc-900 uppercase tracking-[0.2em]">
-                  stay updated
-                </h4>
-              </div>
-              <p className="text-xs text-zinc-500 font-light leading-relaxed">
-                Receive insights on Philippine gender frameworks, policy
-                directives, and leadership.
-              </p>
-            </div>
-
-            <form
-              onSubmit={handleNewsletterSubmit}
-              className="mt-4 flex flex-col sm:flex-row gap-2"
-            >
-              <input
-                id="news-letter-input"
-                type="email"
-                placeholder="Enter your email"
-                value={newsletterEmail}
-                onChange={(e) => setNewsletterEmail(e.target.value)}
-                className="w-full bg-white px-3.5 py-2.5 rounded-xl border border-zinc-200 focus:outline-none focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-100 text-xs placeholder:text-zinc-400 text-zinc-800 transition-all shadow-sm"
-              />
-              <button
-                type="submit"
-                className="bg-[#8b5cf6] text-white py-2.5 px-4 rounded-xl text-xs font-semibold tracking-wide hover:bg-[#7c3aed] transition-all shadow-md shadow-violet-500/10 active:scale-[0.98] shrink-0"
-              >
-                Subscribe
-              </button>
-            </form>
-          </div>
         </div>
 
         {/* Bottom Bar */}
