@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import { Loader2, AlertCircle, BookOpen, ArrowDown } from "lucide-react";
@@ -41,15 +41,12 @@ export default function PageContainer({
   const { data: session, status: sessionStatus } = useSession();
   const token = session?.laravelJwt;
 
-  const containerRef = useRef<HTMLDivElement>(null);
   const [isCompleted, setIsCompleted] = useState(initialCompleted);
-  const [scrollProgress, setScrollProgress] = useState(
-    initialCompleted ? 100 : 0,
-  );
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     setIsCompleted(initialCompleted);
-    setScrollProgress(initialCompleted ? 100 : 0);
+    setIsNavigating(false); // Reset when page changes
   }, [pageId, initialCompleted]);
 
   const {
@@ -102,61 +99,6 @@ export default function PageContainer({
     ? "Unable to load page content. Please try again."
     : null;
 
-  const handleScrollCheck = useCallback(() => {
-    if (isCompleted) {
-      setScrollProgress(100);
-      return;
-    }
-
-    const el = containerRef.current;
-    if (!el) return;
-
-    const elScrollTop = el.scrollTop;
-    const elScrollHeight = el.scrollHeight;
-    const elClientHeight = el.clientHeight;
-    const elTotalScrollable = elScrollHeight - elClientHeight;
-
-    const docScrollTop =
-      window.scrollY ||
-      document.documentElement.scrollTop ||
-      document.body.scrollTop;
-    const docScrollHeight =
-      document.documentElement.scrollHeight || document.body.scrollHeight;
-    const docClientHeight = window.innerHeight;
-    const docTotalScrollable = docScrollHeight - docClientHeight;
-
-    const isWindowScroll = docTotalScrollable > 20 && docScrollTop > 0;
-    const scrollTop = isWindowScroll ? docScrollTop : elScrollTop;
-    const totalScrollable = isWindowScroll
-      ? docTotalScrollable
-      : elTotalScrollable;
-
-    if (totalScrollable <= 10) {
-      setScrollProgress(100);
-      return;
-    }
-
-    const currentPercent = Math.min(
-      100,
-      Math.max(0, Math.round((scrollTop / totalScrollable) * 100)),
-    );
-
-    setScrollProgress(currentPercent);
-  }, [isCompleted]);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    el.addEventListener("scroll", handleScrollCheck, { passive: true });
-    window.addEventListener("scroll", handleScrollCheck, { passive: true });
-
-    return () => {
-      el.removeEventListener("scroll", handleScrollCheck);
-      window.removeEventListener("scroll", handleScrollCheck);
-    };
-  }, [handleScrollCheck]);
-
   const scrollToHash = useCallback(() => {
     const hash = window.location.hash;
     if (!hash) return;
@@ -166,7 +108,7 @@ export default function PageContainer({
       document.getElementById(blockId) ||
       document.querySelector(`[data-id="${blockId}"]`);
 
-    if (element && containerRef.current) {
+    if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
 
       element.classList.add(
@@ -198,13 +140,14 @@ export default function PageContainer({
     scrollToHash();
   }, [scrollToHash, pageData]);
 
-  if (loading || sessionStatus === "loading") {
+  // Show loading screen if data is loading OR if the user just clicked "Next"
+  if (loading || sessionStatus === "loading" || isNavigating) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-white p-6">
+      <div className="flex h-full min-h-screen w-full items-center justify-center bg-white p-6">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-[#8b5cf6]" />
           <p className="text-xs font-medium text-zinc-400">
-            Loading page content...
+            Loading next page...
           </p>
         </div>
       </div>
@@ -230,19 +173,9 @@ export default function PageContainer({
     Array.isArray(pageData.content) &&
     pageData.content.length > 0;
 
-  const displayProgress = isCompleted ? 100 : scrollProgress;
-
-  const size = 48;
-  const strokeWidth = 3;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset =
-    circumference - (displayProgress / 100) * circumference;
-
-  const canNavigateNext = isCompleted || displayProgress >= 85;
-
-  const handleButtonClick = () => {
-    if (!canNavigateNext) return;
+  const handleNextClick = () => {
+    if (isNavigating) return;
+    setIsNavigating(true); // Triggers the clean full-screen loader immediately
 
     if (!isCompleted) {
       setIsCompleted(true);
@@ -252,12 +185,9 @@ export default function PageContainer({
   };
 
   return (
-    <div
-      ref={containerRef}
-      onScroll={handleScrollCheck}
-      className="flex h-full min-h-screen flex-col justify-between overflow-x-hidden overflow-y-auto bg-white scroll-smooth"
-    >
-      <div className="mx-auto w-full max-w-4xl px-0 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
+    <div className="flex h-full min-h-screen flex-col justify-between overflow-x-hidden overflow-y-auto bg-white scroll-smooth">
+      {/* Main Content Area */}
+      <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-8 sm:py-12 lg:px-12 lg:py-16">
         <main className="min-h-[250px] w-full overflow-x-auto">
           {isBlockNoteContent ? (
             <BlockNoteReader
@@ -279,60 +209,23 @@ export default function PageContainer({
             </div>
           )}
         </main>
-      </div>
 
-      <footer className="sticky bottom-0 z-20 border-t border-zinc-100 bg-white/95 backdrop-blur-md px-4 py-3 sm:px-8 sm:py-4 transition-all">
-        <div className="mx-auto flex max-w-4xl items-center justify-end">
+        {/* Minimalist Centered Arrow Down Button */}
+        <div className="mt-20 pt-10 border-t border-zinc-100 flex flex-col items-center justify-center gap-3">
           <button
             type="button"
-            onClick={handleButtonClick}
-            disabled={!canNavigateNext}
-            aria-label="Next Item"
-            className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all ${
-              canNavigateNext
-                ? "cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
-                : "cursor-default opacity-70"
-            }`}
+            onClick={handleNextClick}
+            disabled={isNavigating}
+            aria-label="Next Page"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-50 hover:bg-[#8b5cf6] text-[#8b5cf6] hover:text-white transition-all duration-300 cursor-pointer shadow-sm hover:scale-105 active:scale-95"
           >
-            <svg
-              className="absolute inset-0 -rotate-90 transform"
-              width={size}
-              height={size}
-            >
-              <circle
-                className="text-purple-100"
-                stroke="currentColor"
-                fill="transparent"
-                strokeWidth={strokeWidth}
-                r={radius}
-                cx={size / 2}
-                cy={size / 2}
-              />
-              <circle
-                className="text-[#8b5cf6] transition-all duration-300 ease-out"
-                stroke="currentColor"
-                fill="transparent"
-                strokeWidth={strokeWidth}
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-                r={radius}
-                cx={size / 2}
-                cy={size / 2}
-              />
-            </svg>
-
-            <ArrowDown
-              size={18}
-              className={`transition-colors duration-200 ${
-                canNavigateNext
-                  ? "text-[#8b5cf6] font-bold"
-                  : "text-[#8b5cf6]/50"
-              }`}
-            />
+            <ArrowDown size={20} />
           </button>
+          <span className="text-[11px] font-medium uppercase tracking-widest text-zinc-400">
+            Continue
+          </span>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }
