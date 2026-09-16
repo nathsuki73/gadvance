@@ -20,7 +20,7 @@ const STEP_CONTENT: Record<
       </>
     ),
     description:
-      "Your identity is the foundation of your journey here. We use this to personalize your learning and verify your identity.",
+      "Your identity is the foundation of your journey here. This helps us verify your account and guide your learning by filling up your basic information.",
   },
   "/onboarding/contact-location": {
     title: (
@@ -30,7 +30,7 @@ const STEP_CONTENT: Record<
       </>
     ),
     description:
-      "Providing your location helps us connect you with local partners and nearby community events in your region.",
+      "Let us know the best way to reach you with updates about your learning journey.",
   },
   "/onboarding/icon-bio": {
     title: (
@@ -40,7 +40,7 @@ const STEP_CONTENT: Record<
       </>
     ),
     description:
-      "Once you finish, you will have full access to our workspace and learning modules.",
+      "You're one step away from unlocking your workspace and starting your first course.",
   },
 };
 

@@ -157,13 +157,6 @@ export default function PrivacyPolicyPage() {
                 </li>
                 <li>
                   <strong className="font-medium text-zinc-800">
-                    Academic & Professional Details:
-                  </strong>{" "}
-                  Institutional affiliation (e.g., student, educator, LGU, or
-                  workplace affiliation) for certificate issuance.
-                </li>
-                <li>
-                  <strong className="font-medium text-zinc-800">
                     Learning Progress:
                   </strong>{" "}
                   Module completion status and assessment results

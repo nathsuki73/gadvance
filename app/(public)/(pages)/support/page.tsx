@@ -28,13 +28,13 @@ const FAQS: FAQItem[] = [
     category: "General",
     question: "What is GADvance and who is it designed for?",
     answer:
-      "GADvance is an e-learning and gender advancement platform tailored for students, educators, public servants, and private institutions in the Philippines. It provides self-paced learning tracks, policy frameworks, and interactive community spaces.",
+      "GADvance is an e-learning and gender advancement platform tailored for students, educators, and institutions in the Philippines. It provides self-paced learning tracks, policy frameworks, and interactive community spaces.",
   },
   {
     category: "Partnerships",
     question: "How can my university or organization integrate GADvance?",
     answer:
-      "We partner with academic institutions, local government units (LGUs), and organizations looking to strengthen their Gender Focal Point System (GFPS) and Safe Spaces Act compliance. Reach out to our partnership desk at gadvanceproject@gmail.com for institutional onboardings.",
+      "We partner with academic institutions and organizations looking to strengthen their Gender Focal Point System (GFPS) and Safe Spaces Act compliance. Reach out to our partnership desk at gadvanceproject@gmail.com for institutional onboardings.",
   },
   {
     category: "Technical",
