@@ -82,7 +82,6 @@ export default function AuthHeader() {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const activeAbortControllerRef = useRef<AbortController | null>(null);
   const pointerOrigin = useRef({ x: 0, y: 0 });
-  const profilePointerOrigin = useRef({ x: 0, y: 0 });
   const [isProfilePending, setIsProfilePending] = useState(false);
 
   // Overlay states
@@ -331,27 +330,6 @@ export default function AuthHeader() {
     });
   };
 
-  const toggleProfileDropdown = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const moveX = Math.abs(e.clientX - profilePointerOrigin.current.x);
-    const moveY = Math.abs(e.clientY - profilePointerOrigin.current.y);
-    if (moveX > 6 || moveY > 6) {
-      e.preventDefault();
-      return;
-    }
-
-    if (isProfilePending) return;
-    setIsProfilePending(true);
-    setTimeout(() => setIsProfilePending(false), 250);
-
-    const selection = window.getSelection();
-    if (selection) {
-      selection.removeAllRanges();
-    }
-
-    setShowNotifications(false);
-    setShowProfileDropdown((current) => !current);
-  };
-
   const handleResultClick = (url: string) => {
     closeAllOverlays();
     setSearchQuery("");
@@ -474,24 +452,25 @@ export default function AuthHeader() {
           </span>
         </Link>
 
-        <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
-          {/* Desktop search */}
-          <div className="hidden md:block md:flex-1 md:max-w-md relative">
-            <form onSubmit={handleSearchSubmit} className="relative w-full">
-              <SearchBar
-                value={searchQuery}
-                onChange={handleSearchChange}
-                id="desktop-search-input"
-              />
-              {renderSearchDropdown()}
-            </form>
-          </div>
+        {/* Desktop Search Bar (Hidden on Mobile) */}
+        <div className="hidden md:block md:flex-1 md:max-w-md relative mx-4">
+          <form onSubmit={handleSearchSubmit} className="relative w-full">
+            <SearchBar
+              value={searchQuery}
+              onChange={handleSearchChange}
+              id="desktop-search-input"
+            />
+            {renderSearchDropdown()}
+          </form>
+        </div>
 
+        <div className="flex items-center gap-2 md:gap-4">
           {/* Mobile search toggle */}
           <button
             type="button"
             onClick={toggleSearch}
             className="rounded-full p-2 text-zinc-600 hover:bg-zinc-100 md:hidden"
+            aria-label="Toggle search"
           >
             {showSearch ? (
               <X className="h-5 w-5" />
@@ -509,68 +488,82 @@ export default function AuthHeader() {
             ))}
           </nav>
 
-          {/* Profile dropdown */}
-          <div className="relative hidden md:block">
-            <button
-              type="button"
-              draggable={false}
-              onDragStart={(e) => e.preventDefault()}
-              onClick={(e) => {
-                // Prevent rapid-click thread locks
-                if (isProfilePending) return;
-                setIsProfilePending(true);
-
-                // Defer state update to prevent Chromium main-thread lockups
-                requestAnimationFrame(() => {
-                  setShowNotifications(false);
-                  setShowProfileDropdown((current) => !current);
-                });
-
-                setTimeout(() => setIsProfilePending(false), 250);
-              }}
-              className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-100 bg-zinc-50 p-0 hover:border-[#a78bfa]/30 transition-all select-none cursor-pointer"
-            >
-              {renderAvatar(
-                "h-full w-full rounded-full object-cover pointer-events-none",
-                "flex h-full w-full items-center justify-center rounded-full bg-[#c4b5fd] text-white text-xs font-bold",
-              )}
-            </button>
-
-            <div
-              className={`absolute right-0 mt-3 w-56 z-50 origin-top-right rounded-2xl border border-primary-hover/20 bg-white p-2 flex flex-col gap-0.5 shadow-xl transition-all duration-200 ease-in-out transform ${
-                showProfileDropdown
-                  ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
-                  : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
-              }`}
-            >
-              <div className="px-3 py-2.5 border-b border-zinc-200 mb-1">
-                <p className="text-xs font-bold text-zinc-800">
-                  {currentUser.name}
-                </p>
-                <p className="text-[10px] text-zinc-400 font-light truncate mt-0.5">
-                  {currentUser.email}
-                </p>
-              </div>
-
-              <DropdownLink
-                href="/workspace/profile"
-                icon={<User2Icon size={14} />}
-                label="profile"
-              />
+          <div className="flex items-center gap-2 border-l border-zinc-100 pl-2 md:pl-4">
+            {/* Profile dropdown (Desktop Only) */}
+            <div className="relative hidden md:block">
               <button
                 type="button"
-                onClick={() => setShowLogoutDialog(true)}
-                className="w-full flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-red-500 font-medium hover:bg-red-50 transition-colors lowercase cursor-pointer select-none"
+                draggable={false}
+                onDragStart={(e) => e.preventDefault()}
+                onClick={(e) => {
+                  if (isProfilePending) return;
+                  setIsProfilePending(true);
+
+                  requestAnimationFrame(() => {
+                    setShowNotifications(false);
+                    setShowProfileDropdown((current) => !current);
+                  });
+
+                  setTimeout(() => setIsProfilePending(false), 250);
+                }}
+                className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-100 bg-zinc-50 p-0 hover:border-[#a78bfa]/30 transition-all select-none cursor-pointer"
               >
-                <LogOut size={14} />
-                sign out
+                {renderAvatar(
+                  "h-full w-full rounded-full object-cover pointer-events-none",
+                  "flex h-full w-full items-center justify-center rounded-full bg-[#c4b5fd] text-white text-xs font-bold",
+                )}
               </button>
+
+              <div
+                className={`absolute right-0 mt-3 w-56 z-50 origin-top-right rounded-2xl border border-primary-hover/20 bg-white p-2 flex flex-col gap-0.5 shadow-xl transition-all duration-200 ease-in-out transform ${
+                  showProfileDropdown
+                    ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                    : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
+                }`}
+              >
+                <div className="px-3 py-2.5 border-b border-zinc-200 mb-1">
+                  <p className="text-xs font-bold text-zinc-800">
+                    {currentUser.name}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 font-light truncate mt-0.5">
+                    {currentUser.email}
+                  </p>
+                </div>
+
+                <DropdownLink
+                  href="/workspace/profile"
+                  icon={<User2Icon size={14} />}
+                  label="profile"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutDialog(true)}
+                  className="w-full flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-red-500 font-medium hover:bg-red-50 transition-colors lowercase cursor-pointer select-none"
+                >
+                  <LogOut size={14} />
+                  sign out
+                </button>
+              </div>
+
+              <LogoutConfirmationDialog
+                open={showLogoutDialog}
+                onClose={() => setShowLogoutDialog(false)}
+              />
             </div>
 
-            <LogoutConfirmationDialog
-              open={showLogoutDialog}
-              onClose={() => setShowLogoutDialog(false)}
-            />
+            {/* Burger menu */}
+            <button
+              type="button"
+              onClick={toggleMobileMenu}
+              className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-50 md:hidden"
+              aria-label="Toggle mobile menu"
+            >
+              {showMobileMenu ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -584,7 +577,7 @@ export default function AuthHeader() {
         }`}
       >
         <div className="border-t border-zinc-100 pt-3 flex justify-center">
-          <div className="relative w-full max-w-md">
+          <div className="relative w-full">
             <form onSubmit={handleSearchSubmit} className="relative w-full">
               <SearchBar
                 value={searchQuery}
@@ -600,7 +593,9 @@ export default function AuthHeader() {
       {/* Mobile menu */}
       <div
         className={`overflow-hidden transition-all duration-300 ease-in-out md:hidden ${
-          showMobileMenu ? "max-h-150 opacity-100 mt-4" : "max-h-0 opacity-0"
+          showMobileMenu
+            ? "max-h-[500px] opacity-100 mt-4"
+            : "max-h-0 opacity-0"
         }`}
       >
         <nav className="flex flex-col gap-1 border-t border-zinc-100 pt-4">
@@ -615,7 +610,7 @@ export default function AuthHeader() {
               <p className="text-sm font-semibold text-zinc-800 lowercase">
                 {currentUser.name}
               </p>
-              <p className="text-xs text-zinc-400 font-light truncate">
+              <p className="text-xs text-zinc-400 font-light truncate max-w-[200px]">
                 {currentUser.email}
               </p>
             </div>
