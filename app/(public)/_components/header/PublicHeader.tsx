@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 
 import logoIcon from "@/app/assets/logo.ico";
 
 import { NavLink } from "./NavLink";
-import { Button } from "../Button/button";
-import { SearchBar } from "./SearchBar";
+import { Button } from "../Button/Button";
 
 const PUBLIC_NAVS = [
   { href: "/about", label: "About" },
@@ -22,17 +22,55 @@ const PUBLIC_NAVS = [
 export default function PublicHeader() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const headerRef = useRef<HTMLElement>(null);
+  const pointerOrigin = useRef({ x: 0, y: 0 });
 
-  const toggleSearch = () => {
-    const willBeShown = !showSearch;
-    setShowSearch(willBeShown);
-
-    // If opening search, close the burger menu
-    if (willBeShown) {
-      setShowMobileMenu(false);
+  const handlePointerDown = (e: React.PointerEvent) => {
+    pointerOrigin.current = { x: e.clientX, y: e.clientY };
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim().length > 0) {
+      selection.removeAllRanges();
     }
+  };
+
+  const handleSafeLinkClick = (
+    e: React.MouseEvent<HTMLElement>,
+    href: string,
+  ) => {
+    // Allow opening in a new tab via Ctrl/Cmd + Click
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
+      return;
+    }
+
+    // Ignore drag-clicks to prevent freezes
+    const moveX = Math.abs(e.clientX - pointerOrigin.current.x);
+    const moveY = Math.abs(e.clientY - pointerOrigin.current.y);
+    if (moveX > 6 || moveY > 6) {
+      e.preventDefault();
+      return;
+    }
+
+    // Prevent rapid-click thread locks
+    if (isPending) {
+      e.preventDefault();
+      return;
+    }
+
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+    }
+
+    setShowMobileMenu(false);
+    setShowSearch(false);
+
+    e.preventDefault();
+    startTransition(() => {
+      router.push(href);
+    });
   };
 
   const toggleMobileMenu = () => {
@@ -46,6 +84,11 @@ export default function PublicHeader() {
 
   useEffect(() => {
     const handleClickOutside = (e: PointerEvent) => {
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim().length > 0) {
+        return;
+      }
+
       if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
         setShowSearch(false);
         setShowMobileMenu(false);
@@ -65,21 +108,23 @@ export default function PublicHeader() {
       className="sticky top-0 z-50 border-b border-zinc-100 bg-white/80 px-4 py-3 backdrop-blur-md md:px-6"
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-        {/* LEFT: Logo (Icon only on mobile, text added on sm+) */}
+        {/* LEFT: Logo with Safe Link Handler */}
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2.5 transition-transform active:scale-95"
+          draggable={false}
+          onPointerDown={handlePointerDown}
+          onClick={(e) => handleSafeLinkClick(e, "/")}
+          className="flex shrink-0 items-center gap-2.5 transition-transform active:scale-95 select-none cursor-pointer"
         >
           <Image src={logoIcon} alt="Logo" width={32} height={32} />
-          <span className=" text-xl font-bold tracking-tight text-zinc-900 block">
+          <span className="text-xl font-bold tracking-tight text-zinc-900 block">
             GADvance
           </span>
         </Link>
 
         {/* CENTER/RIGHT: Search & Navigation */}
         <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
-          {/* DESKTOP NAV (xl only) */}
-
+          {/* DESKTOP NAV */}
           <nav className="hidden items-center gap-6 xl:flex">
             {PUBLIC_NAVS.map((link) => (
               <NavLink key={link.href} href={link.href}>
@@ -88,7 +133,7 @@ export default function PublicHeader() {
             ))}
           </nav>
 
-          {/* AUTH ACTIONS */}
+          {/* AUTH ACTIONS (Using the safe Button component naturally with href) */}
           <div className="flex items-center gap-2">
             <div className="hidden xl:flex items-center gap-2">
               <Button href="/auth/signin" variant="ghost">
@@ -97,10 +142,11 @@ export default function PublicHeader() {
               <Button href="/auth/signup">Sign Up</Button>
             </div>
 
-            {/* BURGER MENU (Visible up to xl) */}
+            {/* BURGER MENU */}
             <button
-              onClick={toggleMobileMenu} // Using the new handler
+              onClick={toggleMobileMenu}
               className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-50 xl:hidden"
+              aria-label="Toggle menu"
             >
               {showMobileMenu ? (
                 <X className="h-6 w-6" />
@@ -111,6 +157,7 @@ export default function PublicHeader() {
           </div>
         </div>
       </div>
+
       {/* EXPANDABLE MOBILE/TABLET MENU */}
       <div
         className={`
@@ -124,8 +171,10 @@ export default function PublicHeader() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-lg px-3 py-2 text-base font-medium text-zinc-600 hover:bg-zinc-50"
-                onClick={() => setShowMobileMenu(false)}
+                draggable={false}
+                onPointerDown={handlePointerDown}
+                onClick={(e) => handleSafeLinkClick(e, link.href)}
+                className="rounded-lg px-3 py-2 text-base font-medium text-zinc-600 hover:bg-zinc-50 select-none"
               >
                 {link.label}
               </Link>
