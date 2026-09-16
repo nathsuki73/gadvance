@@ -19,12 +19,12 @@ import {
 
 import Notification from "../Notification";
 import logoIcon from "@/app/assets/logo.ico";
-import { NavLink } from "./NavLink";
 import SearchBar from "./SearchBar";
 import LogoutConfirmationDialog from "./LogoutConfirmation";
 import { useQuery } from "@tanstack/react-query";
 import { getUserProfile } from "../../service";
 import { apiFetch } from "@/app/lib/api-client";
+import { NavLink } from "@/app/(public)/_components/header/NavLink";
 
 const SEARCH_DEBOUNCE_MS = 250;
 
