@@ -122,10 +122,10 @@ const LearnPage = ({ params }: LearnPageProps) => {
         await syncLearningPlanProgress(learningPlanId);
       }
 
-      queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: ["learningProgress", moduleId],
       });
-      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      await queryClient.invalidateQueries({ queryKey: ["userProfile"] });
     },
     [activeItem, module, moduleId, queryClient],
   );
