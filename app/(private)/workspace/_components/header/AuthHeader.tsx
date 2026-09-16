@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -76,10 +76,14 @@ function getInitials(name?: string | null): string {
 export default function AuthHeader() {
   const router = useRouter();
   const { data: session } = useSession();
+  const [isPending, startTransition] = useTransition();
 
   const headerRef = useRef<HTMLElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const activeAbortControllerRef = useRef<AbortController | null>(null);
+  const pointerOrigin = useRef({ x: 0, y: 0 });
+  const profilePointerOrigin = useRef({ x: 0, y: 0 });
+  const [isProfilePending, setIsProfilePending] = useState(false);
 
   // Overlay states
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -121,6 +125,47 @@ export default function AuthHeader() {
     setShowProfileDropdown(false);
     setShowNotifications(false);
     setIsSearchOpen(false);
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    pointerOrigin.current = { x: e.clientX, y: e.clientY };
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim().length > 0) {
+      selection.removeAllRanges();
+    }
+  };
+
+  const handleSafeLinkClick = (
+    e: React.MouseEvent<HTMLElement>,
+    href: string,
+  ) => {
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
+      return;
+    }
+
+    const moveX = Math.abs(e.clientX - pointerOrigin.current.x);
+    const moveY = Math.abs(e.clientY - pointerOrigin.current.y);
+    if (moveX > 6 || moveY > 6) {
+      e.preventDefault();
+      return;
+    }
+
+    if (isPending) {
+      e.preventDefault();
+      return;
+    }
+
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+    }
+
+    closeAllOverlays();
+
+    e.preventDefault();
+    startTransition(() => {
+      router.push(href);
+    });
   };
 
   const displayName = useMemo(() => {
@@ -214,7 +259,6 @@ export default function AuthHeader() {
     }
   };
 
-  // Search input change handler
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
 
@@ -236,16 +280,19 @@ export default function AuthHeader() {
     }, SEARCH_DEBOUNCE_MS);
   };
 
-  // Form submit handler (triggers immediate execution when pressing Enter)
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     executeSearch(searchQuery);
   };
 
-  // Outside click listener
   useEffect(() => {
     const handleClickOutside = (e: PointerEvent) => {
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim().length > 0) {
+        return;
+      }
+
       if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
         closeAllOverlays();
       }
@@ -284,19 +331,23 @@ export default function AuthHeader() {
     });
   };
 
-  const toggleNotifications = () => {
-    setShowNotifications((current) => {
-      const next = !current;
-      if (next) {
-        setShowProfileDropdown(false);
-        setShowMobileMenu(false);
-        setShowSearch(false);
-      }
-      return next;
-    });
-  };
+  const toggleProfileDropdown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const moveX = Math.abs(e.clientX - profilePointerOrigin.current.x);
+    const moveY = Math.abs(e.clientY - profilePointerOrigin.current.y);
+    if (moveX > 6 || moveY > 6) {
+      e.preventDefault();
+      return;
+    }
 
-  const toggleProfileDropdown = () => {
+    if (isProfilePending) return;
+    setIsProfilePending(true);
+    setTimeout(() => setIsProfilePending(false), 250);
+
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+    }
+
     setShowNotifications(false);
     setShowProfileDropdown((current) => !current);
   };
@@ -345,7 +396,6 @@ export default function AuthHeader() {
 
     return (
       <div className="absolute top-full left-0 mt-2 w-full max-w-[420px] rounded-2xl border border-zinc-100 bg-white p-2 shadow-2xl z-50 max-h-[350px] overflow-y-auto">
-        {/* Loading Skeleton / Spinner State */}
         {isSearching && (
           <div className="flex flex-col gap-2 p-2">
             <div className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-500">
@@ -359,7 +409,6 @@ export default function AuthHeader() {
           </div>
         )}
 
-        {/* Results Found */}
         {!isSearching && searchResults.length > 0 && (
           <div className="flex flex-col gap-0.5">
             {searchResults.map((item, index) => (
@@ -387,7 +436,6 @@ export default function AuthHeader() {
           </div>
         )}
 
-        {/* Empty State */}
         {!isSearching && hasSearched && searchResults.length === 0 && (
           <div className="flex flex-col items-center justify-center py-6 px-4 text-center">
             <div className="p-2.5 rounded-full bg-zinc-50 mb-2">
@@ -415,7 +463,10 @@ export default function AuthHeader() {
         {/* Logo */}
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2.5 transition-transform"
+          draggable={false}
+          onPointerDown={handlePointerDown}
+          onClick={(e) => handleSafeLinkClick(e, "/")}
+          className="flex shrink-0 items-center gap-2.5 transition-transform select-none cursor-pointer"
         >
           <Image src={logoIcon} alt="Logo" width={32} height={32} />
           <span className="text-xl font-bold tracking-tight text-zinc-900 block">
@@ -458,86 +509,68 @@ export default function AuthHeader() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 border-l border-zinc-100 pl-4 md:pl-4">
-            {/* Notifications */}
-            {/* <div className="relative">
-              <button
-                type="button"
-                onClick={toggleNotifications}
-                aria-expanded={showNotifications}
-                className="relative rounded-full p-2 text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
-              >
-                <Bell className="h-5 w-5" strokeWidth={1.8} />
-              </button>
-
-              <Notification
-                open={showNotifications}
-                onCloseAction={() => setShowNotifications(false)}
-              />
-            </div> */}
-
-            {/* Profile dropdown */}
-            <div className="relative hidden md:block">
-              <button
-                type="button"
-                onClick={toggleProfileDropdown}
-                className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-100 bg-zinc-50 p-0 hover:border-[#a78bfa]/30 transition-all"
-              >
-                {renderAvatar(
-                  "h-full w-full rounded-full object-cover",
-                  "flex h-full w-full items-center justify-center rounded-full bg-[#c4b5fd] text-white text-xs font-bold",
-                )}
-              </button>
-
-              <div
-                className={`absolute right-0 mt-3 w-56 z-50 origin-top-right rounded-2xl border border-primary-hover/20 bg-white p-2 flex flex-col gap-0.5 shadow-xl transition-all duration-200 ease-in-out transform ${
-                  showProfileDropdown
-                    ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
-                    : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
-                }`}
-              >
-                <div className="px-3 py-2.5 border-b border-zinc-200 mb-1">
-                  <p className="text-xs font-bold text-zinc-800">
-                    {currentUser.name}
-                  </p>
-                  <p className="text-[10px] text-zinc-400 font-light truncate mt-0.5">
-                    {currentUser.email}
-                  </p>
-                </div>
-
-                <DropdownLink
-                  href="/workspace/profile"
-                  icon={<User2Icon size={14} />}
-                  label="profile"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowLogoutDialog(true)}
-                  className="w-full flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-red-500 font-medium hover:bg-red-50 transition-colors lowercase"
-                >
-                  <LogOut size={14} />
-                  sign out
-                </button>
-              </div>
-
-              <LogoutConfirmationDialog
-                open={showLogoutDialog}
-                onClose={() => setShowLogoutDialog(false)}
-              />
-            </div>
-
-            {/* Burger menu */}
+          {/* Profile dropdown */}
+          <div className="relative hidden md:block">
             <button
               type="button"
-              onClick={toggleMobileMenu}
-              className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-50 md:hidden"
+              draggable={false}
+              onDragStart={(e) => e.preventDefault()}
+              onClick={(e) => {
+                // Prevent rapid-click thread locks
+                if (isProfilePending) return;
+                setIsProfilePending(true);
+
+                // Defer state update to prevent Chromium main-thread lockups
+                requestAnimationFrame(() => {
+                  setShowNotifications(false);
+                  setShowProfileDropdown((current) => !current);
+                });
+
+                setTimeout(() => setIsProfilePending(false), 250);
+              }}
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-100 bg-zinc-50 p-0 hover:border-[#a78bfa]/30 transition-all select-none cursor-pointer"
             >
-              {showMobileMenu ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
+              {renderAvatar(
+                "h-full w-full rounded-full object-cover pointer-events-none",
+                "flex h-full w-full items-center justify-center rounded-full bg-[#c4b5fd] text-white text-xs font-bold",
               )}
             </button>
+
+            <div
+              className={`absolute right-0 mt-3 w-56 z-50 origin-top-right rounded-2xl border border-primary-hover/20 bg-white p-2 flex flex-col gap-0.5 shadow-xl transition-all duration-200 ease-in-out transform ${
+                showProfileDropdown
+                  ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                  : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
+              }`}
+            >
+              <div className="px-3 py-2.5 border-b border-zinc-200 mb-1">
+                <p className="text-xs font-bold text-zinc-800">
+                  {currentUser.name}
+                </p>
+                <p className="text-[10px] text-zinc-400 font-light truncate mt-0.5">
+                  {currentUser.email}
+                </p>
+              </div>
+
+              <DropdownLink
+                href="/workspace/profile"
+                icon={<User2Icon size={14} />}
+                label="profile"
+              />
+              <button
+                type="button"
+                onClick={() => setShowLogoutDialog(true)}
+                className="w-full flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-red-500 font-medium hover:bg-red-50 transition-colors lowercase cursor-pointer select-none"
+              >
+                <LogOut size={14} />
+                sign out
+              </button>
+            </div>
+
+            <LogoutConfirmationDialog
+              open={showLogoutDialog}
+              onClose={() => setShowLogoutDialog(false)}
+            />
           </div>
         </div>
       </div>
@@ -592,8 +625,10 @@ export default function AuthHeader() {
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-xl px-3 py-2.5 text-base font-medium text-zinc-600 hover:bg-zinc-50"
-              onClick={() => setShowMobileMenu(false)}
+              draggable={false}
+              onPointerDown={handlePointerDown}
+              onClick={(e) => handleSafeLinkClick(e, link.href)}
+              className="rounded-xl px-3 py-2.5 text-base font-medium text-zinc-600 hover:bg-zinc-50 select-none"
             >
               {link.label}
             </Link>
@@ -602,8 +637,10 @@ export default function AuthHeader() {
           <div className="border-t border-zinc-50 mt-2 pt-3 flex flex-col gap-1">
             <Link
               href="/workspace/profile"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 font-medium"
-              onClick={() => setShowMobileMenu(false)}
+              draggable={false}
+              onPointerDown={handlePointerDown}
+              onClick={(e) => handleSafeLinkClick(e, "/workspace/profile")}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 font-medium select-none"
             >
               <Settings size={16} className="text-zinc-400" />
               Profile Settings
@@ -614,7 +651,7 @@ export default function AuthHeader() {
                 setShowLogoutDialog(true);
                 setShowMobileMenu(false);
               }}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-500 font-medium hover:bg-red-50/50 text-left lowercase mt-1"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-500 font-medium hover:bg-red-50/50 text-left lowercase mt-1 cursor-pointer"
             >
               <LogOut size={16} />
               Sign out
@@ -635,10 +672,54 @@ function DropdownLink({
   icon: React.ReactNode;
   label: string;
 }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const pointerOrigin = useRef({ x: 0, y: 0 });
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    pointerOrigin.current = { x: e.clientX, y: e.clientY };
+
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim().length > 0) {
+      selection.removeAllRanges();
+    }
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
+      return;
+    }
+
+    const moveX = Math.abs(e.clientX - pointerOrigin.current.x);
+    const moveY = Math.abs(e.clientY - pointerOrigin.current.y);
+    if (moveX > 6 || moveY > 6) {
+      e.preventDefault();
+      return;
+    }
+
+    if (isPending) {
+      e.preventDefault();
+      return;
+    }
+
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+    }
+
+    e.preventDefault();
+    startTransition(() => {
+      router.push(href);
+    });
+  };
+
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-zinc-600 font-medium hover:bg-zinc-50 transition-colors lowercase"
+      draggable={false}
+      onPointerDown={handlePointerDown}
+      onClick={handleClick}
+      className="flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-zinc-600 font-medium hover:bg-zinc-50 transition-colors lowercase select-none cursor-pointer"
     >
       <span className="text-zinc-400">{icon}</span>
       {label}
