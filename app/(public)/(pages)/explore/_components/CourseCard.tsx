@@ -2,12 +2,31 @@
 
 import React from "react";
 import { ArrowUpRight, Clock3, Users } from "lucide-react";
-
 import { useRouter } from "next/navigation";
 import type { LearningPlan } from "../types";
 
 type CourseCardProps = {
   module: LearningPlan;
+};
+
+// Helper function to format total minutes into days, hours, and minutes
+const formatDuration = (totalMinutes: number): string => {
+  if (!totalMinutes || totalMinutes <= 0) return "0m";
+
+  const minutesInDay = 24 * 60;
+  const days = Math.floor(totalMinutes / minutesInDay);
+  const remainingMinutesAfterDays = totalMinutes % minutesInDay;
+
+  const hours = Math.floor(remainingMinutesAfterDays / 60);
+  const minutes = remainingMinutesAfterDays % 60;
+
+  const parts: string[] = [];
+
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`);
+
+  return parts.join(" ");
 };
 
 const CourseCard = ({ module }: CourseCardProps) => {
@@ -38,7 +57,7 @@ const CourseCard = ({ module }: CourseCardProps) => {
         </div>
       </div>
 
-      {/* Content: Updated with fluid typography tracking */}
+      {/* Content */}
       <div className="relative flex-1">
         <h3 className="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight sm:leading-snug tracking-tight text-zinc-900 transition-colors duration-200 group-hover:text-primary wrap-break-word">
           {module.title}
@@ -58,7 +77,8 @@ const CourseCard = ({ module }: CourseCardProps) => {
         <div className="flex items-center gap-2.5 sm:gap-3.5 text-[11px] sm:text-xs font-medium text-zinc-500">
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
             <Clock3 size={13} strokeWidth={2} className="text-primary/60" />
-            {module.duration || "0h"}
+            {/* Formatted duration calculated from raw minutes number */}
+            {formatDuration(Number(module.duration) || 0)}
           </span>
           <span className="h-1 w-1 rounded-full bg-purple-300 shrink-0" />
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
