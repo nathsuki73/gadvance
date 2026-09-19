@@ -215,8 +215,10 @@ const LearnPage = ({ params }: LearnPageProps) => {
               sectionId={activeItem.section_id}
               assessmentId={activeItem.content_id}
               type={activeItem.assessment_type || "quiz"}
+              isLastItem={isLastItem}
               onComplete={() => handleItemComplete(activeItem.id, 100)}
               onNext={handleNext}
+              onExit={handleExitModule}
               onNavigate={handleNavigateTo}
             />
           ) : (

@@ -31,8 +31,10 @@ interface AssessmentContainerProps {
   moduleId: string;
   assessmentId: string;
   type?: string;
+  isLastItem?: boolean;
   onComplete: () => void;
   onNext: () => void;
+  onExit: () => void;
   onNavigate?: (targetId: string, blockId: string) => void;
 }
 
@@ -44,8 +46,10 @@ export default function AssessmentContainer({
   moduleId,
   assessmentId,
   type = "quiz",
+  isLastItem = false,
   onComplete,
   onNext,
+  onExit,
   onNavigate,
 }: AssessmentContainerProps) {
   const queryClient = useQueryClient();
@@ -902,7 +906,8 @@ export default function AssessmentContainer({
                     elapsedSeconds={elapsedSeconds}
                     settings={settings}
                     onRetry={handleRetry}
-                    onNext={onNext}
+                    onNext={isLastItem ? onExit : onNext}
+                    isLastItem={isLastItem}
                     isPassed={isPassed}
                     isPoll={isPoll}
                     remedialSuggestions={remedialSuggestions}
