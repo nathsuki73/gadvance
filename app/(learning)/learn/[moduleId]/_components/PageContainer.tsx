@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
-import { Loader2, AlertCircle, BookOpen, ArrowDown } from "lucide-react";
+import { Loader2, AlertCircle, BookOpen, ArrowDown, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import "@blocknote/mantine/style.css";
@@ -26,8 +26,10 @@ interface PageContainerProps {
   pageId: string;
   title: string;
   initialCompleted?: boolean;
+  isLastItem?: boolean;
   onComplete: () => void;
   onNext: () => void;
+  onExit: () => void;
 }
 
 export default function PageContainer({
@@ -35,8 +37,10 @@ export default function PageContainer({
   pageId,
   title,
   initialCompleted = false,
+  isLastItem = false,
   onComplete,
   onNext,
+  onExit,
 }: PageContainerProps) {
   const { data: session, status: sessionStatus } = useSession();
   const token = session?.laravelJwt;
@@ -214,15 +218,15 @@ export default function PageContainer({
         <div className="mt-20 pt-10 border-t border-zinc-100 flex flex-col items-center justify-center gap-3">
           <button
             type="button"
-            onClick={handleNextClick}
+            onClick={isLastItem ? onExit : handleNextClick}
             disabled={isNavigating}
-            aria-label="Next Page"
+            aria-label={isLastItem ? "Exit Module" : "Next Page"}
             className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-50 hover:bg-[#8b5cf6] text-[#8b5cf6] hover:text-white transition-all duration-300 cursor-pointer shadow-sm hover:scale-105 active:scale-95"
           >
-            <ArrowDown size={20} />
+            {isLastItem ? <X size={20} /> : <ArrowDown size={20} />}
           </button>
           <span className="text-[11px] font-medium uppercase tracking-widest text-zinc-400">
-            Continue
+            {isLastItem ? "Exit Module" : "Continue"}
           </span>
         </div>
       </div>

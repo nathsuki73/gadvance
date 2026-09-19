@@ -42,7 +42,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // 🔑 React Query hooks manage fetching and deduplication automatically
   const {
     data: module,
     isLoading: moduleLoading,
@@ -55,7 +54,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
   const loading = moduleLoading || progressLoading;
   const error = Boolean(moduleError);
 
-  // 🔑 Derived via useMemo safely without cascading renders
   const completedItemIds = useMemo(() => {
     const completed = new Set<string>();
     if (progressData?.success && Array.isArray(progressData.data)) {
@@ -70,7 +68,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
     return module?.sections?.flatMap((sec) => sec.items) ?? [];
   }, [module]);
 
-  // 🔑 Derived activeItem using useMemo instead of useEffect + setState
   const activeItem = useMemo(() => {
     if (allItems.length === 0) return null;
 
@@ -165,6 +162,17 @@ const LearnPage = ({ params }: LearnPageProps) => {
     notFound();
   }
 
+  // 3️⃣ Safe computations since activeItem is guaranteed to exist here
+  const currentIndex = allItems.findIndex((i) => i.id === activeItem.id);
+  const isLastItem = currentIndex === allItems.length - 1;
+
+  const handleExitModule = async () => {
+    if (!completedItemIds.has(activeItem.id)) {
+      await handleItemComplete(activeItem.id, 100);
+    }
+    router.push(`/explore/course/${module.courseId}/module/${moduleId}`);
+  };
+
   return (
     <main className="min-h-screen bg-white text-zinc-900">
       <ModuleSidebar
@@ -225,8 +233,10 @@ const LearnPage = ({ params }: LearnPageProps) => {
             pageId={activeItem.content_id || activeItem.id}
             title={activeItem.title}
             initialCompleted={completedItemIds.has(activeItem.id)}
+            isLastItem={isLastItem}
             onComplete={() => handleItemComplete(activeItem.id, 100)}
             onNext={handleNext}
+            onExit={handleExitModule}
           />
         )}
       </div>
