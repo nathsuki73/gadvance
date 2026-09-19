@@ -25,6 +25,7 @@ import {
   JoinedOrganization,
 } from "./service";
 import WorkspaceSkeleton from "./_components/WorkspaceSkeleton";
+import LeaveConfirmModal from "@/app/(public)/(pages)/organization/leave-confirm-modal";
 
 export default function WorkspacePage() {
   const router = useRouter();
@@ -33,6 +34,12 @@ export default function WorkspacePage() {
   const { showToast } = useToast();
 
   const userEmail = session?.user?.email;
+
+  // State to track which organization is selected for the leave confirmation modal
+  const [selectedOrgToLeave, setSelectedOrgToLeave] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const { data: profileResponse, isLoading: isProfileInitialLoading } =
     useQuery({
@@ -80,6 +87,7 @@ export default function WorkspacePage() {
         queryClient.invalidateQueries({
           queryKey: ["joinedOrganizations", userEmail],
         });
+        setSelectedOrgToLeave(null); // 👈 Close the modal on success
       } else {
         showToast(
           res.error || "Could not leave organization. Please try again.",
@@ -127,9 +135,17 @@ export default function WorkspacePage() {
     href: `/learn/${m.id}`,
   }));
 
-  // Browser confirm dialog removed
-  const handleLeaveOrganization = (orgId: string, orgName: string) => {
-    leaveOrgMutation.mutate({ orgId, orgName });
+  // 🔑 Open the custom leave confirmation modal instead of browser confirm
+  const handleOpenLeaveModal = (orgId: string, orgName: string) => {
+    setSelectedOrgToLeave({ id: orgId, name: orgName });
+  };
+
+  const handleConfirmLeave = () => {
+    if (!selectedOrgToLeave) return;
+    leaveOrgMutation.mutate({
+      orgId: selectedOrgToLeave.id,
+      orgName: selectedOrgToLeave.name,
+    });
   };
 
   return (
@@ -158,7 +174,7 @@ export default function WorkspacePage() {
           isFetching={isOrgsFetching || leaveOrgMutation.isPending}
           onExploreOrgs={() => router.push("/organization")}
           onGoToOrgPage={(orgId) => router.push(`/explore`)}
-          onLeaveOrg={handleLeaveOrganization}
+          onLeaveOrg={handleOpenLeaveModal}
         />
 
         {/* Dashboard Grid */}
@@ -194,6 +210,14 @@ export default function WorkspacePage() {
           </section>
         </div>
       </main>
+
+      <LeaveConfirmModal
+        isOpen={!!selectedOrgToLeave}
+        orgName={selectedOrgToLeave?.name || ""}
+        isPending={leaveOrgMutation.isPending}
+        onClose={() => setSelectedOrgToLeave(null)}
+        onConfirm={handleConfirmLeave}
+      />
     </div>
   );
 }
