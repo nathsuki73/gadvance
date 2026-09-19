@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AlertTriangle, X, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface LeaveConfirmModalProps {
   isOpen: boolean;
@@ -21,66 +21,56 @@ export default function LeaveConfirmModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-900/10 backdrop-blur-md p-4 animate-in fade-in duration-200">
       {/* Click outside backdrop to close */}
       <div
         className="fixed inset-0"
         onClick={isPending ? undefined : onClose}
       />
 
-      {/* Modal Dialog Card */}
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-zinc-100 p-6 z-10 space-y-5 animate-in zoom-in-95 duration-200">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          disabled={isPending}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors disabled:opacity-50 cursor-pointer"
-        >
-          <X size={18} />
-        </button>
+      {/* Modal Dialog Card matching LogoutConfirmationDialog styling */}
+      <div className="relative w-full max-w-md rounded-[24px] border border-zinc-100 bg-white p-10 shadow-xl shadow-zinc-200/40 transition-all z-10">
+        {/* Content Layout */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-light tracking-tight text-zinc-900 leading-tight lowercase">
+            ready to{" "}
+            <span className="italic font-serif text-[#e05353]">
+              leave organization?
+            </span>
+          </h2>
 
-        {/* Header Icon & Title */}
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-red-50 text-red-600 rounded-xl shrink-0">
-            <AlertTriangle size={24} />
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-base font-semibold text-zinc-900">
-              Leave Organization?
-            </h3>
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              Are you sure you want to leave{" "}
-              <span className="font-semibold text-zinc-800">{orgName}</span>?
-              You may lose access to courses and materials linked to this organization.
-            </p>
-          </div>
+          <p className="mt-4 text-base text-zinc-400 font-light leading-relaxed lowercase">
+            are you sure you want to leave{" "}
+            <span className="font-medium text-zinc-600">{orgName}</span>? you
+            may lose access to courses and materials linked to this
+            organization.
+          </p>
         </div>
 
-        {/* Modal Actions */}
-        <div className="flex items-center justify-end gap-3 pt-2">
+        {/* Action Controls: Soft Red & White Pill Layout */}
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
           <button
             type="button"
             onClick={onClose}
             disabled={isPending}
-            className="px-4 py-2 text-xs font-semibold text-zinc-600 hover:bg-zinc-100 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+            className="w-full rounded-md border border-zinc-200 bg-white px-6 py-4 text-zinc-500 transition-all hover:bg-zinc-50 hover:text-zinc-700 font-medium cursor-pointer disabled:opacity-50"
           >
             Cancel
           </button>
 
-          {/* 🎯 Explicit Red Action Button */}
           <button
             type="button"
             onClick={onConfirm}
             disabled={isPending}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-xl transition-all cursor-pointer disabled:opacity-50 shadow-sm"
+            className="w-full flex items-center justify-center gap-2 rounded-md bg-[#e05353] px-6 py-4 text-white transition-all hover:bg-[#cc4646] hover:shadow-lg hover:shadow-red-50 font-medium cursor-pointer disabled:opacity-50"
           >
             {isPending ? (
               <>
-                <Loader2 size={14} className="animate-spin text-white" />
+                <Loader2 size={16} className="animate-spin text-white" />
                 <span>Leaving...</span>
               </>
             ) : (
-              <span>Leave Organization</span>
+              <span>Leave</span>
             )}
           </button>
         </div>
