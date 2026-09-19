@@ -3,7 +3,14 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
-import { Loader2, AlertCircle, BookOpen, ArrowDown, X } from "lucide-react";
+import {
+  Loader2,
+  AlertCircle,
+  BookOpen,
+  ArrowDown,
+  X,
+  CheckCircle2,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import "@blocknote/mantine/style.css";
@@ -214,20 +221,34 @@ export default function PageContainer({
           )}
         </main>
 
-        {/* Minimalist Centered Arrow Down Button */}
+        {/* Dynamic Footer Button: Circular Arrow for Continue, Full Width Button for Complete */}
         <div className="mt-20 pt-10 border-t border-zinc-100 flex flex-col items-center justify-center gap-3">
-          <button
-            type="button"
-            onClick={isLastItem ? onExit : handleNextClick}
-            disabled={isNavigating}
-            aria-label={isLastItem ? "Exit Module" : "Next Page"}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-50 hover:bg-[#8b5cf6] text-[#8b5cf6] hover:text-white transition-all duration-300 cursor-pointer shadow-sm hover:scale-105 active:scale-95"
-          >
-            {isLastItem ? <X size={20} /> : <ArrowDown size={20} />}
-          </button>
-          <span className="text-[11px] font-medium uppercase tracking-widest text-zinc-400">
-            {isLastItem ? "Exit Module" : "Continue"}
-          </span>
+          {isLastItem ? (
+            <button
+              type="button"
+              onClick={onExit}
+              disabled={isNavigating}
+              className="inline-flex min-h-[48px] w-full max-w-sm items-center justify-center gap-2 rounded-2xl bg-[#8b5cf6] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-[#8b5cf6]/20 transition-all duration-300 cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-50"
+            >
+              <span>Complete Module</span>
+              <CheckCircle2 size={16} />
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleNextClick}
+                disabled={isNavigating}
+                aria-label="Next Page"
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-50 hover:bg-[#8b5cf6] text-[#8b5cf6] hover:text-white transition-all duration-300 cursor-pointer shadow-sm hover:scale-105 active:scale-95 disabled:opacity-50"
+              >
+                <ArrowDown size={20} />
+              </button>
+              <span className="text-[11px] font-medium uppercase tracking-widest text-zinc-400">
+                Continue
+              </span>
+            </>
+          )}
         </div>
       </div>
     </div>
