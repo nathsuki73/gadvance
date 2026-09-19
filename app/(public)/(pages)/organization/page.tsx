@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/app/components/context/ToastContext";
 import {
   Search,
   Building2,
@@ -40,6 +41,7 @@ export default function OrganizationPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const [query, setQuery] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
@@ -51,16 +53,14 @@ export default function OrganizationPage() {
 
   const isAuthenticated = !!session?.user;
 
-  // 🎯 TanStack Query for fetching explore organizations with caching
   const { data: organizations = [], isLoading: isFetching } = useQuery({
     queryKey: ["exploreOrganizations", session?.user?.email],
     queryFn: fetchExploreOrganizations,
     enabled: status !== "loading",
-    staleTime: 1000 * 60 * 2, // Cache data for 2 minutes to prevent reloading on navigation
-    refetchOnWindowFocus: false, // Prevents refetching when switching browser tabs
+    staleTime: 1000 * 60 * 2,
+    refetchOnWindowFocus: false,
   });
 
-  // 🎯 Leave Organization Mutation
   const leaveOrgMutation = useMutation({
     mutationFn: async (orgId: string) => {
       const res = await apiFetch("/api/organizations/leave", {
@@ -72,15 +72,26 @@ export default function OrganizationPage() {
       }
       return res.json();
     },
-    onSuccess: () => {
-      // Invalidate relevant queries so cache updates automatically across pages
+    onSuccess: (res, orgId) => {
+      const leftOrg = organizations.find((o) => o.id === orgId);
+      const orgName = leftOrg ? leftOrg.title : "organization";
+
+      showToast(
+        `Success! You have successfully left the organization "${orgName}"`,
+        "success",
+      );
+
       queryClient.invalidateQueries({ queryKey: ["exploreOrganizations"] });
       queryClient.invalidateQueries({ queryKey: ["userOrganization"] });
       queryClient.invalidateQueries({ queryKey: ["joinedOrganizations"] });
       setSelectedOrgToLeave(null);
     },
-    onError: (err) => {
+    onError: (err: any) => {
       console.error("Leave organization failed:", err);
+      showToast(
+        err?.message || "Could not leave organization. Please try again.",
+        "error",
+      );
     },
   });
 
