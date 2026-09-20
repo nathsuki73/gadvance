@@ -722,8 +722,6 @@ export default function AssessmentContainer({
           queryKey: viewQueryKey,
           refetchType: "none",
         });
-
-        onComplete();
       } else {
         alert(result.message || "Failed to save assessment progress.");
       }

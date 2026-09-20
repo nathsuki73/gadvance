@@ -26,13 +26,15 @@ type LearnPageProps = {
 const getMaxUnlockedIndex = (items: SectionItem[], completed: Set<string>) => {
   let idx = 0;
   for (let i = 0; i < items.length; i++) {
+    // If the item is completed, we unlock the next one
     if (completed.has(items[i].id)) {
       idx = i + 1;
     } else {
       break;
     }
   }
-  return Math.min(idx, items.length - 1);
+  // Ensure we never return an index out of bounds, but allow index 0 if nothing is completed
+  return Math.min(Math.max(0, idx), items.length - 1);
 };
 
 const LearnPage = ({ params }: LearnPageProps) => {
