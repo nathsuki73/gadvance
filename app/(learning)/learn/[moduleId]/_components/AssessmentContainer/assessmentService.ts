@@ -54,7 +54,10 @@ function shuffleArray<T>(arr: T[]): T[] {
   return shuffled;
 }
 
-function normalizeAssessmentData(payload: any, id: string): AssessmentViewData {
+export function normalizeAssessmentData(
+  payload: any,
+  id: string,
+): AssessmentViewData {
   const data = payload?.data ?? payload;
   const settingsObj = data.settings || {};
   const mode: AssessmentMode =
@@ -348,10 +351,14 @@ export async function submitPollVote(
 /**
  * 6. Reset Assessment Attempt for Retake
  */
+export type RetakeResponseData = {
+  attempt_id?: string;
+};
+
 export async function retakeAssessment(
   assessmentId: string,
   sectionItemId: string,
-): Promise<ServiceResponse<void>> {
+): Promise<ServiceResponse<RetakeResponseData>> {
   try {
     const res = await apiFetch(`/api/assessments/${assessmentId}/retake`, {
       method: "POST",
@@ -363,7 +370,11 @@ export async function retakeAssessment(
     }
 
     const json = await res.json();
-    return json;
+    return {
+      success: json.success ?? res.ok,
+      data: { attempt_id: json.attempt_id },
+      message: json.message,
+    };
   } catch (error) {
     console.error("[AssessmentViewService] Retake error:", error);
     return { success: false, error: "Network error resetting assessment." };

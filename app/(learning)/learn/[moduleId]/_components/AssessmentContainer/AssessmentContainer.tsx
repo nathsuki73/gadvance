@@ -19,11 +19,14 @@ import {
   submitPollVote,
   AnswerPayload,
   retakeAssessment,
+  normalizeAssessmentData,
+  q,
 } from "./assessmentService";
 import { AssessmentStartScreen } from "./AssessmentStartScreen";
 import { QuestionCard } from "./QuestionCard";
 import { ResultsSummary } from "./ResultSummary";
 import { ReviewSubmission } from "./ReviewSubmission";
+import { apiFetch } from "@/app/lib/api-client";
 
 interface AssessmentContainerProps {
   itemId: string;
@@ -152,14 +155,6 @@ export default function AssessmentContainer({
     const currentStatus = stateRes?.data?.status ?? "not_started";
     const isCurrentlyActive = currentStatus === "in_progress";
 
-    let localSavedAnswers: Record<string, string> = {};
-    try {
-      const stored = localStorage.getItem(storageDraftKey);
-      if (stored) {
-        localSavedAnswers = JSON.parse(stored);
-      }
-    } catch {}
-
     const prevAttempt = (viewData as any).previous_attempt;
 
     if (prevAttempt && !isCurrentlyActive) {
@@ -202,20 +197,22 @@ export default function AssessmentContainer({
         voted_question_ids,
       } = stateRes.data;
 
+      // 🛡️ FIX: If the attempt is active, strictly use the backend's saved question_order
+      // if it matches the current available pool, preventing random shifts on refresh.
       let activeQuestions = [...availableQuestions];
 
-      if (Array.isArray(question_order) && question_order.length > 0) {
+      if (
+        isCurrentlyActive &&
+        Array.isArray(question_order) &&
+        question_order.length > 0
+      ) {
         const restoredQuestions = question_order
           .map((qId: string) => validQuestionMap.get(qId))
           .filter(Boolean) as typeof availableQuestions;
 
-        const existingIdSet = new Set(restoredQuestions.map((q) => q.id));
-        const newQuestions = availableQuestions.filter(
-          (q) => !existingIdSet.has(q.id),
-        );
-        const merged = [...restoredQuestions, ...newQuestions];
-        if (merged.length > 0) {
-          activeQuestions = merged;
+        // Only use restored order if it contains valid questions matching current settings
+        if (restoredQuestions.length > 0) {
+          activeQuestions = restoredQuestions;
         }
       }
 
@@ -239,7 +236,7 @@ export default function AssessmentContainer({
 
       setAssessment({ ...viewData, questions: activeQuestions });
 
-      const restoredMap: Record<string, string> = { ...localSavedAnswers };
+      const restoredMap: Record<string, string> = {};
       if (draft_answers) {
         if (Array.isArray(draft_answers)) {
           draft_answers.forEach((ans: any) => {
@@ -781,39 +778,33 @@ export default function AssessmentContainer({
     setSavedTotalPoints(null);
     setSavedCorrectCount(null);
 
-    await queryClient.cancelQueries({ queryKey: stateQueryKey });
-    await queryClient.cancelQueries({ queryKey: viewQueryKey });
+    // 🚀 Clear query cache data completely to bypass staleTime restrictions
+    queryClient.removeQueries({ queryKey: viewQueryKey });
+    queryClient.removeQueries({ queryKey: stateQueryKey });
 
-    queryClient.setQueryData(stateQueryKey, (old: any) => ({
-      success: true,
-      data: {
-        ...(old?.data ?? {}),
-        attempt_id: (res as any).attempt_id ?? old?.data?.attempt_id ?? null,
-        status: "in_progress",
-        draft_answers: {},
-        question_order: [],
-        current_index: 0,
-        voted_question_ids: [],
-        poll_distributions: {},
-      },
-    }));
+    // 🚀 Force fetch fresh view data and state data from the backend
+    const [freshView, freshState] = await Promise.all([
+      queryClient.fetchQuery({
+        queryKey: viewQueryKey,
+        queryFn: async () => {
+          const res = await apiFetch(
+            `/api/assessments/${assessmentId}?section_item_id=${itemId}`,
+            { method: "GET" },
+          );
+          const rawData = await res.json();
+          return normalizeAssessmentData(rawData, assessmentId);
+        },
+      }),
+      queryClient.fetchQuery({
+        queryKey: stateQueryKey,
+        queryFn: () => getAssessmentState(assessmentId, itemId),
+      }),
+    ]);
 
-    queryClient.setQueryData(viewQueryKey, (old: any) => {
-      if (!old) return old;
-      const copy = { ...old };
-      delete copy.previous_attempt;
-      copy.user_has_completed = false;
-      return copy;
-    });
-
-    queryClient.invalidateQueries({
-      queryKey: stateQueryKey,
-      refetchType: "none",
-    });
-    queryClient.invalidateQueries({
-      queryKey: viewQueryKey,
-      refetchType: "none",
-    });
+    // 🚀 Directly update local assessment state with the fresh backend response
+    if (freshView) {
+      setAssessment(freshView);
+    }
   };
 
   const formatTimerDisplay = () => {
