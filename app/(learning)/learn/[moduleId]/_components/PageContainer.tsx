@@ -3,29 +3,16 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
-import {
-  Loader2,
-  AlertCircle,
-  BookOpen,
-  ArrowDown,
-  X,
-  CheckCircle2,
-} from "lucide-react";
+import { AlertCircle, BookOpen, ArrowDown, CheckCircle2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { PageContentSkeleton } from "./PageContentSkeleton";
 
 import "@blocknote/mantine/style.css";
 import "@blocknote/core/fonts/inter.css";
 
 const BlockNoteReader = dynamic(() => import("./BlockNoteReader"), {
   ssr: false,
-  loading: () => (
-    <div className="flex flex-col items-center justify-center py-12 gap-3 text-[#8b5cf6]">
-      <Loader2 size={28} className="animate-spin" />
-      <p className="text-xs font-semibold text-zinc-500">
-        Loading Page Content...
-      </p>
-    </div>
-  ),
+  loading: () => <PageContentSkeleton />,
 });
 
 interface PageContainerProps {
@@ -151,16 +138,11 @@ export default function PageContainer({
     scrollToHash();
   }, [scrollToHash, pageData]);
 
-  // Show loading screen if data is loading OR if the user just clicked "Next"
+  // Use Skeleton view when loading or clicking next
   if (loading || sessionStatus === "loading" || isNavigating) {
     return (
-      <div className="flex h-full min-h-screen w-full items-center justify-center bg-white p-6">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-[#8b5cf6]" />
-          <p className="text-xs font-medium text-zinc-400">
-            Loading next page...
-          </p>
-        </div>
+      <div className="flex h-full min-h-screen w-full flex-col justify-between bg-white overflow-y-auto">
+        <PageContentSkeleton />
       </div>
     );
   }
@@ -186,7 +168,7 @@ export default function PageContainer({
 
   const handleNextClick = () => {
     if (isNavigating) return;
-    setIsNavigating(true); // Triggers the clean full-screen loader immediately
+    setIsNavigating(true); // Triggers skeleton loader immediately
 
     if (!isCompleted) {
       setIsCompleted(true);
@@ -222,7 +204,7 @@ export default function PageContainer({
           )}
         </main>
 
-        {/* Dynamic Footer Button: Circular Arrow for Continue, Full Width Button for Complete */}
+        {/* Dynamic Footer Button */}
         <div className="mt-20 pt-10 border-t border-zinc-100 flex flex-col items-center justify-center gap-3">
           {isLastItem ? (
             <button
