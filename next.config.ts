@@ -45,8 +45,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api-backend/:path*",
-        // Now dynamically toggles between Localhost and Azure depending on your environment
+        source: "/api-proxy/:path*",
         destination: `${BACKEND_URL}/:path*`,
       },
     ];
