@@ -8,6 +8,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import ModuleSidebar from "./_components/SideBar/ModuleSidebar";
 import AssessmentContainer from "./_components/AssessmentContainer/AssessmentContainer";
 import PageContainer from "./_components/PageContainer";
+import { LearnPageSkeleton } from "./LearnPageSkeleton";
 import {
   SectionItem,
   useModuleStructure,
@@ -247,11 +248,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
   };
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb]">
-        <Loader2 size={32} className="animate-spin text-primary" />
-      </div>
-    );
+    return <LearnPageSkeleton />;
   }
 
   if (error || !module || !activeItem) {
