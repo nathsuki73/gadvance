@@ -62,17 +62,17 @@ const CourseOverviewHeader = ({
   const displayProgress = useMemo(() => {
     if (!isEnrolled || modules.length === 0) return 0;
 
-    // If your backend provides an overall course progress object:
-    if (typeof course.progress?.percentage === "number") {
-      return course.progress.percentage;
-    }
-
-    // Otherwise compute average from the module percentages
-    const total = modules.reduce((sum: number, mod: any) => {
-      return sum + (mod.progress?.percentage ?? 0);
+    // Sum up every module's progress percentage
+    const totalPercentage = modules.reduce((sum: number, mod: any) => {
+      const modProgress = mod.progress?.percentage ?? 0;
+      // Ensure each individual module percentage is safely bounded between 0 and 100
+      return sum + Math.min(100, Math.max(0, modProgress));
     }, 0);
-    return Math.round(total / modules.length);
-  }, [isEnrolled, modules, course.progress]);
+
+    // Calculate the mathematical average and round it to the nearest integer
+    const average = totalPercentage / modules.length;
+    return Math.min(100, Math.round(average));
+  }, [isEnrolled, modules]);
 
   const executeGuardedAction = async (action: () => void) => {
     if (onRequireAuth) {

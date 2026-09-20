@@ -102,6 +102,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
     currentIndex !== -1 && !isLastItem ? allItems[currentIndex + 1] : null;
 
   // 🚀 Optimized Mutation with Optimistic Updates
+  // 🚀 Optimized Combined Mutation
   const completeMutation = useMutation({
     mutationFn: async ({
       itemId,
@@ -120,11 +121,12 @@ const LearnPage = ({ params }: LearnPageProps) => {
       const learningPlanId =
         (module as any)?.learning_plan_id || module?.courseId;
 
+      // This single call handles saving progress, syncing plan progress,
+      // and returns the fresh progress state!
       return await completeAndGetNextItem({
         module_id: moduleId,
         section_id: sectionId,
         learning_item_id: itemId,
-        progress: 100,
         learning_plan_id: learningPlanId,
         next_item_id: nextId,
       });
@@ -139,6 +141,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
         moduleId,
       ]);
 
+      // Optimistic update
       queryClient.setQueryData(["learningProgress", moduleId], (old: any) => {
         if (!old) return old;
         const existingData = Array.isArray(old.data) ? old.data : [];
@@ -165,10 +168,27 @@ const LearnPage = ({ params }: LearnPageProps) => {
         );
       }
     },
+    onSuccess: (response) => {
+      if (response && response.success) {
+        queryClient.setQueryData(
+          ["learningProgress", moduleId],
+          (old: any) => ({
+            ...(old || {}),
+            success: true,
+            data: response.data,
+            completed_item_ids: response.completed_item_ids,
+          }),
+        );
+
+        // 🚀 Directly navigate using the server-confirmed next item
+        if (response.next_item) {
+          router.push(`/learn/${moduleId}?item=${response.next_item.id}`, {
+            scroll: false,
+          });
+        }
+      }
+    },
     onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["learningProgress", moduleId],
-      });
       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
     },
   });
