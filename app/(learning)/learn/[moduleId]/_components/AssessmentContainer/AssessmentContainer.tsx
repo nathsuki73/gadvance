@@ -20,7 +20,6 @@ import {
   AnswerPayload,
   retakeAssessment,
   normalizeAssessmentData,
-  q,
 } from "./assessmentService";
 import { AssessmentStartScreen } from "./AssessmentStartScreen";
 import { QuestionCard } from "./QuestionCard";
@@ -53,7 +52,6 @@ export default function AssessmentContainer({
   onComplete,
   onNext,
   onExit,
-  onNavigate,
 }: AssessmentContainerProps) {
   const queryClient = useQueryClient();
 
@@ -197,8 +195,6 @@ export default function AssessmentContainer({
         voted_question_ids,
       } = stateRes.data;
 
-      // 🛡️ FIX: If the attempt is active, strictly use the backend's saved question_order
-      // if it matches the current available pool, preventing random shifts on refresh.
       let activeQuestions = [...availableQuestions];
 
       if (
@@ -210,7 +206,6 @@ export default function AssessmentContainer({
           .map((qId: string) => validQuestionMap.get(qId))
           .filter(Boolean) as typeof availableQuestions;
 
-        // Only use restored order if it contains valid questions matching current settings
         if (restoredQuestions.length > 0) {
           activeQuestions = restoredQuestions;
         }
@@ -778,12 +773,10 @@ export default function AssessmentContainer({
     setSavedTotalPoints(null);
     setSavedCorrectCount(null);
 
-    // 🚀 Clear query cache data completely to bypass staleTime restrictions
     queryClient.removeQueries({ queryKey: viewQueryKey });
     queryClient.removeQueries({ queryKey: stateQueryKey });
 
-    // 🚀 Force fetch fresh view data and state data from the backend
-    const [freshView, freshState] = await Promise.all([
+    const [freshView] = await Promise.all([
       queryClient.fetchQuery({
         queryKey: viewQueryKey,
         queryFn: async () => {
@@ -791,6 +784,9 @@ export default function AssessmentContainer({
             `/api/assessments/${assessmentId}?section_item_id=${itemId}`,
             { method: "GET" },
           );
+          if (!res) {
+            throw new Error("Failed to fetch assessment");
+          }
           const rawData = await res.json();
           return normalizeAssessmentData(rawData, assessmentId);
         },
@@ -801,7 +797,6 @@ export default function AssessmentContainer({
       }),
     ]);
 
-    // 🚀 Directly update local assessment state with the fresh backend response
     if (freshView) {
       setAssessment(freshView);
     }

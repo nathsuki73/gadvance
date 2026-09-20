@@ -145,6 +145,6 @@ export async function completeAndGetNextItem(payload: {
     body: JSON.stringify(payload),
     cache: "no-store",
   });
-  if (!response.ok) throw new Error("Failed to complete action");
+  if (!response || !response.ok) throw new Error("Failed to complete action");
   return await response.json();
 }

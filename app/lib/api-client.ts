@@ -4,9 +4,7 @@ import { getSession, signOut } from "next-auth/react";
 let signOutInFlight = false;
 
 export async function forceSignOut() {
-  if (signOutInFlight) {
-    return;
-  }
+  if (signOutInFlight) return;
   signOutInFlight = true;
   await signOut({ callbackUrl: "/auth/signin" });
 }
@@ -14,14 +12,7 @@ export async function forceSignOut() {
 export async function apiFetch(path: string, options: RequestInit = {}) {
   const session = await getSession();
 
-  // 🚀 THE FIX: Use relative path "/api-proxy" for browser requests.
-  // This tricks the browser into thinking it's same-origin, eliminating ALL preflights.
-  // If running on the server (SSR), fallback to the actual backend URL.
-  const isServer = typeof window === "undefined";
-  const apiBaseUrl = isServer
-    ? (process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "")
-    : "/api-proxy";
-
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
   const isFormData = options.body instanceof FormData;
 
   const res = await fetch(`${apiBaseUrl}${path}`, {
