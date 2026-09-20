@@ -3,18 +3,20 @@
 import { use, useState, useCallback, useMemo } from "react";
 import { useRouter, notFound, useSearchParams } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 
 import ModuleSidebar from "./_components/SideBar/ModuleSidebar";
 import AssessmentContainer from "./_components/AssessmentContainer/AssessmentContainer";
 import PageContainer from "./_components/PageContainer";
-import { SectionItem, useModuleStructure } from "./service";
 import {
-  saveLearningProgress,
+  SectionItem,
+  useModuleStructure,
+  useLearningProgressQuery,
+} from "./service";
+import {
+  completeAndGetNextItem,
   ProgressRecord,
-  syncLearningPlanProgress,
 } from "./service-user-progress";
-import { useLearningProgressQuery } from "./service";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
@@ -90,6 +92,87 @@ const LearnPage = ({ params }: LearnPageProps) => {
     return allowedItem;
   }, [allItems, completedItemIds, targetItemId]);
 
+  const currentIndex = useMemo(() => {
+    if (!activeItem) return -1;
+    return allItems.findIndex((i) => i.id === activeItem.id);
+  }, [allItems, activeItem]);
+
+  const isLastItem = currentIndex === allItems.length - 1;
+  const nextItem =
+    currentIndex !== -1 && !isLastItem ? allItems[currentIndex + 1] : null;
+
+  // 🚀 Optimized Mutation with Optimistic Updates
+  const completeMutation = useMutation({
+    mutationFn: async ({
+      itemId,
+      nextId,
+    }: {
+      itemId: string;
+      nextId?: string;
+    }) => {
+      const sectionId =
+        activeItem?.section_id ||
+        module?.sections?.find((sec) => sec.items?.some((i) => i.id === itemId))
+          ?.id;
+
+      if (!sectionId) throw new Error("Section ID not found");
+
+      const learningPlanId =
+        (module as any)?.learning_plan_id || module?.courseId;
+
+      return await completeAndGetNextItem({
+        module_id: moduleId,
+        section_id: sectionId,
+        learning_item_id: itemId,
+        progress: 100,
+        learning_plan_id: learningPlanId,
+        next_item_id: nextId,
+      });
+    },
+    onMutate: async ({ itemId }) => {
+      await queryClient.cancelQueries({
+        queryKey: ["learningProgress", moduleId],
+      });
+
+      const previousProgress = queryClient.getQueryData([
+        "learningProgress",
+        moduleId,
+      ]);
+
+      queryClient.setQueryData(["learningProgress", moduleId], (old: any) => {
+        if (!old) return old;
+        const existingData = Array.isArray(old.data) ? old.data : [];
+        const updatedData = [
+          ...existingData,
+          { learning_item_id: itemId, progress: 100, module_id: moduleId },
+        ];
+        const updatedIds = [...(old.completed_item_ids || []), itemId];
+
+        return {
+          ...old,
+          data: updatedData,
+          completed_item_ids: updatedIds,
+        };
+      });
+
+      return { previousProgress };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousProgress) {
+        queryClient.setQueryData(
+          ["learningProgress", moduleId],
+          context.previousProgress,
+        );
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["learningProgress", moduleId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+    },
+  });
+
   const handleSelectItem = (item: SectionItem) => {
     setMobileSidebarOpen(false);
     router.push(`/learn/${moduleId}?item=${item.id}`, { scroll: false });
@@ -97,44 +180,37 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   const handleItemComplete = useCallback(
     async (itemId: string, progressValue = 100) => {
-      if (!activeItem || !moduleId || !module) return;
+      // 🛡️ Block duplicate mutations if a request is already running
+      if (
+        !activeItem ||
+        !moduleId ||
+        !module ||
+        progressValue < 100 ||
+        completeMutation.isPending
+      )
+        return;
 
-      const sectionId =
-        activeItem.section_id ||
-        module?.sections?.find((sec) => sec.items?.some((i) => i.id === itemId))
-          ?.id;
+      const nextId = nextItem ? nextItem.id : undefined;
 
-      if (!sectionId) return;
-
-      await saveLearningProgress({
-        module_id: moduleId,
-        section_id: sectionId,
-        learning_item_id: itemId,
-        progress: progressValue,
-      });
-
-      const learningPlanId =
-        (module as any)?.learning_plan_id || module?.courseId;
-      if (learningPlanId && progressValue >= 100) {
-        await syncLearningPlanProgress(learningPlanId);
-      }
-
-      await queryClient.invalidateQueries({
-        queryKey: ["learningProgress", moduleId],
-      });
-      await queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      completeMutation.mutate(
+        { itemId, nextId },
+        {
+          onSuccess: () => {
+            if (nextItem) {
+              router.push(`/learn/${moduleId}?item=${nextItem.id}`, {
+                scroll: false,
+              });
+            }
+          },
+        },
+      );
     },
-    [activeItem, module, moduleId, queryClient],
+    [activeItem, moduleId, module, nextItem, completeMutation, router],
   );
 
   const handleNext = () => {
     if (!activeItem) return;
-
-    const currentIndex = allItems.findIndex((i) => i.id === activeItem.id);
-    if (currentIndex !== -1 && currentIndex < allItems.length - 1) {
-      const nextItem = allItems[currentIndex + 1];
-      router.push(`/learn/${moduleId}?item=${nextItem.id}`, { scroll: false });
-    }
+    handleItemComplete(activeItem.id, 100);
   };
 
   const handleNavigateTo = (targetId: string, blockId?: string) => {
@@ -162,13 +238,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
     notFound();
   }
 
-  // 3️⃣ Safe computations since activeItem is guaranteed to exist here
-  const currentIndex = allItems.findIndex((i) => i.id === activeItem.id);
-  const isLastItem = currentIndex === allItems.length - 1;
-
   const handleExitModule = async () => {
-    if (!completedItemIds.has(activeItem.id)) {
-      await handleItemComplete(activeItem.id, 100);
+    if (!completedItemIds.has(activeItem.id) && !completeMutation.isPending) {
+      await completeMutation.mutateAsync({ itemId: activeItem.id });
     }
     router.push(`/explore/course/${module.courseId}/module/${moduleId}`);
   };

@@ -131,3 +131,20 @@ export const syncLearningPlanProgress = async (
     return { success: false, error: "Network error" };
   }
 };
+
+export async function completeAndGetNextItem(payload: {
+  module_id: string;
+  section_id: string;
+  learning_item_id: string;
+  learning_plan_id?: string;
+  next_item_id?: string;
+}) {
+  const response = await apiFetch(`/api/learning-progress/complete-and-next`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error("Failed to complete action");
+  return await response.json();
+}

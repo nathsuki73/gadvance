@@ -191,8 +191,9 @@ export default function PageContainer({
     if (!isCompleted) {
       setIsCompleted(true);
       onComplete();
+    } else {
+      onNext();
     }
-    onNext();
   };
 
   return (
