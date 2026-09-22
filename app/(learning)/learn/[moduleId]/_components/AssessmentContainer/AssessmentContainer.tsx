@@ -14,7 +14,6 @@ import { AssessmentViewData, Choice } from "./types";
 import {
   getAssessmentViewData,
   getAssessmentState,
-  saveAssessmentDraft,
   submitAssessment,
   submitPollVote,
   AnswerPayload,
@@ -26,6 +25,7 @@ import { QuestionCard } from "./QuestionCard";
 import { ResultsSummary } from "./ResultSummary";
 import { ReviewSubmission } from "./ReviewSubmission";
 import { apiFetch } from "@/app/lib/api-client";
+import { useToast } from "@/app/components/context/ToastContext";
 
 interface AssessmentContainerProps {
   itemId: string;
@@ -40,7 +40,7 @@ interface AssessmentContainerProps {
   onNavigate?: (targetId: string, blockId: string) => void;
 }
 
-const AUTOSAVE_INTERVAL_MS = 25000;
+const TOAST_DURATION_MS = 2800;
 
 export default function AssessmentContainer({
   itemId,
@@ -54,35 +54,79 @@ export default function AssessmentContainer({
   onExit,
 }: AssessmentContainerProps) {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
-  const viewQueryKey = ["assessmentView", assessmentId, itemId, type] as const;
+  const viewQueryKey = [
+    "assessmentView",
+    assessmentId,
+    itemId,
+    moduleId,
+    type,
+  ] as const;
   const stateQueryKey = [
     "assessmentState",
     assessmentId,
     itemId,
+    moduleId,
     type,
   ] as const;
 
   const storageDraftKey = `local_draft_${assessmentId}_${itemId}`;
 
+  // Prevent multiple executions of close logic
+  const closingRef = useRef(false);
+
+  // Helper that displays toast and auto-closes page after toast finishes
+  const triggerAutoClose = useCallback(
+    (message?: string) => {
+      if (closingRef.current) return;
+      closingRef.current = true;
+
+      showToast(
+        message || "This module is currently being edited. Closing page...",
+        "warning",
+        TOAST_DURATION_MS,
+      );
+
+      setTimeout(() => {
+        window.close();
+        // Fallback: If browser restricts script-initiated window.close(), invoke onExit
+        if (onExit) {
+          onExit();
+        }
+      }, TOAST_DURATION_MS);
+    },
+    [showToast, onExit],
+  );
+
+  // 1. Load Assessment Definition with Module ID for guard checks
   const {
     data: viewData,
     isLoading: viewLoading,
     error: viewError,
   } = useQuery({
     queryKey: viewQueryKey,
-    queryFn: () => getAssessmentViewData(assessmentId),
+    queryFn: () => getAssessmentViewData(assessmentId, itemId, moduleId),
     enabled: Boolean(assessmentId),
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
+    retry: (failureCount, error: any) => {
+      if (error?.code === "MODULE_UNPUBLISHED") return false;
+      return failureCount < 2;
+    },
   });
 
+  // 2. Load Attempt State
   const { data: stateData, isLoading: stateLoading } = useQuery({
     queryKey: stateQueryKey,
-    queryFn: () => getAssessmentState(assessmentId, itemId),
+    queryFn: () => getAssessmentState(assessmentId, itemId, moduleId),
     enabled: Boolean(assessmentId) && Boolean(itemId),
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
+    retry: (failureCount, error: any) => {
+      if (error?.code === "MODULE_UNPUBLISHED") return false;
+      return failureCount < 2;
+    },
   });
 
   const [assessment, setAssessment] = useState<AssessmentViewData | null>(null);
@@ -108,7 +152,7 @@ export default function AssessmentContainer({
 
   const [submittedQuestions, setSubmittedQuestions] = useState<
     Record<string, boolean>
-  >({});
+  >([]);
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
@@ -122,26 +166,30 @@ export default function AssessmentContainer({
 
   const hasHydrated = useRef(false);
 
-  const answersRef = useRef(answers);
-  answersRef.current = answers;
+  // Handle unpublished status triggered during initial fetch
+  useEffect(() => {
+    if (viewError) {
+      const err = viewError as any;
+      if (err?.code === "MODULE_UNPUBLISHED") {
+        triggerAutoClose(err.message);
+        return;
+      }
+      setError(err?.message || "Failed to load assessment.");
+    }
+  }, [viewError, triggerAutoClose]);
 
-  const currentIndexRef = useRef(currentQuestionIndex);
-  currentIndexRef.current = currentQuestionIndex;
+  // Handle state fetch errors indicating unpublished module
+  useEffect(() => {
+    if (
+      stateData &&
+      !stateData.success &&
+      (stateData as any).code === "MODULE_UNPUBLISHED"
+    ) {
+      triggerAutoClose((stateData as any).message);
+    }
+  }, [stateData, triggerAutoClose]);
 
-  const questionsRef = useRef<string[]>([]);
-  if (assessment?.questions) {
-    questionsRef.current = assessment.questions.map((q) => q.id);
-  }
-
-  const isPollRef = useRef(false);
-  isPollRef.current = assessment?.settings?.type === "poll";
-
-  const submittedRef = useRef(submitted);
-  submittedRef.current = submitted;
-
-  const hasStartedRef = useRef(hasStarted);
-  hasStartedRef.current = hasStarted;
-
+  // Reconcile and hydrate state
   useEffect(() => {
     if (hasHydrated.current) return;
     if (!viewData || stateLoading) return;
@@ -311,12 +359,6 @@ export default function AssessmentContainer({
   }, [viewData, stateData, stateLoading, storageDraftKey]);
 
   useEffect(() => {
-    if (viewError) {
-      setError((viewError as any)?.message || "Failed to load assessment.");
-    }
-  }, [viewError]);
-
-  useEffect(() => {
     questionStartRef.current = Date.now();
   }, [currentQuestionIndex]);
 
@@ -331,6 +373,7 @@ export default function AssessmentContainer({
     }));
   };
 
+  // Exam Countdown Timer
   useEffect(() => {
     if (!hasStarted || submitted || !assessment?.settings) return;
 
@@ -356,83 +399,17 @@ export default function AssessmentContainer({
     assessment?.settings?.timeLimitMinutes,
   ]);
 
-  const draftSaveMutation = useMutation({
-    mutationFn: (vars: {
-      formattedAnswers: AnswerPayload[];
-      questionOrder: string[];
-      targetIndex: number;
-    }) =>
-      saveAssessmentDraft(
-        assessmentId,
-        itemId,
-        vars.formattedAnswers,
-        vars.questionOrder,
-        vars.targetIndex,
-      ),
-    onError: (err) => console.error("Draft save failed:", err),
-  });
-
   const pollVoteMutation = useMutation({
     mutationFn: (vars: { questionId: string; choiceId: string }) =>
-      submitPollVote(assessmentId, itemId, vars.questionId, vars.choiceId),
+      submitPollVote(
+        assessmentId,
+        itemId,
+        vars.questionId,
+        vars.choiceId,
+        moduleId,
+      ),
     onError: (err) => console.error("Poll vote failed:", err),
   });
-
-  const sendDraft = useCallback(
-    (currentAnswers: Record<string, string>, targetIndex: number) => {
-      if (isPollRef.current || submittedRef.current || !hasStartedRef.current)
-        return;
-
-      const formattedAnswers: AnswerPayload[] = Object.entries(
-        currentAnswers,
-      ).map(([qId, cId]) => ({ question_id: qId, choice_id: cId }));
-
-      const questionOrder = questionsRef.current;
-
-      queryClient.setQueryData(stateQueryKey, (old: any) => {
-        if (!old?.data) return old;
-        return {
-          ...old,
-          data: {
-            ...old.data,
-            draft_answers: currentAnswers,
-            current_index: targetIndex,
-            status: "in_progress",
-          },
-        };
-      });
-
-      draftSaveMutation.mutate({
-        formattedAnswers,
-        questionOrder,
-        targetIndex,
-      });
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [assessmentId, itemId, queryClient],
-  );
-
-  useEffect(() => {
-    if (!hasStarted || submitted || isPollRef.current) return;
-
-    const timer = setInterval(() => {
-      sendDraft(answersRef.current, currentIndexRef.current);
-    }, AUTOSAVE_INTERVAL_MS);
-
-    return () => clearInterval(timer);
-  }, [hasStarted, submitted, sendDraft]);
-
-  useEffect(() => {
-    return () => {
-      if (
-        hasStartedRef.current &&
-        !submittedRef.current &&
-        !isPollRef.current
-      ) {
-        sendDraft(answersRef.current, currentIndexRef.current);
-      }
-    };
-  }, [sendDraft]);
 
   const isLoading = viewLoading || (Boolean(itemId) && stateLoading);
 
@@ -464,12 +441,19 @@ export default function AssessmentContainer({
           <h2 className="mb-1 text-base font-bold text-zinc-900">
             Assessment Unavailable
           </h2>
-          <p className="text-xs leading-relaxed text-zinc-500">
+          <p className="mb-4 text-xs leading-relaxed text-zinc-500">
             {error ||
               (!assessment?.questions?.length
                 ? "This assessment currently has no available questions."
                 : "Could not retrieve assessment information.")}
           </p>
+          <button
+            type="button"
+            onClick={() => triggerAutoClose()}
+            className="rounded-xl bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-zinc-800 cursor-pointer"
+          >
+            Close Page
+          </button>
         </div>
       </div>
     );
@@ -538,6 +522,24 @@ export default function AssessmentContainer({
         choiceId,
       });
 
+      if (!result.success) {
+        setSubmittedQuestions((prev) => ({ ...prev, [qId]: false }));
+        const errData = result as any;
+        if (errData.code === "MODULE_UNPUBLISHED") {
+          triggerAutoClose(errData.message);
+          return;
+        }
+        showToast(
+          result.message ||
+            errData.error ||
+            "Couldn't save your vote — please try again.",
+          "error",
+        );
+        return;
+      }
+
+      showToast("Vote submitted successfully!", "success", 2000);
+
       queryClient.setQueryData(stateQueryKey, (old: any) => {
         if (!old?.data) return old;
         const votedSet = new Set(old.data.voted_question_ids || []);
@@ -583,7 +585,7 @@ export default function AssessmentContainer({
       }
     } catch (err) {
       setSubmittedQuestions((prev) => ({ ...prev, [qId]: false }));
-      alert("Couldn't save your vote — please try again.");
+      showToast("Couldn't save your vote — please try again.", "error");
     }
   };
 
@@ -618,7 +620,7 @@ export default function AssessmentContainer({
       }
 
       const validQuestionsMap = new Map(questions.map((q) => [q.id, true]));
-      const formattedAnswers = Object.entries(answers)
+      const formattedAnswers: AnswerPayload[] = Object.entries(answers)
         .filter(([qId]) => validQuestionsMap.has(qId))
         .map(([qId, cId]) => ({
           question_id: qId,
@@ -632,94 +634,111 @@ export default function AssessmentContainer({
         moduleId,
         sectionId,
         sectionItemId: itemId,
-        answers: formattedAnswers as any,
+        answers: formattedAnswers,
       });
 
-      if (result.success) {
-        const responseData = result.data as any;
-
-        const backendScore =
-          responseData?.score_percentage ?? (result as any).score_percentage;
-        const rawScore = responseData?.score ?? (result as any).score;
-        const totalPoints =
-          responseData?.total_points ?? (result as any).total_points;
-
-        const finalRemedialSuggestions: Array<{
-          page_id: string;
-          block_id: string;
-          review_url: string;
-        }> =
-          responseData?.remedial_suggestions ??
-          (Array.isArray((result.data as any)?.remedial_suggestions)
-            ? (result.data as any).remedial_suggestions
-            : []);
-
-        const finalCorrectCount =
-          backendScore !== undefined
-            ? Math.round((backendScore / 100) * totalGraded)
-            : displayCorrectCount;
-
-        if (backendScore !== undefined) {
-          setSavedScore(backendScore);
-          setSavedRawScore(rawScore);
-          setSavedTotalPoints(totalPoints);
-          setSavedCorrectCount(finalCorrectCount);
+      // 🛑 1. FAILURE / GUARD INTERCEPTION
+      if (!result.success) {
+        const errorData = result as any;
+        if (errorData.code === "MODULE_UNPUBLISHED") {
+          triggerAutoClose(errorData.message);
+          return;
         }
 
-        setRemedialSuggestions(finalRemedialSuggestions);
-        setSubmitted(true);
-
-        try {
-          localStorage.removeItem(storageDraftKey);
-        } catch {}
-
-        queryClient.setQueryData(viewQueryKey, (old: any) => {
-          if (!old) return old;
-          return {
-            ...old,
-            previous_attempt: {
-              score_percentage: backendScore,
-              score: rawScore,
-              total_points: totalPoints,
-              answers: formattedAnswers.map((a) => ({
-                question_id: a.question_id,
-                choice_id: a.choice_id,
-                is_correct:
-                  gradedQuestions.find((q: any) => q.id === a.question_id)
-                    ?.correctChoiceId === a.choice_id,
-              })),
-              remedial_suggestions: finalRemedialSuggestions,
-            },
-          };
-        });
-
-        queryClient.setQueryData(stateQueryKey, (old: any) => {
-          if (!old?.data) return old;
-          return {
-            ...old,
-            data: {
-              ...old.data,
-              draft_answers: answers,
-              current_index: safeQuestionIndex,
-              status: "completed",
-            },
-          };
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: stateQueryKey,
-          refetchType: "none",
-        });
-        queryClient.invalidateQueries({
-          queryKey: viewQueryKey,
-          refetchType: "none",
-        });
-      } else {
-        alert(result.message || "Failed to save assessment progress.");
+        showToast(
+          result.message ||
+            errorData.error ||
+            "Failed to save assessment progress.",
+          "error",
+        );
+        return;
       }
-    } catch (err) {
+
+      // ✅ 2. SUCCESS: Safe response unwrapping
+      const responseData = (result.data as any) ?? result;
+
+      const backendScore =
+        responseData?.score_percentage ?? responseData?.percentage;
+      const rawScore = responseData?.score;
+      const totalPoints = responseData?.total_points;
+
+      const finalRemedialSuggestions: Array<{
+        page_id: string;
+        block_id: string;
+        review_url: string;
+      }> =
+        responseData?.remedial_suggestions ??
+        (Array.isArray((result as any)?.remedial_suggestions)
+          ? (result as any).remedial_suggestions
+          : []);
+
+      const finalCorrectCount =
+        backendScore !== undefined
+          ? Math.round((backendScore / 100) * totalGraded)
+          : displayCorrectCount;
+
+      if (backendScore !== undefined) {
+        setSavedScore(backendScore);
+        setSavedRawScore(rawScore ?? null);
+        setSavedTotalPoints(totalPoints ?? null);
+        setSavedCorrectCount(finalCorrectCount);
+      }
+
+      setRemedialSuggestions(finalRemedialSuggestions);
+      setSubmitted(true);
+      showToast("Assessment submitted successfully!", "success", 2500);
+
+      try {
+        localStorage.removeItem(storageDraftKey);
+      } catch {}
+
+      queryClient.setQueryData(viewQueryKey, (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          previous_attempt: {
+            score_percentage: backendScore,
+            score: rawScore,
+            total_points: totalPoints,
+            answers: formattedAnswers.map((a) => ({
+              question_id: a.question_id,
+              choice_id: a.choice_id,
+              is_correct:
+                gradedQuestions.find((q: any) => q.id === a.question_id)
+                  ?.correctChoiceId === a.choice_id,
+            })),
+            remedial_suggestions: finalRemedialSuggestions,
+          },
+        };
+      });
+
+      queryClient.setQueryData(stateQueryKey, (old: any) => {
+        if (!old?.data) return old;
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            draft_answers: answers,
+            current_index: safeQuestionIndex,
+            status: "completed",
+          },
+        };
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: stateQueryKey,
+        refetchType: "none",
+      });
+      queryClient.invalidateQueries({
+        queryKey: viewQueryKey,
+        refetchType: "none",
+      });
+    } catch (err: any) {
       console.error("Submission error:", err);
-      alert("Network issue while submitting assessment.");
+      showToast(
+        err?.message || "Network issue while submitting assessment.",
+        "error",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -727,13 +746,21 @@ export default function AssessmentContainer({
 
   const handleRetry = async () => {
     if (settings.maxAttempts != null && settings.maxAttempts <= 1) {
-      alert("You have reached the maximum allowed attempts.");
+      showToast("You have reached the maximum allowed attempts.", "warning");
       return;
     }
 
-    const res = await retakeAssessment(assessmentId, itemId);
+    const res = await retakeAssessment(assessmentId, itemId, moduleId);
     if (!res.success) {
-      alert(res.error || "Failed to retake assessment.");
+      const errData = res as any;
+      if (errData.code === "MODULE_UNPUBLISHED") {
+        triggerAutoClose(errData.message);
+        return;
+      }
+      showToast(
+        res.error || res.message || "Failed to retake assessment.",
+        "error",
+      );
       return;
     }
 
@@ -781,7 +808,7 @@ export default function AssessmentContainer({
         queryKey: viewQueryKey,
         queryFn: async () => {
           const res = await apiFetch(
-            `/api/assessments/${assessmentId}?section_item_id=${itemId}`,
+            `/api/assessments/${assessmentId}?section_item_id=${itemId}&module_id=${moduleId}`,
             { method: "GET" },
           );
           if (!res) {
@@ -793,12 +820,13 @@ export default function AssessmentContainer({
       }),
       queryClient.fetchQuery({
         queryKey: stateQueryKey,
-        queryFn: () => getAssessmentState(assessmentId, itemId),
+        queryFn: () => getAssessmentState(assessmentId, itemId, moduleId),
       }),
     ]);
 
     if (freshView) {
       setAssessment(freshView);
+      showToast("Started fresh attempt.", "info", 2000);
     }
   };
 

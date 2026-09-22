@@ -10,14 +10,21 @@ import {
 export type AnswerPayload = {
   question_id: string;
   choice_id: string;
+  time_spent_seconds?: number;
+  answered_at?: string;
 };
 
 export type AssessmentStateData = {
-  attempt_id: string;
-  status: "in_progress" | "completed" | "expired";
-  draft_answers: AnswerPayload[];
+  attempt_id: string | null;
+  status: "not_started" | "in_progress" | "completed" | "expired";
+  draft_answers: Record<string, string> | AnswerPayload[];
+  question_order: string[];
+  current_index: number;
   remaining_seconds: number | null;
   time_limit_minutes: number | null;
+  is_poll: boolean;
+  poll_distributions: Record<string, { votes: number; percentage: number }>;
+  voted_question_ids: string[];
 };
 
 export type PollDistributionItem = {
@@ -29,11 +36,17 @@ export type SubmissionResultData = {
   attempt_id?: string;
   score?: number;
   total_points?: number;
-  percentage?: number;
+  score_percentage?: number;
   passed?: boolean;
+  has_passed?: boolean;
   passing_score?: number;
   is_poll?: boolean;
-  poll_distributions?: Record<string, PollDistributionItem | number>;
+  poll_distributions?: Record<string, PollDistributionItem>;
+  remedial_suggestions?: Array<{
+    page_id: string;
+    block_id: string;
+    review_url: string;
+  }>;
 };
 
 export type ServiceResponse<T> = {
@@ -41,8 +54,18 @@ export type ServiceResponse<T> = {
   data?: T;
   message?: string;
   error?: string;
-  is_poll?: boolean;
-  poll_distributions?: Record<string, PollDistributionItem | number>;
+  code?: string;
+  score?: number;
+  total_points?: number;
+  score_percentage?: number;
+  has_passed?: boolean;
+  passing_score?: number;
+  poll_distributions?: Record<string, PollDistributionItem>;
+  remedial_suggestions?: Array<{
+    page_id: string;
+    block_id: string;
+    review_url: string;
+  }>;
 };
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -170,6 +193,8 @@ export function normalizeAssessmentData(
  */
 export async function getAssessmentViewData(
   id: string,
+  sectionItemId?: string,
+  moduleId?: string,
 ): Promise<AssessmentViewData> {
   if (typeof window !== "undefined") {
     const cachedPreview = localStorage.getItem(`assessment_preview_${id}`);
@@ -186,13 +211,27 @@ export async function getAssessmentViewData(
     }
   }
 
-  const res = await apiFetch(`/api/assessments/${id}`, {
+  const queryParams = new URLSearchParams();
+  if (sectionItemId) queryParams.append("section_item_id", sectionItemId);
+  if (moduleId) queryParams.append("module_id", moduleId);
+  const queryStr = queryParams.toString() ? `?${queryParams.toString()}` : "";
+
+  const res = await apiFetch(`/api/assessments/${id}${queryStr}`, {
     method: "GET",
   });
 
   if (!res || !res.ok) {
+    const errorJson = await res?.json().catch(() => null);
+    if (res?.status === 403 && errorJson?.code === "MODULE_UNPUBLISHED") {
+      const err = new Error(
+        errorJson.message || "Module is currently unpublished.",
+      );
+      (err as any).code = "MODULE_UNPUBLISHED";
+      throw err;
+    }
     throw new Error(
-      `Assessment #${id} not found or inaccessible (HTTP ${res?.status ?? "unknown"}).`,
+      errorJson?.message ||
+        `Assessment #${id} not found or inaccessible (HTTP ${res?.status ?? "unknown"}).`,
     );
   }
 
@@ -206,76 +245,51 @@ export async function getAssessmentViewData(
 export async function getAssessmentState(
   assessmentId: string,
   sectionItemId: string,
+  moduleId?: string,
 ): Promise<ServiceResponse<AssessmentStateData>> {
   try {
+    const queryParams = new URLSearchParams({ section_item_id: sectionItemId });
+    if (moduleId) queryParams.append("module_id", moduleId);
+
     const res = await apiFetch(
-      `/api/assessments/${assessmentId}/state?section_item_id=${sectionItemId}`,
+      `/api/assessments/${assessmentId}/state?${queryParams.toString()}`,
       {
         method: "GET",
         cache: "no-store",
       },
     );
 
+    const json = await res.json().catch(() => ({}));
+
     if (!res || !res.ok) {
-      return { success: false, error: "Failed to fetch assessment state." };
+      return {
+        success: false,
+        code: json?.code,
+        message: json?.message,
+        error: json?.message || "Failed to fetch assessment state.",
+      };
     }
 
-    const json = await res.json();
     return json;
-  } catch (error) {
+  } catch (error: any) {
     console.error("[AssessmentViewService] Fetch state error:", error);
     return {
       success: false,
-      error: "Network error fetching assessment state.",
+      error: error?.message || "Network error fetching assessment state.",
     };
   }
 }
 
 /**
- * 3. Auto-Save Choice Selections as Draft
- */
-export async function saveAssessmentDraft(
-  assessmentId: string,
-  sectionItemId: string,
-  answers: AnswerPayload[],
-  questionOrder: string[] = [],
-  currentIndex: number = 0,
-): Promise<ServiceResponse<void>> {
-  try {
-    const res = await apiFetch(`/api/assessments/${assessmentId}/save-draft`, {
-      method: "POST",
-      body: JSON.stringify({
-        section_item_id: sectionItemId,
-        answers,
-        question_order: questionOrder,
-        current_index: currentIndex,
-      }),
-    });
-
-    if (!res || !res.ok) {
-      return { success: false, error: "Failed to save draft." };
-    }
-
-    const json = await res.json();
-    return json;
-  } catch (error) {
-    console.error("[AssessmentViewService] Save draft error:", error);
-    return { success: false, error: "Network error saving draft." };
-  }
-}
-
-/**
- * 4. Submit Assessment, Evaluate Grade, and Fill DonutProgress
+ * 3. Submit Assessment and Evaluate Grade
  */
 export async function submitAssessment(payload: {
   assessmentId: string;
   moduleId: string;
-  sectionId: string;
+  sectionId?: string;
   sectionItemId: string;
   answers: AnswerPayload[];
-}): Promise<
-  ServiceResponse<SubmissionResultData & { remedial_suggestions?: any[] }>
-> {
+}): Promise<ServiceResponse<SubmissionResultData>> {
   try {
     const res = await apiFetch(
       `/api/assessments/${payload.assessmentId}/submit`,
@@ -290,35 +304,50 @@ export async function submitAssessment(payload: {
       },
     );
 
-    if (!res || !res.ok) {
-      return { success: false, error: "Failed to submit assessment." };
-    }
+    const json = await res.json().catch(() => ({}));
 
-    const json = await res.json();
+    if (!res || !res.ok) {
+      return {
+        success: false,
+        code: json?.code,
+        message: json?.message,
+        error: json?.message || "Failed to submit assessment.",
+      };
+    }
 
     return {
       success: json.success ?? res.ok,
       data: json.data ?? json,
+      score: json.score,
+      total_points: json.total_points,
+      score_percentage: json.score_percentage,
+      has_passed: json.has_passed,
+      passing_score: json.passing_score,
       poll_distributions: json.poll_distributions,
+      remedial_suggestions: json.remedial_suggestions,
       message: json.message,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("[AssessmentViewService] Submission error:", error);
-    return { success: false, error: "Network error submitting assessment." };
+    return {
+      success: false,
+      error: error?.message || "Network error submitting assessment.",
+    };
   }
 }
 
 /**
- * 5. Submit Individual Poll Vote
+ * 4. Submit Individual Poll Vote
  */
 export async function submitPollVote(
   assessmentId: string,
   itemId: string,
   questionId: string,
   choiceId: string,
+  moduleId?: string,
 ): Promise<
   ServiceResponse<{
-    poll_distributions: Record<string, { votes: number; percentage: number }>;
+    poll_distributions: Record<string, PollDistributionItem>;
   }>
 > {
   try {
@@ -326,30 +355,40 @@ export async function submitPollVote(
       method: "POST",
       body: JSON.stringify({
         section_item_id: itemId,
+        module_id: moduleId,
         question_id: questionId,
         choice_id: choiceId,
       }),
     });
 
+    const json = await res.json().catch(() => ({}));
+
     if (!res || !res.ok) {
-      return { success: false, error: "Failed to submit poll vote." };
+      return {
+        success: false,
+        code: json?.code,
+        message: json?.message,
+        error: json?.message || "Failed to submit poll vote.",
+      };
     }
 
-    const json = await res.json();
     return {
       success: json.success ?? res.ok,
       data: json.data ?? json,
       poll_distributions: json.poll_distributions,
       message: json.message,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("[AssessmentViewService] Submit poll vote error:", error);
-    return { success: false, error: "Network error submitting poll vote." };
+    return {
+      success: false,
+      error: error?.message || "Network error submitting poll vote.",
+    };
   }
 }
 
 /**
- * 6. Reset Assessment Attempt for Retake
+ * 5. Reset Assessment Attempt for Retake
  */
 export type RetakeResponseData = {
   attempt_id?: string;
@@ -358,25 +397,38 @@ export type RetakeResponseData = {
 export async function retakeAssessment(
   assessmentId: string,
   sectionItemId: string,
+  moduleId?: string,
 ): Promise<ServiceResponse<RetakeResponseData>> {
   try {
     const res = await apiFetch(`/api/assessments/${assessmentId}/retake`, {
       method: "POST",
-      body: JSON.stringify({ section_item_id: sectionItemId }),
+      body: JSON.stringify({
+        section_item_id: sectionItemId,
+        module_id: moduleId,
+      }),
     });
 
+    const json = await res.json().catch(() => ({}));
+
     if (!res || !res.ok) {
-      return { success: false, error: "Failed to reset assessment." };
+      return {
+        success: false,
+        code: json?.code,
+        message: json?.message,
+        error: json?.message || "Failed to reset assessment.",
+      };
     }
 
-    const json = await res.json();
     return {
       success: json.success ?? res.ok,
       data: { attempt_id: json.attempt_id },
       message: json.message,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("[AssessmentViewService] Retake error:", error);
-    return { success: false, error: "Network error resetting assessment." };
+    return {
+      success: false,
+      error: error?.message || "Network error resetting assessment.",
+    };
   }
 }
