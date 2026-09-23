@@ -17,13 +17,11 @@ import {
   submitPollVote,
   AnswerPayload,
   retakeAssessment,
-  normalizeAssessmentData,
 } from "./assessmentService";
 import { AssessmentStartScreen } from "./AssessmentStartScreen";
 import { QuestionCard } from "./QuestionCard";
 import { ResultsSummary } from "./ResultSummary";
 import { ReviewSubmission } from "./ReviewSubmission";
-import { apiFetch } from "@/app/lib/api-client";
 import { useToast } from "@/app/components/context/ToastContext";
 
 interface AssessmentContainerProps {
@@ -90,7 +88,7 @@ export default function AssessmentContainer({
     [showToast, onExit],
   );
 
-  // 1. Load Assessment Definition (Cached in Redis on backend, zero extra state calls!)
+  // 1. Load Assessment Definition (Cached in React Query cache)
   const {
     data: viewData,
     isLoading: viewLoading,
@@ -156,61 +154,69 @@ export default function AssessmentContainer({
     }
   }, [viewError, triggerAutoClose]);
 
-  // Reconcile and hydrate state locally without hitting /state
+  // Reconcile and hydrate state from viewData (TanStack Query cache)
   useEffect(() => {
-    if (hasHydrated.current) return;
     if (!viewData) return;
 
     setAssessment(viewData);
     const prevAttempt = (viewData as any).previous_attempt;
+    const isCompleted = Boolean(
+      prevAttempt ||
+      (viewData as any).user_has_completed ||
+      (viewData as any).is_submitted,
+    );
 
-    if (prevAttempt) {
-      setSavedScore(prevAttempt.score_percentage);
-      setSavedRawScore(prevAttempt.score ?? null);
-      setSavedTotalPoints(prevAttempt.total_points ?? null);
+    if (isCompleted) {
       setSubmitted(true);
       setHasStarted(true);
 
-      if (prevAttempt.remedial_suggestions) {
-        setRemedialSuggestions(prevAttempt.remedial_suggestions);
-      }
+      if (prevAttempt) {
+        setSavedScore(
+          prevAttempt.score_percentage ?? prevAttempt.percentage ?? null,
+        );
+        setSavedRawScore(prevAttempt.score ?? null);
+        setSavedTotalPoints(prevAttempt.total_points ?? null);
 
-      const pastAnswersMap: Record<string, string> = {};
-      if (prevAttempt.answers) {
-        if (Array.isArray(prevAttempt.answers)) {
-          prevAttempt.answers.forEach((ans: any) => {
-            const qId = ans.question_id;
-            const cId = ans.choice_id ?? ans.selected_option_id;
-            if (qId && cId) {
-              pastAnswersMap[qId] = String(cId);
-            }
-          });
-        } else if (typeof prevAttempt.answers === "object") {
-          Object.entries(prevAttempt.answers).forEach(([qId, ansObj]) => {
-            const typedAnsObj = ansObj as any;
-            const cId =
-              typeof typedAnsObj === "object" && typedAnsObj !== null
-                ? (typedAnsObj.selected_option_id ?? typedAnsObj.choice_id)
-                : typedAnsObj;
-            if (qId && cId) {
-              pastAnswersMap[qId] = String(cId);
-            }
-          });
+        if (prevAttempt.remedial_suggestions) {
+          setRemedialSuggestions(prevAttempt.remedial_suggestions);
+        }
+
+        const pastAnswersMap: Record<string, string> = {};
+        const rawAns = prevAttempt.answers;
+        if (rawAns) {
+          if (Array.isArray(rawAns)) {
+            rawAns.forEach((ans: any) => {
+              const qId = ans.question_id;
+              const cId = ans.choice_id ?? ans.selected_option_id;
+              if (qId && cId) {
+                pastAnswersMap[qId] = String(cId);
+              }
+            });
+          } else if (typeof rawAns === "object") {
+            Object.entries(rawAns).forEach(([qId, ansObj]) => {
+              const typedAnsObj = ansObj as any;
+              const cId =
+                typeof typedAnsObj === "object" && typedAnsObj !== null
+                  ? (typedAnsObj.selected_option_id ?? typedAnsObj.choice_id)
+                  : typedAnsObj;
+              if (qId && cId) {
+                pastAnswersMap[qId] = String(cId);
+              }
+            });
+          }
+        }
+
+        if (Object.keys(pastAnswersMap).length > 0) {
+          setAnswers(pastAnswersMap);
+        }
+
+        if (rawAns && Array.isArray(rawAns)) {
+          const correct = rawAns.filter((a: any) => a.is_correct).length;
+          setSavedCorrectCount(correct);
         }
       }
-
-      if (Object.keys(pastAnswersMap).length > 0) {
-        setAnswers(pastAnswersMap);
-      }
-
-      if (prevAttempt.answers && Array.isArray(prevAttempt.answers)) {
-        const correct = prevAttempt.answers.filter(
-          (a: any) => a.is_correct,
-        ).length;
-        setSavedCorrectCount(correct);
-      }
-    } else {
-      // 🚀 Hydrate active draft instantly from localStorage on refresh
+    } else if (!hasHydrated.current) {
+      // Hydrate active draft from localStorage only if not submitted
       const localDraft = localStorage.getItem(storageDraftKey);
       if (localDraft) {
         try {
@@ -363,7 +369,7 @@ export default function AssessmentContainer({
     savedCorrectCount !== null ? savedCorrectCount : localCorrectCount;
   const isPassed = displayScore >= settings.passingScore;
 
-  // 🚀 Local draft persistence helper (zero network lag)
+  // Local draft persistence helper
   const saveLocalDraft = (
     newAnswers: Record<string, string>,
     newIndex: number,
@@ -528,8 +534,6 @@ export default function AssessmentContainer({
         responseData?.score_percentage ?? responseData?.percentage;
       const rawScore = responseData?.score;
       const totalPoints = responseData?.total_points;
-
-      // 🎯 Capture correct answers map sent by the backend on submit
       const correctAnswersMap =
         responseData?.correct_answers ?? result.correct_answers;
 
@@ -555,93 +559,35 @@ export default function AssessmentContainer({
       setSubmitted(true);
       showToast("Assessment submitted successfully!", "success", 2500);
 
-      // 🎯 Immediately inject correct choices into state for the review screen
-      if (correctAnswersMap) {
-        setAssessment((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            user_has_completed: true,
-            questions: prev.questions.map((q) => ({
-              ...q,
-              correctChoiceId: correctAnswersMap[q.id] || q.correctChoiceId,
-              choices: q.choices.map((c) => ({
-                ...c,
-                isCorrect: c.id === correctAnswersMap[q.id],
-              })),
-            })),
-          };
-        });
-      }
-
       try {
         localStorage.removeItem(storageDraftKey);
       } catch {}
 
-      // 🚀 Fetch fresh review view and immediately hydrate state so review displays instantly
-      const freshView = await queryClient.fetchQuery({
-        queryKey: viewQueryKey,
-        queryFn: async () => {
-          const res = await apiFetch(
-            `/api/assessments/${assessmentId}?section_item_id=${itemId}&module_id=${moduleId}`,
-            { method: "GET" },
-          );
-          if (!res) throw new Error("Failed to fetch assessment review data");
-          const rawData = await res.json();
-          return normalizeAssessmentData(rawData, assessmentId);
-        },
+      // 🚀 CRITICAL FIX: Directly update the TanStack Query cache with the completed state.
+      // This ensures that when unmounting and remounting (navigating away and back),
+      // useQuery immediately sees the completed state without needing localStorage.
+      queryClient.setQueryData(viewQueryKey, (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          user_has_completed: true,
+          previous_attempt: {
+            score_percentage: backendScore,
+            score: rawScore,
+            total_points: totalPoints,
+            remedial_suggestions: finalRemedialSuggestions,
+            answers: formattedAnswers,
+          },
+          questions: oldData.questions.map((q: any) => ({
+            ...q,
+            correctChoiceId: correctAnswersMap?.[q.id] || q.correctChoiceId,
+            choices: q.choices.map((c: any) => ({
+              ...c,
+              isCorrect: c.id === correctAnswersMap?.[q.id],
+            })),
+          })),
+        };
       });
-
-      if (freshView) {
-        setAssessment(freshView);
-
-        // 🎯 Hydrate previous attempt answers & score stats immediately on submit
-        const prevAttempt = (freshView as any).previous_attempt;
-        if (prevAttempt) {
-          setSavedScore(prevAttempt.score_percentage);
-          setSavedRawScore(prevAttempt.score ?? null);
-          setSavedTotalPoints(prevAttempt.total_points ?? null);
-
-          if (prevAttempt.remedial_suggestions) {
-            setRemedialSuggestions(prevAttempt.remedial_suggestions);
-          }
-
-          const pastAnswersMap: Record<string, string> = {};
-          if (prevAttempt.answers) {
-            if (Array.isArray(prevAttempt.answers)) {
-              prevAttempt.answers.forEach((ans: any) => {
-                const qId = ans.question_id;
-                const cId = ans.choice_id ?? ans.selected_option_id;
-                if (qId && cId) {
-                  pastAnswersMap[qId] = String(cId);
-                }
-              });
-            } else if (typeof prevAttempt.answers === "object") {
-              Object.entries(prevAttempt.answers).forEach(([qId, ansObj]) => {
-                const typedAnsObj = ansObj as any;
-                const cId =
-                  typeof typedAnsObj === "object" && typedAnsObj !== null
-                    ? (typedAnsObj.selected_option_id ?? typedAnsObj.choice_id)
-                    : typedAnsObj;
-                if (qId && cId) {
-                  pastAnswersMap[qId] = String(cId);
-                }
-              });
-            }
-          }
-
-          if (Object.keys(pastAnswersMap).length > 0) {
-            setAnswers(pastAnswersMap);
-          }
-
-          if (prevAttempt.answers && Array.isArray(prevAttempt.answers)) {
-            const correct = prevAttempt.answers.filter(
-              (a: any) => a.is_correct,
-            ).length;
-            setSavedCorrectCount(correct);
-          }
-        }
-      }
     } catch (err: any) {
       console.error("Submission error:", err);
       showToast(
@@ -709,7 +655,7 @@ export default function AssessmentContainer({
     setSavedTotalPoints(null);
     setSavedCorrectCount(null);
 
-    // 🎯 Instant hydration from retake response data — NO secondary GET fetch!
+    // Update TanStack Query cache for retake
     if (res.data?.assessment) {
       setAssessment(res.data.assessment);
       queryClient.setQueryData(viewQueryKey, res.data.assessment);
