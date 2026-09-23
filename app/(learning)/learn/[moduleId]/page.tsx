@@ -264,8 +264,8 @@ const LearnPage = ({ params }: LearnPageProps) => {
         await completeMutation.mutateAsync({ itemId: activeItem.id });
       }
 
-      // 2. Close the window/tab
-      window.close();
+      // 2. Always route back safely
+      router.push(`/explore/course/${module.courseId}/module/${moduleId}`);
     } catch (error) {
       console.error("Failed to complete item before exiting:", error);
     }

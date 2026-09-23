@@ -91,10 +91,6 @@ const ModuleOverviewHeader = ({
     setOpenSectionIds((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleContinueLearning = () => {
-    router.push(`/learn/${module.id}`);
-  };
-
   return (
     <section className="bg-gradient-to-b from-white via-white to-zinc-50/40 py-16">
       <div className="mx-auto grid max-w-7xl gap-12 px-6 md:px-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
@@ -117,14 +113,14 @@ const ModuleOverviewHeader = ({
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={handleContinueLearning}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-purple-600/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] cursor-pointer"
+            <Link
+              href={`/learn/${module.id}` as any}
+              prefetch={true}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-purple-600/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] cursor-pointer no-underline"
             >
               {hasStarted ? "Continue Learning" : "Start Learning"}
               <ChevronRight size={14} strokeWidth={2.5} />
-            </button>
+            </Link>
           </div>
 
           <div className="mt-12 grid max-w-md grid-cols-2 gap-4">

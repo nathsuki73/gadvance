@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Section, SectionItem } from "../../service";
 import SideBarNavItem from "./_components/SideBarNavItem";
 import { DonutProgress } from "./_components/DonutProgress";
+import Link from "next/link";
 
 type ModuleSidebarProps = {
   courseId: string;
@@ -200,10 +201,11 @@ export default function ModuleSidebar({
         </div>
 
         <div className="shrink-0 border-t border-zinc-200 bg-white/80 p-3">
-          <button
-            onClick={() => window.close()}
+          <Link
+            href={`/explore/course/${courseId}/module/${moduleId}` as any}
+            prefetch={true}
             aria-label="Exit module"
-            className={`flex items-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition-colors hover:bg-zinc-50 cursor-pointer ${
+            className={`flex items-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition-colors hover:bg-zinc-50 cursor-pointer no-underline ${
               collapsedView
                 ? "h-10 w-full justify-center"
                 : "w-full justify-center gap-2 px-3 py-2.5"
@@ -213,7 +215,7 @@ export default function ModuleSidebar({
             {!collapsedView && (
               <span className="text-xs font-medium">Exit Module</span>
             )}
-          </button>
+          </Link>
         </div>
       </aside>
     </>

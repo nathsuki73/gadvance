@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, use, useRef } from "react";
 import { notFound, usePathname, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Loader2,
@@ -17,7 +18,6 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-import { getModule } from "./service";
 import { getLearningPlanDetails } from "../../service";
 import Link from "next/link";
 
@@ -73,9 +73,6 @@ export default function ModulePage({
   const moduleId = resolvedParams.moduleId;
   const courseId = resolvedParams.courseId;
 
-  const [modules, setModules] = useState<ModuleResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
   const overviewRef = useRef<HTMLDivElement | null>(null);
@@ -89,47 +86,39 @@ export default function ModulePage({
     router.push(courseLink);
   };
 
-  const hasFetchedRef = useRef(false);
+  // Derive course ID safely for the query key
+  let derivedCourseId = courseId;
+  if (!derivedCourseId) {
+    const parts = pathname.split("/course/")[1];
+    if (parts) derivedCourseId = parts.split("/")[0];
+  }
 
+  // TanStack Query handles caching, background re-fetching, and prevents full reloads on navigation
+  const {
+    data: modules = [],
+    isLoading: loading,
+    isError: error,
+  } = useQuery<ModuleResponse[]>({
+    queryKey: ["course-modules", derivedCourseId],
+    queryFn: async () => {
+      if (!derivedCourseId) return [];
+      const courseRes = await getLearningPlanDetails(derivedCourseId);
+      return (courseRes.data?.modules || []) as ModuleResponse[];
+    },
+    enabled: Boolean(derivedCourseId),
+    staleTime: 1000 * 60 * 5, // Cache stays fresh for 5 minutes (prevents refetching when going back/forth)
+    refetchOnWindowFocus: false,
+  });
+
+  // Sync activeIndex when modules load or moduleId changes
   useEffect(() => {
-    if (hasFetchedRef.current) return;
-    hasFetchedRef.current = true;
-
-    const fetchAllModules = async () => {
-      try {
-        setLoading(true);
-
-        let derivedCourseId = courseId;
-        if (!derivedCourseId) {
-          const parts = pathname.split("/course/")[1];
-          if (parts) derivedCourseId = parts.split("/")[0];
-        }
-
-        if (derivedCourseId) {
-          const courseRes = await getLearningPlanDetails(derivedCourseId);
-
-          const rawModules = courseRes.data?.modules || [];
-
-          if (Array.isArray(rawModules) && rawModules.length > 0) {
-            setModules(rawModules as ModuleResponse[]);
-            const idx = rawModules.findIndex(
-              (m: any) => String(m.id || m.module_id) === String(moduleId),
-            );
-            setActiveIndex(idx >= 0 ? idx : 0);
-            setLoading(false);
-            return;
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load modules:", err);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllModules();
-  }, [moduleId, courseId, pathname]);
+    if (modules.length > 0) {
+      const idx = modules.findIndex(
+        (m: any) => String(m.id || m.module_id) === String(moduleId),
+      );
+      setActiveIndex(idx >= 0 ? idx : 0);
+    }
+  }, [modules, moduleId]);
 
   const handlePrev = (e?: React.MouseEvent) => {
     e?.preventDefault();
@@ -171,7 +160,7 @@ export default function ModulePage({
     );
   }
 
-  if (error || modules.length === 0) notFound();
+  if (error || (!loading && modules.length === 0)) notFound();
 
   return (
     <main className="w-full min-h-screen bg-white text-zinc-900 pb-20 flex flex-col justify-between">
@@ -222,8 +211,6 @@ export default function ModulePage({
                           <div className="mt-6 sm:mt-8">
                             <Link
                               href={`/learn/${mod.id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
                               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-purple-500/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] cursor-pointer"
                             >
                               {modProgress > 0
@@ -368,7 +355,7 @@ export default function ModulePage({
                   <ChevronLeft size={20} strokeWidth={2.4} />
                 </button>
 
-                {/* Module Cards Track (Fixed wide 2-column layout on desktop, 1 per view on mobile, swipe disabled) */}
+                {/* Module Cards Track */}
                 <div
                   ref={listScrollRef}
                   style={{
@@ -426,11 +413,9 @@ export default function ModulePage({
                             {m.title}
                           </h4>
 
-                          {/* Fixed 2-line height Description with ellipsis */}
+                          {/* Description */}
                           <p className="mt-1.5 sm:mt-2 text-xs font-light leading-relaxed text-zinc-500 h-9 line-clamp-2 break-all overflow-hidden text-ellipsis">
-                            {m.about ||
-                              m.description ||
-                              "this is a test description for the module card. it should be truncated after 2 lines and show an ellipsis if it exceeds the height limit."}
+                            {m.about || m.description || "..."}
                           </p>
                         </div>
 
