@@ -86,21 +86,6 @@ export function normalizeAssessmentData(
   const mode: AssessmentMode =
     settingsObj.type || data.type || data.assessment_type || "quiz";
 
-  // 🎯 FIX: Explicitly check if the user completed the assessment or if a previous attempt exists
-  const isCompletedOrReview = Boolean(
-    data.user_has_completed ||
-    data.previous_attempt ||
-    data.status === "completed",
-  );
-
-  const shuffleQuestions = isCompletedOrReview
-    ? false
-    : Boolean(settingsObj.shuffleQuestions ?? data.shuffle_questions);
-
-  const shuffleOptions = isCompletedOrReview
-    ? false
-    : Boolean(settingsObj.shuffleOptions ?? data.shuffle_options);
-
   const rawMaxAttempts = settingsObj.maxAttempts ?? data.max_attempts;
   const parsedMaxAttempts =
     rawMaxAttempts !== null &&
@@ -122,8 +107,8 @@ export function normalizeAssessmentData(
     passingScore: Number(settingsObj.passingScore ?? data.passing_score ?? 70),
     timeLimitMinutes: parsedTimeLimit,
     maxAttempts: parsedMaxAttempts,
-    shuffleQuestions,
-    shuffleOptions,
+    shuffleQuestions: false, // Handled 100% on the backend
+    shuffleOptions: false, // 🛑 DISABLED to prevent option desync on refresh/review
     showFeedbackImmediately: Boolean(
       settingsObj.showFeedbackImmediately ??
       data.show_feedback_immediately ??
@@ -146,10 +131,11 @@ export function normalizeAssessmentData(
 
   const rawQuestions: any[] = data.questions || [];
 
-  let mappedQuestions: Question[] = rawQuestions.map((q: any) => {
+  const mappedQuestions: Question[] = rawQuestions.map((q: any) => {
     const rawOptions = q.options || q.choices || [];
 
-    let mappedChoices: Choice[] = rawOptions.map((o: any, idx: number) => ({
+    // Mapped in stable database order with zero random client-side shuffling
+    const mappedChoices: Choice[] = rawOptions.map((o: any, idx: number) => ({
       id: o.id || `choice-${idx}`,
       text: o.optionText || o.option_text || o.text || "",
       isCorrect: Boolean(o.isCorrect ?? o.is_correct),
@@ -157,10 +143,6 @@ export function normalizeAssessmentData(
       votes: o.votes ?? 0,
       percentage: o.percentage ?? 0,
     }));
-
-    if (shuffleOptions) {
-      mappedChoices = shuffleArray(mappedChoices);
-    }
 
     const correctChoice = mappedChoices.find((c) => c.isCorrect);
 
@@ -178,10 +160,6 @@ export function normalizeAssessmentData(
       isPoll: mode === "poll" || Boolean(q.isPoll),
     };
   });
-
-  if (shuffleQuestions) {
-    mappedQuestions = shuffleArray(mappedQuestions);
-  }
 
   return {
     id: data.id || id,

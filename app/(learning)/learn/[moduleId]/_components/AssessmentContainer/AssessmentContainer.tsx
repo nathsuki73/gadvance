@@ -13,7 +13,6 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { AssessmentViewData, Choice } from "./types";
 import {
   getAssessmentViewData,
-  getAssessmentState,
   submitAssessment,
   submitPollVote,
   AnswerPayload,
@@ -63,15 +62,8 @@ export default function AssessmentContainer({
     moduleId,
     type,
   ] as const;
-  const stateQueryKey = [
-    "assessmentState",
-    assessmentId,
-    itemId,
-    moduleId,
-    type,
-  ] as const;
 
-  const storageDraftKey = `local_draft_${assessmentId}_${itemId}`;
+  const storageDraftKey = `assessment_draft_${assessmentId}_${itemId}`;
 
   // Prevent multiple executions of close logic
   const closingRef = useRef(false);
@@ -90,7 +82,6 @@ export default function AssessmentContainer({
 
       setTimeout(() => {
         window.close();
-        // Fallback: If browser restricts script-initiated window.close(), invoke onExit
         if (onExit) {
           onExit();
         }
@@ -99,7 +90,7 @@ export default function AssessmentContainer({
     [showToast, onExit],
   );
 
-  // 1. Load Assessment Definition with Module ID for guard checks
+  // 1. Load Assessment Definition (Cached in Redis on backend, zero extra state calls!)
   const {
     data: viewData,
     isLoading: viewLoading,
@@ -108,19 +99,6 @@ export default function AssessmentContainer({
     queryKey: viewQueryKey,
     queryFn: () => getAssessmentViewData(assessmentId, itemId, moduleId),
     enabled: Boolean(assessmentId),
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-    retry: (failureCount, error: any) => {
-      if (error?.code === "MODULE_UNPUBLISHED") return false;
-      return failureCount < 2;
-    },
-  });
-
-  // 2. Load Attempt State
-  const { data: stateData, isLoading: stateLoading } = useQuery({
-    queryKey: stateQueryKey,
-    queryFn: () => getAssessmentState(assessmentId, itemId, moduleId),
-    enabled: Boolean(assessmentId) && Boolean(itemId),
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
     retry: (failureCount, error: any) => {
@@ -152,7 +130,7 @@ export default function AssessmentContainer({
 
   const [submittedQuestions, setSubmittedQuestions] = useState<
     Record<string, boolean>
-  >([]);
+  >({});
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
@@ -178,44 +156,26 @@ export default function AssessmentContainer({
     }
   }, [viewError, triggerAutoClose]);
 
-  // Handle state fetch errors indicating unpublished module
-  useEffect(() => {
-    if (
-      stateData &&
-      !stateData.success &&
-      (stateData as any).code === "MODULE_UNPUBLISHED"
-    ) {
-      triggerAutoClose((stateData as any).message);
-    }
-  }, [stateData, triggerAutoClose]);
-
-  // Reconcile and hydrate state
-  // Reconcile and hydrate state
+  // Reconcile and hydrate state locally without hitting /state
   useEffect(() => {
     if (hasHydrated.current) return;
-    if (!viewData || stateLoading) return;
+    if (!viewData) return;
 
-    const availableQuestions = viewData.questions || [];
-    const validQuestionMap = new Map(availableQuestions.map((q) => [q.id, q]));
-
-    const stateRes = stateData as any;
-    const currentStatus = stateRes?.data?.status ?? "not_started";
-    const isCurrentlyActive = currentStatus === "in_progress";
-
+    setAssessment(viewData);
     const prevAttempt = (viewData as any).previous_attempt;
 
-    // 🎯 Explicitly hydrate past answers from previous_attempt so review cards show selections
     if (prevAttempt) {
       setSavedScore(prevAttempt.score_percentage);
       setSavedRawScore(prevAttempt.score ?? null);
       setSavedTotalPoints(prevAttempt.total_points ?? null);
+      setSubmitted(true);
+      setHasStarted(true);
 
       if (prevAttempt.remedial_suggestions) {
         setRemedialSuggestions(prevAttempt.remedial_suggestions);
       }
 
       const pastAnswersMap: Record<string, string> = {};
-
       if (prevAttempt.answers) {
         if (Array.isArray(prevAttempt.answers)) {
           prevAttempt.answers.forEach((ans: any) => {
@@ -249,151 +209,27 @@ export default function AssessmentContainer({
         ).length;
         setSavedCorrectCount(correct);
       }
-    }
-
-    if (stateRes?.success && stateRes.data) {
-      const {
-        draft_answers,
-        question_order,
-        current_index,
-        status,
-        poll_distributions,
-        voted_question_ids,
-      } = stateRes.data;
-
-      let activeQuestions = [...availableQuestions];
-
-      if (
-        isCurrentlyActive &&
-        Array.isArray(question_order) &&
-        question_order.length > 0
-      ) {
-        const restoredQuestions = question_order
-          .map((qId: string) => validQuestionMap.get(qId))
-          .filter(Boolean) as typeof availableQuestions;
-
-        if (restoredQuestions.length > 0) {
-          activeQuestions = restoredQuestions;
-        }
-      }
-
-      if (poll_distributions && Object.keys(poll_distributions).length > 0) {
-        activeQuestions = activeQuestions.map((q) => ({
-          ...q,
-          choices: q.choices.map((choice) => {
-            const c = choice as any;
-            const dist = poll_distributions[c.id];
-            if (typeof dist === "object" && dist !== null) {
-              return {
-                ...c,
-                votes: dist.votes ?? c.votes ?? 0,
-                percentage: dist.percentage ?? c.percentage ?? 0,
-              };
-            }
-            return c;
-          }),
-        }));
-      }
-
-      setAssessment({ ...viewData, questions: activeQuestions });
-
-      if (
-        isCurrentlyActive &&
-        (!question_order || question_order.length === 0)
-      ) {
-        const initialOrder = activeQuestions.map((q) => q.id);
-        apiFetch(`/api/assessments/${assessmentId}/save-draft`, {
-          method: "POST",
-          body: JSON.stringify({
-            section_item_id: itemId,
-            module_id: moduleId,
-            answers: draft_answers || {},
-            question_order: initialOrder,
-            current_index: current_index || 0,
-          }),
-        }).catch(() => {});
-      }
-
-      const restoredMap: Record<string, string> = {};
-      if (draft_answers) {
-        if (Array.isArray(draft_answers)) {
-          draft_answers.forEach((ans: any) => {
-            if (ans?.question_id && validQuestionMap.has(ans.question_id)) {
-              restoredMap[ans.question_id] = ans.choice_id;
-            }
-          });
-        } else if (
-          typeof draft_answers === "object" &&
-          draft_answers !== null
-        ) {
-          Object.entries(draft_answers).forEach(([qId, cId]) => {
-            if (validQuestionMap.has(qId)) {
-              restoredMap[qId] = String(cId);
-            }
-          });
-        }
-      }
-
-      if (isCurrentlyActive) {
-        setAnswers(restoredMap);
-        setSavedScore(null);
-        setSavedRawScore(null);
-        setSavedTotalPoints(null);
-        setSavedCorrectCount(null);
-        setSubmitted(false);
-        setHasStarted(true);
-      } else if (Object.keys(restoredMap).length > 0) {
-        setAnswers((prev) => ({ ...prev, ...restoredMap }));
-      }
-
-      const validVotedIds: string[] = (voted_question_ids || []).filter(
-        (qId: string) => validQuestionMap.has(qId),
-      );
-      if (validVotedIds.length > 0) {
-        setSubmittedQuestions((prev) => {
-          const next = { ...prev };
-          validVotedIds.forEach((qId) => {
-            next[qId] = true;
-          });
-          return next;
-        });
-      }
-
-      if (activeQuestions.length > 0) {
-        const safeIndex =
-          typeof current_index === "number"
-            ? Math.min(Math.max(0, current_index), activeQuestions.length - 1)
-            : 0;
-        setCurrentQuestionIndex(safeIndex);
-      } else {
-        setCurrentQuestionIndex(0);
-      }
-
-      if (status === "completed" || prevAttempt) {
-        setHasStarted(true);
-        setSubmitted(true);
-
-        if (prevAttempt?.remedial_suggestions) {
-          setRemedialSuggestions(prevAttempt.remedial_suggestions);
-        }
-
-        if (prevAttempt?.score_percentage !== undefined) {
-          setSavedScore(prevAttempt.score_percentage);
-          setSavedRawScore(prevAttempt.score ?? null);
-          setSavedTotalPoints(prevAttempt.total_points ?? null);
-        }
-      } else if (status === "in_progress") {
-        setHasStarted(true);
-        setSubmitted(false);
-      }
     } else {
-      setAssessment(viewData);
+      // 🚀 Hydrate active draft instantly from localStorage on refresh
+      const localDraft = localStorage.getItem(storageDraftKey);
+      if (localDraft) {
+        try {
+          const parsed = JSON.parse(localDraft);
+          if (parsed.answers) setAnswers(parsed.answers);
+          if (typeof parsed.current_index === "number") {
+            setCurrentQuestionIndex(parsed.current_index);
+          }
+        } catch (e) {
+          console.error("Failed to parse local draft", e);
+        }
+      }
+      setHasStarted(true);
     }
 
     hasHydrated.current = true;
     setStartTime(Date.now());
     questionStartRef.current = Date.now();
-  }, [viewData, stateData, stateLoading, storageDraftKey]);
+  }, [viewData, storageDraftKey]);
 
   useEffect(() => {
     questionStartRef.current = Date.now();
@@ -448,9 +284,7 @@ export default function AssessmentContainer({
     onError: (err) => console.error("Poll vote failed:", err),
   });
 
-  const isLoading = viewLoading || (Boolean(itemId) && stateLoading);
-
-  if (isLoading) {
+  if (viewLoading) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white p-6">
         <div className="flex flex-col items-center gap-3 text-[#8b5cf6]">
@@ -529,15 +363,27 @@ export default function AssessmentContainer({
     savedCorrectCount !== null ? savedCorrectCount : localCorrectCount;
   const isPassed = displayScore >= settings.passingScore;
 
+  // 🚀 Local draft persistence helper (zero network lag)
+  const saveLocalDraft = (
+    newAnswers: Record<string, string>,
+    newIndex: number,
+  ) => {
+    try {
+      localStorage.setItem(
+        storageDraftKey,
+        JSON.stringify({ answers: newAnswers, current_index: newIndex }),
+      );
+    } catch (e) {
+      console.error("Failed to save local draft", e);
+    }
+  };
+
   const handleSelectChoice = (questionId: string, choiceId: string) => {
     if (submitted || submittedQuestions[questionId]) return;
 
     const nextAnswers = { ...answers, [questionId]: choiceId };
     setAnswers(nextAnswers);
-
-    try {
-      localStorage.setItem(storageDraftKey, JSON.stringify(nextAnswers));
-    } catch {}
+    saveLocalDraft(nextAnswers, currentQuestionIndex);
 
     setAnsweredAtMap((prev) => ({
       ...prev,
@@ -577,23 +423,6 @@ export default function AssessmentContainer({
 
       showToast("Vote submitted successfully!", "success", 2000);
 
-      queryClient.setQueryData(stateQueryKey, (old: any) => {
-        if (!old?.data) return old;
-        const votedSet = new Set(old.data.voted_question_ids || []);
-        votedSet.add(qId);
-        return {
-          ...old,
-          data: {
-            ...old.data,
-            voted_question_ids: Array.from(votedSet),
-            poll_distributions: {
-              ...old.data.poll_distributions,
-              ...result.poll_distributions,
-            },
-          },
-        };
-      });
-
       if (result.poll_distributions) {
         setAssessment((prev) => {
           if (!prev) return null;
@@ -629,14 +458,18 @@ export default function AssessmentContainer({
   const handleNextQuestion = () => {
     if (!isLastQuestion) {
       recordCurrentQuestionTime();
-      setCurrentQuestionIndex((prev) => prev + 1);
+      const nextIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(nextIndex);
+      saveLocalDraft(answers, nextIndex);
     }
   };
 
   const handlePreviousQuestion = () => {
     if (!isFirstQuestion) {
       recordCurrentQuestionTime();
-      setCurrentQuestionIndex((prev) => prev - 1);
+      const prevIndex = currentQuestionIndex - 1;
+      setCurrentQuestionIndex(prevIndex);
+      saveLocalDraft(answers, prevIndex);
     }
   };
 
@@ -674,7 +507,6 @@ export default function AssessmentContainer({
         answers: formattedAnswers,
       });
 
-      // 🛑 1. FAILURE / GUARD INTERCEPTION
       if (!result.success) {
         const errorData = result as any;
         if (errorData.code === "MODULE_UNPUBLISHED") {
@@ -691,20 +523,13 @@ export default function AssessmentContainer({
         return;
       }
 
-      // ✅ 2. SUCCESS: Safe response unwrapping
       const responseData = (result.data as any) ?? result;
-      const correctAnswersMap = responseData.correct_answers || {};
-
       const backendScore =
         responseData?.score_percentage ?? responseData?.percentage;
       const rawScore = responseData?.score;
       const totalPoints = responseData?.total_points;
 
-      const finalRemedialSuggestions: Array<{
-        page_id: string;
-        block_id: string;
-        review_url: string;
-      }> =
+      const finalRemedialSuggestions =
         responseData?.remedial_suggestions ??
         (Array.isArray((result as any)?.remedial_suggestions)
           ? (result as any).remedial_suggestions
@@ -726,64 +551,29 @@ export default function AssessmentContainer({
       setSubmitted(true);
       showToast("Assessment submitted successfully!", "success", 2500);
 
+      // Clean up local draft since test is submitted
       try {
         localStorage.removeItem(storageDraftKey);
       } catch {}
 
-      // 🎯 FIX: Immediately map the correct choice IDs into the local assessment state
-      // so the review screen shows correct/incorrect answers right away without needing a reload.
-      setAssessment((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          questions: prev.questions.map((q) => ({
-            ...q,
-            correctChoiceId: correctAnswersMap[q.id] || q.correctChoiceId,
-          })),
-        };
-      });
-
-      queryClient.setQueryData(viewQueryKey, (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          previous_attempt: {
-            score_percentage: backendScore,
-            score: rawScore,
-            total_points: totalPoints,
-            answers: formattedAnswers.map((a) => ({
-              question_id: a.question_id,
-              choice_id: a.choice_id,
-              is_correct:
-                gradedQuestions.find((q: any) => q.id === a.question_id)
-                  ?.correctChoiceId === a.choice_id,
-            })),
-            remedial_suggestions: finalRemedialSuggestions,
-          },
-        };
-      });
-
-      queryClient.setQueryData(stateQueryKey, (old: any) => {
-        if (!old?.data) return old;
-        return {
-          ...old,
-          data: {
-            ...old.data,
-            draft_answers: answers,
-            current_index: safeQuestionIndex,
-            status: "completed",
-          },
-        };
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: stateQueryKey,
-        refetchType: "none",
-      });
-      queryClient.invalidateQueries({
+      // 🚀 Force an immediate refetch of the assessment view so the review screen
+      // loads the exact completed attempt snapshot and correct answer mappings from the server.
+      const freshView = await queryClient.fetchQuery({
         queryKey: viewQueryKey,
-        refetchType: "none",
+        queryFn: async () => {
+          const res = await apiFetch(
+            `/api/assessments/${assessmentId}?section_item_id=${itemId}&module_id=${moduleId}`,
+            { method: "GET" },
+          );
+          if (!res) throw new Error("Failed to fetch assessment review data");
+          const rawData = await res.json();
+          return normalizeAssessmentData(rawData, assessmentId);
+        },
       });
+
+      if (freshView) {
+        setAssessment(freshView);
+      }
     } catch (err: any) {
       console.error("Submission error:", err);
       showToast(
@@ -852,28 +642,21 @@ export default function AssessmentContainer({
     setSavedCorrectCount(null);
 
     queryClient.removeQueries({ queryKey: viewQueryKey });
-    queryClient.removeQueries({ queryKey: stateQueryKey });
 
-    const [freshView] = await Promise.all([
-      queryClient.fetchQuery({
-        queryKey: viewQueryKey,
-        queryFn: async () => {
-          const res = await apiFetch(
-            `/api/assessments/${assessmentId}?section_item_id=${itemId}&module_id=${moduleId}`,
-            { method: "GET" },
-          );
-          if (!res) {
-            throw new Error("Failed to fetch assessment");
-          }
-          const rawData = await res.json();
-          return normalizeAssessmentData(rawData, assessmentId);
-        },
-      }),
-      queryClient.fetchQuery({
-        queryKey: stateQueryKey,
-        queryFn: () => getAssessmentState(assessmentId, itemId, moduleId),
-      }),
-    ]);
+    const freshView = await queryClient.fetchQuery({
+      queryKey: viewQueryKey,
+      queryFn: async () => {
+        const res = await apiFetch(
+          `/api/assessments/${assessmentId}?section_item_id=${itemId}&module_id=${moduleId}`,
+          { method: "GET" },
+        );
+        if (!res) {
+          throw new Error("Failed to fetch assessment");
+        }
+        const rawData = await res.json();
+        return normalizeAssessmentData(rawData, assessmentId);
+      },
+    });
 
     if (freshView) {
       setAssessment(freshView);
