@@ -168,10 +168,12 @@ export default function MentalHealthPage() {
                 </p>
               </div>
               <a
-                href="tel:09178998727"
-                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-violet-50 py-3 text-sm font-medium text-[#8b5cf6] hover:bg-violet-100 transition-colors"
+                href="https://ncmh.gov.ph/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-[#8b5cf6] py-3 text-sm font-medium text-white transition-colors hover:bg-[#7c3aed]"
               >
-                <PhoneCall size={16} /> Call Mobile Hotline
+                <ExternalLink size={16} /> View Official NCMH Source
               </a>
             </div>
 
@@ -190,10 +192,12 @@ export default function MentalHealthPage() {
                 </p>
               </div>
               <a
-                href="tel:1553"
-                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-violet-50 py-3 text-sm font-medium text-[#8b5cf6] hover:bg-violet-100 transition-colors"
+                href="https://ncmh.gov.ph/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-[#8b5cf6] py-3 text-sm font-medium text-white transition-colors hover:bg-[#7c3aed]"
               >
-                <PhoneCall size={16} /> Call Hotline 1553
+                <ExternalLink size={16} /> View Official NCMH Source
               </a>
             </div>
 
@@ -212,10 +216,12 @@ export default function MentalHealthPage() {
                 </p>
               </div>
               <a
-                href="tel:0279898727"
-                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-violet-50 py-3 text-sm font-medium text-[#8b5cf6] hover:bg-violet-100 transition-colors"
+                href="https://ncmh.gov.ph/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-[#8b5cf6] py-3 text-sm font-medium text-white transition-colors hover:bg-[#7c3aed]"
               >
-                <PhoneCall size={16} /> Call Direct Landline
+                <ExternalLink size={16} /> View Official NCMH Source
               </a>
             </div>
           </div>
@@ -223,7 +229,7 @@ export default function MentalHealthPage() {
       </section>
 
       {/* ================= COMMUNITY CAMPAIGNS SECTION (#MentalHealthPH) ================= */}
-      <section className="py-28 bg-white">
+      {/* <section className="py-28 bg-white">
         <div className="mx-auto max-w-7xl px-8 lg:px-12">
           <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out max-w-3xl">
             <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-[#8b5cf6]">
@@ -283,10 +289,10 @@ export default function MentalHealthPage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
-      {/* ================= LOCAL DIRECTORY SPOTLIGHT (San Pablo City Medical Center) ================= */}
-      <section className="py-24 bg-zinc-50 border-t border-zinc-100">
+
+      {/* <section className="py-24 bg-zinc-50 border-t border-zinc-100">
         <div className="mx-auto max-w-7xl px-8 lg:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-5 scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out">
@@ -306,7 +312,6 @@ export default function MentalHealthPage() {
               </p>
             </div>
 
-            {/* Directory Feature Card */}
             <div className="lg:col-span-7 scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-200 ease-out">
               <div className="bg-white p-8 rounded-3xl border border-zinc-200/80 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between border-b border-zinc-100 pb-4 gap-2">
@@ -363,7 +368,6 @@ export default function MentalHealthPage() {
                   </div>
                 </div>
 
-                {/* Contact Sub-block */}
                 <div className="mt-6 pt-4 border-t border-zinc-100 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                   <a
                     href="tel:0495620726"
@@ -400,7 +404,7 @@ export default function MentalHealthPage() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* ================= FINAL CTA ================= */}
       <section className="relative overflow-hidden bg-gradient-to-b from-white via-violet-50 to-white py-32 text-center">

@@ -28,19 +28,19 @@ const FAQS: FAQItem[] = [
     category: "General",
     question: "What is GADvance and who is it designed for?",
     answer:
-      "GADvance is an e-learning and gender advancement platform tailored for students, educators, and institutions in the Philippines. It provides self-paced learning tracks, policy frameworks, and interactive community spaces.",
+      "GADvance is an e-learning and gender advancement platform tailored for students, educators, and institutions. It provides self-paced learning courses, module compilations, and lessons with interactive elements.",
   },
   {
     category: "Partnerships",
     question: "How can my university or organization integrate GADvance?",
     answer:
-      "We partner with academic institutions and organizations looking to strengthen their Gender Focal Point System (GFPS) and Safe Spaces Act compliance. Reach out to our partnership desk at gadvanceproject@gmail.com for institutional onboardings.",
+      "We can partner with academic institutions and organizations looking to strengthen their Gender Focal Point System (GFPS) and Safe Spaces Act compliance. Reach out to our partnership desk at gadvanceproject@gmail.com for institutional onboardings.",
   },
   {
     category: "Technical",
     question: "What should I do if I encounter platform bugs or login issues?",
     answer:
-      "For technical anomalies, video playback issues, or account recovery support, you can contact our developer desk at gadvanceproject@gmail.com. Please include details about your device and browser for faster troubleshooting.",
+      "For technical anomalies, account recovery support, or any other issues regarding the website, you can contact our developer desk at gadvanceproject@gmail.com. Please include details about your device and browser for faster troubleshooting.",
   },
   {
     category: "General",
@@ -236,11 +236,6 @@ export default function SupportPage() {
                 direct troubleshooting.
               </p>
 
-              <div className="mt-8">
-                <span className="text-xs font-medium text-zinc-500">
-                  Developed for GADvance Philippines
-                </span>
-              </div>
             </div>
 
             {/* Right Desk Card */}
