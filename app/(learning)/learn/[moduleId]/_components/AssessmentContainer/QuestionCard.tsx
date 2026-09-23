@@ -38,7 +38,8 @@ interface QuestionCardProps {
   submitted: boolean;
   isQuestionSubmitted?: boolean;
   settings: AssessmentSettings;
-  showQuestionNumber?: boolean; // 👈 Added parameter for on/off switch
+  showQuestionNumber?: boolean;
+  isCorrectOverride?: boolean; // 👈 Added override prop for accurate review evaluation
   onSelectChoice: (questionId: string, choiceId: string) => void;
 }
 
@@ -49,13 +50,19 @@ export function QuestionCard({
   submitted,
   isQuestionSubmitted = false,
   settings,
-  showQuestionNumber = true, // 👈 Default to true if not specified
+  showQuestionNumber = true,
+  isCorrectOverride,
   onSelectChoice,
 }: QuestionCardProps) {
   const isPoll = settings.type === "poll" || question.isPoll;
   const isTestMode = settings.type === "test";
 
-  const isCorrect = selectedChoiceId === question.correctChoiceId;
+  // Use the backend-provided override if available, otherwise fallback to comparison
+  const isCorrect =
+    isCorrectOverride !== undefined
+      ? isCorrectOverride
+      : selectedChoiceId === question.correctChoiceId;
+
   const bloomInfo = question.bloomLevel
     ? BLOOM_BADGES[question.bloomLevel]
     : null;
@@ -102,7 +109,7 @@ export function QuestionCard({
         )}
       </div>
 
-      {/* Choice Options (Minimalist List Style) */}
+      {/* Choice Options */}
       <div className="space-y-2">
         {question.choices.map((choice) => {
           const isSelected = selectedChoiceId === choice.id;
@@ -147,7 +154,6 @@ export function QuestionCard({
                 disabled={isLocked}
                 className={`relative overflow-hidden flex flex-1 items-center justify-between gap-3 py-2.5 px-2 text-left text-md transition-colors cursor-pointer disabled:cursor-default rounded-lg hover:bg-zinc-50 ${textStyle}`}
               >
-                {/* Background Progress Bar for Polls */}
                 {showPollDistribution && (
                   <div
                     className={`absolute inset-y-0 left-0 transition-all duration-700 ease-out rounded-lg pointer-events-none opacity-25 ${
@@ -157,7 +163,6 @@ export function QuestionCard({
                   />
                 )}
 
-                {/* Option Label & Radio/Checkbox Indicator */}
                 <div className="relative z-10 flex items-center gap-3 pr-2 min-w-0 flex-1">
                   <div
                     className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all ${radioCircleStyle}`}
@@ -182,7 +187,6 @@ export function QuestionCard({
                   </span>
                 </div>
 
-                {/* Vote Count / Feedback Icons */}
                 <div className="relative z-10 flex items-center gap-2 shrink-0">
                   {showPollDistribution && (
                     <span
@@ -203,7 +207,6 @@ export function QuestionCard({
                 </div>
               </button>
 
-              {/* Percentage Badge for Polls */}
               {showPollDistribution && (
                 <div
                   className={`w-12 shrink-0 text-right font-mono text-xs font-semibold ${

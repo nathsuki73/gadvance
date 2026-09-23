@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { ChevronRight, ArrowLeft } from "lucide-react";
-import { QuestionCard } from "./QuestionCard";
+import { ReviewQuestionCard } from "./ReviewQuestionCard"; // 👈 Use new component
 import { AssessmentSettings, Question } from "./types";
 
 interface ReviewSubmissionProps {
@@ -24,20 +24,16 @@ export function ReviewSubmission({
   isPoll,
   isReviewActive,
   onToggleReview,
-  onSelectChoice,
 }: ReviewSubmissionProps) {
-  // 📱 Handle Mobile Browser Back Button behavior
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       if (isReviewActive) {
-        // If the review list is open, close it and stay on the results summary page
         event.preventDefault();
         onToggleReview(false);
       }
     };
 
     if (isReviewActive) {
-      // Push a dummy history state when review opens so the back button catches it
       window.history.pushState({ reviewOpen: true }, "");
       window.addEventListener("popstate", handlePopState);
     }
@@ -55,7 +51,6 @@ export function ReviewSubmission({
         <button
           type="button"
           onClick={() => {
-            // Standard click behavior: go back and pop history if needed
             onToggleReview(false);
             if (window.history.state?.reviewOpen) {
               window.history.back();
@@ -69,15 +64,11 @@ export function ReviewSubmission({
 
         <div className="space-y-6">
           {questions.map((q, qIndex) => (
-            <QuestionCard
+            <ReviewQuestionCard
               key={q.id}
               question={q}
               index={qIndex}
               selectedChoiceId={answers[q.id]}
-              submitted={submitted}
-              isQuestionSubmitted={true}
-              settings={settings}
-              onSelectChoice={onSelectChoice}
             />
           ))}
         </div>

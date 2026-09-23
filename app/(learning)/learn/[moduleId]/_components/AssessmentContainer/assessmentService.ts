@@ -86,12 +86,20 @@ export function normalizeAssessmentData(
   const mode: AssessmentMode =
     settingsObj.type || data.type || data.assessment_type || "quiz";
 
-  const shuffleQuestions = Boolean(
-    settingsObj.shuffleQuestions ?? data.shuffle_questions,
+  // 🎯 FIX: Explicitly check if the user completed the assessment or if a previous attempt exists
+  const isCompletedOrReview = Boolean(
+    data.user_has_completed ||
+    data.previous_attempt ||
+    data.status === "completed",
   );
-  const shuffleOptions = Boolean(
-    settingsObj.shuffleOptions ?? data.shuffle_options,
-  );
+
+  const shuffleQuestions = isCompletedOrReview
+    ? false
+    : Boolean(settingsObj.shuffleQuestions ?? data.shuffle_questions);
+
+  const shuffleOptions = isCompletedOrReview
+    ? false
+    : Boolean(settingsObj.shuffleOptions ?? data.shuffle_options);
 
   const rawMaxAttempts = settingsObj.maxAttempts ?? data.max_attempts;
   const parsedMaxAttempts =
@@ -280,16 +288,13 @@ export async function getAssessmentState(
   }
 }
 
-/**
- * 3. Submit Assessment and Evaluate Grade
- */
 export async function submitAssessment(payload: {
   assessmentId: string;
   moduleId: string;
   sectionId?: string;
   sectionItemId: string;
   answers: AnswerPayload[];
-}): Promise<ServiceResponse<SubmissionResultData>> {
+}): Promise<ServiceResponse<SubmissionResultData & { answers?: any }>> {
   try {
     const res = await apiFetch(
       `/api/assessments/${payload.assessmentId}/submit`,
@@ -305,6 +310,9 @@ export async function submitAssessment(payload: {
     );
 
     const json = await res.json().catch(() => ({}));
+
+    // 🔍 DEBUG LOG: Check what the backend is actually sending back on submit
+    console.log("🔍 SUBMIT API RAW RESPONSE:", json);
 
     if (!res || !res.ok) {
       return {
@@ -325,6 +333,7 @@ export async function submitAssessment(payload: {
       passing_score: json.passing_score,
       poll_distributions: json.poll_distributions,
       remedial_suggestions: json.remedial_suggestions,
+      answers: json.answers ?? json.data?.answers,
       message: json.message,
     };
   } catch (error: any) {

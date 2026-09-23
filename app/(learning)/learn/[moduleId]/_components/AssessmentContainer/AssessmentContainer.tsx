@@ -190,6 +190,7 @@ export default function AssessmentContainer({
   }, [stateData, triggerAutoClose]);
 
   // Reconcile and hydrate state
+  // Reconcile and hydrate state
   useEffect(() => {
     if (hasHydrated.current) return;
     if (!viewData || stateLoading) return;
@@ -203,33 +204,50 @@ export default function AssessmentContainer({
 
     const prevAttempt = (viewData as any).previous_attempt;
 
-    if (prevAttempt && !isCurrentlyActive) {
+    // 🎯 Explicitly hydrate past answers from previous_attempt so review cards show selections
+    if (prevAttempt) {
       setSavedScore(prevAttempt.score_percentage);
       setSavedRawScore(prevAttempt.score ?? null);
       setSavedTotalPoints(prevAttempt.total_points ?? null);
 
-      if (Array.isArray(prevAttempt.answers)) {
+      if (prevAttempt.remedial_suggestions) {
+        setRemedialSuggestions(prevAttempt.remedial_suggestions);
+      }
+
+      const pastAnswersMap: Record<string, string> = {};
+
+      if (prevAttempt.answers) {
+        if (Array.isArray(prevAttempt.answers)) {
+          prevAttempt.answers.forEach((ans: any) => {
+            const qId = ans.question_id;
+            const cId = ans.choice_id ?? ans.selected_option_id;
+            if (qId && cId) {
+              pastAnswersMap[qId] = String(cId);
+            }
+          });
+        } else if (typeof prevAttempt.answers === "object") {
+          Object.entries(prevAttempt.answers).forEach(([qId, ansObj]) => {
+            const typedAnsObj = ansObj as any;
+            const cId =
+              typeof typedAnsObj === "object" && typedAnsObj !== null
+                ? (typedAnsObj.selected_option_id ?? typedAnsObj.choice_id)
+                : typedAnsObj;
+            if (qId && cId) {
+              pastAnswersMap[qId] = String(cId);
+            }
+          });
+        }
+      }
+
+      if (Object.keys(pastAnswersMap).length > 0) {
+        setAnswers(pastAnswersMap);
+      }
+
+      if (prevAttempt.answers && Array.isArray(prevAttempt.answers)) {
         const correct = prevAttempt.answers.filter(
           (a: any) => a.is_correct,
         ).length;
         setSavedCorrectCount(correct);
-
-        const pastAnswersMap: Record<string, string> = {};
-        prevAttempt.answers.forEach((ans: any) => {
-          const qId = ans.question_id;
-          const cId = ans.choice_id ?? ans.selected_option_id;
-          if (qId && cId) {
-            pastAnswersMap[qId] = String(cId);
-          }
-        });
-
-        if (Object.keys(pastAnswersMap).length > 0) {
-          setAnswers(pastAnswersMap);
-        }
-      }
-
-      if (prevAttempt.remedial_suggestions) {
-        setRemedialSuggestions(prevAttempt.remedial_suggestions);
       }
     }
 
@@ -278,6 +296,23 @@ export default function AssessmentContainer({
       }
 
       setAssessment({ ...viewData, questions: activeQuestions });
+
+      if (
+        isCurrentlyActive &&
+        (!question_order || question_order.length === 0)
+      ) {
+        const initialOrder = activeQuestions.map((q) => q.id);
+        apiFetch(`/api/assessments/${assessmentId}/save-draft`, {
+          method: "POST",
+          body: JSON.stringify({
+            section_item_id: itemId,
+            module_id: moduleId,
+            answers: draft_answers || {},
+            question_order: initialOrder,
+            current_index: current_index || 0,
+          }),
+        }).catch(() => {});
+      }
 
       const restoredMap: Record<string, string> = {};
       if (draft_answers) {
@@ -334,16 +369,18 @@ export default function AssessmentContainer({
         setCurrentQuestionIndex(0);
       }
 
-      if (status === "completed") {
+      if (status === "completed" || prevAttempt) {
         setHasStarted(true);
         setSubmitted(true);
 
-        if (viewData.settings.type === "poll") {
-          const allSubmittedMap: Record<string, boolean> = {};
-          activeQuestions.forEach((q) => {
-            allSubmittedMap[q.id] = true;
-          });
-          setSubmittedQuestions(allSubmittedMap);
+        if (prevAttempt?.remedial_suggestions) {
+          setRemedialSuggestions(prevAttempt.remedial_suggestions);
+        }
+
+        if (prevAttempt?.score_percentage !== undefined) {
+          setSavedScore(prevAttempt.score_percentage);
+          setSavedRawScore(prevAttempt.score ?? null);
+          setSavedTotalPoints(prevAttempt.total_points ?? null);
         }
       } else if (status === "in_progress") {
         setHasStarted(true);
@@ -656,6 +693,7 @@ export default function AssessmentContainer({
 
       // ✅ 2. SUCCESS: Safe response unwrapping
       const responseData = (result.data as any) ?? result;
+      const correctAnswersMap = responseData.correct_answers || {};
 
       const backendScore =
         responseData?.score_percentage ?? responseData?.percentage;
@@ -691,6 +729,19 @@ export default function AssessmentContainer({
       try {
         localStorage.removeItem(storageDraftKey);
       } catch {}
+
+      // 🎯 FIX: Immediately map the correct choice IDs into the local assessment state
+      // so the review screen shows correct/incorrect answers right away without needing a reload.
+      setAssessment((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          questions: prev.questions.map((q) => ({
+            ...q,
+            correctChoiceId: correctAnswersMap[q.id] || q.correctChoiceId,
+          })),
+        };
+      });
 
       queryClient.setQueryData(viewQueryKey, (old: any) => {
         if (!old) return old;
