@@ -16,7 +16,6 @@ import {
   Building2,
   Users,
   ExternalLink,
-  Plus,
 } from "lucide-react";
 import {
   getUserProfile,
@@ -26,6 +25,7 @@ import {
 } from "./service";
 import WorkspaceSkeleton from "./_components/WorkspaceSkeleton";
 import LeaveConfirmModal from "@/app/(public)/(pages)/organization/leave-confirm-modal";
+import Link from "next/link";
 
 export default function WorkspacePage() {
   const router = useRouter();
@@ -490,13 +490,14 @@ function RecentlyViewedSection({
       </div>
 
       <div className="pt-6 mt-auto flex items-center justify-between">
-        <button
-          onClick={() => onNavigate(currentModule.href)}
-          className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] cursor-pointer shadow-sm"
+        <Link
+          href={currentModule.href}
+          target="_blank"
+          className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] cursor-pointer shadow-sm no-underline"
         >
           {isCompleted ? <CheckCircle2 size={14} /> : <PlayCircle size={14} />}
-          <span>{isCompleted ? "View Module" : "Resume Module"}</span>
-        </button>
+          <span>View Module</span>
+        </Link>
 
         {modules.length > 1 && (
           <div className="flex items-center gap-1.5">
