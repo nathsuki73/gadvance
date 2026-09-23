@@ -374,11 +374,9 @@ export async function submitPollVote(
   }
 }
 
-/**
- * 5. Reset Assessment Attempt for Retake
- */
 export type RetakeResponseData = {
   attempt_id?: string;
+  assessment?: AssessmentViewData;
 };
 
 export async function retakeAssessment(
@@ -406,9 +404,17 @@ export async function retakeAssessment(
       };
     }
 
+    // 🎯 Normalize the fresh assessment payload returned directly by the retake endpoint
+    const normalizedAssessment = json.data
+      ? normalizeAssessmentData(json.data, assessmentId)
+      : undefined;
+
     return {
       success: json.success ?? res.ok,
-      data: { attempt_id: json.attempt_id },
+      data: {
+        attempt_id: json.attempt_id ?? json.data?.id,
+        assessment: normalizedAssessment,
+      },
       message: json.message,
     };
   } catch (error: any) {
