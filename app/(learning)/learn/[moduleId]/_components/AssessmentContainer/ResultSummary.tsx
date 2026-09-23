@@ -102,11 +102,12 @@ export function ResultsSummary({
     }
   }, [activeView]);
 
-  // Score Animation Loop
+  // Score Animation Loop (Restored whole-number counting animation)
   useEffect(() => {
     if (isPoll) return;
     let startTime: number | null = null;
     const duration = 1300;
+    const targetRounded = Math.round(scorePercentage);
 
     const animateScore = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
@@ -117,13 +118,13 @@ export function ResultsSummary({
           ? 4 * progress * progress * progress
           : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
-      const currentVal = Math.round(customEase * scorePercentage);
+      const currentVal = Math.round(customEase * targetRounded);
       setAnimatedPercentage(currentVal);
 
       if (progress < 1) {
         requestAnimationFrame(animateScore);
       } else {
-        setAnimatedPercentage(scorePercentage);
+        setAnimatedPercentage(targetRounded);
       }
     };
 
@@ -344,11 +345,6 @@ export function ResultsSummary({
                 : "opacity-0 z-0 pointer-events-none select-none"
             }`}
           >
-            {/* 🔑 Mounted once, the first time this tab is activated, and
-                never remounted (no `key` churn) — so AnimatedRemedialList's
-                internal stagger effect runs exactly one time. Switching back
-                and forth to this tab afterward just toggles opacity on an
-                already-fully-visible, already-settled list. */}
             {remedialUnlocked && (
               <AnimatedRemedialList
                 suggestions={remedialSuggestions}
@@ -467,10 +463,6 @@ export function ResultsSummary({
   );
 }
 
-/**
- * Renders the remedial suggestion blocks one after another with a
- * spring/overshoot pop-in without sequence numbers.
- */
 function AnimatedRemedialList({
   suggestions,
   moduleId,
@@ -496,12 +488,10 @@ function AnimatedRemedialList({
       timers.push(t);
     });
     return () => timers.forEach(clearTimeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="space-y-4 w-full">
-      {/* Friendly Explanatory Header */}
       <div className="space-y-1 px-1 text-left">
         <h3 className="text-sm sm:text-base font-bold text-zinc-800">
           Let&apos;s review these key concepts
@@ -512,7 +502,6 @@ function AnimatedRemedialList({
         </p>
       </div>
 
-      {/* Vertical List Stack */}
       <div className="space-y-3">
         {items.map((item, idx) => {
           const reviewUrl = `/learn/${moduleId}?item=${item.page_id}#${item.block_id}`;
