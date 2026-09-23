@@ -201,9 +201,7 @@ export default function ModuleSidebar({
 
         <div className="shrink-0 border-t border-zinc-200 bg-white/80 p-3">
           <button
-            onClick={() =>
-              router.push(`/explore/course/${courseId}/module/${moduleId}`)
-            }
+            onClick={() => window.close()}
             aria-label="Exit module"
             className={`flex items-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition-colors hover:bg-zinc-50 cursor-pointer ${
               collapsedView

@@ -258,10 +258,17 @@ const LearnPage = ({ params }: LearnPageProps) => {
   }
 
   const handleExitModule = async () => {
-    if (!completedItemIds.has(activeItem.id) && !completeMutation.isPending) {
-      await completeMutation.mutateAsync({ itemId: activeItem.id });
+    try {
+      // 1. Save progress if not already completed
+      if (!completedItemIds.has(activeItem.id) && !completeMutation.isPending) {
+        await completeMutation.mutateAsync({ itemId: activeItem.id });
+      }
+
+      // 2. Close the window/tab
+      window.close();
+    } catch (error) {
+      console.error("Failed to complete item before exiting:", error);
     }
-    router.push(`/explore/course/${module.courseId}/module/${moduleId}`);
   };
 
   return (
