@@ -19,10 +19,11 @@ import {
   retakeAssessment,
 } from "./assessmentService";
 import { AssessmentStartScreen } from "./AssessmentStartScreen";
-import { QuestionCard } from "./QuestionCard";
+import { PollQuestionCard } from "./PollQuestionCard";
 import { ResultsSummary } from "./ResultSummary";
 import { ReviewSubmission } from "./ReviewSubmission";
 import { useToast } from "@/app/components/context/ToastContext";
+import { QuizQuestionCard } from "./QuizQuestionCard";
 
 interface AssessmentContainerProps {
   itemId: string;
@@ -88,23 +89,6 @@ export default function AssessmentContainer({
     [showToast, onExit],
   );
 
-  // 1. Load Assessment Definition (Cached in React Query cache)
-  const {
-    data: viewData,
-    isLoading: viewLoading,
-    error: viewError,
-  } = useQuery({
-    queryKey: viewQueryKey,
-    queryFn: () => getAssessmentViewData(assessmentId, itemId, moduleId),
-    enabled: Boolean(assessmentId),
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-    retry: (failureCount, error: any) => {
-      if (error?.code === "MODULE_UNPUBLISHED") return false;
-      return failureCount < 2;
-    },
-  });
-
   const [assessment, setAssessment] = useState<AssessmentViewData | null>(null);
   const [hasStarted, setHasStarted] = useState<boolean>(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
@@ -142,6 +126,42 @@ export default function AssessmentContainer({
 
   const hasHydrated = useRef(false);
 
+  // 🛑 CRITICAL FIX: Reset all local states when switching between assessments or navigation items
+  useEffect(() => {
+    setAssessment(null);
+    setHasStarted(false);
+    setCurrentQuestionIndex(0);
+    setAnswers({});
+    setSubmitted(false);
+    setIsReviewActive(false);
+    setSubmittedQuestions({});
+    setSavedScore(null);
+    setSavedRawScore(null);
+    setSavedTotalPoints(null);
+    setSavedCorrectCount(null);
+    setRemedialSuggestions([]);
+    setQuestionTimes({});
+    setAnsweredAtMap({});
+    hasHydrated.current = false;
+  }, [assessmentId, itemId]);
+
+  // 1. Load Assessment Definition (Cached in React Query cache)
+  const {
+    data: viewData,
+    isLoading: viewLoading,
+    error: viewError,
+  } = useQuery({
+    queryKey: viewQueryKey,
+    queryFn: () => getAssessmentViewData(assessmentId, itemId, moduleId),
+    enabled: Boolean(assessmentId),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    retry: (failureCount, error: any) => {
+      if (error?.code === "MODULE_UNPUBLISHED") return false;
+      return failureCount < 2;
+    },
+  });
+
   // Handle unpublished status triggered during initial fetch
   useEffect(() => {
     if (viewError) {
@@ -154,82 +174,109 @@ export default function AssessmentContainer({
     }
   }, [viewError, triggerAutoClose]);
 
-  // Reconcile and hydrate state from viewData (TanStack Query cache)
   useEffect(() => {
     if (!viewData) return;
 
     setAssessment(viewData);
-    const prevAttempt = (viewData as any).previous_attempt;
-    const isCompleted = Boolean(
-      prevAttempt ||
-      (viewData as any).user_has_completed ||
-      (viewData as any).is_submitted,
-    );
+    const isPoll = (viewData as any).type === "poll";
 
-    if (isCompleted) {
-      setSubmitted(true);
+    if (isPoll) {
       setHasStarted(true);
+      setSubmitted(false); // 🛑 Polls are never globally submitted
 
-      if (prevAttempt) {
-        setSavedScore(
-          prevAttempt.score_percentage ?? prevAttempt.percentage ?? null,
-        );
-        setSavedRawScore(prevAttempt.score ?? null);
-        setSavedTotalPoints(prevAttempt.total_points ?? null);
+      const userVotedMap = (viewData as any).user_voted_map || {};
+      const draftAnswers = (viewData as any).draft_answers || {};
+      const savedIndex = (viewData as any).current_index;
 
+      if (typeof savedIndex === "number") {
+        setCurrentQuestionIndex(savedIndex);
+      }
+
+      // Combine unsubmitted drafts and already submitted votes
+      const combinedAnswers = { ...draftAnswers, ...userVotedMap };
+      if (Object.keys(combinedAnswers).length > 0) {
+        setAnswers(combinedAnswers);
+      }
+
+      // 🎯 Lock already voted poll questions so they cannot be submitted again
+      if (Object.keys(userVotedMap).length > 0) {
+        const votedSubmits: Record<string, boolean> = {};
+        Object.keys(userVotedMap).forEach((qId) => {
+          votedSubmits[qId] = true;
+        });
+        setSubmittedQuestions((prev) => ({ ...prev, ...votedSubmits }));
+      }
+    } else {
+      // Existing Quiz / Exam hydration logic
+      const prevAttempt = (viewData as any).previous_attempt;
+      const isCompleted = Boolean(
+        prevAttempt ||
+        (viewData as any).user_has_completed ||
+        (viewData as any).is_submitted,
+      );
+
+      if (isCompleted && prevAttempt) {
+        setSubmitted(true);
+        setHasStarted(true);
+
+        // 1. Hydrate answers for review screen
+        if (prevAttempt.answers) {
+          const formattedPrevAnswers: Record<string, string> = {};
+          if (Array.isArray(prevAttempt.answers)) {
+            prevAttempt.answers.forEach((ans: any) => {
+              if (
+                ans.question_id &&
+                (ans.selected_option_id || ans.choice_id)
+              ) {
+                formattedPrevAnswers[ans.question_id] =
+                  ans.selected_option_id || ans.choice_id;
+              }
+            });
+          } else if (typeof prevAttempt.answers === "object") {
+            Object.entries(prevAttempt.answers).forEach(
+              ([qId, ansObj]: [string, any]) => {
+                const optId =
+                  typeof ansObj === "object"
+                    ? ansObj.selected_option_id ||
+                      ansObj.choice_id ||
+                      ansObj.selectedChoiceId
+                    : ansObj;
+                if (optId) formattedPrevAnswers[qId] = String(optId);
+              },
+            );
+          }
+          setAnswers(formattedPrevAnswers);
+        }
+
+        // 2. Hydrate Remedial Suggestions from previous attempt
         if (prevAttempt.remedial_suggestions) {
           setRemedialSuggestions(prevAttempt.remedial_suggestions);
         }
 
-        const pastAnswersMap: Record<string, string> = {};
-        const rawAns = prevAttempt.answers;
-        if (rawAns) {
-          if (Array.isArray(rawAns)) {
-            rawAns.forEach((ans: any) => {
-              const qId = ans.question_id;
-              const cId = ans.choice_id ?? ans.selected_option_id;
-              if (qId && cId) {
-                pastAnswersMap[qId] = String(cId);
-              }
-            });
-          } else if (typeof rawAns === "object") {
-            Object.entries(rawAns).forEach(([qId, ansObj]) => {
-              const typedAnsObj = ansObj as any;
-              const cId =
-                typeof typedAnsObj === "object" && typedAnsObj !== null
-                  ? (typedAnsObj.selected_option_id ?? typedAnsObj.choice_id)
-                  : typedAnsObj;
-              if (qId && cId) {
-                pastAnswersMap[qId] = String(cId);
-              }
-            });
-          }
+        // 3. Hydrate Saved Score Metrics for ResultsSummary
+        if (prevAttempt.score_percentage !== undefined) {
+          setSavedScore(prevAttempt.score_percentage);
         }
-
-        if (Object.keys(pastAnswersMap).length > 0) {
-          setAnswers(pastAnswersMap);
+        if (prevAttempt.score !== undefined) {
+          setSavedRawScore(prevAttempt.score);
         }
-
-        if (rawAns && Array.isArray(rawAns)) {
-          const correct = rawAns.filter((a: any) => a.is_correct).length;
-          setSavedCorrectCount(correct);
+        if (prevAttempt.total_points !== undefined) {
+          setSavedTotalPoints(prevAttempt.total_points);
         }
+      } else {
+        // Active quiz draft hydration from localStorage / backend
+        const localDraft = localStorage.getItem(storageDraftKey);
+        if (localDraft) {
+          try {
+            const parsed = JSON.parse(localDraft);
+            if (parsed.answers) setAnswers(parsed.answers);
+            if (typeof parsed.current_index === "number") {
+              setCurrentQuestionIndex(parsed.current_index);
+            }
+          } catch (e) {}
+        }
+        setHasStarted(true);
       }
-    } else if (!hasHydrated.current) {
-      // Hydrate active draft from localStorage only if not submitted
-      const localDraft = localStorage.getItem(storageDraftKey);
-      if (localDraft) {
-        try {
-          const parsed = JSON.parse(localDraft);
-          if (parsed.answers) setAnswers(parsed.answers);
-          if (typeof parsed.current_index === "number") {
-            setCurrentQuestionIndex(parsed.current_index);
-          }
-        } catch (e) {
-          console.error("Failed to parse local draft", e);
-        }
-      }
-      setHasStarted(true);
     }
 
     hasHydrated.current = true;
@@ -429,6 +476,9 @@ export default function AssessmentContainer({
 
       showToast("Vote submitted successfully!", "success", 2000);
 
+      // Invalidate query cache
+      queryClient.invalidateQueries({ queryKey: viewQueryKey });
+
       if (result.poll_distributions) {
         setAssessment((prev) => {
           if (!prev) return null;
@@ -563,9 +613,6 @@ export default function AssessmentContainer({
         localStorage.removeItem(storageDraftKey);
       } catch {}
 
-      // 🚀 CRITICAL FIX: Directly update the TanStack Query cache with the completed state.
-      // This ensures that when unmounting and remounting (navigating away and back),
-      // useQuery immediately sees the completed state without needing localStorage.
       queryClient.setQueryData(viewQueryKey, (oldData: any) => {
         if (!oldData) return oldData;
         return {
@@ -655,7 +702,6 @@ export default function AssessmentContainer({
     setSavedTotalPoints(null);
     setSavedCorrectCount(null);
 
-    // Update TanStack Query cache for retake
     if (res.data?.assessment) {
       setAssessment(res.data.assessment);
       queryClient.setQueryData(viewQueryKey, res.data.assessment);
@@ -779,18 +825,30 @@ export default function AssessmentContainer({
           </div>
         ) : (
           <div className="space-y-6">
-            <QuestionCard
-              question={currentQuestion}
-              index={safeQuestionIndex}
-              selectedChoiceId={
-                currentQuestion ? answers[currentQuestion.id] : undefined
-              }
-              submitted={submitted}
-              isQuestionSubmitted={isCurrentQuestionSubmitted}
-              settings={settings}
-              onSelectChoice={handleSelectChoice}
-              showQuestionNumber={false}
-            />
+            {isPoll ? (
+              <PollQuestionCard
+                question={currentQuestion}
+                index={safeQuestionIndex}
+                selectedChoiceId={
+                  currentQuestion ? answers[currentQuestion.id] : undefined
+                }
+                isQuestionSubmitted={isCurrentQuestionSubmitted}
+                showQuestionNumber={false}
+                onSelectChoice={handleSelectChoice}
+              />
+            ) : (
+              <QuizQuestionCard
+                question={currentQuestion}
+                index={safeQuestionIndex}
+                selectedChoiceId={
+                  currentQuestion ? answers[currentQuestion.id] : undefined
+                }
+                submitted={submitted}
+                settings={settings}
+                onSelectChoice={handleSelectChoice}
+                showQuestionNumber={false}
+              />
+            )}
 
             <div className="flex items-center justify-between border-t border-zinc-100 pt-4">
               <button

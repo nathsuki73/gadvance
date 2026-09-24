@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CheckCircle2, XCircle, BarChart3, Check } from "lucide-react";
+import { CheckCircle2, XCircle, Check } from "lucide-react";
 import { Question, AssessmentSettings, BloomLevel } from "./types";
 
 const BLOOM_BADGES: Record<BloomLevel, { label: string; style: string }> = {
@@ -31,33 +31,29 @@ const BLOOM_BADGES: Record<BloomLevel, { label: string; style: string }> = {
   },
 };
 
-interface QuestionCardProps {
+interface QuizQuestionCardProps {
   question: Question;
   index: number;
   selectedChoiceId?: string;
   submitted: boolean;
-  isQuestionSubmitted?: boolean;
   settings: AssessmentSettings;
   showQuestionNumber?: boolean;
-  isCorrectOverride?: boolean; // 👈 Added override prop for accurate review evaluation
+  isCorrectOverride?: boolean;
   onSelectChoice: (questionId: string, choiceId: string) => void;
 }
 
-export function QuestionCard({
+export function QuizQuestionCard({
   question,
   index,
   selectedChoiceId,
   submitted,
-  isQuestionSubmitted = false,
   settings,
   showQuestionNumber = true,
   isCorrectOverride,
   onSelectChoice,
-}: QuestionCardProps) {
-  const isPoll = settings.type === "poll" || question.isPoll;
+}: QuizQuestionCardProps) {
   const isTestMode = settings.type === "test";
 
-  // Use the backend-provided override if available, otherwise fallback to comparison
   const isCorrect =
     isCorrectOverride !== undefined
       ? isCorrectOverride
@@ -67,21 +63,16 @@ export function QuestionCard({
     ? BLOOM_BADGES[question.bloomLevel]
     : null;
 
-  const showPollDistribution = isPoll && (submitted || isQuestionSubmitted);
   const canShowReview = settings.allowReview;
-
-  const showReviewFeedback = !isPoll && submitted && canShowReview;
+  const showReviewFeedback = submitted && canShowReview;
   const showImmediateFeedback =
-    !isPoll &&
     !isTestMode &&
     Boolean(selectedChoiceId) &&
     settings.showFeedbackImmediately;
 
   const shouldDisplayFeedback = showReviewFeedback || showImmediateFeedback;
   const isLocked =
-    submitted ||
-    isQuestionSubmitted ||
-    Boolean(shouldDisplayFeedback && selectedChoiceId);
+    submitted || Boolean(shouldDisplayFeedback && selectedChoiceId);
 
   return (
     <div className="space-y-4">
@@ -118,8 +109,6 @@ export function QuestionCard({
               ? question.correctChoiceId === choice.id
               : false) ||
             Boolean(choice.isCorrect || (choice as any).is_correct);
-          const votesCount = choice.votes ?? (isSelected ? 1 : 0);
-          const percent = choice.percentage ?? 0;
 
           let textStyle = "text-zinc-700 hover:text-zinc-950";
           let radioCircleStyle =
@@ -130,7 +119,7 @@ export function QuestionCard({
             radioCircleStyle = "border-purple-600 bg-purple-600 text-white";
           }
 
-          if (shouldDisplayFeedback && !isPoll) {
+          if (shouldDisplayFeedback) {
             if (isChoiceCorrect) {
               textStyle = "text-emerald-950 font-semibold";
               radioCircleStyle = "border-emerald-500 bg-emerald-500 text-white";
@@ -141,11 +130,6 @@ export function QuestionCard({
             }
           }
 
-          if (showPollDistribution && isSelected) {
-            textStyle = "text-purple-950 font-semibold";
-            radioCircleStyle = "border-purple-600 bg-purple-600 text-white";
-          }
-
           return (
             <div key={choice.id} className="flex items-center gap-3">
               <button
@@ -154,26 +138,12 @@ export function QuestionCard({
                 disabled={isLocked}
                 className={`relative overflow-hidden flex flex-1 items-center justify-between gap-3 py-2.5 px-2 text-left text-md transition-colors cursor-pointer disabled:cursor-default rounded-lg hover:bg-zinc-50 ${textStyle}`}
               >
-                {showPollDistribution && (
-                  <div
-                    className={`absolute inset-y-0 left-0 transition-all duration-700 ease-out rounded-lg pointer-events-none opacity-25 ${
-                      isSelected ? "bg-purple-400" : "bg-zinc-200"
-                    }`}
-                    style={{ width: `${percent}%` }}
-                  />
-                )}
-
                 <div className="relative z-10 flex items-center gap-3 pr-2 min-w-0 flex-1">
                   <div
                     className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all ${radioCircleStyle}`}
                   >
-                    {isSelected &&
-                      !showPollDistribution &&
-                      !shouldDisplayFeedback && (
-                        <div className="h-1.5 w-1.5 rounded-full bg-white" />
-                      )}
-                    {showPollDistribution && isSelected && (
-                      <Check size={10} strokeWidth={3} />
+                    {isSelected && !shouldDisplayFeedback && (
+                      <div className="h-1.5 w-1.5 rounded-full bg-white" />
                     )}
                     {shouldDisplayFeedback && isChoiceCorrect && (
                       <Check size={10} strokeWidth={3} />
@@ -188,16 +158,6 @@ export function QuestionCard({
                 </div>
 
                 <div className="relative z-10 flex items-center gap-2 shrink-0">
-                  {showPollDistribution && (
-                    <span
-                      className={`text-[11px] font-medium transition-opacity duration-300 ${
-                        isSelected ? "text-[#8b5cf6]" : "text-zinc-400"
-                      }`}
-                    >
-                      {votesCount} {votesCount === 1 ? "vote" : "votes"}
-                    </span>
-                  )}
-
                   {shouldDisplayFeedback && isChoiceCorrect && (
                     <CheckCircle2 size={16} className="text-emerald-600" />
                   )}
@@ -206,23 +166,13 @@ export function QuestionCard({
                   )}
                 </div>
               </button>
-
-              {showPollDistribution && (
-                <div
-                  className={`w-12 shrink-0 text-right font-mono text-xs font-semibold ${
-                    isSelected ? "text-[#8b5cf6]" : "text-zinc-400"
-                  }`}
-                >
-                  {percent}%
-                </div>
-              )}
             </div>
           );
         })}
       </div>
 
       {/* Immediate Remediation & Feedback */}
-      {shouldDisplayFeedback && !isPoll && (
+      {shouldDisplayFeedback && (
         <div className="space-y-2.5 pt-2">
           <div
             className={`flex items-center gap-1.5 text-xs font-semibold ${
@@ -247,13 +197,6 @@ export function QuestionCard({
               <strong>Explanation:</strong> {question.explanation}
             </p>
           )}
-        </div>
-      )}
-
-      {showPollDistribution && (
-        <div className="flex items-center gap-2 pt-1 text-[11px] font-medium text-[#8b5cf6]">
-          <BarChart3 size={14} className="text-[#8b5cf6] shrink-0" />
-          <span>Total votes calculated across all learner submissions.</span>
         </div>
       )}
     </div>

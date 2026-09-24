@@ -80,7 +80,10 @@ function shuffleArray<T>(arr: T[]): T[] {
 export function normalizeAssessmentData(
   payload: any,
   id: string,
-): AssessmentViewData {
+): AssessmentViewData & {
+  user_voted_map?: Record<string, string>;
+  draft_answers?: Record<string, string>;
+} {
   const data = payload?.data ?? payload;
   const settingsObj = data.settings || {};
   const mode: AssessmentMode =
@@ -107,8 +110,8 @@ export function normalizeAssessmentData(
     passingScore: Number(settingsObj.passingScore ?? data.passing_score ?? 70),
     timeLimitMinutes: parsedTimeLimit,
     maxAttempts: parsedMaxAttempts,
-    shuffleQuestions: false, // Handled 100% on the backend
-    shuffleOptions: false, // 🛑 DISABLED to prevent option desync on refresh/review
+    shuffleQuestions: false,
+    shuffleOptions: false,
     showFeedbackImmediately: Boolean(
       settingsObj.showFeedbackImmediately ??
       data.show_feedback_immediately ??
@@ -134,14 +137,13 @@ export function normalizeAssessmentData(
   const mappedQuestions: Question[] = rawQuestions.map((q: any) => {
     const rawOptions = q.options || q.choices || [];
 
-    // Mapped in stable database order with zero random client-side shuffling
     const mappedChoices: Choice[] = rawOptions.map((o: any, idx: number) => ({
       id: o.id || `choice-${idx}`,
       text: o.optionText || o.option_text || o.text || "",
       isCorrect: Boolean(o.isCorrect ?? o.is_correct),
       explanation: o.explanation || "",
-      votes: o.votes ?? 0,
-      percentage: o.percentage ?? 0,
+      votes: o.votes ?? 0, // 👈 Preserves backend vote counts
+      percentage: o.percentage ?? 0, // 👈 Preserves backend percentage
     }));
 
     const correctChoice = mappedChoices.find((c) => c.isCorrect);
@@ -171,6 +173,9 @@ export function normalizeAssessmentData(
     updatedAt: data.updated_at || data.updatedAt,
     previous_attempt: data.previous_attempt,
     user_has_completed: data.user_has_completed,
+    user_voted_map: data.user_voted_map || {}, // 👈 Required for reload hydration
+    draft_answers: data.draft_answers || {}, // 👈 Required for draft hydration
+    current_index: data.current_index ?? 0,
   };
 }
 
@@ -182,7 +187,11 @@ export async function getAssessmentViewData(
   sectionItemId?: string,
   moduleId?: string,
 ): Promise<AssessmentViewData> {
-  if (typeof window !== "undefined") {
+  // 🛑 Only use local preview storage if explicitly in preview mode (avoid student state override)
+  if (
+    typeof window !== "undefined" &&
+    window.location.pathname.includes("/preview")
+  ) {
     const cachedPreview = localStorage.getItem(`assessment_preview_${id}`);
     if (cachedPreview) {
       try {
@@ -204,6 +213,7 @@ export async function getAssessmentViewData(
 
   const res = await apiFetch(`/api/assessments/${id}${queryStr}`, {
     method: "GET",
+    cache: "no-store", // 👈 Ensure browser/Next.js doesn't cache the API fetch blindly
   });
 
   if (!res || !res.ok) {
