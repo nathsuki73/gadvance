@@ -1,8 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getAssessmentViewData } from "./Assessment/assessmentService";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getAssessmentViewData,
+  retakeAssessment,
+} from "./Assessment/assessmentService";
 import { getPollViewData } from "./Poll/pollService";
 import AssessmentView from "./Assessment/AssessmentView";
 import PollView from "./Poll/PollView";
@@ -12,7 +15,7 @@ import { Loader2 } from "lucide-react";
 interface AssessmentContainerProps {
   assessmentId: string;
   sectionItemId?: string;
-  itemId?: string; // 👈 Support itemId passed from LearnPage
+  itemId?: string;
   moduleId?: string;
   sectionId?: string;
   type?: string;
@@ -33,11 +36,11 @@ export default function AssessmentContainer({
   onNext,
   onExit,
 }: AssessmentContainerProps) {
-  // 🛡️ Automatically resolve whichever prop name was provided
+  const queryClient = useQueryClient();
   const effectiveSectionItemId = sectionItemId || itemId;
-  const [hasStarted, setHasStarted] = useState<boolean>(false);
 
-  // 🚀 TanStack Query configuration for state preservation across sidebar navigation
+  const [hasStarted, setHasStarted] = useState<boolean | null>(null);
+
   const { data, isLoading, error } = useQuery({
     queryKey: [
       "assessmentContainer",
@@ -61,8 +64,7 @@ export default function AssessmentContainer({
           return { data: pollData, isPoll: true };
         }
         return { data: assessmentData, isPoll: false };
-      } catch (err: any) {
-        // Fallback check if it's strictly exposed under polls API route
+      } catch (err) {
         const pollData = await getPollViewData(
           assessmentId,
           effectiveSectionItemId,
@@ -72,10 +74,10 @@ export default function AssessmentContainer({
       }
     },
     enabled: Boolean(assessmentId),
-    staleTime: 1000 * 60 * 10, // ⏱️ Keep data fresh in memory for 10 minutes
-    gcTime: 1000 * 60 * 30, // 🗑️ Retain unused cache data for 30 minutes
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
-    refetchOnMount: false, // 🛑 Prevents refetching when switching back and forth via sidebar
+    refetchOnMount: false,
   });
 
   if (isLoading) {
@@ -101,24 +103,25 @@ export default function AssessmentContainer({
 
   const { data: contentData, isPoll } = data;
 
-  // Auto-skip start screen if the user already completed or has a previous attempt saved in cache
-  const shouldAutoStart =
-    !isPoll && (contentData.user_has_completed || contentData.previous_attempt);
+  // Determine starting screen status
+  const isCompleted = Boolean(
+    contentData.user_has_completed || contentData.previous_attempt,
+  );
+  const showStartScreen =
+    !isPoll && (hasStarted === false || (hasStarted === null && !isCompleted));
 
-  // Show generic Start Screen if not yet started
-  if (!hasStarted && !shouldAutoStart) {
+  if (showStartScreen) {
     return (
       <StartScreen
         title={contentData.title}
         instructions={contentData.instructions}
         totalItems={contentData.questions?.length || 0}
-        buttonText={isPoll ? "Start Poll" : "Start Assessment"}
+        buttonText={"Start Assessment"}
         onStart={() => setHasStarted(true)}
       />
     );
   }
 
-  // Route cleanly to isolated components, preserving their respective cache context
   return isPoll ? (
     <PollView
       pollData={contentData}
@@ -135,6 +138,49 @@ export default function AssessmentContainer({
       onComplete={onComplete}
       onNext={onNext}
       onExit={onExit}
+      onRetake={async () => {
+        if (!effectiveSectionItemId) return;
+        try {
+          const res = await retakeAssessment(
+            contentData.id,
+            effectiveSectionItemId,
+            moduleId,
+          );
+
+          if (res.success) {
+            // Your controller returns 'data' on success, which contains the fresh assessment
+            const freshAssessment = res.data;
+
+            queryClient.setQueryData(
+              [
+                "assessmentContainer",
+                assessmentId,
+                effectiveSectionItemId,
+                moduleId,
+              ],
+              (old: any) => {
+                if (!old) return old;
+                return {
+                  ...old,
+                  data: {
+                    ...(freshAssessment || old.data),
+                    user_has_completed: false,
+                    previous_attempt: null,
+                    draft_answers: {},
+                  },
+                };
+              },
+            );
+
+            // Transition directly back to the start screen
+            setHasStarted(false);
+          } else {
+            alert(res?.message || "Failed to retake assessment.");
+          }
+        } catch (err: any) {
+          alert(err?.message || "Failed to retake assessment.");
+        }
+      }}
     />
   );
 }

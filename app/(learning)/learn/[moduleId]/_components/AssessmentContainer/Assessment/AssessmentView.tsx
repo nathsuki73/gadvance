@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { submitAssessment, retakeAssessment } from "./assessmentService";
+import { submitAssessment } from "./assessmentService";
 import { useQueryClient } from "@tanstack/react-query";
 import { AssessmentViewData, Question } from "../types";
 import { QuizQuestionCard } from "./AssessmentQuestionCard";
@@ -19,6 +19,7 @@ interface AssessmentViewProps {
   onComplete?: () => void;
   onNext?: () => void;
   onExit?: () => void;
+  onRetake?: () => void;
 }
 
 export default function AssessmentView({
@@ -31,17 +32,17 @@ export default function AssessmentView({
   onComplete,
   onNext,
   onExit,
+  onRetake,
 }: AssessmentViewProps) {
   const queryClient = useQueryClient();
   const effectiveSectionItemId = sectionItemId || itemId;
 
-  const [currentData, setCurrentData] =
-    useState<AssessmentViewData>(assessmentData);
+  const [currentData] = useState<AssessmentViewData>(assessmentData);
   const [currentIndex, setCurrentIndex] = useState<number>(
     assessmentData.current_index || 0,
   );
 
-  // 🛡️ Helper to safely flatten draft answers or previous attempt answers into a flat Record<questionId, choiceId>
+  // Parse draft/previous answers
   const getInitialAnswers = () => {
     if (
       assessmentData.draft_answers &&
@@ -52,23 +53,9 @@ export default function AssessmentView({
     if (assessmentData.previous_attempt?.answers) {
       const parsed: Record<string, string> = {};
       const prev = assessmentData.previous_attempt.answers;
-
-      if (Array.isArray(prev)) {
-        prev.forEach((item: any) => {
-          const qId = item.question_id;
-          const cId = item.selected_option_id || item.choice_id;
-          if (qId && cId) parsed[qId] = String(cId);
-        });
-      } else if (typeof prev === "object" && prev !== null) {
-        Object.entries(prev).forEach(([qId, val]: [string, any]) => {
-          if (typeof val === "object" && val !== null) {
-            const cId = val.selected_option_id || val.choice_id;
-            if (cId) parsed[qId] = String(cId);
-          } else if (typeof val === "string") {
-            parsed[qId] = val;
-          }
-        });
-      }
+      Object.entries(prev).forEach(([qId, val]: [string, any]) => {
+        parsed[qId] = String(val.selected_option_id || val.choice_id || val);
+      });
       return parsed;
     }
     return {};
@@ -77,19 +64,8 @@ export default function AssessmentView({
   const [answers, setAnswers] =
     useState<Record<string, string>>(getInitialAnswers);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
   const [result, setResult] = useState<any>(
-    assessmentData.previous_attempt
-      ? {
-          score_percentage: assessmentData.previous_attempt.score_percentage,
-          score: assessmentData.previous_attempt.score,
-          total_points: assessmentData.previous_attempt.total_points,
-          has_passed: assessmentData.previous_attempt.has_passed,
-          answers: assessmentData.previous_attempt.answers,
-          remedial_suggestions:
-            assessmentData.previous_attempt.remedial_suggestions,
-        }
-      : null,
+    assessmentData.previous_attempt || null,
   );
 
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
@@ -105,19 +81,16 @@ export default function AssessmentView({
   const progressPercentage =
     totalQuestions > 0 ? ((safeQuestionIndex + 1) / totalQuestions) * 100 : 0;
 
-  // Timer Elapsed tracking
   useEffect(() => {
-    const timer = setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
+    const timer = setInterval(
+      () => setElapsedSeconds((prev) => prev + 1),
+      1000,
+    );
     return () => clearInterval(timer);
   }, []);
 
   const handleSelectOption = (questionId: string, choiceId: string) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: choiceId,
-    }));
+    setAnswers((prev) => ({ ...prev, [questionId]: choiceId }));
   };
 
   const handleSubmit = async () => {
@@ -127,7 +100,6 @@ export default function AssessmentView({
     }
 
     setIsSubmitting(true);
-
     const formattedAnswers = Object.entries(answers).map(([qId, cId]) => ({
       question_id: qId,
       choice_id: cId,
@@ -142,10 +114,10 @@ export default function AssessmentView({
       });
 
       if (response && response.success) {
+        // Backend maps this exactly as expected
         const payloadData = response.data || response;
         setResult(payloadData);
 
-        // 🚀 Update TanStack Query cache instantly so state is preserved across navigation/reloads
         queryClient.setQueryData(
           [
             "assessmentContainer",
@@ -166,7 +138,7 @@ export default function AssessmentView({
           },
         );
       } else {
-        alert(response?.error || "Submission failed.");
+        alert(response?.message || "Submission failed.");
       }
     } catch (err: any) {
       alert(err?.message || "An unexpected error occurred.");
@@ -175,50 +147,21 @@ export default function AssessmentView({
     }
   };
 
-  const handleRetake = async () => {
-    if (!effectiveSectionItemId) return;
-    const res = await retakeAssessment(
-      currentData.id,
-      effectiveSectionItemId,
-      moduleId,
-    );
-    if (res.success && res.data?.assessment) {
-      setCurrentData(res.data.assessment);
-      setResult(null);
-      setAnswers({});
-      setCurrentIndex(0);
-      setElapsedSeconds(0);
-      setIsReviewActive(false);
-
-      // Invalidate cache to clear completed state for the retake
-      queryClient.invalidateQueries({
-        queryKey: [
-          "assessmentContainer",
-          assessmentId,
-          effectiveSectionItemId,
-          moduleId,
-        ],
-      });
-    }
-  };
-
   if (result) {
-    const scorePercentage = Number(
-      result.score_percentage ?? result.percentage ?? 0,
-    );
+    // These keys directly map exactly to what Laravel submitAttempt returns
+    const rawScore = Number(result.score ?? 0);
+    const totalPoints = Number(result.total_points ?? questions.length);
+    const scorePercentage = Number(result.score_percentage ?? 0);
     const passingScore = Number(
-      result.passing_score ?? currentData.settings.passingScore ?? 70,
+      result.passing_score ?? currentData.settings?.passingScore ?? 70,
     );
-    const isPassed = result.has_passed ?? scorePercentage >= passingScore;
+    const isPassed = Boolean(result.has_passed);
+    const remedialSuggestions = result.remedial_suggestions || [];
 
     const evaluatedAnswers = result.answers || {};
-    const correctCount = Array.isArray(evaluatedAnswers)
-      ? evaluatedAnswers.filter((a: any) => a.is_correct).length
-      : Object.values(evaluatedAnswers).filter((a: any) => a.is_correct).length;
-
-    const totalGraded = questions.length;
-    const rawScore = Number(result.score ?? correctCount);
-    const totalPoints = Number(result.total_points ?? totalGraded);
+    const correctCount = Object.values(evaluatedAnswers).filter(
+      (a: any) => a.is_correct,
+    ).length;
 
     return (
       <div className="w-full max-w-3xl mx-auto px-4 py-8 space-y-6">
@@ -227,16 +170,16 @@ export default function AssessmentView({
           score={rawScore}
           totalPoints={totalPoints}
           correctCount={correctCount}
-          totalGraded={totalGraded}
+          totalGraded={questions.length}
           totalQuestions={questions.length}
           elapsedSeconds={elapsedSeconds}
           settings={{ ...currentData.settings, passingScore }}
-          onRetry={handleRetake}
+          onRetry={onRetake || (() => {})}
           onNext={onNext || (() => {})}
           isLastItem={isLastItem}
           onExit={onExit}
           isPassed={isPassed}
-          remedialSuggestions={result.remedial_suggestions || []}
+          remedialSuggestions={remedialSuggestions}
           moduleId={moduleId}
         />
 
@@ -270,7 +213,6 @@ export default function AssessmentView({
 
   return (
     <div className="flex flex-col min-h-full w-full max-w-3xl mx-auto px-4 py-6 sm:py-10 justify-between">
-      {/* Top Bar Header & Progress Bar */}
       <div className="space-y-4 mb-8">
         <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-zinc-500">
           <span>
@@ -280,7 +222,6 @@ export default function AssessmentView({
           </span>
         </div>
 
-        {/* Progress Tracker Bar */}
         <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
           <div
             className="h-full bg-[#8b5cf6] transition-all duration-300 ease-out rounded-full"
@@ -289,7 +230,6 @@ export default function AssessmentView({
         </div>
       </div>
 
-      {/* Main Question Body Card */}
       <div className="flex-1 space-y-6">
         <QuizQuestionCard
           question={currentQuestion}
@@ -302,7 +242,6 @@ export default function AssessmentView({
         />
       </div>
 
-      {/* Bottom Navigation Control Action Footer */}
       <div className="flex items-center justify-between border-t border-zinc-200/80 pt-6 mt-10">
         <button
           type="button"
