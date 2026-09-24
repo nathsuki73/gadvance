@@ -148,29 +148,15 @@ export default function AssessmentContainer({
           );
 
           if (res.success) {
-            // Your controller returns 'data' on success, which contains the fresh assessment
-            const freshAssessment = res.data;
-
-            queryClient.setQueryData(
-              [
+            // 🛡️ Invalidate query so React Query fetches the brand new attempt and fresh questions from the server
+            await queryClient.invalidateQueries({
+              queryKey: [
                 "assessmentContainer",
                 assessmentId,
                 effectiveSectionItemId,
                 moduleId,
               ],
-              (old: any) => {
-                if (!old) return old;
-                return {
-                  ...old,
-                  data: {
-                    ...(freshAssessment || old.data),
-                    user_has_completed: false,
-                    previous_attempt: null,
-                    draft_answers: {},
-                  },
-                };
-              },
-            );
+            });
 
             // Transition directly back to the start screen
             setHasStarted(false);
