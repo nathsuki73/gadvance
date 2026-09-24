@@ -4,16 +4,15 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   RotateCcw,
   CheckCircle2,
-  Info,
-  X,
   CheckCircle,
-  Clock,
   ChevronRight,
   BookOpenText,
   ExternalLink,
+  BarChart3,
 } from "lucide-react";
 import { AssessmentSettings } from "../../types";
 import Link from "next/link";
+import { DetailedSummary, BktSkill } from "./DetailedSummary";
 
 interface ResultsSummaryProps {
   scorePercentage: number;
@@ -36,11 +35,11 @@ interface ResultsSummaryProps {
     review_url?: string;
   }>;
   moduleId?: string;
+  bktSkillsBreakdown?: BktSkill[];
 }
 
-// Spring/overshoot easing — this cubic-bezier is what gives the "pop" feel
 const SPRING_EASE = "cubic-bezier(0.34,1.56,0.64,1)";
-const STAGGER_MS = 220; // delay between each remedial block appearing
+const STAGGER_MS = 220;
 
 export function ResultsSummary({
   scorePercentage,
@@ -59,17 +58,15 @@ export function ResultsSummary({
   isPoll,
   remedialSuggestions = [],
   moduleId = "",
+  bktSkillsBreakdown = [],
 }: ResultsSummaryProps) {
-  const [showBreakdown, setShowBreakdown] = useState(false);
   const [animatedPercentage, setAnimatedPercentage] = useState(0);
 
-  // ⏱️ State for toggling views ("score" vs "remedial")
-  const [activeView, setActiveView] = useState<"score" | "remedial">("score");
+  // ⏱️ State for toggling views ("score" vs "detailed" vs "remedial")
+  const [activeView, setActiveView] = useState<
+    "score" | "detailed" | "remedial"
+  >("score");
 
-  // 🔑 Flips to true the FIRST time the remedial tab is activated, and then
-  // stays true forever — this is a one-shot switch, not a counter, so the
-  // list mounts (and animates) exactly once no matter how many times the
-  // user flips back and forth between tabs afterward.
   const [remedialUnlocked, setRemedialUnlocked] = useState(false);
   const hasActivatedRemedialOnce = useRef(false);
 
@@ -102,7 +99,6 @@ export function ResultsSummary({
     }
   }, [activeView]);
 
-  // Score Animation Loop (Restored whole-number counting animation)
   useEffect(() => {
     if (isPoll) return;
     let startTime: number | null = null;
@@ -132,14 +128,6 @@ export function ResultsSummary({
     return () => cancelAnimationFrame(frameId);
   }, [scorePercentage, isPoll]);
 
-  const formatTime = (secs: number) => {
-    const mins = Math.floor(secs / 60);
-    const remainingSecs = secs % 60;
-    return `${mins.toString().padStart(2, "0")}:${remainingSecs
-      .toString()
-      .padStart(2, "0")}`;
-  };
-
   const radius = 58;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset =
@@ -162,16 +150,11 @@ export function ResultsSummary({
     ? tickX2 + horizontalLength
     : tickX2 - horizontalLength;
 
-  const displayScoreText =
-    score !== undefined && totalPoints !== undefined
-      ? `${score} / ${totalPoints}`
-      : `${correctCount} / ${totalGraded}`;
-
   return (
     <div className="overflow-hidden p-6 space-y-6 flex flex-col items-center text-center w-full max-w-md mx-auto">
-      {/* 1. Static View Switcher Tabs at the top */}
-      {remedialSuggestions.length > 0 && !isPoll && (
-        <div className="flex items-center justify-center gap-1.5 bg-zinc-100 p-1 rounded-2xl w-full max-w-xs shrink-0">
+      {/* 1. View Switcher Tabs at the top */}
+      {!isPoll && (
+        <div className="flex items-center justify-center gap-1.5 bg-zinc-100 p-1 rounded-2xl w-full max-w-sm shrink-0">
           <button
             type="button"
             onClick={() => setActiveView("score")}
@@ -185,16 +168,30 @@ export function ResultsSummary({
           </button>
           <button
             type="button"
-            onClick={activateRemedial}
+            onClick={() => setActiveView("detailed")}
             className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
-              activeView === "remedial"
+              activeView === "detailed"
                 ? "bg-[#8b5cf6] text-white shadow-2xs"
                 : "text-zinc-500 hover:text-zinc-800"
             }`}
           >
-            <BookOpenText size={12} />
-            <span>Study ({Math.min(remedialSuggestions.length, 3)})</span>
+            <BarChart3 size={12} />
+            <span>Performance</span>
           </button>
+          {remedialSuggestions.length > 0 && (
+            <button
+              type="button"
+              onClick={activateRemedial}
+              className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                activeView === "remedial"
+                  ? "bg-[#8b5cf6] text-white shadow-2xs"
+                  : "text-zinc-500 hover:text-zinc-800"
+              }`}
+            >
+              <BookOpenText size={12} />
+              <span>Study ({Math.min(remedialSuggestions.length, 3)})</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -225,8 +222,18 @@ export function ResultsSummary({
 
           {settings.type !== "poll" && (
             <div className="flex flex-col items-center justify-center gap-6 w-full py-2">
-              {/* Donut Ring */}
-              <div className="relative flex items-center justify-center">
+              {/* Fully Clickable Donut Ring Area */}
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setActiveView("detailed")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ")
+                    setActiveView("detailed");
+                }}
+                className="relative flex items-center justify-center cursor-pointer group hover:scale-[1.02] transition-transform p-2 rounded-full focus:outline-hidden"
+                title="Click to view detailed BKT analytics breakdown"
+              >
                 <svg className="h-48 w-48 -rotate-90 transform overflow-visible">
                   <circle
                     cx="96"
@@ -246,7 +253,7 @@ export function ResultsSummary({
                     strokeDasharray={circumference}
                     strokeDashoffset={strokeDashoffset}
                     strokeLinecap="round"
-                    className="text-[#8b5cf6] transition-all duration-300 ease-out"
+                    className="text-[#8b5cf6] transition-all duration-300 ease-out group-hover:text-[#7c3aed]"
                     fill="transparent"
                   />
                 </svg>
@@ -296,22 +303,12 @@ export function ResultsSummary({
                 </div>
 
                 <div className="absolute flex flex-col items-center justify-center text-center">
-                  <span className="text-3xl font-black tracking-tight text-[#8b5cf6]">
+                  <span className="text-3xl font-black tracking-tight text-[#8b5cf6] group-hover:scale-105 transition-transform">
                     {animatedPercentage}%
                   </span>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                      Score
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowBreakdown(true)}
-                      className="text-zinc-400 hover:text-[#8b5cf6] transition-colors cursor-pointer"
-                      title="View Exact Score Breakdown"
-                    >
-                      <Info size={12} />
-                    </button>
-                  </div>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5 group-hover:text-[#8b5cf6] transition-colors">
+                    Score
+                  </span>
                 </div>
               </div>
 
@@ -324,19 +321,26 @@ export function ResultsSummary({
                   </span>
                 </span>
                 <p className="text-xs text-zinc-500 leading-relaxed">
-                  The indicator line on your score ring highlights your target
-                  milestone of{" "}
-                  <span className="font-bold text-zinc-800">
-                    {settings.passingScore}%
-                  </span>
-                  . Click the info icon anytime to view detailed counts.
+                  Click the score above anytime to view your detailed BKT
+                  mastery breakdown.
                 </p>
               </div>
             </div>
           )}
         </div>
 
-        {/* View B: Targeted Plan (Vertical List Stack) */}
+        {/* View B: Detailed BKT Analytics Inline View */}
+        <div
+          className={`col-start-1 row-start-1 w-full transition-opacity duration-300 flex flex-col ${
+            activeView === "detailed"
+              ? "opacity-100 z-10 pointer-events-auto"
+              : "opacity-0 z-0 pointer-events-none select-none"
+          }`}
+        >
+          <DetailedSummary skillsBreakdown={bktSkillsBreakdown} />
+        </div>
+
+        {/* View C: Targeted Plan (Vertical List Stack) */}
         {remedialSuggestions.length > 0 && !isPoll && (
           <div
             className={`col-start-1 row-start-1 w-full transition-opacity duration-300 flex flex-col space-y-2.5 ${
@@ -398,67 +402,6 @@ export function ResultsSummary({
           </div>
         )}
       </div>
-
-      {/* Breakdown Modal */}
-      {showBreakdown && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl border border-zinc-200 space-y-4 text-left">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-              <h3 className="font-bold text-zinc-900 text-sm flex items-center gap-2">
-                <Info size={16} className="text-[#8b5cf6]" />
-                <span>Score Breakdown</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowBreakdown(false)}
-                className="text-zinc-400 hover:text-zinc-600 cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50/40 border border-purple-100 text-xs">
-                <span className="font-medium text-zinc-600">Score</span>
-                <span className="font-mono font-bold text-zinc-900">
-                  {displayScoreText}
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50/40 border border-purple-100 text-xs">
-                <span className="font-medium text-zinc-600">
-                  Correct Answers
-                </span>
-                <span className="font-mono font-bold text-[#8b5cf6]">
-                  {correctCount} of {totalGraded} questions
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50/40 border border-purple-100 text-xs">
-                <span className="font-medium text-zinc-600">
-                  Target Milestone
-                </span>
-                <span className="font-mono font-bold text-zinc-900">
-                  {settings.passingScore}%
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50/40 border border-purple-100 text-xs">
-                <span className="font-medium text-zinc-600">Time Elapsed</span>
-                <span className="font-mono font-bold text-zinc-900 flex items-center gap-1">
-                  <Clock size={12} className="text-zinc-400" />
-                  {formatTime(elapsedSeconds)}
-                </span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowBreakdown(false)}
-              className="w-full py-2.5 bg-[#8b5cf6] text-white text-xs font-bold rounded-xl hover:bg-[#7c3aed] transition-colors cursor-pointer shadow-xs"
-            >
-              Close Details
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
