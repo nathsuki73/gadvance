@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { submitAssessment, retakeAssessment } from "./assessmentService";
+import { useQueryClient } from "@tanstack/react-query";
 import { AssessmentViewData, Question } from "../types";
 import { QuizQuestionCard } from "./AssessmentQuestionCard";
 import { ResultsSummary } from "./ResultSummary";
@@ -10,6 +11,7 @@ import { ChevronLeft, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
 
 interface AssessmentViewProps {
   assessmentData: AssessmentViewData;
+  assessmentId: string;
   sectionItemId?: string;
   itemId?: string;
   moduleId?: string;
@@ -21,6 +23,7 @@ interface AssessmentViewProps {
 
 export default function AssessmentView({
   assessmentData,
+  assessmentId,
   sectionItemId,
   itemId,
   moduleId,
@@ -29,6 +32,7 @@ export default function AssessmentView({
   onNext,
   onExit,
 }: AssessmentViewProps) {
+  const queryClient = useQueryClient();
   const effectiveSectionItemId = sectionItemId || itemId;
 
   const [currentData, setCurrentData] =
@@ -36,11 +40,58 @@ export default function AssessmentView({
   const [currentIndex, setCurrentIndex] = useState<number>(
     assessmentData.current_index || 0,
   );
-  const [answers, setAnswers] = useState<Record<string, string>>(
-    assessmentData.draft_answers || {},
-  );
+
+  // 🛡️ Helper to safely flatten draft answers or previous attempt answers into a flat Record<questionId, choiceId>
+  const getInitialAnswers = () => {
+    if (
+      assessmentData.draft_answers &&
+      Object.keys(assessmentData.draft_answers).length > 0
+    ) {
+      return assessmentData.draft_answers;
+    }
+    if (assessmentData.previous_attempt?.answers) {
+      const parsed: Record<string, string> = {};
+      const prev = assessmentData.previous_attempt.answers;
+
+      if (Array.isArray(prev)) {
+        prev.forEach((item: any) => {
+          const qId = item.question_id;
+          const cId = item.selected_option_id || item.choice_id;
+          if (qId && cId) parsed[qId] = String(cId);
+        });
+      } else if (typeof prev === "object" && prev !== null) {
+        Object.entries(prev).forEach(([qId, val]: [string, any]) => {
+          if (typeof val === "object" && val !== null) {
+            const cId = val.selected_option_id || val.choice_id;
+            if (cId) parsed[qId] = String(cId);
+          } else if (typeof val === "string") {
+            parsed[qId] = val;
+          }
+        });
+      }
+      return parsed;
+    }
+    return {};
+  };
+
+  const [answers, setAnswers] =
+    useState<Record<string, string>>(getInitialAnswers);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [result, setResult] = useState<any>(null);
+
+  const [result, setResult] = useState<any>(
+    assessmentData.previous_attempt
+      ? {
+          score_percentage: assessmentData.previous_attempt.score_percentage,
+          score: assessmentData.previous_attempt.score,
+          total_points: assessmentData.previous_attempt.total_points,
+          has_passed: assessmentData.previous_attempt.has_passed,
+          answers: assessmentData.previous_attempt.answers,
+          remedial_suggestions:
+            assessmentData.previous_attempt.remedial_suggestions,
+        }
+      : null,
+  );
+
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const [isReviewActive, setIsReviewActive] = useState<boolean>(false);
 
@@ -70,17 +121,8 @@ export default function AssessmentView({
   };
 
   const handleSubmit = async () => {
-    console.log("📤 Triggering assessment submission...", {
-      assessmentId: currentData.id,
-      moduleId,
-      sectionItemId: effectiveSectionItemId,
-      answers,
-    });
-
     if (!effectiveSectionItemId || !moduleId) {
-      alert(
-        "Missing required assessment context (sectionItemId or moduleId). Please reload the page.",
-      );
+      alert("Missing required assessment context. Please reload the page.");
       return;
     }
 
@@ -99,26 +141,37 @@ export default function AssessmentView({
         answers: formattedAnswers,
       });
 
-      console.log("📥 Raw submission response received:", response);
-
       if (response && response.success) {
         const payloadData = response.data || response;
         setResult(payloadData);
-        console.log("✅ Results state successfully set:", payloadData);
+
+        // 🚀 Update TanStack Query cache instantly so state is preserved across navigation/reloads
+        queryClient.setQueryData(
+          [
+            "assessmentContainer",
+            assessmentId,
+            effectiveSectionItemId,
+            moduleId,
+          ],
+          (old: any) => {
+            if (!old) return old;
+            return {
+              ...old,
+              data: {
+                ...old.data,
+                user_has_completed: true,
+                previous_attempt: payloadData,
+              },
+            };
+          },
+        );
+
+        if (onComplete) onComplete();
       } else {
-        const errorMsg =
-          response?.error ||
-          response?.message ||
-          "Submission failed on server.";
-        console.error("❌ Submission failed:", errorMsg);
-        alert(errorMsg);
+        alert(response?.error || "Submission failed.");
       }
     } catch (err: any) {
-      console.error("🚨 Exception caught during assessment submission:", err);
-      alert(
-        err?.message ||
-          "An unexpected network error occurred while submitting.",
-      );
+      alert(err?.message || "An unexpected error occurred.");
     } finally {
       setIsSubmitting(false);
     }
@@ -138,31 +191,36 @@ export default function AssessmentView({
       setCurrentIndex(0);
       setElapsedSeconds(0);
       setIsReviewActive(false);
+
+      // Invalidate cache to clear completed state for the retake
+      queryClient.invalidateQueries({
+        queryKey: [
+          "assessmentContainer",
+          assessmentId,
+          effectiveSectionItemId,
+          moduleId,
+        ],
+      });
     }
   };
 
   if (result) {
     const scorePercentage = Number(
-      result.score_percentage ??
-        result.percentage ??
-        result.data?.score_percentage ??
-        0,
+      result.score_percentage ?? result.percentage ?? 0,
     );
     const passingScore = Number(
       result.passing_score ?? currentData.settings.passingScore ?? 70,
     );
     const isPassed = result.has_passed ?? scorePercentage >= passingScore;
 
-    const evaluatedAnswers = result.answers || result.data?.answers || {};
+    const evaluatedAnswers = result.answers || {};
     const correctCount = Array.isArray(evaluatedAnswers)
       ? evaluatedAnswers.filter((a: any) => a.is_correct).length
       : Object.values(evaluatedAnswers).filter((a: any) => a.is_correct).length;
 
     const totalGraded = questions.length;
-    const rawScore = Number(result.score ?? result.data?.score ?? correctCount);
-    const totalPoints = Number(
-      result.total_points ?? result.data?.total_points ?? totalGraded,
-    );
+    const rawScore = Number(result.score ?? correctCount);
+    const totalPoints = Number(result.total_points ?? totalGraded);
 
     return (
       <div className="w-full max-w-3xl mx-auto px-4 py-8 space-y-6">
@@ -180,11 +238,7 @@ export default function AssessmentView({
           isLastItem={isLastItem}
           onExit={onExit}
           isPassed={isPassed}
-          remedialSuggestions={
-            result.remedial_suggestions ||
-            result.data?.remedial_suggestions ||
-            []
-          }
+          remedialSuggestions={result.remedial_suggestions || []}
           moduleId={moduleId}
         />
 

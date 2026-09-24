@@ -37,7 +37,7 @@ export default function AssessmentContainer({
   const effectiveSectionItemId = sectionItemId || itemId;
   const [hasStarted, setHasStarted] = useState<boolean>(false);
 
-  // 🚀 TanStack Query handles caching and prevents duplicate requests on StrictMode / re-mounts
+  // 🚀 TanStack Query configuration for state preservation across sidebar navigation
   const { data, isLoading, error } = useQuery({
     queryKey: [
       "assessmentContainer",
@@ -72,8 +72,10 @@ export default function AssessmentContainer({
       }
     },
     enabled: Boolean(assessmentId),
-    staleTime: 1000 * 60 * 5, // Cache result for 5 minutes
+    staleTime: 1000 * 60 * 10, // ⏱️ Keep data fresh in memory for 10 minutes
+    gcTime: 1000 * 60 * 30, // 🗑️ Retain unused cache data for 30 minutes
     refetchOnWindowFocus: false,
+    refetchOnMount: false, // 🛑 Prevents refetching when switching back and forth via sidebar
   });
 
   if (isLoading) {
@@ -99,7 +101,7 @@ export default function AssessmentContainer({
 
   const { data: contentData, isPoll } = data;
 
-  // Auto-skip start screen if the user already completed or has an ongoing state
+  // Auto-skip start screen if the user already completed or has a previous attempt saved in cache
   const shouldAutoStart =
     !isPoll && (contentData.user_has_completed || contentData.previous_attempt);
 
@@ -116,7 +118,7 @@ export default function AssessmentContainer({
     );
   }
 
-  // Route cleanly to isolated folders once started, passing the correct sectionItemId
+  // Route cleanly to isolated components, preserving their respective cache context
   return isPoll ? (
     <PollView
       pollData={contentData}
@@ -126,6 +128,7 @@ export default function AssessmentContainer({
   ) : (
     <AssessmentView
       assessmentData={contentData}
+      assessmentId={assessmentId}
       sectionItemId={effectiveSectionItemId}
       moduleId={moduleId}
       isLastItem={isLastItem}
