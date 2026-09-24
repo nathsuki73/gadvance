@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  submitAssessment,
-  retakeAssessment,
-  getAssessmentState,
-} from "./assessmentService";
+import { submitAssessment, retakeAssessment } from "./assessmentService";
 import { AssessmentViewData, Question } from "../types";
 import { QuizQuestionCard } from "./AssessmentQuestionCard";
 import { ResultsSummary } from "./ResultSummary";
@@ -45,7 +41,6 @@ export default function AssessmentView({
   );
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [result, setResult] = useState<any>(null);
-  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const [isReviewActive, setIsReviewActive] = useState<boolean>(false);
 
@@ -59,31 +54,10 @@ export default function AssessmentView({
   const progressPercentage =
     totalQuestions > 0 ? ((safeQuestionIndex + 1) / totalQuestions) * 100 : 0;
 
-  // Fetch active state & timer on mount
-  useEffect(() => {
-    if (effectiveSectionItemId) {
-      getAssessmentState(currentData.id, effectiveSectionItemId, moduleId).then(
-        (res) => {
-          if (res.success && res.data) {
-            if (res.data.current_index !== undefined)
-              setCurrentIndex(res.data.current_index);
-            if (res.data.draft_answers)
-              setAnswers(res.data.draft_answers as any);
-            if (res.data.remaining_seconds !== undefined)
-              setRemainingSeconds(res.data.remaining_seconds);
-          }
-        },
-      );
-    }
-  }, [currentData.id, effectiveSectionItemId, moduleId]);
-
-  // Timer Countdown & Elapsed tracking
+  // Timer Elapsed tracking
   useEffect(() => {
     const timer = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
-      setRemainingSeconds((prev) =>
-        prev !== null && prev > 0 ? prev - 1 : prev,
-      );
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -96,6 +70,13 @@ export default function AssessmentView({
   };
 
   const handleSubmit = async () => {
+    console.log("📤 Triggering assessment submission...", {
+      assessmentId: currentData.id,
+      moduleId,
+      sectionItemId: effectiveSectionItemId,
+      answers,
+    });
+
     if (!effectiveSectionItemId || !moduleId) {
       alert(
         "Missing required assessment context (sectionItemId or moduleId). Please reload the page.",
@@ -110,21 +91,37 @@ export default function AssessmentView({
       choice_id: cId,
     }));
 
-    const response = await submitAssessment({
-      assessmentId: currentData.id,
-      moduleId,
-      sectionItemId: effectiveSectionItemId,
-      answers: formattedAnswers,
-    });
+    try {
+      const response = await submitAssessment({
+        assessmentId: currentData.id,
+        moduleId,
+        sectionItemId: effectiveSectionItemId,
+        answers: formattedAnswers,
+      });
 
-    if (response.success) {
-      setResult(response);
-      // 🛑 REMOVED auto-navigation `if (onComplete) onComplete();` here.
-      // The user will now stay on the Results Summary screen until they manually click Continue.
-    } else {
-      alert(response.error || "Submission failed.");
+      console.log("📥 Raw submission response received:", response);
+
+      if (response && response.success) {
+        const payloadData = response.data || response;
+        setResult(payloadData);
+        console.log("✅ Results state successfully set:", payloadData);
+      } else {
+        const errorMsg =
+          response?.error ||
+          response?.message ||
+          "Submission failed on server.";
+        console.error("❌ Submission failed:", errorMsg);
+        alert(errorMsg);
+      }
+    } catch (err: any) {
+      console.error("🚨 Exception caught during assessment submission:", err);
+      alert(
+        err?.message ||
+          "An unexpected network error occurred while submitting.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const handleRetake = async () => {
@@ -145,23 +142,34 @@ export default function AssessmentView({
   };
 
   if (result) {
-    const scorePercentage = result.score_percentage ?? 0;
-    const passingScore =
-      result.passing_score ?? currentData.settings.passingScore;
+    const scorePercentage = Number(
+      result.score_percentage ??
+        result.percentage ??
+        result.data?.score_percentage ??
+        0,
+    );
+    const passingScore = Number(
+      result.passing_score ?? currentData.settings.passingScore ?? 70,
+    );
     const isPassed = result.has_passed ?? scorePercentage >= passingScore;
 
-    const evaluatedAnswers = result.answers || {};
-    const correctCount = Object.values(evaluatedAnswers).filter(
-      (a: any) => a.is_correct,
-    ).length;
+    const evaluatedAnswers = result.answers || result.data?.answers || {};
+    const correctCount = Array.isArray(evaluatedAnswers)
+      ? evaluatedAnswers.filter((a: any) => a.is_correct).length
+      : Object.values(evaluatedAnswers).filter((a: any) => a.is_correct).length;
+
     const totalGraded = questions.length;
+    const rawScore = Number(result.score ?? result.data?.score ?? correctCount);
+    const totalPoints = Number(
+      result.total_points ?? result.data?.total_points ?? totalGraded,
+    );
 
     return (
       <div className="w-full max-w-3xl mx-auto px-4 py-8 space-y-6">
         <ResultsSummary
           scorePercentage={scorePercentage}
-          score={result.score}
-          totalPoints={result.total_points}
+          score={rawScore}
+          totalPoints={totalPoints}
           correctCount={correctCount}
           totalGraded={totalGraded}
           totalQuestions={questions.length}
@@ -172,8 +180,11 @@ export default function AssessmentView({
           isLastItem={isLastItem}
           onExit={onExit}
           isPassed={isPassed}
-          isPoll={false}
-          remedialSuggestions={result.remedial_suggestions || []}
+          remedialSuggestions={
+            result.remedial_suggestions ||
+            result.data?.remedial_suggestions ||
+            []
+          }
           moduleId={moduleId}
         />
 
@@ -215,12 +226,6 @@ export default function AssessmentView({
             <span className="text-[#8b5cf6]">{safeQuestionIndex + 1}</span> of{" "}
             {totalQuestions}
           </span>
-          {remainingSeconds !== null && (
-            <span className="inline-flex items-center gap-1.5 font-mono text-orange-600 bg-orange-50 px-3 py-1 rounded-full border border-orange-200/60">
-              Time Left: {Math.floor(remainingSeconds / 60)}:
-              {(remainingSeconds % 60).toString().padStart(2, "0")}
-            </span>
-          )}
         </div>
 
         {/* Progress Tracker Bar */}
@@ -274,7 +279,7 @@ export default function AssessmentView({
             type="button"
             disabled={!isCurrentAnswered || isSubmitting}
             onClick={handleSubmit}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-emerald-600/20 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-40 cursor-pointer"
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#8b5cf6]/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-40 cursor-pointer"
           >
             {isSubmitting ? (
               <Loader2 size={16} className="animate-spin" />

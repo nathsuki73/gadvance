@@ -5,23 +5,13 @@ import {
   Choice,
   AssessmentMode,
   AssessmentSettings,
-} from "../types"; // adjust path as needed
+} from "../types";
 
 export type AnswerPayload = {
   question_id: string;
   choice_id: string;
   time_spent_seconds?: number;
   answered_at?: string;
-};
-
-export type AssessmentStateData = {
-  attempt_id: string | null;
-  status: "not_started" | "in_progress" | "completed" | "expired";
-  draft_answers: Record<string, string> | AnswerPayload[];
-  question_order: string[];
-  current_index: number;
-  remaining_seconds: number | null;
-  time_limit_minutes: number | null;
 };
 
 export type SubmissionResultData = {
@@ -156,31 +146,6 @@ export async function getAssessmentViewData(
 
   const rawData = await res.json();
   return normalizeAssessmentData(rawData, id);
-}
-
-export async function getAssessmentState(
-  assessmentId: string,
-  sectionItemId: string,
-  moduleId?: string,
-): Promise<ServiceResponse<AssessmentStateData>> {
-  try {
-    const queryParams = new URLSearchParams({ section_item_id: sectionItemId });
-    if (moduleId) queryParams.append("module_id", moduleId);
-
-    const res = await apiFetch(
-      `/api/assessments/${assessmentId}/state?${queryParams.toString()}`,
-      {
-        method: "GET",
-        cache: "no-store",
-      },
-    );
-
-    const json = await res.json().catch(() => ({}));
-    if (!res || !res.ok) return { success: false, error: json?.message };
-    return json;
-  } catch (error: any) {
-    return { success: false, error: error?.message };
-  }
 }
 
 export async function submitAssessment(payload: {

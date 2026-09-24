@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from "react";
+"use client";
+
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getAssessmentViewData } from "./Assessment/assessmentService";
 import { getPollViewData } from "./Poll/pollService";
 import AssessmentView from "./Assessment/AssessmentView";
 import PollView from "./Poll/PollView";
 import { StartScreen } from "./StartScreen";
+import { Loader2 } from "lucide-react";
 
 interface AssessmentContainerProps {
   assessmentId: string;
@@ -31,93 +35,81 @@ export default function AssessmentContainer({
 }: AssessmentContainerProps) {
   // 🛡️ Automatically resolve whichever prop name was provided
   const effectiveSectionItemId = sectionItemId || itemId;
-
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<any>(null);
-  const [isPoll, setIsPoll] = useState<boolean>(false);
   const [hasStarted, setHasStarted] = useState<boolean>(false);
 
-  useEffect(() => {
-    async function loadContent() {
+  // 🚀 TanStack Query handles caching and prevents duplicate requests on StrictMode / re-mounts
+  const { data, isLoading, error } = useQuery({
+    queryKey: [
+      "assessmentContainer",
+      assessmentId,
+      effectiveSectionItemId,
+      moduleId,
+    ],
+    queryFn: async () => {
       try {
-        setLoading(true);
-        setError(null);
-
-        // Try loading as standard assessment first to inspect mode/type
-        try {
-          const assessmentData = await getAssessmentViewData(
-            assessmentId,
-            effectiveSectionItemId,
-            moduleId,
-          );
-          if (assessmentData.type === "poll") {
-            setIsPoll(true);
-            const pollData = await getPollViewData(
-              assessmentId,
-              effectiveSectionItemId,
-              moduleId,
-            );
-            setData(pollData);
-          } else {
-            setIsPoll(false);
-            setData(assessmentData);
-
-            // Auto-skip start screen if the user already completed or has an ongoing state
-            if (
-              assessmentData.user_has_completed ||
-              assessmentData.previous_attempt
-            ) {
-              setHasStarted(true);
-            }
-          }
-        } catch (err: any) {
-          // Fallback check if it's strictly exposed under polls API route
+        const assessmentData = await getAssessmentViewData(
+          assessmentId,
+          effectiveSectionItemId,
+          moduleId,
+        );
+        if (assessmentData.type === "poll") {
           const pollData = await getPollViewData(
             assessmentId,
             effectiveSectionItemId,
             moduleId,
           );
-          setIsPoll(true);
-          setData(pollData);
+          return { data: pollData, isPoll: true };
         }
+        return { data: assessmentData, isPoll: false };
       } catch (err: any) {
-        setError(err.message || "Failed to load content.");
-      } finally {
-        setLoading(false);
+        // Fallback check if it's strictly exposed under polls API route
+        const pollData = await getPollViewData(
+          assessmentId,
+          effectiveSectionItemId,
+          moduleId,
+        );
+        return { data: pollData, isPoll: true };
       }
-    }
+    },
+    enabled: Boolean(assessmentId),
+    staleTime: 1000 * 60 * 5, // Cache result for 5 minutes
+    refetchOnWindowFocus: false,
+  });
 
-    if (assessmentId) {
-      loadContent();
-    }
-  }, [assessmentId, effectiveSectionItemId, moduleId]);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="p-8 text-center text-gray-500">
-        Loading module content...
+      <div className="flex h-[100dvh] w-full items-center justify-center bg-white p-6">
+        <div className="flex flex-col items-center gap-3 text-[#8b5cf6]">
+          <Loader2 size={32} className="animate-spin" />
+          <p className="text-xs font-semibold text-zinc-500">
+            Loading module content...
+          </p>
+        </div>
       </div>
     );
   }
 
-  if (error) {
-    return <div className="p-8 text-center text-red-500">Error: {error}</div>;
-  }
-
-  if (!data) {
+  if (error || !data) {
     return (
-      <div className="p-8 text-center text-gray-500">No content available.</div>
+      <div className="p-8 text-center text-red-500">
+        Error: {(error as any)?.message || "Failed to load content."}
+      </div>
     );
   }
 
+  const { data: contentData, isPoll } = data;
+
+  // Auto-skip start screen if the user already completed or has an ongoing state
+  const shouldAutoStart =
+    !isPoll && (contentData.user_has_completed || contentData.previous_attempt);
+
   // Show generic Start Screen if not yet started
-  if (!hasStarted) {
+  if (!hasStarted && !shouldAutoStart) {
     return (
       <StartScreen
-        title={data.title}
-        instructions={data.instructions}
-        totalItems={data.questions?.length || 0}
+        title={contentData.title}
+        instructions={contentData.instructions}
+        totalItems={contentData.questions?.length || 0}
         buttonText={isPoll ? "Start Poll" : "Start Assessment"}
         onStart={() => setHasStarted(true)}
       />
@@ -127,13 +119,13 @@ export default function AssessmentContainer({
   // Route cleanly to isolated folders once started, passing the correct sectionItemId
   return isPoll ? (
     <PollView
-      pollData={data}
+      pollData={contentData}
       sectionItemId={effectiveSectionItemId}
       moduleId={moduleId}
     />
   ) : (
     <AssessmentView
-      assessmentData={data}
+      assessmentData={contentData}
       sectionItemId={effectiveSectionItemId}
       moduleId={moduleId}
       isLastItem={isLastItem}
