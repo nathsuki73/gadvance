@@ -20,7 +20,7 @@ import "@blocknote/core/fonts/inter.css";
 import {
   generateRemedialExplanation,
   RemedialContent,
-} from "../aiRemedialService";
+} from "../../aiRemedialService";
 
 const BlockNoteReader = dynamic(() => import("./BlockNoteReader"), {
   ssr: false,

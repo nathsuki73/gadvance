@@ -7,7 +7,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 
 import ModuleSidebar from "./_components/SideBar/ModuleSidebar";
 import AssessmentContainer from "./_components/AssessmentContainer/AssessmentContainer";
-import PageContainer from "./_components/PageContainer";
+import PageContainer from "./_components/PageContainer/PageContainer";
 import { LearnPageSkeleton } from "./LearnPageSkeleton";
 import {
   SectionItem,

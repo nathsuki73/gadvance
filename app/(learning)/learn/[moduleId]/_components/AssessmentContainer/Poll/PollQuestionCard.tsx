@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { BarChart3, Check } from "lucide-react";
-import { Question } from "./types";
+import { Question } from "../types";
 
 interface PollQuestionCardProps {
   question: Question;

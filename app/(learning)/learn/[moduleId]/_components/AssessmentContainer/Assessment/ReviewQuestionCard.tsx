@@ -2,7 +2,7 @@
 
 import React from "react";
 import { CheckCircle2, XCircle, Check } from "lucide-react";
-import { Question, BloomLevel } from "./types";
+import { Question, BloomLevel } from "../types";
 
 const BLOOM_BADGES: Record<BloomLevel, { label: string; style: string }> = {
   1: {
