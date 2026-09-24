@@ -4,10 +4,15 @@ import React, { useState, useEffect } from "react";
 import { submitAssessment } from "./assessmentService";
 import { useQueryClient } from "@tanstack/react-query";
 import { AssessmentViewData, Question } from "../types";
-import { QuizQuestionCard } from "./AssessmentQuestionCard";
-import { ResultsSummary } from "./ResultSummary";
-import { ReviewSubmission } from "./ReviewSubmission";
 import { ChevronLeft, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
+import {
+  loadInitialAssessmentState,
+  saveLocalDraft,
+  clearLocalDraft,
+} from "./assessmentDraftUtils"; // 👈 Imported utilities
+import { ResultsSummary } from "./_components/ResultSummary";
+import { ReviewSubmission } from "./_components/ReviewSubmission";
+import { QuizQuestionCard } from "./_components/AssessmentQuestionCard";
 
 interface AssessmentViewProps {
   assessmentData: AssessmentViewData;
@@ -38,31 +43,22 @@ export default function AssessmentView({
   const effectiveSectionItemId = sectionItemId || itemId;
 
   const [currentData] = useState<AssessmentViewData>(assessmentData);
-  const [currentIndex, setCurrentIndex] = useState<number>(
-    assessmentData.current_index || 0,
+
+  // 🛡️ Initialize state using the pruning & validation utility
+  const [initialState] = useState(() =>
+    loadInitialAssessmentState(
+      assessmentData,
+      assessmentId,
+      effectiveSectionItemId,
+    ),
   );
 
-  // Parse draft/previous answers
-  const getInitialAnswers = () => {
-    if (
-      assessmentData.draft_answers &&
-      Object.keys(assessmentData.draft_answers).length > 0
-    ) {
-      return assessmentData.draft_answers;
-    }
-    if (assessmentData.previous_attempt?.answers) {
-      const parsed: Record<string, string> = {};
-      const prev = assessmentData.previous_attempt.answers;
-      Object.entries(prev).forEach(([qId, val]: [string, any]) => {
-        parsed[qId] = String(val.selected_option_id || val.choice_id || val);
-      });
-      return parsed;
-    }
-    return {};
-  };
-
-  const [answers, setAnswers] =
-    useState<Record<string, string>>(getInitialAnswers);
+  const [answers, setAnswers] = useState<Record<string, string>>(
+    initialState.answers,
+  );
+  const [currentIndex, setCurrentIndex] = useState<number>(
+    initialState.currentIndex,
+  );
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [result, setResult] = useState<any>(
     assessmentData.previous_attempt || null,
@@ -81,6 +77,7 @@ export default function AssessmentView({
   const progressPercentage =
     totalQuestions > 0 ? ((safeQuestionIndex + 1) / totalQuestions) * 100 : 0;
 
+  // ⏱️ Elapsed Timer
   useEffect(() => {
     const timer = setInterval(
       () => setElapsedSeconds((prev) => prev + 1),
@@ -88,6 +85,17 @@ export default function AssessmentView({
     );
     return () => clearInterval(timer);
   }, []);
+
+  // 💾 Auto-save answers and page index using the utility
+  useEffect(() => {
+    if (result || !effectiveSectionItemId) return;
+    saveLocalDraft(
+      currentData.id,
+      effectiveSectionItemId,
+      answers,
+      currentIndex,
+    );
+  }, [answers, currentIndex, currentData.id, effectiveSectionItemId, result]);
 
   const handleSelectOption = (questionId: string, choiceId: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: choiceId }));
@@ -114,9 +122,11 @@ export default function AssessmentView({
       });
 
       if (response && response.success) {
-        // Backend maps this exactly as expected
         const payloadData = response.data || response;
         setResult(payloadData);
+
+        // 🗑️ Clear local draft storage on successful submission
+        clearLocalDraft(currentData.id, effectiveSectionItemId);
 
         queryClient.setQueryData(
           [
@@ -148,7 +158,6 @@ export default function AssessmentView({
   };
 
   if (result) {
-    // These keys directly map exactly to what Laravel submitAttempt returns
     const rawScore = Number(result.score ?? 0);
     const totalPoints = Number(result.total_points ?? questions.length);
     const scorePercentage = Number(result.score_percentage ?? 0);
@@ -156,7 +165,11 @@ export default function AssessmentView({
       result.passing_score ?? currentData.settings?.passingScore ?? 70,
     );
     const isPassed = Boolean(result.has_passed);
-    const remedialSuggestions = result.remedial_suggestions || [];
+    const remedialSuggestions =
+      result.remedial_suggestions ||
+      result.remedialSuggestions ||
+      currentData.previous_attempt?.remedial_suggestions ||
+      [];
 
     const evaluatedAnswers = result.answers || {};
     const correctCount = Object.values(evaluatedAnswers).filter(
@@ -174,7 +187,10 @@ export default function AssessmentView({
           totalQuestions={questions.length}
           elapsedSeconds={elapsedSeconds}
           settings={{ ...currentData.settings, passingScore }}
-          onRetry={onRetake || (() => {})}
+          onRetry={() => {
+            clearLocalDraft(currentData.id, effectiveSectionItemId);
+            if (onRetake) onRetake();
+          }}
           onNext={onNext || (() => {})}
           isLastItem={isLastItem}
           onExit={onExit}

@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { ChevronRight, ArrowLeft } from "lucide-react";
 import { ReviewQuestionCard } from "./ReviewQuestionCard"; // 👈 Use new component
-import { AssessmentSettings, Question } from "../types";
+import { AssessmentSettings, Question } from "../../types";
 
 interface ReviewSubmissionProps {
   questions: Question[];

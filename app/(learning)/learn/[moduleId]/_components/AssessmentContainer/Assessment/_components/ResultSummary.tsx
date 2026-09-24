@@ -12,7 +12,7 @@ import {
   BookOpenText,
   ExternalLink,
 } from "lucide-react";
-import { AssessmentSettings } from "../types";
+import { AssessmentSettings } from "../../types";
 import Link from "next/link";
 
 interface ResultsSummaryProps {
