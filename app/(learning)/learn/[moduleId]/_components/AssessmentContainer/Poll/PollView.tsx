@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { PollViewData, submitPollVote } from "./pollService";
+import { PollQuestionCard } from "./PollQuestionCard";
+import { ChevronLeft, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
 
 interface PollViewProps {
   pollData: PollViewData;
@@ -18,27 +20,57 @@ export default function PollView({
     pollData.user_voted_map || {},
   );
   const [questions, setQuestions] = useState(pollData.questions || []);
-  const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [currentIndex, setCurrentIndex] = useState<number>(
+    pollData.current_index || 0,
+  );
 
-  const handleVote = async (questionId: string, choiceId: string) => {
-    if (!sectionItemId) return;
-    setSubmittingId(questionId);
+  const [selectedChoiceId, setSelectedChoiceId] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  const totalQuestions = questions.length;
+  const safeQuestionIndex = Math.min(
+    Math.max(0, currentIndex),
+    Math.max(0, totalQuestions - 1),
+  );
+  const currentQuestion = questions[safeQuestionIndex];
+  const progressPercentage =
+    totalQuestions > 0 ? ((safeQuestionIndex + 1) / totalQuestions) * 100 : 0;
+
+  const isFirstQuestion = safeQuestionIndex === 0;
+  const isLastQuestion = safeQuestionIndex === totalQuestions - 1;
+
+  const hasVotedCurrent = Boolean(userVotes[currentQuestion?.id]);
+  const activeSelection = hasVotedCurrent
+    ? userVotes[currentQuestion.id]
+    : selectedChoiceId;
+
+  const handleSelectOption = (questionId: string, choiceId: string) => {
+    if (hasVotedCurrent) return;
+    setSelectedChoiceId(choiceId);
+  };
+
+  const handleSubmitVote = async () => {
+    if (!sectionItemId || !currentQuestion || !activeSelection) return;
+    setIsSubmitting(true);
 
     const res = await submitPollVote(
       pollData.id,
       sectionItemId,
-      questionId,
-      choiceId,
+      currentQuestion.id,
+      activeSelection,
       moduleId,
     );
 
     if (res.success && res.poll_distributions) {
-      setUserVotes((prev) => ({ ...prev, [questionId]: choiceId }));
+      setUserVotes((prev) => ({
+        ...prev,
+        [currentQuestion.id]: activeSelection,
+      }));
 
       // Update local question option percentages & votes
       setQuestions((prevQuestions) =>
         prevQuestions.map((q) => {
-          if (q.id === questionId) {
+          if (q.id === currentQuestion.id) {
             return {
               ...q,
               choices: q.choices.map((choice) => {
@@ -54,73 +86,108 @@ export default function PollView({
           return q;
         }),
       );
+      setSelectedChoiceId("");
     } else {
       alert(res.error || "Failed to submit vote.");
     }
-    setSubmittingId(null);
+    setIsSubmitting(false);
   };
 
+  if (!currentQuestion) {
+    return (
+      <div className="flex h-full w-full items-center justify-center p-6 text-zinc-500">
+        No questions found for this poll.
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow border border-gray-100">
-      <h2 className="text-2xl font-bold mb-2 text-gray-800">
-        {pollData.title}
-      </h2>
-      <p className="text-gray-600 mb-6">{pollData.instructions}</p>
+    <div className="flex flex-col min-h-full w-full max-w-3xl mx-auto px-4 py-6 sm:py-10 justify-between">
+      {/* Top Header & Progress Bar */}
+      <div className="space-y-4 mb-8">
+        <div className="space-y-1">
+          <h2 className="text-xl sm:text-2xl font-bold text-zinc-900">
+            {pollData.title}
+          </h2>
+          {pollData.instructions && (
+            <p className="text-sm text-zinc-600 leading-relaxed">
+              {pollData.instructions}
+            </p>
+          )}
+        </div>
 
-      <div className="space-y-8">
-        {questions.map((question, qIdx) => {
-          const selectedChoiceId = userVotes[question.id];
+        <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-zinc-500 pt-2">
+          <span>
+            Question{" "}
+            <span className="text-[#8b5cf6]">{safeQuestionIndex + 1}</span> of{" "}
+            {totalQuestions}
+          </span>
+        </div>
 
-          return (
-            <div
-              key={question.id}
-              className="border-b border-gray-100 pb-6 last:border-none"
-            >
-              <p className="text-lg font-medium text-gray-900 mb-4">
-                {qIdx + 1}. {question.text}
-              </p>
+        {/* Progress Tracker Bar */}
+        <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+          <div
+            className="h-full bg-[#8b5cf6] transition-all duration-300 ease-out rounded-full"
+            style={{ width: `${progressPercentage}%` }}
+          />
+        </div>
+      </div>
 
-              <div className="space-y-3">
-                {question.choices.map((choice) => {
-                  const isSelected = selectedChoiceId === choice.id;
-                  const hasVoted = Boolean(selectedChoiceId);
+      {/* Main Question Body Card */}
+      <div className="flex-1 space-y-6">
+        <PollQuestionCard
+          question={currentQuestion}
+          index={safeQuestionIndex}
+          selectedChoiceId={activeSelection}
+          isQuestionSubmitted={hasVotedCurrent}
+          showQuestionNumber={false}
+          onSelectChoice={handleSelectOption}
+        />
+      </div>
 
-                  return (
-                    <div
-                      key={choice.id}
-                      className="relative overflow-hidden rounded-lg border border-gray-200 transition"
-                    >
-                      {/* Background Progress Bar for percentages */}
-                      {hasVoted && (
-                        <div
-                          className="absolute top-0 bottom-0 left-0 bg-blue-100 transition-all duration-500 opacity-40"
-                          style={{ width: `${choice.percentage || 0}%` }}
-                        />
-                      )}
+      {/* Bottom Navigation Control Action Footer */}
+      <div className="flex items-center justify-between border-t border-zinc-200/80 pt-6 mt-10">
+        <button
+          type="button"
+          disabled={isFirstQuestion}
+          onClick={() => {
+            setCurrentIndex((prev) => Math.max(0, prev - 1));
+            setSelectedChoiceId("");
+          }}
+          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+        >
+          <ChevronLeft size={16} />
+          <span>Previous</span>
+        </button>
 
-                      <button
-                        disabled={submittingId === question.id}
-                        onClick={() => handleVote(question.id, choice.id)}
-                        className={`relative w-full flex justify-between items-center p-4 text-left z-10 ${
-                          isSelected
-                            ? "border-blue-600 font-semibold text-blue-900"
-                            : "hover:bg-gray-50 text-gray-700"
-                        }`}
-                      >
-                        <span>{choice.text}</span>
-                        {hasVoted && (
-                          <span className="text-sm font-medium text-gray-600">
-                            {choice.percentage}% ({choice.votes} votes)
-                          </span>
-                        )}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+        {!hasVotedCurrent ? (
+          <button
+            type="button"
+            disabled={!activeSelection || isSubmitting}
+            onClick={handleSubmitVote}
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#8b5cf6]/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-40 cursor-pointer"
+          >
+            {isSubmitting ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <CheckCircle2 size={16} />
+            )}
+            <span>{isSubmitting ? "Submitting..." : "Submit Vote"}</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={isLastQuestion}
+            onClick={() => {
+              setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1));
+              setSelectedChoiceId("");
+            }}
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#8b5cf6]/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-40 cursor-pointer"
+          >
+            <span>Next</span>
+            <ChevronRight size={16} />
+          </button>
+        )}
       </div>
     </div>
   );
