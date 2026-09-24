@@ -165,8 +165,6 @@ export default function AssessmentView({
             };
           },
         );
-
-        if (onComplete) onComplete();
       } else {
         alert(response?.error || "Submission failed.");
       }
