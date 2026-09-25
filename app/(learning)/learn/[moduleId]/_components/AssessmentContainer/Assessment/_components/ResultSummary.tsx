@@ -198,7 +198,7 @@ export function ResultsSummary({
     : tickX2 - horizontalLength;
 
   return (
-    <div className="overflow-hidden p-6 space-y-6 flex flex-col items-center text-center w-full max-w-md mx-auto">
+    <div className="overflow-hidden p-2 space-y-6 flex flex-col items-center text-center w-full max-w-md mx-auto">
       {!isPoll && (
         <div className="flex items-center justify-center gap-1.5 bg-zinc-100 p-1 rounded-2xl w-full max-w-sm shrink-0">
           <button
