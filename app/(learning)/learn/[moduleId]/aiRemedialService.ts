@@ -24,6 +24,7 @@ const MODEL_NAME = "gemini-3.5-flash-lite";
 /**
  * 1. Generates the initial 3-part structured refresher.
  * Explains assertively without robotic meta-referencing ("This refers to...").
+ * Completely excludes statutory citations ("RA", "RA 11313", "Republic Act").
  */
 export async function generateRemedialExplanation(
   conceptTitle: string,
@@ -38,29 +39,30 @@ export async function generateRemedialExplanation(
   }
 
   const prompt = `
-    You are an authoritative legal educator and instructional designer in Philippine Gender and Development (GAD) and the Safe Spaces Act (RA 11313).
+    You are an authoritative educator and instructional designer in Philippine Gender and Development (GAD) and safe spaces education.
     A student is reviewing a specific study block (Current estimated mastery: ${Math.round(masteryProbability * 100)}%, Scaffolding: ${scaffoldingLevel}).
 
     Lesson Context: "${conceptTitle}"
     Target Block Content: "${blockContent}"
 
-    CRITICAL TONE & PHRASING RULES (STRICT):
+    CRITICAL RULES (STRICT):
+    - DO NOT cite or mention Republic Acts, article numbers, or legal codes (NEVER write "RA", "RA 11313", or "Republic Act"). Focus purely on the concept, principles, and behavior.
     - Speak with complete confidence and direct authority.
     - NEVER use referential filler or meta-openers like "This refers to...", "This concept is...", "This means...", "This passage defines...", or "Here we see...".
     - State the subject and rule directly as a definitive fact.
       * BAD: "This refers to Gender Expression, which is how someone dresses."
       * GOOD: "Gender Expression is the outward manifestation of a person's gender through behavior, clothing, and presentation."
-      * BAD: "This refers to Catcalling under the Safe Spaces Act."
-      * GOOD: "Catcalling consists of unwanted remarks, whistling, or invasive comments in public spaces penalized under RA 11313."
+      * BAD: "This refers to Catcalling under the law."
+      * GOOD: "Catcalling consists of unwanted remarks, whistling, or invasive sexual comments in public spaces."
 
     CONTENT RESOLUTION RULES:
-    1. WORD/TERM ONLY: If the block is just a single word or legal term, immediately define its legal scope and application under GAD / RA 11313.
-    2. MEANING/DEFINITION ONLY: If the block is a description without a label, identify the underlying concept and state it assertively as the subject of the sentence. Do not drift into other legal provisions.
+    1. WORD/TERM ONLY: If the block is just a single word or term, immediately define its core meaning and application in safe spaces education.
+    2. MEANING/DEFINITION ONLY: If the block is a description without a label, identify the underlying concept and state it assertively as the subject of the sentence. Do not drift into unrelated topics.
     3. MULTIPLE CONCEPTS: If the block contains two or more related ideas (e.g., Sex vs. Gender), clearly delineate both with distinct, parallel statements (e.g., "1. [Concept A]... 2. [Concept B]...").
 
     OUTPUT REQUIREMENTS:
-    - summary: Exactly 1 assertive, standalone sentence delivering the core takeaway or rule.
-    - explanation: 2 to 3 concise, authoritative sentences explaining how the concept operates in practice without referencing outside topics.
+    - summary: Exactly 1 assertive, standalone sentence delivering the core takeaway or definition.
+    - explanation: 2 to 3 concise, authoritative sentences explaining how the concept works in practice.
     - analogy: A concrete, everyday real-world comparison that makes the concept instantly clear.
 
     Return ONLY a JSON object matching this schema:
@@ -93,8 +95,8 @@ export async function generateRemedialExplanation(
 }
 
 /**
- * 2. Streams controlled follow-up text (scenario / simplify / importance).
- * Maintains confident, direct delivery without preamble.
+ * 2. Streams controlled follow-up text (scenario / simplify / Tagalog).
+ * Maintains confident, direct delivery without preamble and without legal statute citations.
  */
 export async function generateFollowUpStream(
   conceptTitle: string,
@@ -103,13 +105,14 @@ export async function generateFollowUpStream(
   onChunk: (textSoFar: string) => void,
 ): Promise<string> {
   const prompt = `
-    You are an expert instructional designer in Philippine Gender and Development (GAD) and RA 11313 (Safe Spaces Act).
+    You are an expert instructional designer in Philippine Gender and Development (GAD) and safe spaces policies.
     Module Context: "${conceptTitle}"
     Target Concept: "${blockContent}"
 
     Action: ${instructionPrompt}
 
-    DIRECTIVE:
+    DIRECTIVES:
+    - DO NOT cite or mention Republic Acts, legal codes, or acronyms like "RA", "RA 11313", or "Republic Act".
     - Deliver the response with immediate confidence and authority.
     - NEVER start with filler like "Sure!", "Here is an explanation:", "This refers to...", or "In this scenario...".
     - Jump directly into the scenario, simplified rule, or explanation.
@@ -142,20 +145,24 @@ export async function generateFollowUpStream(
 
 /**
  * 3. Generates a quick 1-question check to verify comprehension.
+ * Designed to be easy, clear, and beginner-friendly with no legal acronyms.
  */
 export async function generateQuickQuiz(
   conceptTitle: string,
   blockContent: string,
 ): Promise<QuizQuestion> {
   const prompt = `
-    Create a 1-question multiple-choice formative check evaluating understanding of this GAD / RA 11313 concept:
+    Create a 1-question multiple-choice formative check evaluating basic understanding of this Gender and Development (GAD) / safe spaces concept:
     Module Context: "${conceptTitle}"
     Concept / Content: "${blockContent}"
 
-    ANALYSIS RULES:
-    - Identify the primary concept in the content (whether given as a term or an excerpt).
-    - Create a practical, scenario-grounded question testing application or boundary recognition.
-    - Provide 4 options (IDs: "a", "b", "c", "d") with 1 clearly correct answer and 3 plausible distractors.
+    CRITICAL REQUIREMENTS:
+    - DIFFICULTY: EASY. The question must be beginner-friendly, straightforward, and easy to answer for a student who just read the explanation.
+    - DO NOT cite or mention legal codes or acronyms (NEVER write "RA", "RA 11313", or "Republic Act").
+    - Test simple definition recall or an obvious real-life example (e.g., identifying whether an action is acceptable or respectful).
+    - Avoid tricky wording, double negatives, or ambiguous choices.
+    - Provide 4 options (IDs: "a", "b", "c", "d").
+    - Exactly 1 clearly correct answer and 3 simple, clearly incorrect distractors.
     - Return the exact ID of the correct choice.
   `;
 

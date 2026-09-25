@@ -4,11 +4,9 @@ import React, { useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  CheckCircle2,
   Loader2,
   Check,
   X,
-  Sparkles,
   ArrowRight,
   RotateCcw,
 } from "lucide-react";
@@ -37,7 +35,7 @@ const FOLLOW_UP_OPTIONS: FollowUpOption[] = [
   },
   {
     id: "quiz",
-    label: "Test my understanding",
+    label: "Quick check",
     prompt: "",
   },
 ];
@@ -47,17 +45,10 @@ type ExplanationPage =
   | { kind: "followup"; label: string; text: string }
   | { kind: "quiz"; label: string; quiz: QuizQuestion | null };
 
-export interface NoteVariant {
-  accent: string;
-  tag: string;
-  mark: string;
-}
-
 interface ExplanationCardProps {
   paragraphId: string;
   remedialContent: RemedialContent;
   masteryProbability: number;
-  variant: NoteVariant;
   onRequestFollowUp: (
     paragraphId: string,
     prompt: string,
@@ -76,13 +67,12 @@ export function ExplanationCard({
   paragraphId,
   remedialContent,
   masteryProbability,
-  variant,
   onRequestFollowUp,
   onRequestQuiz,
   onGoToAssessment,
 }: ExplanationCardProps) {
   const [pages, setPages] = useState<ExplanationPage[]>([
-    { kind: "base", label: "Concept Refresher" },
+    { kind: "base", label: "Concept Review" },
   ]);
   const [pageIndex, setPageIndex] = useState(0);
   const [hasUsedFollowUp, setHasUsedFollowUp] = useState(false);
@@ -139,34 +129,33 @@ export function ExplanationCard({
   };
 
   return (
-    <div
-      className={`w-full rounded-2xl border-l-4 ${variant.accent} bg-zinc-50/80 p-4 sm:p-5 shadow-xs transition-all space-y-3`}
-    >
-      {/* Header & Pager */}
-      <div className="flex items-center justify-between border-b border-zinc-200/60 pb-2.5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span
-            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${variant.tag}`}
-          >
+    // Outer Container: No shadow, no outer box, no rounded corners; straight left accent line
+    <div className="w-full border-l-2 sm:border-l-[3px] border-[#8b5cf6] pl-4 sm:pl-5 py-2 my-5 space-y-3.5 bg-transparent font-sans">
+      {/* Top Meta Bar */}
+      <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
+        <div className="flex items-center gap-2">
+          <span className="rounded-lg bg-purple-50 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[#8b5cf6]">
             {currentPage.label}
           </span>
-          <span className="text-[11px] text-zinc-400 font-medium">
-            Est. Mastery: {masteryPercent}%
+          <span className="text-zinc-300">•</span>
+          <span className="rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-600">
+            Mastery: {masteryPercent}%
           </span>
         </div>
 
+        {/* Pager with rounded buttons */}
         {pages.length > 1 && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-0.5">
             <button
               type="button"
               disabled={!canGoBack}
               onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
-              className="h-6 w-6 flex items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-              aria-label="Previous page"
+              className="flex h-6 w-6 items-center justify-center rounded-lg text-zinc-500 hover:bg-white hover:text-zinc-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              aria-label="Previous step"
             >
               <ChevronLeft size={14} />
             </button>
-            <span className="text-[11px] font-bold text-zinc-500 tabular-nums w-7 text-center">
+            <span className="w-7 text-center text-xs font-mono font-bold tabular-nums text-zinc-600">
               {pageIndex + 1}/{pages.length}
             </span>
             <button
@@ -175,8 +164,8 @@ export function ExplanationCard({
               onClick={() =>
                 setPageIndex((i) => Math.min(pages.length - 1, i + 1))
               }
-              className="h-6 w-6 flex items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-              aria-label="Next page"
+              className="flex h-6 w-6 items-center justify-center rounded-lg text-zinc-500 hover:bg-white hover:text-zinc-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              aria-label="Next step"
             >
               <ChevronRight size={14} />
             </button>
@@ -184,99 +173,91 @@ export function ExplanationCard({
         )}
       </div>
 
-      {/* Page Content */}
+      {/* Main Body */}
       {currentPage.kind === "base" && (
         <div className="space-y-2.5">
-          <p className="text-sm sm:text-[15px] font-semibold text-zinc-900 leading-snug">
+          <p className="text-sm sm:text-base font-bold text-zinc-900 leading-snug">
             {remedialContent.summary}
           </p>
           <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
             {remedialContent.explanation}
           </p>
-          <p
-            className={`text-xs italic ${variant.mark} leading-relaxed font-medium`}
-          >
-            💡 Analogy: {lowerFirst(remedialContent.analogy)}
-          </p>
+
+          {/* Analogy: Straight flat accent box with no rounded corners */}
+          <div className="border-l-2 border-purple-200 bg-purple-50/40 p-3 text-xs sm:text-sm text-purple-900 leading-relaxed">
+            <span className="font-semibold text-[#8b5cf6]">
+              Real-world analogy:{" "}
+            </span>
+            {lowerFirst(remedialContent.analogy)}
+          </div>
         </div>
       )}
 
       {currentPage.kind === "followup" && (
         <div className="min-h-[50px] text-xs sm:text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap">
           {currentPage.text || (
-            <span className="inline-flex items-center gap-2 text-zinc-400 py-1">
-              <Loader2 className="animate-spin text-[#8b5cf6]" size={14} />
-              Generating tailored explanation…
-            </span>
+            <div className="flex items-center gap-2 py-3 text-xs font-medium text-zinc-400">
+              <Loader2 className="animate-spin text-[#8b5cf6]" size={15} />
+              <span>Generating concept explanation…</span>
+            </div>
           )}
         </div>
       )}
 
       {currentPage.kind === "quiz" && <MiniQuiz quiz={currentPage.quiz} />}
 
-      {/* Suggestion Chips & Navigation Button */}
-      {!hasUsedFollowUp ? (
-        <div className="pt-2 border-t border-zinc-200/50">
-          <span className="block text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-            Ask AI Follow-Up (Pick One)
-          </span>
-          <div className="flex flex-wrap gap-2">
+      {/* Right-Aligned Button Group: Fully rounded interactive chips */}
+      <div className="flex items-center justify-end gap-2 flex-wrap pt-2.5 border-t border-zinc-100">
+        {!hasUsedFollowUp ? (
+          <>
             {FOLLOW_UP_OPTIONS.map((option) => (
               <button
                 key={option.id}
                 type="button"
                 onClick={() => handleChipClick(option)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-200 bg-white text-[11px] font-semibold text-zinc-700 hover:border-[#8b5cf6] hover:text-[#8b5cf6] hover:shadow-xs transition-all cursor-pointer"
+                className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 hover:border-[#8b5cf6] hover:text-[#8b5cf6] active:scale-[0.98] transition-all cursor-pointer"
               >
-                <Sparkles size={11} className="text-[#8b5cf6]" />
                 {option.label}
               </button>
             ))}
 
-            {/* Same suggestion button look for returning back to the assessment */}
             {onGoToAssessment && (
               <button
                 type="button"
                 onClick={onGoToAssessment}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#8b5cf6]/30 bg-purple-50 text-[11px] font-bold text-[#8b5cf6] hover:bg-[#8b5cf6] hover:text-white hover:border-[#8b5cf6] hover:shadow-xs transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#8b5cf6] px-4 py-2 text-xs font-bold text-white hover:bg-[#7c3aed] active:scale-[0.98] transition-all cursor-pointer"
               >
-                <ArrowRight size={12} />
-                Back to assessment
+                <span>Back to assessment</span>
+                <ArrowRight size={13} />
               </button>
             )}
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-between pt-2 border-t border-zinc-200/50 flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600">
-              <CheckCircle2 size={14} />
-              Refresher active
-            </span>
+          </>
+        ) : (
+          <>
             {pageIndex !== 0 && (
               <button
                 type="button"
                 onClick={() => setPageIndex(0)}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-zinc-500 hover:text-zinc-800 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98] transition-all cursor-pointer"
               >
-                <RotateCcw size={11} />
-                Original note
+                <RotateCcw size={12} />
+                <span>Original note</span>
               </button>
             )}
-          </div>
 
-          {onGoToAssessment && (
-            <button
-              type="button"
-              onClick={onGoToAssessment}
-              className="inline-flex items-center gap-1 rounded-lg bg-[#8b5cf6] px-3.5 py-1.5 text-[11px] font-bold text-white hover:bg-[#7c3aed] active:scale-95 transition-all cursor-pointer shadow-xs"
-            >
-              <span>Back to assessment</span>
-              <ArrowRight size={12} />
-            </button>
-          )}
-        </div>
-      )}
+            {onGoToAssessment && (
+              <button
+                type="button"
+                onClick={onGoToAssessment}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#8b5cf6] px-4 py-2 text-xs font-bold text-white hover:bg-[#7c3aed] active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <span>Back to assessment</span>
+                <ArrowRight size={13} />
+              </button>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -286,18 +267,20 @@ function MiniQuiz({ quiz }: { quiz: QuizQuestion | null }) {
 
   if (!quiz) {
     return (
-      <div className="flex items-center gap-2 text-xs text-zinc-400 py-3">
-        <Loader2 className="animate-spin text-[#8b5cf6]" size={14} />
-        Preparing a 1-question check…
+      <div className="flex items-center gap-2 py-3 text-xs font-medium text-zinc-400">
+        <Loader2 className="animate-spin text-[#8b5cf6]" size={15} />
+        <span>Preparing quick check…</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2.5">
-      <p className="text-xs sm:text-sm font-semibold text-zinc-800 leading-snug">
+    <div className="space-y-2.5 py-1">
+      <p className="text-xs sm:text-sm font-bold text-zinc-900 leading-snug">
         {quiz.question}
       </p>
+
+      {/* Quiz Choices with rounded card styling */}
       <div className="space-y-1.5">
         {quiz.choices.map((choice) => {
           const isSelected = selectedId === choice.id;
@@ -305,13 +288,16 @@ function MiniQuiz({ quiz }: { quiz: QuizQuestion | null }) {
           const revealed = selectedId !== null;
 
           let style =
-            "border-zinc-200 bg-white hover:border-[#8b5cf6]/60 text-zinc-700";
+            "border-zinc-200 bg-white hover:border-[#8b5cf6] hover:bg-purple-50/20 text-zinc-700";
+
           if (revealed && isSelected && isCorrect)
-            style = "border-emerald-300 bg-emerald-50 text-emerald-800";
+            style =
+              "border-emerald-400 bg-emerald-50 text-emerald-900 font-semibold";
           if (revealed && isSelected && !isCorrect)
-            style = "border-rose-300 bg-rose-50 text-rose-800";
+            style = "border-rose-300 bg-rose-50 text-rose-800 font-semibold";
           if (revealed && !isSelected && isCorrect)
-            style = "border-emerald-200 bg-emerald-50/50 text-emerald-700";
+            style =
+              "border-emerald-300 bg-emerald-50/60 text-emerald-800 font-semibold";
 
           return (
             <button
@@ -319,14 +305,18 @@ function MiniQuiz({ quiz }: { quiz: QuizQuestion | null }) {
               type="button"
               disabled={revealed}
               onClick={() => setSelectedId(choice.id)}
-              className={`w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs font-medium text-left transition-all cursor-pointer disabled:cursor-default ${style}`}
+              className={`w-full flex items-center justify-between gap-3 rounded-xl border p-3 text-xs sm:text-sm text-left transition-all active:scale-[0.99] cursor-pointer disabled:cursor-default ${style}`}
             >
               <span>{choice.text}</span>
               {revealed && isSelected && isCorrect && (
-                <Check size={14} className="text-emerald-600 shrink-0" />
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+                  <Check size={12} strokeWidth={3} />
+                </span>
               )}
               {revealed && isSelected && !isCorrect && (
-                <X size={14} className="text-rose-600 shrink-0" />
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-rose-500 text-white">
+                  <X size={12} strokeWidth={3} />
+                </span>
               )}
             </button>
           );
