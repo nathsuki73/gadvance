@@ -13,6 +13,7 @@ import {
 import { ResultsSummary } from "./_components/ResultSummary";
 import { ReviewSubmission } from "./_components/ReviewSubmission";
 import { QuizQuestionCard } from "./_components/AssessmentQuestionCard";
+import { useToast } from "@/app/components/context/ToastContext";
 
 interface AssessmentViewProps {
   assessmentData: AssessmentViewData;
@@ -80,6 +81,8 @@ export default function AssessmentView({
   );
   const questionStartTimeRef = useRef<number>(Date.now());
 
+  const { showToast } = useToast();
+
   const questions: Question[] = currentData.questions || [];
   const totalQuestions = questions.length;
   const safeQuestionIndex = Math.min(
@@ -97,6 +100,42 @@ export default function AssessmentView({
       onQuestionActiveChange?.(false);
     };
   }, [result, onQuestionActiveChange]);
+
+  useEffect(() => {
+    if (result) return; // Do not trap navigation if the assessment is already submitted/completed
+
+    // 1. Push an initial history state to act as the trap barrier
+    window.history.pushState(
+      { activeAssessment: true },
+      "",
+      window.location.href,
+    );
+
+    const handlePopState = (event: PopStateEvent) => {
+      // 2. Show the strict alert message
+      showToast("You can't go back while taking an assessment.");
+
+      // 3. Instantly push the state back onto the stack to force them to stay
+      window.history.pushState(
+        { activeAssessment: true },
+        "",
+        window.location.href,
+      );
+    };
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = ""; // Standard browser dialog for accidental page reloads / tab closes
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [result]);
 
   useEffect(() => {
     questionStartTimeRef.current = Date.now();
