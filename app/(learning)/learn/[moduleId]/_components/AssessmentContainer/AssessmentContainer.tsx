@@ -24,7 +24,7 @@ interface AssessmentContainerProps {
   onComplete?: () => void;
   onNext?: () => void;
   onExit?: () => void;
-  onNavigate?: (targetId: string, blockId: string) => void;
+  onNavigate?: (targetId: string, blockId?: string) => void;
   onQuestionActiveChange?: (isActive: boolean) => void;
 }
 
@@ -37,7 +37,7 @@ export default function AssessmentContainer({
   onComplete,
   onNext,
   onExit,
-  onNavigate, // 👈 Destructure onNavigate
+  onNavigate,
   onQuestionActiveChange,
 }: AssessmentContainerProps) {
   const queryClient = useQueryClient();
@@ -144,7 +144,10 @@ export default function AssessmentContainer({
 
   return isPoll ? (
     <PollView
-      pollData={contentData}
+      pollData={{
+        ...contentData,
+        user_voted_map: contentData.user_voted_map ?? {},
+      }}
       sectionItemId={effectiveSectionItemId}
       moduleId={moduleId}
       isLastItem={isLastItem}
@@ -162,7 +165,7 @@ export default function AssessmentContainer({
       onComplete={onComplete}
       onNext={onNext}
       onExit={onExit}
-      onNavigate={onNavigate} // 👈 Forwarded to AssessmentView
+      onNavigate={onNavigate}
       onQuestionActiveChange={onQuestionActiveChange}
       onRetake={async () => {
         if (!effectiveSectionItemId) return;

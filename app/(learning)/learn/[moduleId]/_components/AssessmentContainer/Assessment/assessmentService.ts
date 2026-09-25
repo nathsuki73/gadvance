@@ -40,6 +40,7 @@ export type ServiceResponse<T> = {
   score_percentage?: number;
   has_passed?: boolean;
   passing_score?: number;
+  answers?: any;
   remedial_suggestions?: Array<{
     page_id: string;
     block_id: string;
@@ -169,6 +170,10 @@ export async function submitAssessment(payload: {
       },
     );
 
+    if (!res) {
+      return { success: false, error: "Network error: No response received." };
+    }
+
     const json = await res.json().catch(() => ({}));
 
     // Log the exact raw response received from the submit endpoint
@@ -210,8 +215,12 @@ export async function retakeAssessment(
       }),
     });
 
+    if (!res) {
+      return { success: false, error: "Network error: No response received." };
+    }
+
     const json = await res.json().catch(() => ({}));
-    if (!res || !res.ok) return { success: false, error: json?.message };
+    if (!res.ok) return { success: false, error: json?.message };
 
     const normalizedAssessment = json.data
       ? normalizeAssessmentData(json.data, assessmentId)

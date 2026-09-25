@@ -255,6 +255,10 @@ export async function getAssessmentState(
       },
     );
 
+    if (!res) {
+      return { success: false, error: "Network error: No response received." };
+    }
+
     const json = await res.json().catch(() => ({}));
 
     if (!res || !res.ok) {
@@ -297,6 +301,10 @@ export async function submitAssessment(payload: {
       },
     );
 
+    if (!res) {
+      return { success: false, error: "Network error: No response received." };
+    }
+
     const json = await res.json().catch(() => ({}));
 
     // 🔍 DEBUG LOG: Check what the backend is actually sending back on submit
@@ -313,7 +321,10 @@ export async function submitAssessment(payload: {
 
     return {
       success: json.success ?? res.ok,
-      data: json.data ?? json,
+      data: {
+        ...(json.data ?? json),
+        answers: json.answers ?? json.data?.answers,
+      },
       score: json.score,
       total_points: json.total_points,
       score_percentage: json.score_percentage,
@@ -321,7 +332,6 @@ export async function submitAssessment(payload: {
       passing_score: json.passing_score,
       poll_distributions: json.poll_distributions,
       remedial_suggestions: json.remedial_suggestions,
-      answers: json.answers ?? json.data?.answers,
       message: json.message,
     };
   } catch (error: any) {
@@ -357,6 +367,10 @@ export async function submitPollVote(
         choice_id: choiceId,
       }),
     });
+
+    if (!res) {
+      return { success: false, error: "Network error: No response received." };
+    }
 
     const json = await res.json().catch(() => ({}));
 
@@ -402,6 +416,10 @@ export async function retakeAssessment(
         module_id: moduleId,
       }),
     });
+
+    if (!res) {
+      return { success: false, error: "Network error: No response received." };
+    }
 
     const json = await res.json().catch(() => ({}));
 

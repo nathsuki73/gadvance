@@ -130,6 +130,10 @@ export async function submitPollVote(
       }),
     });
 
+    if (!res) {
+      return { success: false, error: "Network error: No response received." };
+    }
+
     const json = await res.json().catch(() => ({}));
     if (!res || !res.ok) return { success: false, error: json?.message };
 

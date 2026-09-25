@@ -33,6 +33,7 @@ interface AssessmentViewProps {
   onNext?: () => void;
   onExit?: () => void;
   onRetake?: () => void | Promise<void>;
+  onNavigate?: (targetId: string, blockId?: string) => void;
   onQuestionActiveChange?: (isActive: boolean) => void;
 }
 
@@ -48,6 +49,7 @@ export default function AssessmentView({
   onExit,
   onRetake,
   onQuestionActiveChange,
+  onNavigate,
 }: AssessmentViewProps) {
   const queryClient = useQueryClient();
   const effectiveSectionItemId = sectionItemId || itemId;

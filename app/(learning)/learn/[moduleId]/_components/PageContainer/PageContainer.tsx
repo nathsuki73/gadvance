@@ -23,7 +23,7 @@ import {
   generateQuickQuiz,
   RemedialContent,
 } from "../../aiRemedialService";
-import { ExplanationCard, NoteVariant } from "../../ExplanationCard";
+import { ExplanationCard } from "../../ExplanationCard";
 
 const BlockNoteReader = dynamic(() => import("./BlockNoteReader"), {
   ssr: false,
@@ -40,6 +40,12 @@ interface PageContainerProps {
   onNext: () => void;
   onExit: () => void;
   onGoToAssessment?: () => void;
+}
+
+export interface NoteVariant {
+  accent: string;
+  tag: string;
+  mark: string;
 }
 
 const NOTE_VARIANTS: NoteVariant[] = [

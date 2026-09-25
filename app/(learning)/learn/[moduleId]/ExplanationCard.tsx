@@ -9,7 +9,8 @@ import {
   ArrowRight,
   RotateCcw,
 } from "lucide-react";
-import { RemedialContent, QuizQuestion } from "../../aiRemedialService";
+import { RemedialContent, QuizQuestion } from "./aiRemedialService";
+import { NoteVariant } from "./_components/PageContainer/PageContainer";
 
 export type FollowUpId = "simplify" | "tagalog" | "quiz";
 
@@ -53,6 +54,7 @@ interface ExplanationCardProps {
   paragraphId: string;
   remedialContent: RemedialContent;
   masteryProbability: number;
+  variant: NoteVariant;
   onRequestFollowUp: (
     paragraphId: string,
     prompt: string,
@@ -71,6 +73,7 @@ export function ExplanationCard({
   paragraphId,
   remedialContent,
   masteryProbability,
+  variant,
   onRequestFollowUp,
   onRequestQuiz,
   onGoToAssessment,

@@ -25,10 +25,6 @@ const BLOOM_BADGES: Record<BloomLevel, { label: string; style: string }> = {
     label: "L5: Evaluate",
     style: "bg-purple-50 text-purple-700 border-purple-200/60",
   },
-  6: {
-    label: "L6: Create",
-    style: "bg-rose-50 text-rose-700 border-rose-200/60",
-  },
 };
 
 interface QuizQuestionCardProps {
