@@ -26,14 +26,12 @@ type LearnPageProps = {
 const getMaxUnlockedIndex = (items: SectionItem[], completed: Set<string>) => {
   let idx = 0;
   for (let i = 0; i < items.length; i++) {
-    // If the item is completed, we unlock the next one
     if (completed.has(items[i].id)) {
       idx = i + 1;
     } else {
       break;
     }
   }
-  // Ensure we never return an index out of bounds, but allow index 0 if nothing is completed
   return Math.min(Math.max(0, idx), items.length - 1);
 };
 
@@ -43,6 +41,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const targetItemId = searchParams.get("item");
+  const fromItemId = searchParams.get("fromItem"); // 👈 Captured origin assessment item ID
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -105,8 +104,39 @@ const LearnPage = ({ params }: LearnPageProps) => {
   const nextItem =
     currentIndex !== -1 && !isLastItem ? allItems[currentIndex + 1] : null;
 
-  // 🚀 Optimized Mutation with Optimistic Updates
-  // 🚀 Optimized Combined Mutation
+  // 🔗 Resolves the assessment to return to (Origin assessment, or section assessment fallback)
+  const returnAssessmentItem = useMemo(() => {
+    if (fromItemId) {
+      const found = allItems.find(
+        (i) =>
+          (i.id === fromItemId || i.content_id === fromItemId) &&
+          i.item_type === "assessment",
+      );
+      if (found) return found;
+    }
+
+    if (activeItem) {
+      // Check for assessment in the same section
+      const sameSectionAssessment = allItems.find(
+        (i) =>
+          i.item_type === "assessment" &&
+          i.section_id === activeItem.section_id,
+      );
+      if (sameSectionAssessment) return sameSectionAssessment;
+    }
+
+    // Module-level assessment fallback
+    return allItems.find((i) => i.item_type === "assessment") ?? null;
+  }, [allItems, fromItemId, activeItem]);
+
+  const handleReturnToAssessment = useCallback(() => {
+    if (returnAssessmentItem) {
+      router.push(`/learn/${moduleId}?item=${returnAssessmentItem.id}`, {
+        scroll: false,
+      });
+    }
+  }, [returnAssessmentItem, moduleId, router]);
+
   const completeMutation = useMutation({
     mutationFn: async ({
       itemId,
@@ -125,8 +155,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
       const learningPlanId =
         (module as any)?.learning_plan_id || module?.courseId;
 
-      // This single call handles saving progress, syncing plan progress,
-      // and returns the fresh progress state!
       return await completeAndGetNextItem({
         module_id: moduleId,
         section_id: sectionId,
@@ -145,7 +173,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
         moduleId,
       ]);
 
-      // Optimistic update
       queryClient.setQueryData(["learningProgress", moduleId], (old: any) => {
         if (!old) return old;
         const existingData = Array.isArray(old.data) ? old.data : [];
@@ -184,7 +211,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
           }),
         );
 
-        // 🚀 Directly navigate using the server-confirmed next item
         if (response.next_item) {
           router.push(`/learn/${moduleId}?item=${response.next_item.id}`, {
             scroll: false,
@@ -204,7 +230,6 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   const handleItemComplete = useCallback(
     async (itemId: string, progressValue = 100) => {
-      // 🛡️ Block duplicate mutations if a request is already running
       if (
         !activeItem ||
         !moduleId ||
@@ -237,6 +262,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
     handleItemComplete(activeItem.id, 100);
   };
 
+  // 🚀 Attaches `fromItem` so the page knows which assessment you navigated from!
   const handleNavigateTo = (targetId: string, blockId?: string) => {
     const foundItem = allItems.find(
       (i) => i.id === targetId || i.content_id === targetId,
@@ -244,9 +270,13 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
     if (foundItem) {
       const hash = blockId ? `#${blockId}` : "";
-      router.push(`/learn/${moduleId}?item=${foundItem.id}${hash}`, {
-        scroll: false,
-      });
+      const fromParam = activeItem ? `&fromItem=${activeItem.id}` : "";
+      router.push(
+        `/learn/${moduleId}?item=${foundItem.id}${fromParam}${hash}`,
+        {
+          scroll: false,
+        },
+      );
     }
   };
 
@@ -260,12 +290,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   const handleExitModule = async () => {
     try {
-      // 1. Save progress if not already completed
       if (!completedItemIds.has(activeItem.id) && !completeMutation.isPending) {
         await completeMutation.mutateAsync({ itemId: activeItem.id });
       }
-
-      // 2. Always route back safely
       router.push(`/explore/course/${module.courseId}/module/${moduleId}`);
     } catch (error) {
       console.error("Failed to complete item before exiting:", error);
@@ -338,6 +365,9 @@ const LearnPage = ({ params }: LearnPageProps) => {
             onComplete={() => handleItemComplete(activeItem.id, 100)}
             onNext={handleNext}
             onExit={handleExitModule}
+            onGoToAssessment={
+              returnAssessmentItem ? handleReturnToAssessment : undefined
+            }
           />
         )}
       </div>

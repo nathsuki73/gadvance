@@ -37,6 +37,7 @@ export default function AssessmentContainer({
   onComplete,
   onNext,
   onExit,
+  onNavigate, // 👈 Destructure onNavigate
   onQuestionActiveChange,
 }: AssessmentContainerProps) {
   const queryClient = useQueryClient();
@@ -161,6 +162,7 @@ export default function AssessmentContainer({
       onComplete={onComplete}
       onNext={onNext}
       onExit={onExit}
+      onNavigate={onNavigate} // 👈 Forwarded to AssessmentView
       onQuestionActiveChange={onQuestionActiveChange}
       onRetake={async () => {
         if (!effectiveSectionItemId) return;

@@ -16,10 +16,14 @@ import { PageContentSkeleton } from "./PageContentSkeleton";
 
 import "@blocknote/mantine/style.css";
 import "@blocknote/core/fonts/inter.css";
+
 import {
   generateRemedialExplanation,
+  generateFollowUpStream,
+  generateQuickQuiz,
   RemedialContent,
 } from "../../aiRemedialService";
+import { ExplanationCard, NoteVariant } from "../../ExplanationCard";
 
 const BlockNoteReader = dynamic(() => import("./BlockNoteReader"), {
   ssr: false,
@@ -35,46 +39,38 @@ interface PageContainerProps {
   onComplete: () => void;
   onNext: () => void;
   onExit: () => void;
+  onGoToAssessment?: () => void; // 👈 Callback to return to assessment
 }
 
-// A handful of understated accent looks for the inline refresher note.
-// Picking one deterministically per block (rather than always using the
-// same purple badge+card combo) keeps repeated notes on a page from
-// reading as the same stamped-out template.
-const NOTE_VARIANTS = [
+const NOTE_VARIANTS: NoteVariant[] = [
   {
-    accent: "border-purple-300",
-    tag: "text-purple-700 bg-purple-50/80",
-    mark: "text-purple-500",
+    accent: "border-purple-400",
+    tag: "text-purple-700 bg-purple-100/80",
+    mark: "text-purple-600",
   },
   {
-    accent: "border-teal-300",
-    tag: "text-teal-700 bg-teal-50/80",
+    accent: "border-teal-400",
+    tag: "text-teal-700 bg-teal-100/80",
     mark: "text-teal-600",
   },
   {
-    accent: "border-amber-300",
-    tag: "text-amber-700 bg-amber-50/80",
+    accent: "border-amber-400",
+    tag: "text-amber-700 bg-amber-100/80",
     mark: "text-amber-600",
   },
   {
-    accent: "border-sky-300",
-    tag: "text-sky-700 bg-sky-50/80",
+    accent: "border-sky-400",
+    tag: "text-sky-700 bg-sky-100/80",
     mark: "text-sky-600",
   },
 ];
 
-function pickVariant(seed: string) {
+function pickVariant(seed: string): NoteVariant {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
     hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
   }
   return NOTE_VARIANTS[hash % NOTE_VARIANTS.length];
-}
-
-function lowerFirst(text: string) {
-  if (!text) return text;
-  return text.charAt(0).toLowerCase() + text.slice(1);
 }
 
 export default function PageContainer({
@@ -86,6 +82,7 @@ export default function PageContainer({
   onComplete,
   onNext,
   onExit,
+  onGoToAssessment,
 }: PageContainerProps) {
   const { data: session, status: sessionStatus } = useSession();
   const token = session?.laravelJwt;
@@ -99,6 +96,7 @@ export default function PageContainer({
   const [loadingRemedial, setLoadingRemedial] = useState(false);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+  const [targetBlockText, setTargetBlockText] = useState<string>("");
 
   useEffect(() => {
     setIsCompleted(initialCompleted);
@@ -106,6 +104,7 @@ export default function PageContainer({
     setRemedialContent(null);
     setPortalTarget(null);
     setActiveBlockId(null);
+    setTargetBlockText("");
   }, [pageId, initialCompleted]);
 
   const {
@@ -182,6 +181,8 @@ export default function PageContainer({
           }
         }
 
+        setTargetBlockText(blockText);
+
         const aiResult = await generateRemedialExplanation(
           title,
           blockText,
@@ -197,10 +198,6 @@ export default function PageContainer({
 
     fetchRemedialData();
   }, [pageData, pageId, title, token]);
-
-  const error = queryError
-    ? "Unable to load page content. Please try again."
-    : null;
 
   const scrollToHash = useCallback(() => {
     const hash = window.location.hash;
@@ -246,33 +243,6 @@ export default function PageContainer({
     }
   }, []);
 
-  if (loading || sessionStatus === "loading" || isNavigating) {
-    return (
-      <div className="flex h-full min-h-screen w-full flex-col justify-between bg-white overflow-y-auto">
-        <PageContentSkeleton />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-white p-6">
-        <div className="flex max-w-md flex-col items-center text-center">
-          <AlertCircle className="h-10 w-10 text-rose-500 mb-3" />
-          <h3 className="text-sm font-bold tracking-tight text-zinc-900">
-            Content Unavailable
-          </h3>
-          <p className="mt-1 text-xs text-zinc-500">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const isBlockNoteContent =
-    pageData?.content &&
-    Array.isArray(pageData.content) &&
-    pageData.content.length > 0;
-
   const handleNextClick = () => {
     if (isNavigating) return;
     setIsNavigating(true);
@@ -284,51 +254,39 @@ export default function PageContainer({
     }
   };
 
-  // Renders the "you struggled here, here's a refresher" note. Styled as an
-  // inline margin note rather than a self-contained card, so it reads like
-  // part of the page rather than a bolted-on AI widget.
   const renderTargetedReviewBlock = () => {
     if (!loadingRemedial && !remedialContent) return null;
 
-    const masteryPercent = Math.round(masteryProbability * 100);
     const variant = pickVariant(activeBlockId || pageId || title);
 
     const content = (
-      <div className="w-full relative my-6 animate-in fade-in slide-in-from-bottom-1 duration-500">
+      <div className="w-full relative my-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
         {loadingRemedial && (
-          <div className="flex items-center gap-2.5 text-xs text-zinc-400 py-2">
-            <Loader2 className="animate-spin" size={13} />
-            <span>putting together a quick refresher on this…</span>
+          <div className="flex items-center gap-2.5 text-xs text-zinc-400 py-3 px-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50">
+            <Loader2 className="animate-spin text-[#8b5cf6]" size={14} />
+            <span>Generating personalized concept refresher…</span>
           </div>
         )}
 
         {remedialContent && (
-          <div
-            className={`border-l-2 ${variant.accent} pl-5 py-0.5 space-y-2.5`}
-          >
-            <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${variant.tag}`}
-              >
-                refresher
-              </span>
-              <span className="text-[11px] text-zinc-400">
-                you're around {masteryPercent}% on this one
-              </span>
-            </div>
-
-            <p className="text-sm sm:text-[15px] font-semibold text-zinc-800 leading-snug">
-              {remedialContent.summary}
-            </p>
-
-            <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
-              {remedialContent.explanation}
-            </p>
-
-            <p className={`text-xs italic ${variant.mark} leading-relaxed`}>
-              think of it like this — {lowerFirst(remedialContent.analogy)}
-            </p>
-          </div>
+          <ExplanationCard
+            paragraphId={activeBlockId || pageId}
+            remedialContent={remedialContent}
+            masteryProbability={masteryProbability}
+            variant={variant}
+            onRequestFollowUp={async (pId, prompt, onChunk) => {
+              return await generateFollowUpStream(
+                title,
+                targetBlockText || title,
+                prompt,
+                onChunk,
+              );
+            }}
+            onRequestQuiz={async () => {
+              return await generateQuickQuiz(title, targetBlockText || title);
+            }}
+            onGoToAssessment={onGoToAssessment}
+          />
         )}
       </div>
     );
@@ -338,6 +296,35 @@ export default function PageContainer({
     }
     return content;
   };
+
+  if (loading || sessionStatus === "loading" || isNavigating) {
+    return (
+      <div className="flex h-full min-h-screen w-full flex-col justify-between bg-white overflow-y-auto">
+        <PageContentSkeleton />
+      </div>
+    );
+  }
+
+  if (queryError) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-white p-6">
+        <div className="flex max-w-md flex-col items-center text-center">
+          <AlertCircle className="h-10 w-10 text-rose-500 mb-3" />
+          <h3 className="text-sm font-bold tracking-tight text-zinc-900">
+            Content Unavailable
+          </h3>
+          <p className="mt-1 text-xs text-zinc-500">
+            Unable to load page content. Please try again.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const isBlockNoteContent =
+    pageData?.content &&
+    Array.isArray(pageData.content) &&
+    pageData.content.length > 0;
 
   return (
     <div className="flex h-full min-h-screen flex-col justify-between overflow-x-hidden overflow-y-auto bg-white scroll-smooth font-sans">
