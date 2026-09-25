@@ -31,7 +31,7 @@ interface AssessmentViewProps {
   onComplete?: () => void;
   onNext?: () => void;
   onExit?: () => void;
-  onRetake?: () => void;
+  onRetake?: () => void | Promise<void>;
   onQuestionActiveChange?: (isActive: boolean) => void;
 }
 
@@ -69,10 +69,9 @@ export default function AssessmentView({
   );
   const [checkedQuestions, setCheckedQuestions] = useState<
     Record<string, boolean>
-  >(
-    initialState.checkedQuestions, // 👈 Initialized from persisted draft state
-  );
+  >(initialState.checkedQuestions);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isRetrying, setIsRetrying] = useState<boolean>(false); // 🔄 Lifted retry loading state
   const [result, setResult] = useState<any>(
     assessmentData.previous_attempt || null,
   );
@@ -101,10 +100,6 @@ export default function AssessmentView({
     currentData.settings?.type !== "test" &&
     currentData.settings?.showFeedbackImmediately;
 
-  // The furthest question the learner has actually completed (answered, and
-  // checked when immediate feedback is on). This is independent of which
-  // question is currently on screen, so navigating with Previous/Next never
-  // changes it — only actually completing a new question does.
   const furthestCompletedIndex = useMemo(() => {
     let furthest = -1;
     for (let idx = 0; idx < questions.length; idx++) {
@@ -118,13 +113,6 @@ export default function AssessmentView({
     return furthest;
   }, [questions, answers, checkedQuestions, showImmediateFeedback]);
 
-  // Consecutive-correct streak, counted backward from the furthest completed
-  // question (not from whatever question is currently being viewed).
-  // Anchoring to safeQuestionIndex previously meant hitting "Previous" to
-  // revisit an earlier question re-anchored the count there too, making the
-  // streak appear to drop even though no answers had changed. Anchoring to
-  // furthestCompletedIndex means Previous/Next is just browsing and never
-  // moves the streak on its own.
   const streakCount = useMemo(() => {
     let streak = 0;
     for (let idx = furthestCompletedIndex; idx >= 0; idx--) {
@@ -145,8 +133,6 @@ export default function AssessmentView({
     return streak;
   }, [questions, answers, furthestCompletedIndex]);
 
-  // Brief "pop" animation whenever the streak actually increases, on top of
-  // the tiered ambient pulse below.
   const [streakPulse, setStreakPulse] = useState(false);
   const prevStreakCountRef = useRef(0);
 
@@ -169,20 +155,16 @@ export default function AssessmentView({
   }, [result, onQuestionActiveChange]);
 
   useEffect(() => {
-    if (result) return; // Do not trap navigation if the assessment is already submitted/completed
+    if (result) return;
 
-    // 1. Push an initial history state to act as the trap barrier
     window.history.pushState(
       { activeAssessment: true },
       "",
       window.location.href,
     );
 
-    const handlePopState = (event: PopStateEvent) => {
-      // 2. Show the strict alert message
+    const handlePopState = () => {
       showToast("You can't go back while taking an assessment.");
-
-      // 3. Instantly push the state back onto the stack to force them to stay
       window.history.pushState(
         { activeAssessment: true },
         "",
@@ -192,7 +174,7 @@ export default function AssessmentView({
 
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
-      event.returnValue = ""; // Standard browser dialog for accidental page reloads / tab closes
+      event.returnValue = "";
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -262,13 +244,11 @@ export default function AssessmentView({
     const isChecked = Boolean(checkedQuestions[currentQuestion.id]);
 
     if (showImmediateFeedback && !isChecked) {
-      // First click: Submit/check the individual question to show feedback
       setCheckedQuestions((prev) => ({
         ...prev,
         [currentQuestion.id]: true,
       }));
     } else {
-      // Second click (or normal mode): Proceed to next question or submit final assessment
       recordCurrentQuestionTime();
       if (!isLastQuestion) {
         setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1));
@@ -343,6 +323,26 @@ export default function AssessmentView({
   };
 
   if (result) {
+    // 🦴 If retrying, show StartScreen-matched skeleton loading state (hiding summary & review entirely)
+    if (isRetrying) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 sm:py-20 text-center w-full max-w-md mx-auto animate-pulse px-4">
+          <div className="mb-6 h-7 w-28 rounded-full bg-zinc-200" />
+          <div className="space-y-2 w-full flex flex-col items-center">
+            <div className="h-8 w-64 sm:w-80 rounded-xl bg-zinc-200" />
+            <div className="h-8 w-48 sm:w-56 rounded-xl bg-zinc-200" />
+          </div>
+          <div className="mt-4 space-y-2 w-full flex flex-col items-center">
+            <div className="h-4 w-72 sm:w-96 rounded-md bg-zinc-200" />
+            <div className="h-4 w-48 sm:w-64 rounded-md bg-zinc-200" />
+          </div>
+          <div className="mt-8 flex justify-center w-full">
+            <div className="h-12 w-44 rounded-xl bg-zinc-200" />
+          </div>
+        </div>
+      );
+    }
+
     const rawScore = Number(result.score ?? 0);
     const totalPoints = Number(result.total_points ?? questions.length);
     const scorePercentage = Number(result.score_percentage ?? 0);
@@ -380,21 +380,6 @@ export default function AssessmentView({
       });
     }
 
-    const answerEntries = Object.values(evaluatedAnswers);
-    const times = answerEntries.map(
-      (ans: any) => Number(ans?.time_spent_seconds) || 0,
-    );
-    const totalTimeSeconds = times.reduce((acc, curr) => acc + curr, 0);
-    const validTimes = times.filter((t) => t > 0);
-    const averageTimeSeconds =
-      validTimes.length > 0
-        ? Math.round(validTimes.reduce((a, b) => a + b, 0) / validTimes.length)
-        : 0;
-    const fastestTimeSeconds =
-      validTimes.length > 0 ? Math.min(...validTimes) : 0;
-    const slowestTimeSeconds =
-      validTimes.length > 0 ? Math.max(...validTimes) : 0;
-
     return (
       <div className="w-full max-w-3xl mx-auto px-4 py-8 space-y-6">
         <ResultsSummary
@@ -406,9 +391,12 @@ export default function AssessmentView({
           totalQuestions={questions.length}
           elapsedSeconds={elapsedSeconds}
           settings={{ ...currentData.settings, passingScore }}
-          onRetry={() => {
+          onRetry={async () => {
+            setIsRetrying(true);
             clearLocalDraft(currentData.id, effectiveSectionItemId);
-            if (onRetake) onRetake();
+            if (onRetake) {
+              await Promise.resolve(onRetake());
+            }
           }}
           onNext={onNext || (() => {})}
           isLastItem={isLastItem}
@@ -427,7 +415,6 @@ export default function AssessmentView({
           answers={restoredAnswers}
           submitted={true}
           settings={currentData.settings}
-          isPoll={false}
           isReviewActive={isReviewActive}
           onToggleReview={setIsReviewActive}
           onSelectChoice={handleSelectOption}
@@ -465,23 +452,21 @@ export default function AssessmentView({
 
   return (
     <div className="flex flex-col min-h-full w-full max-w-3xl mx-auto px-4 py-6 sm:py-10 justify-between">
-      {/* Segmented Progress Bar & Right-Side Stats */}
       <div className="space-y-3 mb-8">
         <div className="flex items-center gap-3 w-full">
-          {/* Segmented Progress Bar ("Cuts per part") */}
           <div className="flex items-center gap-1.5 flex-1">
             {questions.map((q, idx) => {
               const isAnswered = Boolean(answers[q.id]);
               const isCurrent = idx === safeQuestionIndex;
 
-              let segmentStyle = "bg-zinc-200"; // Unanswered/default
+              let segmentStyle = "bg-zinc-200";
 
               if (isAnswered) {
-                segmentStyle = "bg-[#8b5cf6]"; // Answered
+                segmentStyle = "bg-[#8b5cf6]";
               }
 
               if (isCurrent) {
-                segmentStyle = "bg-[#8b5cf6] ring-2 ring-purple-200"; // Active current question
+                segmentStyle = "bg-[#8b5cf6] ring-2 ring-purple-200";
               }
 
               return (
@@ -493,7 +478,6 @@ export default function AssessmentView({
             })}
           </div>
 
-          {/* Right side: Streak Badge + Counter (e.g. 5/8) */}
           <div className="flex items-center gap-2.5 shrink-0">
             {streakCount > 0 && (
               <div

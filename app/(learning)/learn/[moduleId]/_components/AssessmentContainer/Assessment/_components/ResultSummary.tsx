@@ -23,12 +23,11 @@ interface ResultsSummaryProps {
   totalQuestions: number;
   elapsedSeconds: number;
   settings: AssessmentSettings;
-  onRetry: () => void;
+  onRetry: () => void | Promise<void>;
   onNext: () => void;
   isLastItem?: boolean;
   onExit?: () => void;
   isPassed: boolean;
-  isPoll?: boolean;
   remedialSuggestions?: Array<{
     page_id: string;
     block_id: string;
@@ -56,14 +55,12 @@ export function ResultsSummary({
   isLastItem = false,
   onExit,
   isPassed,
-  isPoll = false,
   remedialSuggestions = [],
   moduleId = "",
   bktSkillsBreakdown = [],
   answersData = {},
 }: ResultsSummaryProps) {
   const [animatedPercentage, setAnimatedPercentage] = useState(0);
-
   const [activeView, setActiveView] = useState<
     "score" | "detailed" | "remedial"
   >("score");
@@ -79,7 +76,6 @@ export function ResultsSummary({
   const hasAttemptsRemaining =
     settings.maxAttempts == null || settings.maxAttempts > 1;
 
-  // Extract time_spent_seconds directly from answersData dictionary
   const answerEntries = Object.values(answersData || {});
   const times = answerEntries.map(
     (ans: any) => Number(ans?.time_spent_seconds) || 0,
@@ -96,12 +92,6 @@ export function ResultsSummary({
   const slowestTimeSeconds =
     validTimes.length > 0 ? Math.max(...validTimes) : 0;
 
-  // Longest run of consecutive correct answers, computed client-side from
-  // the raw per-question results. answered_at is a sortable
-  // "YYYY-MM-DD HH:MM:SS" string, so a plain lexicographic sort recovers the
-  // order the questions were actually answered in (safer than Date parsing,
-  // which isn't guaranteed consistent across browsers/timezones for that
-  // format).
   const bestStreak = (() => {
     const gradedEntries = answerEntries.filter(
       (ans: any) => ans && typeof ans === "object" && "is_correct" in ans,
@@ -130,7 +120,6 @@ export function ResultsSummary({
     if (
       remedialSuggestions.length > 0 &&
       activeView === "score" &&
-      !isPoll &&
       !hasActivatedRemedialOnce.current
     ) {
       const timer = setTimeout(() => {
@@ -138,7 +127,7 @@ export function ResultsSummary({
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [remedialSuggestions, activeView, isPoll]);
+  }, [remedialSuggestions, activeView]);
 
   useEffect(() => {
     if (activeView === "remedial") {
@@ -147,7 +136,6 @@ export function ResultsSummary({
   }, [activeView]);
 
   useEffect(() => {
-    if (isPoll) return;
     let startTime: number | null = null;
     const duration = 1300;
     const targetRounded = Math.round(scorePercentage);
@@ -173,7 +161,7 @@ export function ResultsSummary({
 
     const frameId = requestAnimationFrame(animateScore);
     return () => cancelAnimationFrame(frameId);
-  }, [scorePercentage, isPoll]);
+  }, [scorePercentage]);
 
   const radius = 58;
   const circumference = 2 * Math.PI * radius;
@@ -199,49 +187,47 @@ export function ResultsSummary({
 
   return (
     <div className="overflow-hidden p-2 space-y-6 flex flex-col items-center text-center w-full max-w-md mx-auto">
-      {!isPoll && (
-        <div className="flex items-center justify-center gap-1.5 bg-zinc-100 p-1 rounded-2xl w-full max-w-sm shrink-0">
+      <div className="flex items-center justify-center gap-1.5 bg-zinc-100 p-1 rounded-2xl w-full max-w-sm shrink-0">
+        <button
+          type="button"
+          onClick={() => setActiveView("score")}
+          className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
+            activeView === "score"
+              ? "bg-white text-zinc-900 shadow-2xs"
+              : "text-zinc-500 hover:text-zinc-800"
+          }`}
+        >
+          Score Summary
+        </button>
+
+        {remedialSuggestions.length > 0 && (
           <button
             type="button"
-            onClick={() => setActiveView("score")}
-            className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
-              activeView === "score"
-                ? "bg-white text-zinc-900 shadow-2xs"
-                : "text-zinc-500 hover:text-zinc-800"
-            }`}
-          >
-            Score Summary
-          </button>
-
-          {remedialSuggestions.length > 0 && (
-            <button
-              type="button"
-              onClick={activateRemedial}
-              className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                activeView === "remedial"
-                  ? "bg-[#8b5cf6] text-white shadow-2xs"
-                  : "text-zinc-500 hover:text-zinc-800"
-              }`}
-            >
-              <BookOpenText size={12} />
-              <span>Study ({Math.min(remedialSuggestions.length, 3)})</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setActiveView("detailed")}
+            onClick={activateRemedial}
             className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
-              activeView === "detailed"
+              activeView === "remedial"
                 ? "bg-[#8b5cf6] text-white shadow-2xs"
                 : "text-zinc-500 hover:text-zinc-800"
             }`}
           >
-            <BarChart3 size={12} />
-            <span>Performance</span>
+            <BookOpenText size={12} />
+            <span>Study ({Math.min(remedialSuggestions.length, 3)})</span>
           </button>
-        </div>
-      )}
+        )}
+
+        <button
+          type="button"
+          onClick={() => setActiveView("detailed")}
+          className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
+            activeView === "detailed"
+              ? "bg-[#8b5cf6] text-white shadow-2xs"
+              : "text-zinc-500 hover:text-zinc-800"
+          }`}
+        >
+          <BarChart3 size={12} />
+          <span>Performance</span>
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 grid-rows-1 w-full items-center justify-items-center">
         <div
@@ -251,126 +237,109 @@ export function ResultsSummary({
               : "opacity-0 z-0 pointer-events-none select-none"
           }`}
         >
-          {settings.type === "poll" && (
-            <div className="w-full rounded-2xl border border-purple-200/85 bg-purple-50/50 p-6 text-center space-y-2">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 text-[#8b5cf6]">
-                <CheckCircle2 size={24} />
+          <div className="flex flex-col items-center justify-center gap-6 w-full py-2">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setActiveView("detailed")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ")
+                  setActiveView("detailed");
+              }}
+              className="relative flex items-center justify-center cursor-pointer group hover:scale-[1.02] transition-transform p-2 rounded-full focus:outline-hidden"
+              title="Click to view detailed BKT analytics breakdown"
+            >
+              <svg className="h-48 w-48 -rotate-90 transform overflow-visible">
+                <circle
+                  cx="96"
+                  cy="96"
+                  r={radius}
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  className="text-zinc-200/80"
+                  fill="transparent"
+                />
+                <circle
+                  cx="96"
+                  cy="96"
+                  r={radius}
+                  stroke="currentColor"
+                  strokeWidth="10"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="round"
+                  className="text-[#8b5cf6] transition-all duration-300 ease-out group-hover:text-[#7c3aed]"
+                  fill="transparent"
+                />
+              </svg>
+
+              <svg
+                className="absolute inset-0 h-48 w-48 overflow-visible pointer-events-none"
+                viewBox="0 0 192 192"
+              >
+                <line
+                  x1={tickX1}
+                  y1={tickY1}
+                  x2={tickX2}
+                  y2={tickY2}
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  className="text-zinc-400 transition-all duration-700"
+                />
+                <line
+                  x1={tickX2}
+                  y1={tickY2}
+                  x2={labelLineX}
+                  y2={tickY2}
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  className="text-zinc-400 transition-all duration-700"
+                />
+              </svg>
+
+              <div
+                className="absolute transition-all duration-700 pointer-events-none"
+                style={{
+                  left: labelLineX,
+                  top: tickY2,
+                  transform: pointsRight
+                    ? "translate(4px, -50%)"
+                    : "translate(calc(-100% - 4px), -50%)",
+                }}
+              >
+                <div className="inline-flex flex-col items-center text-[10px] font-bold tracking-wider text-zinc-500 uppercase bg-white px-2 py-1 rounded shadow-2xs border border-zinc-200/60 leading-tight text-center">
+                  <span>Passing</span>
+                  <span className="text-zinc-800 font-black">
+                    {settings.passingScore}%
+                  </span>
+                </div>
               </div>
-              <h3 className="text-sm font-bold text-[#8b5cf6]">
-                Thank you for participating!
-              </h3>
-              <p className="text-xs text-[#8b5cf6] max-w-md mx-auto leading-relaxed">
-                Your vote has been recorded and factored into the live class
-                metrics below.
+
+              <div className="absolute flex flex-col items-center justify-center text-center">
+                <span className="text-3xl font-black tracking-tight text-[#8b5cf6] group-hover:scale-105 transition-transform">
+                  {animatedPercentage}%
+                </span>
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5 group-hover:text-[#8b5cf6] transition-colors">
+                  Score
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center justify-center space-y-2 text-center max-w-sm mt-1">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-[#8b5cf6] border border-purple-200">
+                <CheckCircle size={13} />
+                <span>
+                  {isPassed ? "Goal Achieved!" : "Good Progress Made!"}
+                </span>
+              </span>
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                Click the score above anytime to view your detailed BKT mastery
+                breakdown.
               </p>
             </div>
-          )}
-
-          {settings.type !== "poll" && (
-            <div className="flex flex-col items-center justify-center gap-6 w-full py-2">
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => setActiveView("detailed")}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ")
-                    setActiveView("detailed");
-                }}
-                className="relative flex items-center justify-center cursor-pointer group hover:scale-[1.02] transition-transform p-2 rounded-full focus:outline-hidden"
-                title="Click to view detailed BKT analytics breakdown"
-              >
-                <svg className="h-48 w-48 -rotate-90 transform overflow-visible">
-                  <circle
-                    cx="96"
-                    cy="96"
-                    r={radius}
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    className="text-zinc-200/80"
-                    fill="transparent"
-                  />
-                  <circle
-                    cx="96"
-                    cy="96"
-                    r={radius}
-                    stroke="currentColor"
-                    strokeWidth="10"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                    strokeLinecap="round"
-                    className="text-[#8b5cf6] transition-all duration-300 ease-out group-hover:text-[#7c3aed]"
-                    fill="transparent"
-                  />
-                </svg>
-
-                <svg
-                  className="absolute inset-0 h-48 w-48 overflow-visible pointer-events-none"
-                  viewBox="0 0 192 192"
-                >
-                  <line
-                    x1={tickX1}
-                    y1={tickY1}
-                    x2={tickX2}
-                    y2={tickY2}
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    className="text-zinc-400 transition-all duration-700"
-                  />
-                  <line
-                    x1={tickX2}
-                    y1={tickY2}
-                    x2={labelLineX}
-                    y2={tickY2}
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    className="text-zinc-400 transition-all duration-700"
-                  />
-                </svg>
-
-                <div
-                  className="absolute transition-all duration-700 pointer-events-none"
-                  style={{
-                    left: labelLineX,
-                    top: tickY2,
-                    transform: pointsRight
-                      ? "translate(4px, -50%)"
-                      : "translate(calc(-100% - 4px), -50%)",
-                  }}
-                >
-                  <div className="inline-flex flex-col items-center text-[10px] font-bold tracking-wider text-zinc-500 uppercase bg-white px-2 py-1 rounded shadow-2xs border border-zinc-200/60 leading-tight text-center">
-                    <span>Passing</span>
-                    <span className="text-zinc-800 font-black">
-                      {settings.passingScore}%
-                    </span>
-                  </div>
-                </div>
-
-                <div className="absolute flex flex-col items-center justify-center text-center">
-                  <span className="text-3xl font-black tracking-tight text-[#8b5cf6] group-hover:scale-105 transition-transform">
-                    {animatedPercentage}%
-                  </span>
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5 group-hover:text-[#8b5cf6] transition-colors">
-                    Score
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col items-center justify-center space-y-2 text-center max-w-sm mt-1">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-[#8b5cf6] border border-purple-200">
-                  <CheckCircle size={13} />
-                  <span>
-                    {isPassed ? "Goal Achieved!" : "Good Progress Made!"}
-                  </span>
-                </span>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Click the score above anytime to view your detailed BKT
-                  mastery breakdown.
-                </p>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
 
         <div
@@ -394,7 +363,7 @@ export function ResultsSummary({
           />
         </div>
 
-        {remedialSuggestions.length > 0 && !isPoll && (
+        {remedialSuggestions.length > 0 && (
           <div
             className={`col-start-1 row-start-1 w-full transition-opacity duration-300 flex flex-col space-y-2.5 ${
               activeView === "remedial"
@@ -424,7 +393,7 @@ export function ResultsSummary({
           </button>
         )}
 
-        {isPoll || !settings.requirePassingToProceed || isPassed ? (
+        {!settings.requirePassingToProceed || isPassed ? (
           <button
             type="button"
             onClick={isLastItem && onExit ? onExit : onNext}
