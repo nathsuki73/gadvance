@@ -43,7 +43,12 @@ const FOLLOW_UP_OPTIONS: FollowUpOption[] = [
 type ExplanationPage =
   | { kind: "base"; label: string }
   | { kind: "followup"; label: string; text: string }
-  | { kind: "quiz"; label: string; quiz: QuizQuestion | null };
+  | {
+      kind: "quiz";
+      label: string;
+      quiz: QuizQuestion | null;
+      selectedChoiceId: string | null; // 👈 Lifted state into page definition
+    };
 
 interface ExplanationCardProps {
   paragraphId: string;
@@ -93,14 +98,24 @@ export function ExplanationCard({
     if (option.id === "quiz") {
       setPages((prev) => [
         ...prev,
-        { kind: "quiz", label: "Quick Check", quiz: null },
+        {
+          kind: "quiz",
+          label: "Quick Check",
+          quiz: null,
+          selectedChoiceId: null,
+        },
       ]);
       setPageIndex(1);
       try {
         const quiz = await onRequestQuiz(paragraphId);
         setPages((prev) => {
           const next = [...prev];
-          next[1] = { kind: "quiz", label: "Quick Check", quiz };
+          next[1] = {
+            kind: "quiz",
+            label: "Quick Check",
+            quiz,
+            selectedChoiceId: null,
+          };
           return next;
         });
       } finally {
@@ -128,8 +143,17 @@ export function ExplanationCard({
     }
   };
 
+  const handleSelectQuizAnswer = (choiceId: string) => {
+    setPages((prev) =>
+      prev.map((page, idx) =>
+        idx === pageIndex && page.kind === "quiz"
+          ? { ...page, selectedChoiceId: choiceId }
+          : page,
+      ),
+    );
+  };
+
   return (
-    // Outer Container: No shadow, no outer box, no rounded corners; straight left accent line
     <div className="w-full border-l-2 sm:border-l-[3px] border-[#8b5cf6] pl-4 sm:pl-5 py-2 my-5 space-y-3.5 bg-transparent font-sans">
       {/* Top Meta Bar */}
       <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
@@ -143,7 +167,7 @@ export function ExplanationCard({
           </span>
         </div>
 
-        {/* Pager with rounded buttons */}
+        {/* Pager */}
         {pages.length > 1 && (
           <div className="flex items-center gap-1 rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-0.5">
             <button
@@ -183,7 +207,6 @@ export function ExplanationCard({
             {remedialContent.explanation}
           </p>
 
-          {/* Analogy: Straight flat accent box with no rounded corners */}
           <div className="border-l-2 border-purple-200 bg-purple-50/40 p-3 text-xs sm:text-sm text-purple-900 leading-relaxed">
             <span className="font-semibold text-[#8b5cf6]">
               Real-world analogy:{" "}
@@ -204,9 +227,15 @@ export function ExplanationCard({
         </div>
       )}
 
-      {currentPage.kind === "quiz" && <MiniQuiz quiz={currentPage.quiz} />}
+      {currentPage.kind === "quiz" && (
+        <MiniQuiz
+          quiz={currentPage.quiz}
+          selectedId={currentPage.selectedChoiceId}
+          onSelect={handleSelectQuizAnswer}
+        />
+      )}
 
-      {/* Right-Aligned Button Group: Fully rounded interactive chips */}
+      {/* Right-Aligned Button Group */}
       <div className="flex items-center justify-end gap-2 flex-wrap pt-2.5 border-t border-zinc-100">
         {!hasUsedFollowUp ? (
           <>
@@ -262,9 +291,15 @@ export function ExplanationCard({
   );
 }
 
-function MiniQuiz({ quiz }: { quiz: QuizQuestion | null }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
+function MiniQuiz({
+  quiz,
+  selectedId,
+  onSelect,
+}: {
+  quiz: QuizQuestion | null;
+  selectedId: string | null;
+  onSelect: (choiceId: string) => void;
+}) {
   if (!quiz) {
     return (
       <div className="flex items-center gap-2 py-3 text-xs font-medium text-zinc-400">
@@ -274,18 +309,18 @@ function MiniQuiz({ quiz }: { quiz: QuizQuestion | null }) {
     );
   }
 
+  const revealed = selectedId !== null;
+
   return (
     <div className="space-y-2.5 py-1">
       <p className="text-xs sm:text-sm font-bold text-zinc-900 leading-snug">
         {quiz.question}
       </p>
 
-      {/* Quiz Choices with rounded card styling */}
       <div className="space-y-1.5">
         {quiz.choices.map((choice) => {
           const isSelected = selectedId === choice.id;
           const isCorrect = choice.id === quiz.correctChoiceId;
-          const revealed = selectedId !== null;
 
           let style =
             "border-zinc-200 bg-white hover:border-[#8b5cf6] hover:bg-purple-50/20 text-zinc-700";
@@ -304,7 +339,7 @@ function MiniQuiz({ quiz }: { quiz: QuizQuestion | null }) {
               key={choice.id}
               type="button"
               disabled={revealed}
-              onClick={() => setSelectedId(choice.id)}
+              onClick={() => onSelect(choice.id)}
               className={`w-full flex items-center justify-between gap-3 rounded-xl border p-3 text-xs sm:text-sm text-left transition-all active:scale-[0.99] cursor-pointer disabled:cursor-default ${style}`}
             >
               <span>{choice.text}</span>
