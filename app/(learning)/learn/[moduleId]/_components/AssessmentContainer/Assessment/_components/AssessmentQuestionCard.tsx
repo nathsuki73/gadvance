@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CheckCircle2, XCircle, Check } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { Question, AssessmentSettings, BloomLevel } from "../../types";
 
 const BLOOM_BADGES: Record<BloomLevel, { label: string; style: string }> = {
@@ -85,7 +85,7 @@ export function QuizQuestionCard({
               </span>
             </div>
           )}
-          <h3 className="text-md font-semibold text-zinc-900 leading-relaxed">
+          <h3 className="text-base sm:text-lg font-semibold text-zinc-900 leading-relaxed">
             {question.text}
           </h3>
         </div>
@@ -99,8 +99,8 @@ export function QuizQuestionCard({
         )}
       </div>
 
-      {/* Choice Options */}
-      <div className="space-y-2">
+      {/* Choice Options (Box Layout) */}
+      <div className="space-y-2.5">
         {question.choices.map((choice) => {
           const isSelected = selectedChoiceId === choice.id;
           const isChoiceCorrect =
@@ -109,63 +109,49 @@ export function QuizQuestionCard({
               : false) ||
             Boolean(choice.isCorrect || (choice as any).is_correct);
 
-          let textStyle = "text-zinc-700 hover:text-zinc-950";
-          let radioCircleStyle =
-            "border-zinc-300 bg-transparent text-transparent";
+          let containerStyle =
+            "border-zinc-200/80 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50/50";
 
           if (isSelected) {
-            textStyle = "text-purple-950 font-semibold";
-            radioCircleStyle = "border-purple-600 bg-purple-600 text-white";
+            containerStyle =
+              "border-purple-300 bg-purple-50/50 text-purple-950 font-semibold shadow-xs";
           }
 
           if (shouldDisplayFeedback) {
             if (isChoiceCorrect) {
-              textStyle = "text-emerald-950 font-semibold";
-              radioCircleStyle = "border-emerald-500 bg-emerald-500 text-white";
+              containerStyle =
+                "border-emerald-300 bg-emerald-50/60 text-emerald-950 font-semibold shadow-xs";
             } else if (isSelected && !isChoiceCorrect) {
-              textStyle =
-                "text-rose-950 font-medium line-through decoration-rose-400";
-              radioCircleStyle = "border-rose-500 bg-rose-500 text-white";
+              containerStyle =
+                "border-rose-300 bg-rose-50/50 text-rose-950 font-medium";
             }
           }
 
           return (
-            <div key={choice.id} className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => onSelectChoice(question.id, choice.id)}
-                disabled={isLocked}
-                className={`relative overflow-hidden flex flex-1 items-center justify-between gap-3 py-2.5 px-2 text-left text-md transition-colors cursor-pointer disabled:cursor-default rounded-lg hover:bg-zinc-50 ${textStyle}`}
-              >
-                <div className="relative z-10 flex items-center gap-3 pr-2 min-w-0 flex-1">
-                  <div
-                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all ${radioCircleStyle}`}
-                  >
-                    {isSelected && !shouldDisplayFeedback && (
-                      <div className="h-1.5 w-1.5 rounded-full bg-white" />
-                    )}
-                    {shouldDisplayFeedback && isChoiceCorrect && (
-                      <Check size={10} strokeWidth={3} />
-                    )}
-                    {shouldDisplayFeedback &&
-                      isSelected &&
-                      !isChoiceCorrect && <XCircle size={10} strokeWidth={3} />}
-                  </div>
-                  <span className="whitespace-normal break-words text-left">
-                    {choice.text}
-                  </span>
-                </div>
+            <button
+              key={choice.id}
+              type="button"
+              onClick={() => onSelectChoice(question.id, choice.id)}
+              disabled={isLocked}
+              className={`flex w-full items-center justify-between gap-3 p-3.5 text-left text-xs sm:text-sm rounded-xl border transition-all cursor-pointer disabled:cursor-default ${containerStyle}`}
+            >
+              <span className="whitespace-normal break-words text-left leading-normal pr-2 flex-1">
+                {choice.text}
+              </span>
 
-                <div className="relative z-10 flex items-center gap-2 shrink-0">
-                  {shouldDisplayFeedback && isChoiceCorrect && (
-                    <CheckCircle2 size={16} className="text-emerald-600" />
-                  )}
-                  {shouldDisplayFeedback && isSelected && !isChoiceCorrect && (
-                    <XCircle size={16} className="text-rose-600" />
-                  )}
-                </div>
-              </button>
-            </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {shouldDisplayFeedback && isChoiceCorrect && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                    <CheckCircle2 size={12} /> Correct
+                  </span>
+                )}
+                {shouldDisplayFeedback && isSelected && !isChoiceCorrect && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-rose-700 bg-rose-100 px-2 py-0.5 rounded-md">
+                    <XCircle size={12} /> Your Answer
+                  </span>
+                )}
+              </div>
+            </button>
           );
         })}
       </div>
@@ -192,7 +178,7 @@ export function QuizQuestionCard({
           </div>
 
           {question.explanation && (
-            <p className="text-xs leading-relaxed text-zinc-500 pl-6 border-l-2 border-zinc-200">
+            <p className="text-xs sm:text-sm leading-relaxed text-zinc-500 pl-4 border-l-2 border-zinc-200">
               <strong>Explanation:</strong> {question.explanation}
             </p>
           )}

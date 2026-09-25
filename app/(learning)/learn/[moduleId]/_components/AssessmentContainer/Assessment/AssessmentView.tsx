@@ -1,10 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { submitAssessment } from "./assessmentService";
 import { useQueryClient } from "@tanstack/react-query";
 import { AssessmentViewData, Question } from "../types";
-import { ChevronLeft, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  Loader2,
+  Flame,
+} from "lucide-react";
 import {
   loadInitialAssessmentState,
   saveLocalDraft,
@@ -90,8 +96,69 @@ export default function AssessmentView({
     Math.max(0, totalQuestions - 1),
   );
   const currentQuestion = questions[safeQuestionIndex];
-  const progressPercentage =
-    totalQuestions > 0 ? ((safeQuestionIndex + 1) / totalQuestions) * 100 : 0;
+
+  const showImmediateFeedback =
+    currentData.settings?.type !== "test" &&
+    currentData.settings?.showFeedbackImmediately;
+
+  // The furthest question the learner has actually completed (answered, and
+  // checked when immediate feedback is on). This is independent of which
+  // question is currently on screen, so navigating with Previous/Next never
+  // changes it — only actually completing a new question does.
+  const furthestCompletedIndex = useMemo(() => {
+    let furthest = -1;
+    for (let idx = 0; idx < questions.length; idx++) {
+      const q = questions[idx];
+      const selectedId = answers[q.id];
+      const isChecked = !showImmediateFeedback || checkedQuestions[q.id];
+      if (selectedId && isChecked) {
+        furthest = idx;
+      }
+    }
+    return furthest;
+  }, [questions, answers, checkedQuestions, showImmediateFeedback]);
+
+  // Consecutive-correct streak, counted backward from the furthest completed
+  // question (not from whatever question is currently being viewed).
+  // Anchoring to safeQuestionIndex previously meant hitting "Previous" to
+  // revisit an earlier question re-anchored the count there too, making the
+  // streak appear to drop even though no answers had changed. Anchoring to
+  // furthestCompletedIndex means Previous/Next is just browsing and never
+  // moves the streak on its own.
+  const streakCount = useMemo(() => {
+    let streak = 0;
+    for (let idx = furthestCompletedIndex; idx >= 0; idx--) {
+      const q = questions[idx];
+      if (!q) break;
+
+      const selectedId = answers[q.id];
+      const correctId =
+        q.correctChoiceId ||
+        q.choices.find((c) => c.isCorrect || (c as any).is_correct)?.id;
+
+      if (selectedId === correctId) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }, [questions, answers, furthestCompletedIndex]);
+
+  // Brief "pop" animation whenever the streak actually increases, on top of
+  // the tiered ambient pulse below.
+  const [streakPulse, setStreakPulse] = useState(false);
+  const prevStreakCountRef = useRef(0);
+
+  useEffect(() => {
+    if (streakCount > prevStreakCountRef.current) {
+      setStreakPulse(true);
+      const t = setTimeout(() => setStreakPulse(false), 450);
+      prevStreakCountRef.current = streakCount;
+      return () => clearTimeout(t);
+    }
+    prevStreakCountRef.current = streakCount;
+  }, [streakCount]);
 
   useEffect(() => {
     const isActive = !result;
@@ -172,12 +239,14 @@ export default function AssessmentView({
       currentIndex,
       checkedQuestions,
       questionTimers,
+      elapsedSeconds,
     );
   }, [
     answers,
     currentIndex,
     checkedQuestions,
     questionTimers,
+    elapsedSeconds,
     currentData.id,
     effectiveSectionItemId,
     result,
@@ -189,10 +258,6 @@ export default function AssessmentView({
 
   const handlePrimaryAction = () => {
     if (!currentQuestion) return;
-
-    const showImmediateFeedback =
-      currentData.settings?.type !== "test" &&
-      currentData.settings?.showFeedbackImmediately;
 
     const isChecked = Boolean(checkedQuestions[currentQuestion.id]);
 
@@ -385,10 +450,6 @@ export default function AssessmentView({
     currentQuestion && answers[currentQuestion.id],
   );
 
-  const showImmediateFeedback =
-    currentData.settings?.type !== "test" &&
-    currentData.settings?.showFeedbackImmediately;
-
   const isCurrentChecked =
     !showImmediateFeedback ||
     Boolean(currentQuestion && checkedQuestions[currentQuestion.id]);
@@ -404,20 +465,69 @@ export default function AssessmentView({
 
   return (
     <div className="flex flex-col min-h-full w-full max-w-3xl mx-auto px-4 py-6 sm:py-10 justify-between">
-      <div className="space-y-4 mb-8">
-        <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-zinc-500">
-          <span>
-            Question{" "}
-            <span className="text-[#8b5cf6]">{safeQuestionIndex + 1}</span> of{" "}
-            {totalQuestions}
-          </span>
-        </div>
+      {/* Segmented Progress Bar & Right-Side Stats */}
+      <div className="space-y-3 mb-8">
+        <div className="flex items-center gap-3 w-full">
+          {/* Segmented Progress Bar ("Cuts per part") */}
+          <div className="flex items-center gap-1.5 flex-1">
+            {questions.map((q, idx) => {
+              const isAnswered = Boolean(answers[q.id]);
+              const isCurrent = idx === safeQuestionIndex;
 
-        <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
-          <div
-            className="h-full bg-[#8b5cf6] transition-all duration-300 ease-out rounded-full"
-            style={{ width: `${progressPercentage}%` }}
-          />
+              let segmentStyle = "bg-zinc-200"; // Unanswered/default
+
+              if (isAnswered) {
+                segmentStyle = "bg-[#8b5cf6]"; // Answered
+              }
+
+              if (isCurrent) {
+                segmentStyle = "bg-[#8b5cf6] ring-2 ring-purple-200"; // Active current question
+              }
+
+              return (
+                <div
+                  key={q.id}
+                  className={`h-2 flex-1 rounded-full transition-all duration-300 ${segmentStyle}`}
+                />
+              );
+            })}
+          </div>
+
+          {/* Right side: Streak Badge + Counter (e.g. 5/8) */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            {streakCount > 0 && (
+              <div
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-bold transform transition-all duration-300 ${
+                  streakPulse ? "scale-110" : "scale-100"
+                } ${
+                  streakCount >= 5
+                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                    : streakCount >= 3
+                      ? "bg-orange-50 text-orange-700 border-orange-200"
+                      : "bg-amber-50 text-amber-700 border-amber-200"
+                }`}
+              >
+                <Flame
+                  size={15}
+                  className={`transform transition-transform duration-300 ${
+                    streakPulse ? "scale-125" : "scale-100"
+                  } ${
+                    streakCount >= 5
+                      ? "text-rose-600 fill-rose-600 animate-pulse"
+                      : streakCount >= 3
+                        ? "text-orange-500 fill-orange-500 animate-pulse"
+                        : "text-amber-500 fill-amber-500"
+                  }`}
+                />
+                <span>{streakCount}</span>
+              </div>
+            )}
+
+            <span className="text-xs sm:text-sm font-bold text-zinc-500 pl-0.5">
+              <span className="text-[#8b5cf6]">{safeQuestionIndex + 1}</span>/
+              {totalQuestions}
+            </span>
+          </div>
         </div>
       </div>
 
