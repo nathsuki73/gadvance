@@ -9,7 +9,6 @@ import {
   BookOpen,
   ArrowDown,
   CheckCircle2,
-  BookMarked,
   Loader2,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -38,6 +37,46 @@ interface PageContainerProps {
   onExit: () => void;
 }
 
+// A handful of understated accent looks for the inline refresher note.
+// Picking one deterministically per block (rather than always using the
+// same purple badge+card combo) keeps repeated notes on a page from
+// reading as the same stamped-out template.
+const NOTE_VARIANTS = [
+  {
+    accent: "border-purple-300",
+    tag: "text-purple-700 bg-purple-50/80",
+    mark: "text-purple-500",
+  },
+  {
+    accent: "border-teal-300",
+    tag: "text-teal-700 bg-teal-50/80",
+    mark: "text-teal-600",
+  },
+  {
+    accent: "border-amber-300",
+    tag: "text-amber-700 bg-amber-50/80",
+    mark: "text-amber-600",
+  },
+  {
+    accent: "border-sky-300",
+    tag: "text-sky-700 bg-sky-50/80",
+    mark: "text-sky-600",
+  },
+];
+
+function pickVariant(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return NOTE_VARIANTS[hash % NOTE_VARIANTS.length];
+}
+
+function lowerFirst(text: string) {
+  if (!text) return text;
+  return text.charAt(0).toLowerCase() + text.slice(1);
+}
+
 export default function PageContainer({
   itemId,
   pageId,
@@ -59,12 +98,14 @@ export default function PageContainer({
   const [masteryProbability, setMasteryProbability] = useState<number>(0.3);
   const [loadingRemedial, setLoadingRemedial] = useState(false);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
 
   useEffect(() => {
     setIsCompleted(initialCompleted);
     setIsNavigating(false);
     setRemedialContent(null);
     setPortalTarget(null);
+    setActiveBlockId(null);
   }, [pageId, initialCompleted]);
 
   const {
@@ -104,6 +145,7 @@ export default function PageContainer({
     if (!hash || !pageData || !token) return;
 
     const blockId = hash.replace("#", "");
+    setActiveBlockId(blockId);
 
     async function fetchRemedialData() {
       try {
@@ -242,64 +284,50 @@ export default function PageContainer({
     }
   };
 
+  // Renders the "you struggled here, here's a refresher" note. Styled as an
+  // inline margin note rather than a self-contained card, so it reads like
+  // part of the page rather than a bolted-on AI widget.
   const renderTargetedReviewBlock = () => {
     if (!loadingRemedial && !remedialContent) return null;
 
     const masteryPercent = Math.round(masteryProbability * 100);
+    const variant = pickVariant(activeBlockId || pageId || title);
 
     const content = (
-      <div className="w-full relative z-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="w-full relative my-6 animate-in fade-in slide-in-from-bottom-1 duration-500">
         {loadingRemedial && (
-          <div className="mb-6 p-5 rounded-2xl border border-zinc-200 bg-zinc-50 flex items-center gap-3">
-            <Loader2 className="animate-spin text-zinc-500" size={18} />
-            <span className="text-xs font-medium text-zinc-600 tracking-tight">
-              Preparing concept breakdown...
-            </span>
+          <div className="flex items-center gap-2.5 text-xs text-zinc-400 py-2">
+            <Loader2 className="animate-spin" size={13} />
+            <span>putting together a quick refresher on this…</span>
           </div>
         )}
 
         {remedialContent && (
-          <div className="mb-8 rounded-2xl border border-zinc-200/80 bg-white p-6 sm:p-7 space-y-5 shadow-xs">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-              <div className="flex items-center gap-2 text-zinc-900 font-bold text-xs tracking-wide uppercase">
-                <BookMarked size={15} className="text-[#8b5cf6]" />
-                <span>Targeted Concept Review</span>
-              </div>
-              <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100">
-                Mastery: {masteryPercent}%
+          <div
+            className={`border-l-2 ${variant.accent} pl-5 py-0.5 space-y-2.5`}
+          >
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${variant.tag}`}
+              >
+                refresher
+              </span>
+              <span className="text-[11px] text-zinc-400">
+                you're around {masteryPercent}% on this one
               </span>
             </div>
 
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-[11px] font-semibold text-zinc-400 tracking-wider uppercase">
-                <span>Concept Competency</span>
-                <span>{masteryPercent}%</span>
-              </div>
-              <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-[#8b5cf6] transition-all duration-700 ease-out rounded-full"
-                  style={{ width: `${masteryPercent}%` }}
-                />
-              </div>
-            </div>
+            <p className="text-sm sm:text-[15px] font-semibold text-zinc-800 leading-snug">
+              {remedialContent.summary}
+            </p>
 
-            <div className="space-y-2">
-              <h4 className="text-sm sm:text-base font-extrabold tracking-tight text-zinc-900">
-                {remedialContent.summary}
-              </h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-zinc-600">
-                {remedialContent.explanation}
-              </p>
-            </div>
+            <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+              {remedialContent.explanation}
+            </p>
 
-            <div className="p-4 rounded-xl bg-zinc-50/80 border border-zinc-100 space-y-1">
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                Quick Analogy
-              </span>
-              <p className="text-xs text-zinc-700 leading-relaxed">
-                {remedialContent.analogy}
-              </p>
-            </div>
+            <p className={`text-xs italic ${variant.mark} leading-relaxed`}>
+              think of it like this — {lowerFirst(remedialContent.analogy)}
+            </p>
           </div>
         )}
       </div>
