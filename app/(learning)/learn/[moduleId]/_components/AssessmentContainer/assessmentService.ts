@@ -323,15 +323,17 @@ export async function submitAssessment(payload: {
       success: json.success ?? res.ok,
       data: {
         ...(json.data ?? json),
+        score: json.score ?? json.data?.score,
+        total_points: json.total_points ?? json.data?.total_points,
+        score_percentage: json.score_percentage ?? json.data?.score_percentage,
+        has_passed: json.has_passed ?? json.data?.has_passed,
+        passing_score: json.passing_score ?? json.data?.passing_score,
+        poll_distributions:
+          json.poll_distributions ?? json.data?.poll_distributions,
+        remedial_suggestions:
+          json.remedial_suggestions ?? json.data?.remedial_suggestions,
         answers: json.answers ?? json.data?.answers,
       },
-      score: json.score,
-      total_points: json.total_points,
-      score_percentage: json.score_percentage,
-      has_passed: json.has_passed,
-      passing_score: json.passing_score,
-      poll_distributions: json.poll_distributions,
-      remedial_suggestions: json.remedial_suggestions,
       message: json.message,
     };
   } catch (error: any) {
