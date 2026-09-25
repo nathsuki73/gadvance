@@ -107,12 +107,10 @@ export default function AssessmentContainer({
 
   const { data: contentData, isPoll } = data;
 
-  // 1. Check if the assessment was already completed/submitted
   const isCompleted = Boolean(
     contentData.user_has_completed || contentData.previous_attempt,
   );
 
-  // 2. Check if there's an existing draft in localStorage
   const hasLocalDraft =
     typeof window !== "undefined" &&
     effectiveSectionItemId &&
@@ -122,12 +120,10 @@ export default function AssessmentContainer({
       ),
     );
 
-  // 3. Check if there's an existing server draft
   const hasServerDraft =
     contentData.draft_answers &&
     Object.keys(contentData.draft_answers).length > 0;
 
-  // Should skip start screen if completed, has a local draft, has a server draft, or user clicked start
   const hasStartedState =
     hasStarted === true || isCompleted || hasLocalDraft || hasServerDraft;
 
@@ -150,6 +146,10 @@ export default function AssessmentContainer({
       pollData={contentData}
       sectionItemId={effectiveSectionItemId}
       moduleId={moduleId}
+      isLastItem={isLastItem}
+      onComplete={onComplete}
+      onNext={onNext}
+      onExit={onExit}
     />
   ) : (
     <AssessmentView

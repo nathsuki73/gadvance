@@ -3,18 +3,27 @@
 import React, { useState } from "react";
 import { PollViewData, submitPollVote } from "./pollService";
 import { PollQuestionCard } from "./PollQuestionCard";
+import { PollResultsSummary } from "./_components/PollResultSummary";
 import { ChevronLeft, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
 
 interface PollViewProps {
   pollData: PollViewData;
   sectionItemId?: string;
   moduleId?: string;
+  isLastItem?: boolean;
+  onComplete?: () => void;
+  onNext?: () => void;
+  onExit?: () => void;
 }
 
 export default function PollView({
   pollData,
   sectionItemId,
   moduleId,
+  isLastItem = false,
+  onComplete,
+  onNext,
+  onExit,
 }: PollViewProps) {
   const [userVotes, setUserVotes] = useState<Record<string, string>>(
     pollData.user_voted_map || {},
@@ -26,6 +35,7 @@ export default function PollView({
 
   const [selectedChoiceId, setSelectedChoiceId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [showSummary, setShowSummary] = useState<boolean>(false);
 
   const totalQuestions = questions.length;
   const safeQuestionIndex = Math.min(
@@ -33,8 +43,6 @@ export default function PollView({
     Math.max(0, totalQuestions - 1),
   );
   const currentQuestion = questions[safeQuestionIndex];
-  const progressPercentage =
-    totalQuestions > 0 ? ((safeQuestionIndex + 1) / totalQuestions) * 100 : 0;
 
   const isFirstQuestion = safeQuestionIndex === 0;
   const isLastQuestion = safeQuestionIndex === totalQuestions - 1;
@@ -67,7 +75,6 @@ export default function PollView({
         [currentQuestion.id]: activeSelection,
       }));
 
-      // Update local question option percentages & votes
       setQuestions((prevQuestions) =>
         prevQuestions.map((q) => {
           if (q.id === currentQuestion.id) {
@@ -93,6 +100,35 @@ export default function PollView({
     setIsSubmitting(false);
   };
 
+  const handleFinishPoll = () => {
+    // 🚀 Mark item progress as complete (saves to backend/cache)
+    if (onComplete) {
+      onComplete();
+    }
+    // Navigate forward or exit module
+    if (isLastItem && onExit) {
+      onExit();
+    } else if (onNext) {
+      onNext();
+    }
+  };
+
+  if (showSummary) {
+    return (
+      <div className="flex flex-col min-h-full w-full max-w-3xl mx-auto px-4 py-8 justify-center">
+        <PollResultsSummary
+          totalQuestions={totalQuestions}
+          onRetake={() => {
+            setShowSummary(false);
+            setCurrentIndex(0);
+          }}
+          onContinue={handleFinishPoll}
+          isLastItem={isLastItem}
+        />
+      </div>
+    );
+  }
+
   if (!currentQuestion) {
     return (
       <div className="flex h-full w-full items-center justify-center p-6 text-zinc-500">
@@ -103,33 +139,39 @@ export default function PollView({
 
   return (
     <div className="flex flex-col min-h-full w-full max-w-3xl mx-auto px-4 py-6 sm:py-10 justify-between">
-      {/* Top Header & Progress Bar */}
-      <div className="space-y-4 mb-8">
-        <div className="space-y-1">
-          <h2 className="text-xl sm:text-2xl font-bold text-zinc-900">
-            {pollData.title}
-          </h2>
-          {pollData.instructions && (
-            <p className="text-sm text-zinc-600 leading-relaxed">
-              {pollData.instructions}
-            </p>
-          )}
-        </div>
+      {/* Segmented Progress Bar Header */}
+      <div className="space-y-3 mb-8">
+        <div className="flex items-center justify-between gap-3 w-full">
+          <div className="flex items-center gap-1.5 flex-1">
+            {questions.map((q, idx) => {
+              const isAnswered = Boolean(userVotes[q.id]);
+              const isCurrent = idx === safeQuestionIndex;
 
-        <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-zinc-500 pt-2">
-          <span>
-            Question{" "}
-            <span className="text-[#8b5cf6]">{safeQuestionIndex + 1}</span> of{" "}
-            {totalQuestions}
-          </span>
-        </div>
+              let segmentStyle = "bg-zinc-200";
 
-        {/* Progress Tracker Bar */}
-        <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
-          <div
-            className="h-full bg-[#8b5cf6] transition-all duration-300 ease-out rounded-full"
-            style={{ width: `${progressPercentage}%` }}
-          />
+              if (isAnswered) {
+                segmentStyle = "bg-[#8b5cf6]";
+              }
+
+              if (isCurrent) {
+                segmentStyle = "bg-[#8b5cf6] ring-2 ring-purple-200";
+              }
+
+              return (
+                <div
+                  key={q.id}
+                  className={`h-2 flex-1 rounded-full transition-all duration-300 ${segmentStyle}`}
+                />
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <span className="text-xs sm:text-sm font-bold text-zinc-500 pl-0.5">
+              <span className="text-[#8b5cf6]">{safeQuestionIndex + 1}</span>/
+              {totalQuestions}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -177,14 +219,19 @@ export default function PollView({
         ) : (
           <button
             type="button"
-            disabled={isLastQuestion}
             onClick={() => {
-              setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1));
-              setSelectedChoiceId("");
+              if (isLastQuestion) {
+                setShowSummary(true);
+              } else {
+                setCurrentIndex((prev) =>
+                  Math.min(totalQuestions - 1, prev + 1),
+                );
+                setSelectedChoiceId("");
+              }
             }}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#8b5cf6]/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-40 cursor-pointer"
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#8b5cf6]/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] cursor-pointer"
           >
-            <span>Next</span>
+            <span>{isLastQuestion ? "Finish" : "Next"}</span>
             <ChevronRight size={16} />
           </button>
         )}
