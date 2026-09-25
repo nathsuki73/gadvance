@@ -18,7 +18,7 @@ import "@blocknote/mantine/style.css";
 import "@blocknote/core/fonts/inter.css";
 
 import {
-  generateRemedialExplanation,
+  generateRemedialExplanationStream,
   generateFollowUpStream,
   generateQuickQuiz,
   RemedialContent,
@@ -39,7 +39,7 @@ interface PageContainerProps {
   onComplete: () => void;
   onNext: () => void;
   onExit: () => void;
-  onGoToAssessment?: () => void; // 👈 Callback to return to assessment
+  onGoToAssessment?: () => void;
 }
 
 const NOTE_VARIANTS: NoteVariant[] = [
@@ -183,12 +183,17 @@ export default function PageContainer({
 
         setTargetBlockText(blockText);
 
-        const aiResult = await generateRemedialExplanation(
+        // Stream the remedial explanation in real time
+        await generateRemedialExplanationStream(
           title,
           blockText,
           currentMastery,
+          (contentChunk) => {
+            // First chunk arrived: hide loader and start rendering live content
+            setLoadingRemedial(false);
+            setRemedialContent({ ...contentChunk });
+          },
         );
-        setRemedialContent(aiResult);
       } catch (err) {
         console.error("Failed to load remedial content:", err);
       } finally {
@@ -255,7 +260,7 @@ export default function PageContainer({
 
     const content = (
       <div className="w-full relative my-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-        {loadingRemedial && (
+        {loadingRemedial && !remedialContent && (
           <div className="flex items-center gap-2.5 text-xs text-zinc-400 py-3 px-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50">
             <Loader2 className="animate-spin text-[#8b5cf6]" size={14} />
             <span>Generating personalized concept refresher…</span>

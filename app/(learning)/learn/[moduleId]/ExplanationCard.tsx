@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  Loader2,
   Check,
   X,
   ArrowRight,
@@ -200,25 +199,49 @@ export function ExplanationCard({
       {/* Main Body */}
       {currentPage.kind === "base" && (
         <div className="space-y-3">
-          <p className="text-sm sm:text-base font-bold text-zinc-900 leading-snug">
-            {remedialContent.summary}
-          </p>
-          <p className="text-sm sm:text-base text-zinc-700 leading-relaxed">
-            {remedialContent.explanation}
-          </p>
+          {/* Summary / Definition */}
+          {remedialContent.summary ? (
+            <p className="text-sm sm:text-base font-bold text-zinc-900 leading-snug">
+              {remedialContent.summary}
+            </p>
+          ) : (
+            <div className="space-y-2 animate-pulse">
+              <div className="h-4 w-4/5 rounded bg-zinc-200" />
+            </div>
+          )}
 
-          <div className="rounded-r-xl border-l-2 border-purple-300 bg-purple-50/40 p-3.5 text-sm sm:text-base text-purple-950 leading-relaxed">
-            <span className="font-semibold text-[#8b5cf6]">
-              Real-world analogy:{" "}
-            </span>
-            {lowerFirst(remedialContent.analogy)}
-          </div>
+          {/* Explanation */}
+          {remedialContent.explanation ? (
+            <p className="text-sm sm:text-base text-zinc-700 leading-relaxed">
+              {remedialContent.explanation}
+            </p>
+          ) : (
+            <div className="space-y-2 py-1 animate-pulse">
+              <div className="h-3.5 w-full rounded bg-zinc-100" />
+              <div className="h-3.5 w-11/12 rounded bg-zinc-100" />
+              <div className="h-3.5 w-2/3 rounded bg-zinc-100" />
+            </div>
+          )}
+
+          {/* Analogy Card */}
+          {remedialContent.analogy ? (
+            <div className="rounded-r-xl border-l-2 border-purple-300 bg-purple-50/40 p-3.5 text-sm sm:text-base text-purple-950 leading-relaxed">
+              <span className="font-semibold text-[#8b5cf6]">
+                Real-world analogy:{" "}
+              </span>
+              {lowerFirst(remedialContent.analogy)}
+            </div>
+          ) : (
+            <div className="rounded-r-xl border-l-2 border-purple-200 bg-purple-50/30 p-3.5 space-y-2 animate-pulse">
+              <div className="h-3.5 w-1/3 rounded bg-purple-100" />
+              <div className="h-3.5 w-5/6 rounded bg-purple-100/70" />
+            </div>
+          )}
         </div>
       )}
 
       {currentPage.kind === "followup" && (
         <div className="space-y-2.5 min-h-[60px]">
-          {/* Section Header matching base summary font */}
           <p className="text-sm sm:text-base font-bold text-zinc-900 leading-snug">
             {currentPage.label}
           </p>
@@ -228,9 +251,10 @@ export function ExplanationCard({
               {currentPage.text}
             </p>
           ) : (
-            <div className="flex items-center gap-2.5 py-3 text-sm font-medium text-zinc-400">
-              <Loader2 className="animate-spin text-[#8b5cf6]" size={16} />
-              <span>Generating concept explanation…</span>
+            <div className="space-y-2 py-1 animate-pulse">
+              <div className="h-3.5 w-full rounded bg-zinc-200/80" />
+              <div className="h-3.5 w-10/12 rounded bg-zinc-200/70" />
+              <div className="h-3.5 w-3/5 rounded bg-zinc-200/50" />
             </div>
           )}
         </div>
@@ -311,9 +335,19 @@ function MiniQuiz({
 }) {
   if (!quiz) {
     return (
-      <div className="flex items-center gap-2 py-3 text-sm font-medium text-zinc-400">
-        <Loader2 className="animate-spin text-[#8b5cf6]" size={16} />
-        <span>Preparing quick check…</span>
+      <div className="space-y-3 py-1 animate-pulse">
+        {/* Question line skeleton */}
+        <div className="h-4 w-3/4 rounded bg-zinc-200" />
+
+        {/* 4 Choices skeletons */}
+        <div className="space-y-2 pt-1">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="h-12 w-full rounded-xl border border-zinc-100 bg-zinc-50/70"
+            />
+          ))}
+        </div>
       </div>
     );
   }
