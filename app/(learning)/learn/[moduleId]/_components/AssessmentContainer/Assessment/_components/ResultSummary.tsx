@@ -182,18 +182,7 @@ export function ResultsSummary({
           >
             Score Summary
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveView("detailed")}
-            className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
-              activeView === "detailed"
-                ? "bg-[#8b5cf6] text-white shadow-2xs"
-                : "text-zinc-500 hover:text-zinc-800"
-            }`}
-          >
-            <BarChart3 size={12} />
-            <span>Performance</span>
-          </button>
+
           {remedialSuggestions.length > 0 && (
             <button
               type="button"
@@ -208,6 +197,19 @@ export function ResultsSummary({
               <span>Study ({Math.min(remedialSuggestions.length, 3)})</span>
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => setActiveView("detailed")}
+            className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
+              activeView === "detailed"
+                ? "bg-[#8b5cf6] text-white shadow-2xs"
+                : "text-zinc-500 hover:text-zinc-800"
+            }`}
+          >
+            <BarChart3 size={12} />
+            <span>Performance</span>
+          </button>
         </div>
       )}
 
