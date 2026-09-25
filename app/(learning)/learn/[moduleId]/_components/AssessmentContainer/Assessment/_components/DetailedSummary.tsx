@@ -9,6 +9,7 @@ import {
   CircleDot,
   ChevronDown,
   ChevronUp,
+  Flame,
 } from "lucide-react";
 
 export interface BktSkill {
@@ -40,6 +41,7 @@ interface DetailedSummaryProps {
   scorePercentage?: number;
   correctAnswersCount?: number;
   totalQuestionsCount?: number;
+  bestStreak?: number;
 }
 
 const MOCK_SKILLS: BktSkill[] = [
@@ -86,6 +88,7 @@ export function DetailedSummary({
   scorePercentage = 0,
   correctAnswersCount = 0,
   totalQuestionsCount = 0,
+  bestStreak = 0,
 }: DetailedSummaryProps) {
   const skills = skillsBreakdown?.length ? skillsBreakdown : MOCK_SKILLS;
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -124,6 +127,15 @@ export function DetailedSummary({
               <span className="text-zinc-500 font-medium">Score:</span>
               <span className="font-semibold text-zinc-800">
                 {correctAnswersCount}/{totalQuestionsCount} ({scorePercentage}%)
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-zinc-500 font-medium">Streak:</span>
+              <span className="font-semibold text-zinc-800 inline-flex items-center gap-1">
+                {bestStreak > 0 && (
+                  <Flame size={12} className="text-amber-500 fill-amber-500" />
+                )}
+                {bestStreak > 0 ? `${bestStreak} in a row` : "No streak yet"}
               </span>
             </div>
           </div>

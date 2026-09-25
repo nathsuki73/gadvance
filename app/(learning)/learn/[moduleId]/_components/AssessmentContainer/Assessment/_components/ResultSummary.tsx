@@ -96,6 +96,36 @@ export function ResultsSummary({
   const slowestTimeSeconds =
     validTimes.length > 0 ? Math.max(...validTimes) : 0;
 
+  // Longest run of consecutive correct answers, computed client-side from
+  // the raw per-question results. answered_at is a sortable
+  // "YYYY-MM-DD HH:MM:SS" string, so a plain lexicographic sort recovers the
+  // order the questions were actually answered in (safer than Date parsing,
+  // which isn't guaranteed consistent across browsers/timezones for that
+  // format).
+  const bestStreak = (() => {
+    const gradedEntries = answerEntries.filter(
+      (ans: any) => ans && typeof ans === "object" && "is_correct" in ans,
+    );
+
+    const sortedEntries = [...gradedEntries].sort((a: any, b: any) => {
+      const ta = typeof a?.answered_at === "string" ? a.answered_at : "";
+      const tb = typeof b?.answered_at === "string" ? b.answered_at : "";
+      return ta.localeCompare(tb);
+    });
+
+    let longest = 0;
+    let current = 0;
+    sortedEntries.forEach((ans: any) => {
+      if (ans?.is_correct) {
+        current++;
+        longest = Math.max(longest, current);
+      } else {
+        current = 0;
+      }
+    });
+    return longest;
+  })();
+
   useEffect(() => {
     if (
       remedialSuggestions.length > 0 &&
@@ -359,6 +389,7 @@ export function ResultsSummary({
             averageTimeSeconds={averageTimeSeconds}
             fastestTimeSeconds={fastestTimeSeconds}
             slowestTimeSeconds={slowestTimeSeconds}
+            bestStreak={bestStreak}
           />
         </div>
 
