@@ -41,6 +41,7 @@ interface DetailedSummaryProps {
   totalQuestionsCount?: number;
   bestStreak?: number;
   onSwitchToStudy?: () => void;
+  hasRemedial?: boolean; // 👈 Added prop to control interactivity
 }
 
 const MOCK_SKILLS: BktSkill[] = [
@@ -88,6 +89,7 @@ export function DetailedSummary({
   totalQuestionsCount = 0,
   bestStreak = 0,
   onSwitchToStudy,
+  hasRemedial = false, // 👈 Default to false
 }: DetailedSummaryProps) {
   const skills = skillsBreakdown?.length ? skillsBreakdown : MOCK_SKILLS;
 
@@ -101,7 +103,6 @@ export function DetailedSummary({
     <div className="space-y-4 w-full text-left max-h-[440px] overflow-y-auto pr-1">
       {/* --- Score & Time Breakdown Groups --- */}
       <div className="px-1 space-y-3 pb-4 border-b border-zinc-100">
-        {/* Group 1: Score Breakdown */}
         <div className="space-y-1.5">
           <h4 className="text-sm font-extrabold tracking-tight text-zinc-900">
             Score breakdown
@@ -135,7 +136,6 @@ export function DetailedSummary({
           </div>
         </div>
 
-        {/* Group 2: Time Details */}
         <div className="space-y-1.5 pt-2">
           <h4 className="text-sm font-extrabold tracking-tight text-zinc-900">
             Time details
@@ -175,8 +175,8 @@ export function DetailedSummary({
           Topics breakdown
         </h4>
         <p className="text-xs text-zinc-500 font-medium">
-          {masteredCount} of {skills.length} topic learned. Click to view
-          suggested concepts to review.
+          {masteredCount} of {skills.length} topic learned.{" "}
+          {hasRemedial ? "Click to view suggested concepts to review." : ""}
         </p>
       </div>
 
@@ -202,16 +202,24 @@ export function DetailedSummary({
         return (
           <div
             key={skill.id}
-            role="button"
-            tabIndex={0}
-            onClick={onSwitchToStudy}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                onSwitchToStudy?.();
-              }
-            }}
-            className="rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-2xs transition-all cursor-pointer hover:border-[#8b5cf6] hover:bg-purple-50/20 hover:shadow-sm"
-            title="Click to review concept in Study tab"
+            {...(hasRemedial
+              ? {
+                  role: "button",
+                  tabIndex: 0,
+                  onClick: onSwitchToStudy,
+                  onKeyDown: (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      onSwitchToStudy?.();
+                    }
+                  },
+                  title: "Click to review concept in Study tab",
+                  className:
+                    "rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-2xs transition-all cursor-pointer hover:border-[#8b5cf6] hover:bg-purple-50/20 hover:shadow-sm",
+                }
+              : {
+                  className:
+                    "rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-2xs",
+                })}
           >
             <div className="flex items-center gap-3 text-left select-none">
               <div className="flex-1 min-w-0 space-y-1.5">

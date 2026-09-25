@@ -360,6 +360,7 @@ export function ResultsSummary({
             slowestTimeSeconds={slowestTimeSeconds}
             bestStreak={bestStreak}
             onSwitchToStudy={activateRemedial}
+            hasRemedial={remedialSuggestions.length > 0}
           />
         </div>
 
