@@ -9,7 +9,7 @@ import { Menu, X } from "lucide-react";
 import logoIcon from "@/app/assets/logo.ico";
 
 import { NavLink } from "./NavLink";
-import { Button } from "../Button/button";
+import { Button } from "../Button/Button";
 
 const PUBLIC_NAVS = [
   { href: "/about", label: "About" },
