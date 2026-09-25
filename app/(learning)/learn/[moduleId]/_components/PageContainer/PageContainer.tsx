@@ -54,7 +54,6 @@ export default function PageContainer({
   const [isCompleted, setIsCompleted] = useState(initialCompleted);
   const [isNavigating, setIsNavigating] = useState(false);
 
-  // Remedial & Mastery States
   const [remedialContent, setRemedialContent] =
     useState<RemedialContent | null>(null);
   const [masteryProbability, setMasteryProbability] = useState<number>(0.3);
@@ -100,7 +99,6 @@ export default function PageContainer({
     gcTime: 1000 * 60 * 30,
   });
 
-  // Fetch Mastery & Trigger Remedial Generation when hash is present
   useEffect(() => {
     const hash = window.location.hash;
     if (!hash || !pageData || !token) return;
@@ -176,7 +174,7 @@ export default function PageContainer({
       element.classList.add(
         "p-4",
         "my-2",
-        "rounded-xl",
+        "rounded-2xl",
         "border-2",
         "border-purple-400/60",
         "bg-purple-50/40",
@@ -219,7 +217,7 @@ export default function PageContainer({
       <div className="flex h-full w-full items-center justify-center bg-white p-6">
         <div className="flex max-w-md flex-col items-center text-center">
           <AlertCircle className="h-10 w-10 text-rose-500 mb-3" />
-          <h3 className="text-base font-semibold text-zinc-800">
+          <h3 className="text-sm font-bold tracking-tight text-zinc-900">
             Content Unavailable
           </h3>
           <p className="mt-1 text-xs text-zinc-500">{error}</p>
@@ -244,7 +242,6 @@ export default function PageContainer({
     }
   };
 
-  // Render Targeted Review Block with Explanation & Progress Bar
   const renderTargetedReviewBlock = () => {
     if (!loadingRemedial && !remedialContent) return null;
 
@@ -255,28 +252,26 @@ export default function PageContainer({
         {loadingRemedial && (
           <div className="mb-6 p-5 rounded-2xl border border-zinc-200 bg-zinc-50 flex items-center gap-3">
             <Loader2 className="animate-spin text-zinc-500" size={18} />
-            <span className="text-xs font-medium text-zinc-600">
+            <span className="text-xs font-medium text-zinc-600 tracking-tight">
               Preparing concept breakdown...
             </span>
           </div>
         )}
 
         {remedialContent && (
-          <div className="mb-8 rounded-2xl border border-zinc-200 bg-white p-6 sm:p-7 space-y-5 shadow-sm">
-            {/* Header with Mastery Progress */}
+          <div className="mb-8 rounded-2xl border border-zinc-200/80 bg-white p-6 sm:p-7 space-y-5 shadow-xs">
             <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-              <div className="flex items-center gap-2 text-zinc-800 font-semibold text-xs uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-zinc-900 font-bold text-xs tracking-wide uppercase">
                 <BookMarked size={15} className="text-[#8b5cf6]" />
                 <span>Targeted Concept Review</span>
               </div>
-              <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100">
+              <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100">
                 Mastery: {masteryPercent}%
               </span>
             </div>
 
-            {/* Mastery Progress Bar */}
             <div className="space-y-1.5">
-              <div className="flex justify-between text-[11px] font-medium text-zinc-400">
+              <div className="flex justify-between text-[11px] font-semibold text-zinc-400 tracking-wider uppercase">
                 <span>Concept Competency</span>
                 <span>{masteryPercent}%</span>
               </div>
@@ -288,9 +283,8 @@ export default function PageContainer({
               </div>
             </div>
 
-            {/* Explanation Section */}
             <div className="space-y-2">
-              <h4 className="text-sm font-bold text-zinc-900">
+              <h4 className="text-sm sm:text-base font-extrabold tracking-tight text-zinc-900">
                 {remedialContent.summary}
               </h4>
               <p className="text-xs sm:text-sm leading-relaxed text-zinc-600">
@@ -298,9 +292,8 @@ export default function PageContainer({
               </p>
             </div>
 
-            {/* Quick Analogy */}
-            <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-100 space-y-1">
-              <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide">
+            <div className="p-4 rounded-xl bg-zinc-50/80 border border-zinc-100 space-y-1">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
                 Quick Analogy
               </span>
               <p className="text-xs text-zinc-700 leading-relaxed">
@@ -319,7 +312,7 @@ export default function PageContainer({
   };
 
   return (
-    <div className="flex h-full min-h-screen flex-col justify-between overflow-x-hidden overflow-y-auto bg-white scroll-smooth">
+    <div className="flex h-full min-h-screen flex-col justify-between overflow-x-hidden overflow-y-auto bg-white scroll-smooth font-sans">
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-8 sm:py-12 lg:px-12 lg:py-16">
         {!portalTarget && renderTargetedReviewBlock()}
 
@@ -333,12 +326,12 @@ export default function PageContainer({
             pageData.content.length > 0 ? (
             <div
               dangerouslySetInnerHTML={{ __html: pageData.content }}
-              className="prose prose-zinc max-w-none text-xs sm:text-base space-y-4 leading-relaxed"
+              className="prose prose-zinc max-w-none text-xs sm:text-sm leading-relaxed"
             />
           ) : (
             <div className="p-6 sm:p-10 border border-dashed border-zinc-200 rounded-2xl text-center">
               <BookOpen className="mx-auto h-7 w-7 text-zinc-300 mb-2" />
-              <p className="text-xs sm:text-sm text-zinc-400 font-light">
+              <p className="text-xs sm:text-sm text-zinc-400 font-medium">
                 No content is published for this page yet.
               </p>
             </div>
@@ -369,7 +362,7 @@ export default function PageContainer({
               >
                 <ArrowDown size={20} />
               </button>
-              <span className="text-[11px] font-medium uppercase tracking-widest text-zinc-400">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">
                 Continue
               </span>
             </>
