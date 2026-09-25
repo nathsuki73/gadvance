@@ -25,6 +25,7 @@ interface AssessmentViewProps {
   onNext?: () => void;
   onExit?: () => void;
   onRetake?: () => void;
+  onQuestionActiveChange?: (isActive: boolean) => void;
 }
 
 export default function AssessmentView({
@@ -38,6 +39,7 @@ export default function AssessmentView({
   onNext,
   onExit,
   onRetake,
+  onQuestionActiveChange,
 }: AssessmentViewProps) {
   const queryClient = useQueryClient();
   const effectiveSectionItemId = sectionItemId || itemId;
@@ -87,6 +89,14 @@ export default function AssessmentView({
   const currentQuestion = questions[safeQuestionIndex];
   const progressPercentage =
     totalQuestions > 0 ? ((safeQuestionIndex + 1) / totalQuestions) * 100 : 0;
+
+  useEffect(() => {
+    const isActive = !result;
+    onQuestionActiveChange?.(isActive);
+    return () => {
+      onQuestionActiveChange?.(false);
+    };
+  }, [result, onQuestionActiveChange]);
 
   useEffect(() => {
     questionStartTimeRef.current = Date.now();

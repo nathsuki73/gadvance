@@ -46,6 +46,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isQuestionActive, setIsQuestionActive] = useState(false);
 
   const {
     data: module,
@@ -285,6 +286,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
         onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
+        disabled={isQuestionActive}
       />
 
       <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center border-b border-zinc-200 bg-white px-4 lg:hidden">
@@ -317,6 +319,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
               onNext={handleNext}
               onExit={handleExitModule}
               onNavigate={handleNavigateTo}
+              onQuestionActiveChange={setIsQuestionActive}
             />
           ) : (
             <div className="flex h-[100dvh] w-full items-center justify-center bg-white p-6">

@@ -25,6 +25,7 @@ interface AssessmentContainerProps {
   onNext?: () => void;
   onExit?: () => void;
   onNavigate?: (targetId: string, blockId: string) => void;
+  onQuestionActiveChange?: (isActive: boolean) => void;
 }
 
 export default function AssessmentContainer({
@@ -36,6 +37,7 @@ export default function AssessmentContainer({
   onComplete,
   onNext,
   onExit,
+  onQuestionActiveChange,
 }: AssessmentContainerProps) {
   const queryClient = useQueryClient();
   const effectiveSectionItemId = sectionItemId || itemId;
@@ -159,6 +161,7 @@ export default function AssessmentContainer({
       onComplete={onComplete}
       onNext={onNext}
       onExit={onExit}
+      onQuestionActiveChange={onQuestionActiveChange}
       onRetake={async () => {
         if (!effectiveSectionItemId) return;
 
