@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Loader2,
   Flame,
+  Clock, // 👈 Added for timer icon
 } from "lucide-react";
 import {
   loadInitialAssessmentState,
@@ -71,7 +72,7 @@ export default function AssessmentView({
     Record<string, boolean>
   >(initialState.checkedQuestions);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isRetrying, setIsRetrying] = useState<boolean>(false); // 🔄 Lifted retry loading state
+  const [isRetrying, setIsRetrying] = useState<boolean>(false);
   const [result, setResult] = useState<any>(
     assessmentData.previous_attempt || null,
   );
@@ -87,6 +88,26 @@ export default function AssessmentView({
   const questionStartTimeRef = useRef<number>(Date.now());
 
   const { showToast } = useToast();
+
+  // ⏱️ Time Limit Calculations
+  const timeLimitMinutes = currentData.settings?.timeLimitMinutes;
+  const totalLimitSeconds = timeLimitMinutes ? timeLimitMinutes * 60 : null;
+  const remainingSeconds =
+    totalLimitSeconds !== null
+      ? Math.max(0, totalLimitSeconds - elapsedSeconds)
+      : null;
+
+  // 🛡️ Safety timeout limit for retries
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (isRetrying) {
+      timeout = setTimeout(() => {
+        setIsRetrying(false);
+        showToast("Retake request took too long. Please try again.", "error");
+      }, 8000);
+    }
+    return () => clearTimeout(timeout);
+  }, [isRetrying, showToast]);
 
   const questions: Question[] = currentData.questions || [];
   const totalQuestions = questions.length;
@@ -204,13 +225,34 @@ export default function AssessmentView({
     questionStartTimeRef.current = now;
   };
 
+  // Timer loop & Auto-submission when time runs out
   useEffect(() => {
     if (result) return;
+
     const timer = setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
+      setElapsedSeconds((prev) => {
+        const next = prev + 1;
+        // Check if time ran out
+        if (totalLimitSeconds !== null && next >= totalLimitSeconds) {
+          clearInterval(timer);
+        }
+        return next;
+      });
     }, 1000);
+
     return () => clearInterval(timer);
-  }, [result]);
+  }, [result, totalLimitSeconds]);
+
+  useEffect(() => {
+    if (result || isSubmitting || totalLimitSeconds === null) return;
+    if (remainingSeconds !== null && remainingSeconds <= 0) {
+      showToast(
+        "Time's up! Submitting your assessment automatically.",
+        "error",
+      );
+      handleSubmit();
+    }
+  }, [remainingSeconds, result, isSubmitting, totalLimitSeconds]);
 
   useEffect(() => {
     if (result || !effectiveSectionItemId) return;
@@ -262,7 +304,7 @@ export default function AssessmentView({
     recordCurrentQuestionTime();
 
     if (!effectiveSectionItemId || !moduleId) {
-      alert("Missing required assessment context. Please reload the page.");
+      showToast("Missing required assessment context. Please reload.", "error");
       return;
     }
 
@@ -313,17 +355,16 @@ export default function AssessmentView({
           },
         );
       } else {
-        alert(response?.message || "Submission failed.");
+        showToast(response?.message || "Submission failed.", "error");
       }
     } catch (err: any) {
-      alert(err?.message || "An unexpected error occurred.");
+      showToast(err?.message || "An unexpected error occurred.", "error");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   if (result) {
-    // 🦴 If retrying, show StartScreen-matched skeleton loading state (hiding summary & review entirely)
     if (isRetrying) {
       return (
         <div className="flex flex-col items-center justify-center py-12 sm:py-20 text-center w-full max-w-md mx-auto animate-pulse px-4">
@@ -393,9 +434,13 @@ export default function AssessmentView({
           settings={{ ...currentData.settings, passingScore }}
           onRetry={async () => {
             setIsRetrying(true);
-            clearLocalDraft(currentData.id, effectiveSectionItemId);
-            if (onRetake) {
-              await Promise.resolve(onRetake());
+            try {
+              clearLocalDraft(currentData.id, effectiveSectionItemId);
+              if (onRetake) {
+                await Promise.resolve(onRetake());
+              }
+            } catch (err) {
+              setIsRetrying(false);
             }
           }}
           onNext={onNext || (() => {})}
@@ -450,10 +495,18 @@ export default function AssessmentView({
       ? "Submit Assessment"
       : "Next";
 
+  // Helper to format remaining seconds as MM:SS
+  const formatTime = (secs: number) => {
+    const mins = Math.floor(secs / 60);
+    const remainderSecs = secs % 60;
+    return `${mins}:${remainderSecs < 10 ? "0" : ""}${remainderSecs}`;
+  };
+
   return (
     <div className="flex flex-col min-h-full w-full max-w-3xl mx-auto px-4 py-6 sm:py-10 justify-between">
       <div className="space-y-3 mb-8">
-        <div className="flex items-center gap-3 w-full">
+        <div className="flex items-center justify-between gap-3 w-full">
+          {/* Segmented Progress Bar */}
           <div className="flex items-center gap-1.5 flex-1">
             {questions.map((q, idx) => {
               const isAnswered = Boolean(answers[q.id]);
@@ -478,7 +531,21 @@ export default function AssessmentView({
             })}
           </div>
 
+          {/* Right-side Stats: Timer + Streak + Counter */}
           <div className="flex items-center gap-2.5 shrink-0">
+            {remainingSeconds !== null && (
+              <div
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-bold ${
+                  remainingSeconds <= 60
+                    ? "bg-rose-50 text-rose-700 border-rose-200 animate-pulse"
+                    : "bg-zinc-50 text-zinc-700 border-zinc-200"
+                }`}
+              >
+                <Clock size={14} className="text-zinc-500" />
+                <span>{formatTime(remainingSeconds)}</span>
+              </div>
+            )}
+
             {streakCount > 0 && (
               <div
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-bold transform transition-all duration-300 ${
