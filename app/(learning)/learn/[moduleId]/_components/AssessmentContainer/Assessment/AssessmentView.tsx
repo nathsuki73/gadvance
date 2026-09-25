@@ -10,7 +10,7 @@ import {
   CheckCircle2,
   Loader2,
   Flame,
-  Clock, // 👈 Added for timer icon
+  Clock,
 } from "lucide-react";
 import {
   loadInitialAssessmentState,
@@ -134,7 +134,10 @@ export default function AssessmentView({
     return furthest;
   }, [questions, answers, checkedQuestions, showImmediateFeedback]);
 
+  // 🚫 Disabled when showImmediateFeedback is false
   const streakCount = useMemo(() => {
+    if (!showImmediateFeedback) return 0;
+
     let streak = 0;
     for (let idx = furthestCompletedIndex; idx >= 0; idx--) {
       const q = questions[idx];
@@ -152,7 +155,7 @@ export default function AssessmentView({
       }
     }
     return streak;
-  }, [questions, answers, furthestCompletedIndex]);
+  }, [questions, answers, furthestCompletedIndex, showImmediateFeedback]);
 
   const [streakPulse, setStreakPulse] = useState(false);
   const prevStreakCountRef = useRef(0);
@@ -232,7 +235,6 @@ export default function AssessmentView({
     const timer = setInterval(() => {
       setElapsedSeconds((prev) => {
         const next = prev + 1;
-        // Check if time ran out
         if (totalLimitSeconds !== null && next >= totalLimitSeconds) {
           clearInterval(timer);
         }
@@ -546,7 +548,7 @@ export default function AssessmentView({
               </div>
             )}
 
-            {streakCount > 0 && (
+            {showImmediateFeedback && streakCount > 0 && (
               <div
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-bold transform transition-all duration-300 ${
                   streakPulse ? "scale-110" : "scale-100"
