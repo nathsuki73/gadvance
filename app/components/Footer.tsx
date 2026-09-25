@@ -1,15 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import logoIcon from "@/app/assets/logo.ico";
-import { Twitter, Linkedin, Instagram, Send, ArrowUp } from "lucide-react";
+import { Twitter, Linkedin, Instagram, ArrowUp } from "lucide-react";
 import { useToast } from "./context/ToastContext";
 
 const Footer = () => {
   const { showToast } = useToast();
-  const [newsletterEmail, setNewsletterEmail] = useState("");
 
   const socialLinks = [
     { name: "Twitter", Icon: Twitter },
@@ -19,16 +18,6 @@ const Footer = () => {
 
   const handleSocialClick = (platform: string) => {
     showToast(`${platform} coming soon!`, "info");
-  };
-
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newsletterEmail.trim()) {
-      showToast("Please enter a valid email address.", "warning");
-      return;
-    }
-    showToast("Thank you for subscribing to GADvance updates!", "success");
-    setNewsletterEmail("");
   };
 
   const scrollToTop = () => {
@@ -44,26 +33,26 @@ const Footer = () => {
         {/* Main Grid */}
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-8 items-start">
           {/* Brand Identity */}
-          <div className="flex flex-col space-y-4 sm:col-span-2 lg:col-span-6">
+          <div className="flex flex-col space-y-4 sm:col-span-2 lg:col-span-5">
             <div className="flex items-center gap-3">
               <div className="relative h-8 w-8 shrink-0">
                 <Image
                   src={logoIcon}
-                  alt="gadvance logo"
+                  alt="GADvance logo"
                   className="object-contain"
                   fill
                   sizes="32px"
                 />
               </div>
 
-              <span className="text-xl font-semibold tracking-tight text-zinc-900 lowercase">
-                gadvance
+              <span className="text-xl font-semibold tracking-tight text-zinc-900">
+                GADvance
               </span>
             </div>
 
-            <p className="max-w-md text-sm font-light leading-relaxed text-zinc-500 lowercase">
-              providing the tools and education needed to advance gender
-              equality within the philippine workplace and beyond.
+            <p className="max-w-md text-sm font-light leading-relaxed text-zinc-500">
+              Providing accessible tools and modular education to advance gender
+              awareness and equality across schools, institutions, and workplaces.
             </p>
 
             <div className="flex gap-2.5 pt-1">
@@ -72,7 +61,7 @@ const Footer = () => {
                   key={name}
                   type="button"
                   onClick={() => handleSocialClick(name)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-100 bg-zinc-50 text-zinc-400 transition-all duration-300 hover:bg-violet-50 hover:text-[#8b5cf6] focus:outline-none touch-manipulation"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-100 bg-zinc-50 text-zinc-400 transition-all duration-300 hover:bg-violet-50 hover:text-[#8b5cf6] focus:outline-none touch-manipulation cursor-pointer"
                   aria-label={name}
                 >
                   <Icon className="h-4 w-4" />
@@ -81,55 +70,56 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Programs */}
-          <div className="lg:col-span-3">
+          {/* Platform Navigation */}
+          <div className="lg:col-span-2">
             <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-zinc-900">
-              programs
+              Platform
             </h4>
 
-            <ul className="space-y-2.5 text-sm font-light text-zinc-500 lowercase">
+            <ul className="space-y-2.5 text-sm font-light text-zinc-500">
               <li>
                 <Link
-                  href="/leadership"
+                  href="/explore"
                   className="transition-colors hover:text-[#8b5cf6]"
                 >
-                  women in leadership
+                  Explore Courses
                 </Link>
               </li>
 
               <li>
                 <Link
-                  href="/advocacy"
+                  href="/organization"
                   className="transition-colors hover:text-[#8b5cf6]"
                 >
-                  workplace advocacy
+                  Organizations
                 </Link>
               </li>
 
               <li>
                 <Link
-                  href="/mental-health"
+                  href="/workspace"
                   className="transition-colors hover:text-[#8b5cf6]"
                 >
-                  mental health
+                  My Workspace
                 </Link>
               </li>
+
             </ul>
           </div>
 
-          {/* Resources */}
-          <div className="lg:col-span-3">
+          {/* About & Support Navigation */}
+          <div className="lg:col-span-2">
             <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-zinc-900">
-              resources
+              About GADvance
             </h4>
 
-            <ul className="space-y-2.5 text-sm font-light text-zinc-500 lowercase">
+            <ul className="space-y-2.5 text-sm font-light text-zinc-500">
               <li>
                 <Link
-                  href="/articles-and-news"
+                  href="/about"
                   className="transition-colors hover:text-[#8b5cf6]"
                 >
-                  articles & news
+                  About the Project
                 </Link>
               </li>
 
@@ -138,7 +128,7 @@ const Footer = () => {
                   href="/community-forum"
                   className="transition-colors hover:text-[#8b5cf6]"
                 >
-                  community forum
+                  Community Forum
                 </Link>
               </li>
 
@@ -147,7 +137,25 @@ const Footer = () => {
                   href="/support"
                   className="transition-colors hover:text-[#8b5cf6]"
                 >
-                  help center
+                  Support Center
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Resources Navigation */}
+          <div className="lg:col-span-3">
+            <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-zinc-900">
+              Resources
+            </h4>
+
+            <ul className="space-y-2.5 text-sm font-light text-zinc-500">
+              <li>
+                <Link
+                  href="/mental-health"
+                  className="transition-colors hover:text-[#8b5cf6]"
+                >
+                  Mental Health Support
                 </Link>
               </li>
             </ul>
@@ -157,8 +165,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="mt-10 pt-6 border-t border-zinc-100 flex flex-col items-center justify-between gap-4 md:flex-row">
           <p className="text-[11px] text-zinc-400 tracking-widest uppercase text-center md:text-left">
-            © {new Date().getFullYear()} gadvance leadership. all rights
-            reserved.
+            © {new Date().getFullYear()} GADvance. All rights reserved.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
@@ -167,26 +174,27 @@ const Footer = () => {
                 href="/privacy-policy"
                 className="hover:text-[#8b5cf6] transition-colors"
               >
-                privacy policy
+                Privacy Policy
               </Link>
               <Link
                 href="/terms-of-service"
                 className="hover:text-[#8b5cf6] transition-colors"
               >
-                terms of service
+                Terms of Service
               </Link>
-              <Link
-                href="/support"
+              <a
+                href="mailto:gadvanceproject@gmail.com"
                 className="hover:text-[#8b5cf6] transition-colors"
               >
-                contact support
-              </Link>
+                Support Desk
+              </a>
             </div>
 
             {/* Back to Top Button */}
             <button
+              type="button"
               onClick={scrollToTop}
-              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-600 hover:border-violet-200 hover:bg-violet-50 hover:text-[#8b5cf6] transition-all active:scale-95 shrink-0"
+              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-600 hover:border-violet-200 hover:bg-violet-50 hover:text-[#8b5cf6] transition-all active:scale-95 shrink-0 cursor-pointer"
               aria-label="Back to top"
             >
               <span>Top</span>
