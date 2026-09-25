@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import image2 from "@/app/(public)/assets/error.png";
+import Link from "next/link";
 
 export default function NotFound() {
   return (
@@ -27,13 +28,12 @@ export default function NotFound() {
           </div>
 
           <div>
-            <button
-              type="button"
-              onClick={() => window.close()}
-              className="inline-block rounded-md bg-[#8b5cf6] px-6 py-2.5 text-xs font-medium text-white transition-colors hover:bg-[#7c3aed] sm:px-8 sm:py-3 sm:text-base cursor-pointer"
+            <Link
+              href="/workspace/courses"
+              className="inline-block rounded-md bg-[#8b5cf6] px-6 py-2.5 text-xs font-medium text-white transition-colors hover:bg-[#7c3aed] sm:px-8 sm:py-3 sm:text-base cursor-pointer text-center"
             >
               Close Page
-            </button>
+            </Link>
           </div>
         </div>
 
