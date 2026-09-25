@@ -12,7 +12,7 @@ import {
 export interface BktSkill {
   id: string;
   name: string;
-  masteryProbability: number; // 0 to 1
+  masteryProbability: number;
   previousMastery?: number;
   trend: "improving" | "stable" | "declining";
   questionsAttempted: number;
@@ -125,13 +125,13 @@ const formatTime = (totalSeconds: number) => {
 
 export function DetailedSummary({
   skillsBreakdown,
-  totalTimeSeconds = 345,
-  averageTimeSeconds = 35,
-  fastestTimeSeconds = 18,
-  slowestTimeSeconds = 62,
-  scorePercentage = 78,
-  correctAnswersCount = 7,
-  totalQuestionsCount = 10,
+  totalTimeSeconds = 0,
+  averageTimeSeconds = 0,
+  fastestTimeSeconds = 0,
+  slowestTimeSeconds = 0,
+  scorePercentage = 0,
+  correctAnswersCount = 0,
+  totalQuestionsCount = 0,
 }: DetailedSummaryProps) {
   const skills = skillsBreakdown?.length ? skillsBreakdown : MOCK_SKILLS;
 

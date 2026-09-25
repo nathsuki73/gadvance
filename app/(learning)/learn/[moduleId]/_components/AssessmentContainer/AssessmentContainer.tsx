@@ -11,6 +11,7 @@ import AssessmentView from "./Assessment/AssessmentView";
 import PollView from "./Poll/PollView";
 import { StartScreen } from "./StartScreen";
 import { Loader2 } from "lucide-react";
+import { useAssessmentActions } from "../../_hooks/useAssessmentActions";
 
 interface AssessmentContainerProps {
   assessmentId: string;
@@ -38,8 +39,10 @@ export default function AssessmentContainer({
 }: AssessmentContainerProps) {
   const queryClient = useQueryClient();
   const effectiveSectionItemId = sectionItemId || itemId;
-
   const [hasStarted, setHasStarted] = useState<boolean | null>(null);
+
+  // 🛡️ Initialize your action wrappers with built-in toast error handling
+  const { handleRetake } = useAssessmentActions();
 
   const { data, isLoading, error } = useQuery({
     queryKey: [
@@ -103,7 +106,6 @@ export default function AssessmentContainer({
 
   const { data: contentData, isPoll } = data;
 
-  // Determine starting screen status
   const isCompleted = Boolean(
     contentData.user_has_completed || contentData.previous_attempt,
   );
@@ -140,31 +142,24 @@ export default function AssessmentContainer({
       onExit={onExit}
       onRetake={async () => {
         if (!effectiveSectionItemId) return;
-        try {
-          const res = await retakeAssessment(
-            contentData.id,
-            effectiveSectionItemId,
-            moduleId,
-          );
 
-          if (res.success) {
-            // 🛡️ Invalidate query so React Query fetches the brand new attempt and fresh questions from the server
-            await queryClient.invalidateQueries({
-              queryKey: [
-                "assessmentContainer",
-                assessmentId,
-                effectiveSectionItemId,
-                moduleId,
-              ],
-            });
+        // ✨ Calls your hook action, automatically showing error/success toasts
+        const res = await handleRetake(
+          contentData.id,
+          effectiveSectionItemId,
+          moduleId,
+        );
 
-            // Transition directly back to the start screen
-            setHasStarted(false);
-          } else {
-            alert(res?.message || "Failed to retake assessment.");
-          }
-        } catch (err: any) {
-          alert(err?.message || "Failed to retake assessment.");
+        if (res.success) {
+          await queryClient.invalidateQueries({
+            queryKey: [
+              "assessmentContainer",
+              assessmentId,
+              effectiveSectionItemId,
+              moduleId,
+            ],
+          });
+          setHasStarted(false);
         }
       }}
     />

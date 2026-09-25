@@ -170,6 +170,10 @@ export async function submitAssessment(payload: {
     );
 
     const json = await res.json().catch(() => ({}));
+
+    // Log the exact raw response received from the submit endpoint
+    console.log("SUBMIT API RAW RESPONSE:", json);
+
     if (!res || !res.ok) return { success: false, error: json?.message };
 
     return {
@@ -185,6 +189,7 @@ export async function submitAssessment(payload: {
       message: json.message,
     };
   } catch (error: any) {
+    console.error("SUBMIT API ERROR:", error);
     return { success: false, error: error?.message };
   }
 }

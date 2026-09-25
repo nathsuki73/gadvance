@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { submitAssessment } from "./assessmentService";
 import { useQueryClient } from "@tanstack/react-query";
 import { AssessmentViewData, Question } from "../types";
@@ -9,7 +9,7 @@ import {
   loadInitialAssessmentState,
   saveLocalDraft,
   clearLocalDraft,
-} from "./assessmentDraftUtils"; // 👈 Imported utilities
+} from "./assessmentDraftUtils";
 import { ResultsSummary } from "./_components/ResultSummary";
 import { ReviewSubmission } from "./_components/ReviewSubmission";
 import { QuizQuestionCard } from "./_components/AssessmentQuestionCard";
@@ -44,7 +44,6 @@ export default function AssessmentView({
 
   const [currentData] = useState<AssessmentViewData>(assessmentData);
 
-  // 🛡️ Initialize state using the pruning & validation utility
   const [initialState] = useState(() =>
     loadInitialAssessmentState(
       assessmentData,
@@ -67,6 +66,11 @@ export default function AssessmentView({
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const [isReviewActive, setIsReviewActive] = useState<boolean>(false);
 
+  const [questionTimers, setQuestionTimers] = useState<Record<string, number>>(
+    {},
+  );
+  const questionStartTimeRef = useRef<number>(Date.now());
+
   const questions: Question[] = currentData.questions || [];
   const totalQuestions = questions.length;
   const safeQuestionIndex = Math.min(
@@ -77,16 +81,32 @@ export default function AssessmentView({
   const progressPercentage =
     totalQuestions > 0 ? ((safeQuestionIndex + 1) / totalQuestions) * 100 : 0;
 
-  // ⏱️ Elapsed Timer
   useEffect(() => {
-    const timer = setInterval(
-      () => setElapsedSeconds((prev) => prev + 1),
-      1000,
-    );
-    return () => clearInterval(timer);
-  }, []);
+    questionStartTimeRef.current = Date.now();
+  }, [currentIndex]);
 
-  // 💾 Auto-save answers and page index using the utility
+  const recordCurrentQuestionTime = () => {
+    if (!currentQuestion) return;
+    const now = Date.now();
+    const elapsed = Math.max(
+      1,
+      Math.round((now - questionStartTimeRef.current) / 1000),
+    );
+    setQuestionTimers((prev) => ({
+      ...prev,
+      [currentQuestion.id]: (prev[currentQuestion.id] || 0) + elapsed,
+    }));
+    questionStartTimeRef.current = now;
+  };
+
+  useEffect(() => {
+    if (result) return;
+    const timer = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [result]);
+
   useEffect(() => {
     if (result || !effectiveSectionItemId) return;
     saveLocalDraft(
@@ -102,15 +122,24 @@ export default function AssessmentView({
   };
 
   const handleSubmit = async () => {
+    recordCurrentQuestionTime();
+
     if (!effectiveSectionItemId || !moduleId) {
       alert("Missing required assessment context. Please reload the page.");
       return;
     }
 
     setIsSubmitting(true);
+    const nowFormatted = new Date()
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", " ");
+
     const formattedAnswers = Object.entries(answers).map(([qId, cId]) => ({
       question_id: qId,
       choice_id: cId,
+      time_spent_seconds: questionTimers[qId] || 1,
+      answered_at: nowFormatted,
     }));
 
     try {
@@ -125,7 +154,6 @@ export default function AssessmentView({
         const payloadData = response.data || response;
         setResult(payloadData);
 
-        // 🗑️ Clear local draft storage on successful submission
         clearLocalDraft(currentData.id, effectiveSectionItemId);
 
         queryClient.setQueryData(
@@ -176,6 +204,21 @@ export default function AssessmentView({
       (a: any) => a.is_correct,
     ).length;
 
+    const answerEntries = Object.values(evaluatedAnswers);
+    const times = answerEntries.map(
+      (ans: any) => Number(ans?.time_spent_seconds) || 0,
+    );
+    const totalTimeSeconds = times.reduce((acc, curr) => acc + curr, 0);
+    const validTimes = times.filter((t) => t > 0);
+    const averageTimeSeconds =
+      validTimes.length > 0
+        ? Math.round(validTimes.reduce((a, b) => a + b, 0) / validTimes.length)
+        : 0;
+    const fastestTimeSeconds =
+      validTimes.length > 0 ? Math.min(...validTimes) : 0;
+    const slowestTimeSeconds =
+      validTimes.length > 0 ? Math.max(...validTimes) : 0;
+
     return (
       <div className="w-full max-w-3xl mx-auto px-4 py-8 space-y-6">
         <ResultsSummary
@@ -197,6 +240,11 @@ export default function AssessmentView({
           isPassed={isPassed}
           remedialSuggestions={remedialSuggestions}
           moduleId={moduleId}
+          // 👇 Properly supplied props to resolve defaults issue
+          answersData={evaluatedAnswers}
+          bktSkillsBreakdown={
+            result.bkt_skills_breakdown || result.skillsBreakdown
+          }
         />
 
         <ReviewSubmission
@@ -262,7 +310,10 @@ export default function AssessmentView({
         <button
           type="button"
           disabled={isFirstQuestion}
-          onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+          onClick={() => {
+            recordCurrentQuestionTime();
+            setCurrentIndex((prev) => Math.max(0, prev - 1));
+          }}
           className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
         >
           <ChevronLeft size={16} />
@@ -273,9 +324,10 @@ export default function AssessmentView({
           <button
             type="button"
             disabled={!isCurrentAnswered}
-            onClick={() =>
-              setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1))
-            }
+            onClick={() => {
+              recordCurrentQuestionTime();
+              setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1));
+            }}
             className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#8b5cf6]/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-40 cursor-pointer"
           >
             <span>Next</span>

@@ -28,7 +28,7 @@ interface ResultsSummaryProps {
   isLastItem?: boolean;
   onExit?: () => void;
   isPassed: boolean;
-  isPoll: boolean;
+  isPoll?: boolean;
   remedialSuggestions?: Array<{
     page_id: string;
     block_id: string;
@@ -36,6 +36,7 @@ interface ResultsSummaryProps {
   }>;
   moduleId?: string;
   bktSkillsBreakdown?: BktSkill[];
+  answersData?: Record<string, any>;
 }
 
 const SPRING_EASE = "cubic-bezier(0.34,1.56,0.64,1)";
@@ -55,14 +56,14 @@ export function ResultsSummary({
   isLastItem = false,
   onExit,
   isPassed,
-  isPoll,
+  isPoll = false,
   remedialSuggestions = [],
   moduleId = "",
   bktSkillsBreakdown = [],
+  answersData = {},
 }: ResultsSummaryProps) {
   const [animatedPercentage, setAnimatedPercentage] = useState(0);
 
-  // ⏱️ State for toggling views ("score" vs "detailed" vs "remedial")
   const [activeView, setActiveView] = useState<
     "score" | "detailed" | "remedial"
   >("score");
@@ -78,7 +79,23 @@ export function ResultsSummary({
   const hasAttemptsRemaining =
     settings.maxAttempts == null || settings.maxAttempts > 1;
 
-  // 🔄 Auto-switch to Remedial view after 3 seconds if suggestions exist
+  // Extract time_spent_seconds directly from answersData dictionary
+  const answerEntries = Object.values(answersData || {});
+  const times = answerEntries.map(
+    (ans: any) => Number(ans?.time_spent_seconds) || 0,
+  );
+
+  const totalTimeSeconds = times.reduce((acc, curr) => acc + curr, 0);
+  const divisor = totalQuestions > 0 ? totalQuestions : times.length;
+  const averageTimeSeconds =
+    divisor > 0 ? Math.round(totalTimeSeconds / divisor) : 0;
+
+  const validTimes = times.filter((t) => t > 0);
+  const fastestTimeSeconds =
+    validTimes.length > 0 ? Math.min(...validTimes) : 0;
+  const slowestTimeSeconds =
+    validTimes.length > 0 ? Math.max(...validTimes) : 0;
+
   useEffect(() => {
     if (
       remedialSuggestions.length > 0 &&
@@ -152,7 +169,6 @@ export function ResultsSummary({
 
   return (
     <div className="overflow-hidden p-6 space-y-6 flex flex-col items-center text-center w-full max-w-md mx-auto">
-      {/* 1. View Switcher Tabs at the top */}
       {!isPoll && (
         <div className="flex items-center justify-center gap-1.5 bg-zinc-100 p-1 rounded-2xl w-full max-w-sm shrink-0">
           <button
@@ -195,9 +211,7 @@ export function ResultsSummary({
         </div>
       )}
 
-      {/* 2. Stabilized Content Area (CSS Grid Stack to lock container height) */}
       <div className="grid grid-cols-1 grid-rows-1 w-full items-center justify-items-center">
-        {/* View A: Score Summary */}
         <div
           className={`col-start-1 row-start-1 w-full transition-opacity duration-300 flex flex-col items-center space-y-6 ${
             activeView === "score"
@@ -222,7 +236,6 @@ export function ResultsSummary({
 
           {settings.type !== "poll" && (
             <div className="flex flex-col items-center justify-center gap-6 w-full py-2">
-              {/* Fully Clickable Donut Ring Area */}
               <div
                 role="button"
                 tabIndex={0}
@@ -312,7 +325,6 @@ export function ResultsSummary({
                 </div>
               </div>
 
-              {/* Status Details */}
               <div className="flex flex-col items-center justify-center space-y-2 text-center max-w-sm mt-1">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-[#8b5cf6] border border-purple-200">
                   <CheckCircle size={13} />
@@ -329,7 +341,6 @@ export function ResultsSummary({
           )}
         </div>
 
-        {/* View B: Detailed BKT Analytics Inline View */}
         <div
           className={`col-start-1 row-start-1 w-full transition-opacity duration-300 flex flex-col ${
             activeView === "detailed"
@@ -337,10 +348,18 @@ export function ResultsSummary({
               : "opacity-0 z-0 pointer-events-none select-none"
           }`}
         >
-          <DetailedSummary skillsBreakdown={bktSkillsBreakdown} />
+          <DetailedSummary
+            skillsBreakdown={bktSkillsBreakdown}
+            scorePercentage={scorePercentage}
+            correctAnswersCount={correctCount}
+            totalQuestionsCount={totalQuestions}
+            totalTimeSeconds={totalTimeSeconds}
+            averageTimeSeconds={averageTimeSeconds}
+            fastestTimeSeconds={fastestTimeSeconds}
+            slowestTimeSeconds={slowestTimeSeconds}
+          />
         </div>
 
-        {/* View C: Targeted Plan (Vertical List Stack) */}
         {remedialSuggestions.length > 0 && !isPoll && (
           <div
             className={`col-start-1 row-start-1 w-full transition-opacity duration-300 flex flex-col space-y-2.5 ${
@@ -359,7 +378,6 @@ export function ResultsSummary({
         )}
       </div>
 
-      {/* 3. Static Action Buttons Container (Locked at the bottom) */}
       <div className="flex flex-col gap-3 w-full pt-2 shrink-0">
         {hasAttemptsRemaining && (
           <button
