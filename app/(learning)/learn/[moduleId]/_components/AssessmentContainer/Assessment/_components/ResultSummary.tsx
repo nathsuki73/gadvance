@@ -390,6 +390,7 @@ export function ResultsSummary({
             fastestTimeSeconds={fastestTimeSeconds}
             slowestTimeSeconds={slowestTimeSeconds}
             bestStreak={bestStreak}
+            onSwitchToStudy={activateRemedial}
           />
         </div>
 

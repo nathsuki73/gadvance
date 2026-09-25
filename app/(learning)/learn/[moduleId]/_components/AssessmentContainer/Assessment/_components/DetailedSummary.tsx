@@ -1,14 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   TrendingUp,
   TrendingDown,
   Minus,
   CheckCircle2,
   CircleDot,
-  ChevronDown,
-  ChevronUp,
   Flame,
 } from "lucide-react";
 
@@ -42,6 +40,7 @@ interface DetailedSummaryProps {
   correctAnswersCount?: number;
   totalQuestionsCount?: number;
   bestStreak?: number;
+  onSwitchToStudy?: () => void;
 }
 
 const MOCK_SKILLS: BktSkill[] = [
@@ -66,7 +65,6 @@ const formatTime = (totalSeconds: number) => {
   return `${mins}m ${secs}s`;
 };
 
-// Helper function for Red -> Orange -> Yellow -> Green scale (75+ is green)
 const getProgressStyle = (pct: number) => {
   if (pct >= 75) {
     return { bg: "bg-emerald-500", text: "text-emerald-600" };
@@ -89,19 +87,15 @@ export function DetailedSummary({
   correctAnswersCount = 0,
   totalQuestionsCount = 0,
   bestStreak = 0,
+  onSwitchToStudy,
 }: DetailedSummaryProps) {
   const skills = skillsBreakdown?.length ? skillsBreakdown : MOCK_SKILLS;
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const masteredCount = skills.filter(
     (s) => s.masteryProbability >= 0.75,
   ).length;
 
   const passed = scorePercentage >= 75;
-
-  const toggleExpand = (id: string) => {
-    setExpandedId(expandedId === id ? null : id);
-  };
 
   return (
     <div className="space-y-4 w-full text-left max-h-[440px] overflow-y-auto pr-1">
@@ -178,11 +172,11 @@ export function DetailedSummary({
       {/* --- Skill Breakdown Header --- */}
       <div className="px-1 pt-1">
         <h4 className="text-sm font-extrabold tracking-tight text-zinc-900">
-          Skill breakdown
+          Topics breakdown
         </h4>
         <p className="text-xs text-zinc-500 font-medium">
-          {masteredCount} of {skills.length} skills mastered. Click a skill for
-          details.
+          {masteredCount} of {skills.length} topic learned. Click to view
+          suggested concepts to review.
         </p>
       </div>
 
@@ -194,7 +188,6 @@ export function DetailedSummary({
         );
         const delta = pct - before;
         const mastered = pct >= 75;
-        const isExpanded = expandedId === skill.id;
 
         const style = getProgressStyle(pct);
         const TrendIcon =
@@ -209,28 +202,24 @@ export function DetailedSummary({
         return (
           <div
             key={skill.id}
-            className="rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-2xs transition-all"
+            role="button"
+            tabIndex={0}
+            onClick={onSwitchToStudy}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                onSwitchToStudy?.();
+              }
+            }}
+            className="rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-2xs transition-all cursor-pointer hover:border-[#8b5cf6] hover:bg-purple-50/20 hover:shadow-sm"
+            title="Click to review concept in Study tab"
           >
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => toggleExpand(skill.id)}
-              className="flex items-center gap-3 text-left cursor-pointer select-none"
-            >
+            <div className="flex items-center gap-3 text-left select-none">
               <div className="flex-1 min-w-0 space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="text-xs font-bold text-zinc-900 truncate">
                       {skill.name}
                     </span>
-                    {isExpanded ? (
-                      <ChevronUp size={14} className="text-zinc-400 shrink-0" />
-                    ) : (
-                      <ChevronDown
-                        size={14}
-                        className="text-zinc-400 shrink-0"
-                      />
-                    )}
                   </div>
                   <span
                     className={`inline-flex items-center gap-1 text-xs font-black ${style.text} shrink-0`}
@@ -263,21 +252,6 @@ export function DetailedSummary({
                 </div>
               </div>
             </div>
-
-            {/* Minimal Expanded Details Section */}
-            {isExpanded && (
-              <div className="mt-3 pt-3 border-t border-zinc-100 space-y-1.5 text-[11px] text-zinc-600 animate-in fade-in duration-300">
-                <p>{skill.decisionRationale}</p>
-                {skill.nextStep && (
-                  <p>
-                    <span className="font-semibold text-zinc-800">
-                      Next step:
-                    </span>{" "}
-                    {skill.nextStep}
-                  </p>
-                )}
-              </div>
-            )}
           </div>
         );
       })}
