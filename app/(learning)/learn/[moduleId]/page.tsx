@@ -336,6 +336,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
         {activeItem.item_type === "assessment" ? (
           activeItem.content_id ? (
             <AssessmentContainer
+              key={activeItem.id}
               itemId={activeItem.id}
               moduleId={moduleId}
               sectionId={activeItem.section_id}
@@ -357,6 +358,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
           )
         ) : (
           <PageContainer
+            key={activeItem.id}
             itemId={activeItem.id}
             pageId={activeItem.content_id || activeItem.id}
             title={activeItem.title}
