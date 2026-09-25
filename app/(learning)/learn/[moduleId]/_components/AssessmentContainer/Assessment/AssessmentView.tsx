@@ -296,6 +296,25 @@ export default function AssessmentView({
       (a: any) => a.is_correct,
     ).length;
 
+    const restoredAnswers: Record<string, string> = {};
+    if (Array.isArray(evaluatedAnswers)) {
+      evaluatedAnswers.forEach((ans: any) => {
+        const qId = ans?.question_id;
+        const cId = ans?.selected_option_id || ans?.choice_id;
+        if (qId && cId) restoredAnswers[qId] = String(cId);
+      });
+    } else if (
+      typeof evaluatedAnswers === "object" &&
+      evaluatedAnswers !== null
+    ) {
+      Object.entries(evaluatedAnswers).forEach(([qId, ans]) => {
+        const typedAns = ans as any;
+        const cId =
+          typedAns?.selected_option_id || typedAns?.choice_id || typedAns;
+        if (qId && cId) restoredAnswers[qId] = String(cId);
+      });
+    }
+
     const answerEntries = Object.values(evaluatedAnswers);
     const times = answerEntries.map(
       (ans: any) => Number(ans?.time_spent_seconds) || 0,
@@ -340,7 +359,7 @@ export default function AssessmentView({
 
         <ReviewSubmission
           questions={questions}
-          answers={answers}
+          answers={restoredAnswers}
           submitted={true}
           settings={currentData.settings}
           isPoll={false}
