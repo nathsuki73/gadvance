@@ -47,7 +47,7 @@ type ExplanationPage =
       kind: "quiz";
       label: string;
       quiz: QuizQuestion | null;
-      selectedChoiceId: string | null; // 👈 Lifted state into page definition
+      selectedChoiceId: string | null;
     };
 
 interface ExplanationCardProps {
@@ -154,7 +154,7 @@ export function ExplanationCard({
   };
 
   return (
-    <div className="w-full border-l-2 sm:border-l-[3px] border-[#8b5cf6] pl-4 sm:pl-5 py-2 my-5 space-y-3.5 bg-transparent font-sans">
+    <div className="w-full border-l-2 sm:border-l-[3px] border-[#8b5cf6] pl-4 sm:pl-5 py-2 my-5 space-y-4 bg-transparent font-sans">
       {/* Top Meta Bar */}
       <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
         <div className="flex items-center gap-2">
@@ -199,15 +199,15 @@ export function ExplanationCard({
 
       {/* Main Body */}
       {currentPage.kind === "base" && (
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           <p className="text-sm sm:text-base font-bold text-zinc-900 leading-snug">
             {remedialContent.summary}
           </p>
-          <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+          <p className="text-sm sm:text-base text-zinc-700 leading-relaxed">
             {remedialContent.explanation}
           </p>
 
-          <div className="border-l-2 border-purple-200 bg-purple-50/40 p-3 text-xs sm:text-sm text-purple-900 leading-relaxed">
+          <div className="rounded-r-xl border-l-2 border-purple-300 bg-purple-50/40 p-3.5 text-sm sm:text-base text-purple-950 leading-relaxed">
             <span className="font-semibold text-[#8b5cf6]">
               Real-world analogy:{" "}
             </span>
@@ -217,10 +217,19 @@ export function ExplanationCard({
       )}
 
       {currentPage.kind === "followup" && (
-        <div className="min-h-[50px] text-xs sm:text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap">
-          {currentPage.text || (
-            <div className="flex items-center gap-2 py-3 text-xs font-medium text-zinc-400">
-              <Loader2 className="animate-spin text-[#8b5cf6]" size={15} />
+        <div className="space-y-2.5 min-h-[60px]">
+          {/* Section Header matching base summary font */}
+          <p className="text-sm sm:text-base font-bold text-zinc-900 leading-snug">
+            {currentPage.label}
+          </p>
+
+          {currentPage.text ? (
+            <p className="text-sm sm:text-base text-zinc-700 leading-relaxed whitespace-pre-wrap">
+              {currentPage.text}
+            </p>
+          ) : (
+            <div className="flex items-center gap-2.5 py-3 text-sm font-medium text-zinc-400">
+              <Loader2 className="animate-spin text-[#8b5cf6]" size={16} />
               <span>Generating concept explanation…</span>
             </div>
           )}
@@ -236,7 +245,7 @@ export function ExplanationCard({
       )}
 
       {/* Right-Aligned Button Group */}
-      <div className="flex items-center justify-end gap-2 flex-wrap pt-2.5 border-t border-zinc-100">
+      <div className="flex items-center justify-end gap-2 flex-wrap pt-3 border-t border-zinc-100">
         {!hasUsedFollowUp ? (
           <>
             {FOLLOW_UP_OPTIONS.map((option) => (
@@ -244,7 +253,7 @@ export function ExplanationCard({
                 key={option.id}
                 type="button"
                 onClick={() => handleChipClick(option)}
-                className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 hover:border-[#8b5cf6] hover:text-[#8b5cf6] active:scale-[0.98] transition-all cursor-pointer"
+                className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-semibold text-zinc-700 hover:border-[#8b5cf6] hover:text-[#8b5cf6] active:scale-[0.98] transition-all cursor-pointer"
               >
                 {option.label}
               </button>
@@ -254,10 +263,10 @@ export function ExplanationCard({
               <button
                 type="button"
                 onClick={onGoToAssessment}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#8b5cf6] px-4 py-2 text-xs font-bold text-white hover:bg-[#7c3aed] active:scale-[0.98] transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#8b5cf6] px-4 py-2 text-xs sm:text-sm font-bold text-white hover:bg-[#7c3aed] active:scale-[0.98] transition-all cursor-pointer"
               >
                 <span>Back to assessment</span>
-                <ArrowRight size={13} />
+                <ArrowRight size={14} />
               </button>
             )}
           </>
@@ -267,9 +276,9 @@ export function ExplanationCard({
               <button
                 type="button"
                 onClick={() => setPageIndex(0)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98] transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-semibold text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98] transition-all cursor-pointer"
               >
-                <RotateCcw size={12} />
+                <RotateCcw size={13} />
                 <span>Original note</span>
               </button>
             )}
@@ -278,10 +287,10 @@ export function ExplanationCard({
               <button
                 type="button"
                 onClick={onGoToAssessment}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#8b5cf6] px-4 py-2 text-xs font-bold text-white hover:bg-[#7c3aed] active:scale-[0.98] transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#8b5cf6] px-4 py-2 text-xs sm:text-sm font-bold text-white hover:bg-[#7c3aed] active:scale-[0.98] transition-all cursor-pointer"
               >
                 <span>Back to assessment</span>
-                <ArrowRight size={13} />
+                <ArrowRight size={14} />
               </button>
             )}
           </>
@@ -302,8 +311,8 @@ function MiniQuiz({
 }) {
   if (!quiz) {
     return (
-      <div className="flex items-center gap-2 py-3 text-xs font-medium text-zinc-400">
-        <Loader2 className="animate-spin text-[#8b5cf6]" size={15} />
+      <div className="flex items-center gap-2 py-3 text-sm font-medium text-zinc-400">
+        <Loader2 className="animate-spin text-[#8b5cf6]" size={16} />
         <span>Preparing quick check…</span>
       </div>
     );
@@ -312,12 +321,12 @@ function MiniQuiz({
   const revealed = selectedId !== null;
 
   return (
-    <div className="space-y-2.5 py-1">
-      <p className="text-xs sm:text-sm font-bold text-zinc-900 leading-snug">
+    <div className="space-y-3 py-1">
+      <p className="text-sm sm:text-base font-bold text-zinc-900 leading-snug">
         {quiz.question}
       </p>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {quiz.choices.map((choice) => {
           const isSelected = selectedId === choice.id;
           const isCorrect = choice.id === quiz.correctChoiceId;
@@ -340,7 +349,7 @@ function MiniQuiz({
               type="button"
               disabled={revealed}
               onClick={() => onSelect(choice.id)}
-              className={`w-full flex items-center justify-between gap-3 rounded-xl border p-3 text-xs sm:text-sm text-left transition-all active:scale-[0.99] cursor-pointer disabled:cursor-default ${style}`}
+              className={`w-full flex items-center justify-between gap-3 rounded-xl border p-3.5 text-sm sm:text-base text-left transition-all active:scale-[0.99] cursor-pointer disabled:cursor-default ${style}`}
             >
               <span>{choice.text}</span>
               {revealed && isSelected && isCorrect && (
