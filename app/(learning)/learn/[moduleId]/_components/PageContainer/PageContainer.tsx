@@ -210,26 +210,20 @@ export default function PageContainer({
 
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
+
       element.classList.add(
-        "p-4",
-        "my-2",
-        "rounded-2xl",
-        "border-2",
-        "border-purple-400/60",
+        "border-l-2",
+        "border-[#8b5cf6]",
+        "pl-4",
+        "sm:pl-5",
+        "py-2",
+        "my-5",
         "bg-purple-50/40",
         "animate-pulse",
-        "transition-all",
-        "duration-500",
       );
+
       setTimeout(() => {
-        element.classList.remove(
-          "p-4",
-          "my-2",
-          "border-2",
-          "border-purple-400/60",
-          "bg-purple-50/40",
-          "animate-pulse",
-        );
+        element.classList.remove("animate-pulse");
       }, 2500);
 
       let targetDiv = document.getElementById(`remedial-portal-${blockId}`);
