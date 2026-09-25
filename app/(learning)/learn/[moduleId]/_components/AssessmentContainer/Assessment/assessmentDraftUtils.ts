@@ -3,41 +3,73 @@ import { AssessmentViewData } from "../types";
 export interface InitialDraftState {
   answers: Record<string, string>;
   currentIndex: number;
+  checkedQuestions: Record<string, boolean>;
+  questionTimers: Record<string, number>;
+  elapsedSeconds: number; // 👈 Track total elapsed time
 }
 
 const getStorageKey = (assessmentId: string, sectionItemId?: string) =>
   `assessment_local_draft_${assessmentId}_${sectionItemId || "default"}`;
 
-/**
- * Loads and validates local storage or server drafts, pruning any deleted/stale
- * question IDs and clamping the index to valid bounds.
- */
 export function loadInitialAssessmentState(
   assessmentData: AssessmentViewData,
   assessmentId: string,
   sectionItemId?: string,
 ): InitialDraftState {
+  if (assessmentData.user_has_completed || assessmentData.previous_attempt) {
+    if (typeof window !== "undefined" && sectionItemId) {
+      clearLocalDraft(assessmentId, sectionItemId);
+    }
+    return {
+      answers: {},
+      currentIndex: 0,
+      checkedQuestions: {},
+      questionTimers: {},
+      elapsedSeconds: 0,
+    };
+  }
+
   const questionsList = assessmentData.questions || [];
   const validQuestionIds = new Set(questionsList.map((q) => q.id));
   const storageKey = getStorageKey(assessmentId, sectionItemId);
 
   const prunedAnswers: Record<string, string> = {};
+  const prunedChecked: Record<string, boolean> = {};
+  const prunedTimers: Record<string, number> = {};
   let targetIndex = assessmentData.current_index || 0;
+  let targetElapsed = 0;
   let hasLocalDraft = false;
 
-  // 1. Try reading from localStorage first
   if (typeof window !== "undefined" && sectionItemId) {
     const local = localStorage.getItem(storageKey);
     if (local) {
       try {
         const parsed = JSON.parse(local);
         if (parsed && parsed.answers) {
-          // Only keep answers whose question IDs still exist in the current assessment
           Object.entries(parsed.answers).forEach(([qId, val]) => {
             if (validQuestionIds.has(qId)) {
               prunedAnswers[qId] = String(val);
             }
           });
+          if (parsed.checkedQuestions) {
+            Object.entries(parsed.checkedQuestions).forEach(
+              ([qId, isChecked]) => {
+                if (validQuestionIds.has(qId)) {
+                  prunedChecked[qId] = Boolean(isChecked);
+                }
+              },
+            );
+          }
+          if (parsed.questionTimers) {
+            Object.entries(parsed.questionTimers).forEach(([qId, time]) => {
+              if (validQuestionIds.has(qId)) {
+                prunedTimers[qId] = Number(time) || 0;
+              }
+            });
+          }
+          if (parsed.elapsedSeconds !== undefined) {
+            targetElapsed = Number(parsed.elapsedSeconds) || 0;
+          }
           if (parsed.currentIndex !== undefined) {
             targetIndex = Number(parsed.currentIndex);
           }
@@ -49,7 +81,6 @@ export function loadInitialAssessmentState(
     }
   }
 
-  // 2. Fallback to server draft or previous attempt if no valid local draft found
   if (!hasLocalDraft) {
     if (
       assessmentData.draft_answers &&
@@ -60,25 +91,18 @@ export function loadInitialAssessmentState(
           prunedAnswers[qId] = String(val);
         }
       });
-    } else if (assessmentData.previous_attempt?.answers) {
-      const prev = assessmentData.previous_attempt.answers;
-      Object.entries(prev).forEach(([qId, val]: [string, any]) => {
-        if (validQuestionIds.has(qId)) {
-          prunedAnswers[qId] = String(
-            val.selected_option_id || val.choice_id || val,
-          );
-        }
-      });
     }
   }
 
-  // 3. Ensure the index is safe and within bounds of the current question count
   const maxIndex = Math.max(0, questionsList.length - 1);
   const safeIndex = Math.min(Math.max(0, targetIndex), maxIndex);
 
   return {
     answers: prunedAnswers,
     currentIndex: safeIndex,
+    checkedQuestions: prunedChecked,
+    questionTimers: prunedTimers,
+    elapsedSeconds: targetElapsed,
   };
 }
 
@@ -87,6 +111,9 @@ export function saveLocalDraft(
   sectionItemId: string | undefined,
   answers: Record<string, string>,
   currentIndex: number,
+  checkedQuestions: Record<string, boolean>,
+  questionTimers: Record<string, number>,
+  elapsedSeconds: number, // 👈 Accept elapsedSeconds parameter
 ) {
   if (typeof window === "undefined" || !sectionItemId) return;
   const storageKey = getStorageKey(assessmentId, sectionItemId);
@@ -95,6 +122,9 @@ export function saveLocalDraft(
     JSON.stringify({
       answers,
       currentIndex,
+      checkedQuestions,
+      questionTimers,
+      elapsedSeconds, // 👈 Save elapsedSeconds to localStorage
       updatedAt: new Date().toISOString(),
     }),
   );

@@ -41,7 +41,6 @@ export default function AssessmentContainer({
   const effectiveSectionItemId = sectionItemId || itemId;
   const [hasStarted, setHasStarted] = useState<boolean | null>(null);
 
-  // 🛡️ Initialize your action wrappers with built-in toast error handling
   const { handleRetake } = useAssessmentActions();
 
   const { data, isLoading, error } = useQuery({
@@ -106,11 +105,31 @@ export default function AssessmentContainer({
 
   const { data: contentData, isPoll } = data;
 
+  // 1. Check if the assessment was already completed/submitted
   const isCompleted = Boolean(
     contentData.user_has_completed || contentData.previous_attempt,
   );
-  const showStartScreen =
-    !isPoll && (hasStarted === false || (hasStarted === null && !isCompleted));
+
+  // 2. Check if there's an existing draft in localStorage
+  const hasLocalDraft =
+    typeof window !== "undefined" &&
+    effectiveSectionItemId &&
+    Boolean(
+      localStorage.getItem(
+        `assessment_local_draft_${assessmentId}_${effectiveSectionItemId}`,
+      ),
+    );
+
+  // 3. Check if there's an existing server draft
+  const hasServerDraft =
+    contentData.draft_answers &&
+    Object.keys(contentData.draft_answers).length > 0;
+
+  // Should skip start screen if completed, has a local draft, has a server draft, or user clicked start
+  const hasStartedState =
+    hasStarted === true || isCompleted || hasLocalDraft || hasServerDraft;
+
+  const showStartScreen = !isPoll && !hasStartedState;
 
   if (showStartScreen) {
     return (
@@ -143,7 +162,6 @@ export default function AssessmentContainer({
       onRetake={async () => {
         if (!effectiveSectionItemId) return;
 
-        // ✨ Calls your hook action, automatically showing error/success toasts
         const res = await handleRetake(
           contentData.id,
           effectiveSectionItemId,

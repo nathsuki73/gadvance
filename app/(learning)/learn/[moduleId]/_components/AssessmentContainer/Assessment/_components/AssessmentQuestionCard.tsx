@@ -39,6 +39,7 @@ interface QuizQuestionCardProps {
   settings: AssessmentSettings;
   showQuestionNumber?: boolean;
   isCorrectOverride?: boolean;
+  isChecked?: boolean;
   onSelectChoice: (questionId: string, choiceId: string) => void;
 }
 
@@ -50,6 +51,7 @@ export function QuizQuestionCard({
   settings,
   showQuestionNumber = true,
   isCorrectOverride,
+  isChecked = false,
   onSelectChoice,
 }: QuizQuestionCardProps) {
   const isTestMode = settings.type === "test";
@@ -65,14 +67,11 @@ export function QuizQuestionCard({
 
   const canShowReview = settings.allowReview;
   const showReviewFeedback = submitted && canShowReview;
-  const showImmediateFeedback =
-    !isTestMode &&
-    Boolean(selectedChoiceId) &&
-    settings.showFeedbackImmediately;
+  const showImmediateFeedback = !isTestMode && settings.showFeedbackImmediately;
 
-  const shouldDisplayFeedback = showReviewFeedback || showImmediateFeedback;
-  const isLocked =
-    submitted || Boolean(shouldDisplayFeedback && selectedChoiceId);
+  const shouldDisplayFeedback =
+    showReviewFeedback || (showImmediateFeedback && isChecked);
+  const isLocked = submitted || (showImmediateFeedback && isChecked);
 
   return (
     <div className="space-y-4">
@@ -173,7 +172,7 @@ export function QuizQuestionCard({
 
       {/* Immediate Remediation & Feedback */}
       {shouldDisplayFeedback && (
-        <div className="space-y-2.5 pt-2">
+        <div className="space-y-2.5 pt-2 animate-in fade-in duration-300">
           <div
             className={`flex items-center gap-1.5 text-xs font-semibold ${
               isCorrect ? "text-emerald-700" : "text-rose-700"

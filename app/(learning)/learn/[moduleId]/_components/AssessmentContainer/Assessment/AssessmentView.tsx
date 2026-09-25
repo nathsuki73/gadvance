@@ -58,16 +58,23 @@ export default function AssessmentView({
   const [currentIndex, setCurrentIndex] = useState<number>(
     initialState.currentIndex,
   );
+  const [checkedQuestions, setCheckedQuestions] = useState<
+    Record<string, boolean>
+  >(
+    initialState.checkedQuestions, // 👈 Initialized from persisted draft state
+  );
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [result, setResult] = useState<any>(
     assessmentData.previous_attempt || null,
   );
 
-  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(
+    initialState.elapsedSeconds,
+  );
   const [isReviewActive, setIsReviewActive] = useState<boolean>(false);
 
   const [questionTimers, setQuestionTimers] = useState<Record<string, number>>(
-    {},
+    initialState.questionTimers,
   );
   const questionStartTimeRef = useRef<number>(Date.now());
 
@@ -114,11 +121,47 @@ export default function AssessmentView({
       effectiveSectionItemId,
       answers,
       currentIndex,
+      checkedQuestions,
+      questionTimers,
     );
-  }, [answers, currentIndex, currentData.id, effectiveSectionItemId, result]);
+  }, [
+    answers,
+    currentIndex,
+    checkedQuestions,
+    questionTimers,
+    currentData.id,
+    effectiveSectionItemId,
+    result,
+  ]);
 
   const handleSelectOption = (questionId: string, choiceId: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: choiceId }));
+  };
+
+  const handlePrimaryAction = () => {
+    if (!currentQuestion) return;
+
+    const showImmediateFeedback =
+      currentData.settings?.type !== "test" &&
+      currentData.settings?.showFeedbackImmediately;
+
+    const isChecked = Boolean(checkedQuestions[currentQuestion.id]);
+
+    if (showImmediateFeedback && !isChecked) {
+      // First click: Submit/check the individual question to show feedback
+      setCheckedQuestions((prev) => ({
+        ...prev,
+        [currentQuestion.id]: true,
+      }));
+    } else {
+      // Second click (or normal mode): Proceed to next question or submit final assessment
+      recordCurrentQuestionTime();
+      if (!isLastQuestion) {
+        setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1));
+      } else {
+        handleSubmit();
+      }
+    }
   };
 
   const handleSubmit = async () => {
@@ -240,7 +283,6 @@ export default function AssessmentView({
           isPassed={isPassed}
           remedialSuggestions={remedialSuggestions}
           moduleId={moduleId}
-          // 👇 Properly supplied props to resolve defaults issue
           answersData={evaluatedAnswers}
           bktSkillsBreakdown={
             result.bkt_skills_breakdown || result.skillsBreakdown
@@ -275,6 +317,23 @@ export default function AssessmentView({
     currentQuestion && answers[currentQuestion.id],
   );
 
+  const showImmediateFeedback =
+    currentData.settings?.type !== "test" &&
+    currentData.settings?.showFeedbackImmediately;
+
+  const isCurrentChecked =
+    !showImmediateFeedback ||
+    Boolean(currentQuestion && checkedQuestions[currentQuestion.id]);
+
+  const canProceed = isCurrentAnswered;
+  const needsChecking = showImmediateFeedback && !isCurrentChecked;
+
+  const buttonLabel = needsChecking
+    ? "Submit Answer"
+    : isLastQuestion
+      ? "Submit Assessment"
+      : "Next";
+
   return (
     <div className="flex flex-col min-h-full w-full max-w-3xl mx-auto px-4 py-6 sm:py-10 justify-between">
       <div className="space-y-4 mb-8">
@@ -302,6 +361,9 @@ export default function AssessmentView({
           submitted={false}
           settings={currentData.settings}
           showQuestionNumber={false}
+          isChecked={Boolean(
+            currentQuestion && checkedQuestions[currentQuestion.id],
+          )}
           onSelectChoice={handleSelectOption}
         />
       </div>
@@ -320,34 +382,23 @@ export default function AssessmentView({
           <span>Previous</span>
         </button>
 
-        {!isLastQuestion ? (
-          <button
-            type="button"
-            disabled={!isCurrentAnswered}
-            onClick={() => {
-              recordCurrentQuestionTime();
-              setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1));
-            }}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#8b5cf6]/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-40 cursor-pointer"
-          >
-            <span>Next</span>
+        <button
+          type="button"
+          disabled={!canProceed || isSubmitting}
+          onClick={handlePrimaryAction}
+          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#8b5cf6]/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-40 cursor-pointer"
+        >
+          {isSubmitting ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : needsChecking ? (
+            <CheckCircle2 size={16} />
+          ) : isLastQuestion ? (
+            <CheckCircle2 size={16} />
+          ) : (
             <ChevronRight size={16} />
-          </button>
-        ) : (
-          <button
-            type="button"
-            disabled={!isCurrentAnswered || isSubmitting}
-            onClick={handleSubmit}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#8b5cf6]/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-40 cursor-pointer"
-          >
-            {isSubmitting ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <CheckCircle2 size={16} />
-            )}
-            <span>{isSubmitting ? "Submitting..." : "Submit Assessment"}</span>
-          </button>
-        )}
+          )}
+          <span>{isSubmitting ? "Submitting..." : buttonLabel}</span>
+        </button>
       </div>
     </div>
   );
