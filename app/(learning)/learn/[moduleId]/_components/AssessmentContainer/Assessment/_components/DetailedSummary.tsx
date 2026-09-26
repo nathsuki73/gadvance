@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   CircleDot,
   Flame,
+  Layers,
 } from "lucide-react";
 
 export interface BktSkill {
@@ -41,23 +42,10 @@ interface DetailedSummaryProps {
   totalQuestionsCount?: number;
   bestStreak?: number;
   onSwitchToStudy?: () => void;
-  hasRemedial?: boolean; // 👈 Added prop to control interactivity
+  hasRemedial?: boolean;
+  isPassed?: boolean;
+  passingScore?: number;
 }
-
-const MOCK_SKILLS: BktSkill[] = [
-  {
-    id: "skill-1",
-    name: "State Management & React Hooks",
-    masteryProbability: 0.88,
-    previousMastery: 0.45,
-    trend: "improving",
-    questionsAttempted: 4,
-    decisionRationale:
-      "Evaluated based on your answers in this assessment attempt.",
-    history: [0.45, 0.88],
-    nextStep: "You've mastered this concept!",
-  },
-];
 
 const formatTime = (totalSeconds: number) => {
   const mins = Math.floor(totalSeconds / 60);
@@ -79,7 +67,7 @@ const getProgressStyle = (pct: number) => {
 };
 
 export function DetailedSummary({
-  skillsBreakdown,
+  skillsBreakdown = [],
   totalTimeSeconds = 0,
   averageTimeSeconds = 0,
   fastestTimeSeconds = 0,
@@ -89,15 +77,18 @@ export function DetailedSummary({
   totalQuestionsCount = 0,
   bestStreak = 0,
   onSwitchToStudy,
-  hasRemedial = false, // 👈 Default to false
+  hasRemedial = false,
+  isPassed,
+  passingScore = 75,
 }: DetailedSummaryProps) {
-  const skills = skillsBreakdown?.length ? skillsBreakdown : MOCK_SKILLS;
+  const skills = skillsBreakdown;
 
   const masteredCount = skills.filter(
     (s) => s.masteryProbability >= 0.75,
   ).length;
 
-  const passed = scorePercentage >= 75;
+  const passed =
+    isPassed !== undefined ? isPassed : scorePercentage >= passingScore;
 
   return (
     <div className="space-y-4 w-full text-left max-h-[440px] overflow-y-auto pr-1">
@@ -175,94 +166,113 @@ export function DetailedSummary({
           Topics breakdown
         </h4>
         <p className="text-xs text-zinc-500 font-medium">
-          {masteredCount} of {skills.length} topic learned.{" "}
-          {hasRemedial ? "Click to view suggested concepts to review." : ""}
+          {skills.length > 0
+            ? `${masteredCount} of ${skills.length} topic${skills.length === 1 ? "" : "s"} learned. ${
+                hasRemedial ? "Click to view suggested concepts to review." : ""
+              }`
+            : "No topic mastery metrics were tracked for this session."}
         </p>
       </div>
 
-      {/* --- Skill Breakdown Cards --- */}
-      {skills.map((skill) => {
-        const pct = Math.round(skill.masteryProbability * 100);
-        const before = Math.round(
-          (skill.previousMastery ?? skill.history[0] ?? 0) * 100,
-        );
-        const delta = pct - before;
-        const mastered = pct >= 75;
+      {/* --- Skill Breakdown Cards / Empty State --- */}
+      {skills.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-6 text-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50">
+          <div className="p-2 rounded-full bg-zinc-100 text-zinc-400 mb-2">
+            <Layers size={18} />
+          </div>
+          <p className="text-xs font-semibold text-zinc-700">
+            No Detected Topics
+          </p>
+          <p className="text-[11px] text-zinc-400 mt-0.5 max-w-xs">
+            There are no skill or concept mappings assigned to these questions.
+          </p>
+        </div>
+      ) : (
+        skills.map((skill) => {
+          const pct = Math.round(skill.masteryProbability * 100);
+          const before = Math.round(
+            (skill.previousMastery ?? skill.history[0] ?? 0) * 100,
+          );
+          const delta = pct - before;
+          const mastered = pct >= 75;
 
-        const style = getProgressStyle(pct);
-        const TrendIcon =
-          delta > 2 ? TrendingUp : delta < -2 ? TrendingDown : Minus;
-        const deltaColor =
-          delta > 2
-            ? "text-emerald-600"
-            : delta < -2
-              ? "text-amber-600"
-              : "text-zinc-400";
+          const style = getProgressStyle(pct);
+          const TrendIcon =
+            delta > 2 ? TrendingUp : delta < -2 ? TrendingDown : Minus;
+          const deltaColor =
+            delta > 2
+              ? "text-emerald-600"
+              : delta < -2
+                ? "text-amber-600"
+                : "text-zinc-400";
 
-        return (
-          <div
-            key={skill.id}
-            {...(hasRemedial
-              ? {
-                  role: "button",
-                  tabIndex: 0,
-                  onClick: onSwitchToStudy,
-                  onKeyDown: (e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      onSwitchToStudy?.();
-                    }
-                  },
-                  title: "Click to review concept in Study tab",
-                  className:
-                    "rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-2xs transition-all cursor-pointer hover:border-[#8b5cf6] hover:bg-purple-50/20 hover:shadow-sm",
-                }
-              : {
-                  className:
-                    "rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-2xs",
-                })}
-          >
-            <div className="flex items-center gap-3 text-left select-none">
-              <div className="flex-1 min-w-0 space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-xs font-bold text-zinc-900 truncate">
-                      {skill.name}
+          return (
+            <div
+              key={skill.id}
+              {...(hasRemedial
+                ? {
+                    role: "button",
+                    tabIndex: 0,
+                    onClick: onSwitchToStudy,
+                    onKeyDown: (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        onSwitchToStudy?.();
+                      }
+                    },
+                    title: "Click to review concept in Study tab",
+                    className:
+                      "rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-2xs transition-all cursor-pointer hover:border-[#8b5cf6] hover:bg-purple-50/20 hover:shadow-sm",
+                  }
+                : {
+                    className:
+                      "rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-2xs",
+                  })}
+            >
+              <div className="flex items-center gap-3 text-left select-none">
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-xs font-bold text-zinc-900 truncate">
+                        {skill.name}
+                      </span>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1 text-xs font-black ${style.text} shrink-0`}
+                    >
+                      {mastered ? (
+                        <CheckCircle2 size={12} />
+                      ) : (
+                        <CircleDot size={12} />
+                      )}
+                      {pct}%
                     </span>
                   </div>
-                  <span
-                    className={`inline-flex items-center gap-1 text-xs font-black ${style.text} shrink-0`}
-                  >
-                    {mastered ? (
-                      <CheckCircle2 size={12} />
-                    ) : (
-                      <CircleDot size={12} />
-                    )}
-                    {pct}%
-                  </span>
-                </div>
-                <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-700 ${style.bg}`}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between text-[11px] font-semibold pt-0.5">
-                  <span className={deltaColor}>
-                    <TrendIcon size={12} className="inline mr-0.5" />
-                    {before}% to {pct}% ({delta > 0 ? "+" : ""}
-                    {delta})
-                  </span>
-                  <span className="text-zinc-400 font-normal">
-                    {skill.questionsAttempted}{" "}
-                    {skill.questionsAttempted === 1 ? "question" : "questions"}{" "}
-                    tested
-                  </span>
+                  <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-700 ${style.bg}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] font-semibold pt-0.5">
+                    <span className={deltaColor}>
+                      <TrendIcon size={12} className="inline mr-0.5" />
+                      {before}% to {pct}% ({delta > 0 ? "+" : ""}
+                      {delta})
+                    </span>
+                    <span className="text-zinc-400 font-normal">
+                      {skill.questionsAttempted}{" "}
+                      {skill.questionsAttempted === 1
+                        ? "question"
+                        : "questions"}{" "}
+                      tested
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })
+      )}
     </div>
   );
 }

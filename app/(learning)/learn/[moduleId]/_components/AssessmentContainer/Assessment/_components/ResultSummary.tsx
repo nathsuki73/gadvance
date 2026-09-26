@@ -361,6 +361,8 @@ export function ResultsSummary({
             bestStreak={bestStreak}
             onSwitchToStudy={activateRemedial}
             hasRemedial={remedialSuggestions.length > 0}
+            isPassed={isPassed}
+            passingScore={settings.passingScore}
           />
         </div>
 
