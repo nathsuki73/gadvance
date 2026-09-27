@@ -212,7 +212,7 @@ export default function AboutPage() {
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-light text-zinc-900 mb-4">
-                Engineered at{" "}
+                Created at{" "}
                 <span className="text-[#8b5cf6] font-semibold italic font-serif">
                   LSPU-SPCC CCS Department
                 </span>

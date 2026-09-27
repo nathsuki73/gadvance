@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import { ArrowUpRight } from "lucide-react";
+import Link from "next/link";
 
 const FinalCTA = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -74,21 +75,15 @@ const FinalCTA = () => {
 
         {/* Buttons Animation - Scale and Fade */}
         <div className="scroll-anim opacity-0 translate-y-10 scale-95 transition-all duration-1000 delay-700 ease-out will-change-transform mt-16 flex flex-col items-center justify-center gap-6 sm:flex-row">
-          <button className="group relative flex w-full items-center justify-center gap-3 rounded-full bg-primary px-10 py-5 text-white transition-all hover:bg-primary-hover hover:shadow-xl hover:shadow-sky-100 active:scale-95 sm:w-auto">
+          <Link
+            href="/workspace"
+            className="group relative flex w-full items-center justify-center gap-3 rounded-full bg-primary px-10 py-5 text-white transition-all hover:bg-primary-hover hover:shadow-xl hover:shadow-sky-100 active:scale-95 sm:w-auto"
+          >
             <span className="text-lg font-medium lowercase">
               start your enrollment
             </span>
-            <ArrowUpRight
-              size={20}
-              // className="transition-transform group-hover:-translate-y-1 group-hover:translate-x-1"
-            />
-          </button>
-
-          {/* <button className="w-full rounded-full border border-zinc-200 bg-white px-10 py-5 text-zinc-600 transition-all hover:border-zinc-300 hover:bg-zinc-50 active:scale-95 sm:w-auto">
-            <span className="text-lg font-medium lowercase">
-              contact our partnership team
-            </span>
-          </button> */}
+            <ArrowUpRight size={20} />
+          </Link>
         </div>
       </div>
     </section>

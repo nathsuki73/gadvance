@@ -223,7 +223,7 @@ export default function SupportPage() {
                 Technical Support
               </h2>
               <h3 className="text-3xl sm:text-5xl font-light tracking-tight text-zinc-900 leading-tight">
-                Engineered by the <br />
+                Created by the <br />
                 <span className="font-semibold italic font-serif text-[#8b5cf6]">
                   LSPU CCS Team.
                 </span>
