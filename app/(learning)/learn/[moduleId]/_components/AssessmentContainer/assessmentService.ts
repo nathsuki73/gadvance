@@ -307,9 +307,6 @@ export async function submitAssessment(payload: {
 
     const json = await res.json().catch(() => ({}));
 
-    // 🔍 DEBUG LOG: Check what the backend is actually sending back on submit
-    console.log("🔍 SUBMIT API RAW RESPONSE:", json);
-
     if (!res || !res.ok) {
       return {
         success: false,
