@@ -51,6 +51,20 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Vary",
+            value: "RSC, Next-Router-Prefetch, Next-Router-State-Tree",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
