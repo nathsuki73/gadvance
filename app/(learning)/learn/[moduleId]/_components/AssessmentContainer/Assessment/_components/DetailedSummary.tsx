@@ -91,7 +91,7 @@ export function DetailedSummary({
     isPassed !== undefined ? isPassed : scorePercentage >= passingScore;
 
   return (
-    <div className="space-y-4 w-full text-left max-h-[440px] overflow-y-auto pr-1">
+    <div className="space-y-4 w-full text-left max-h-[440px] overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300">
       {/* --- Score & Time Breakdown Groups --- */}
       <div className="px-1 space-y-3 pb-4 border-b border-zinc-100">
         <div className="space-y-1.5">
