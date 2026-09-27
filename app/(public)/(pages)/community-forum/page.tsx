@@ -12,7 +12,6 @@ import {
   Lock,
   HeartHandshake,
 } from "lucide-react";
-import ProtectedButton from "@/app/components/ProtectedButton";
 
 export default function CommunityPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -56,7 +55,6 @@ export default function CommunityPage() {
       <section className="relative min-h-[80vh] flex items-center justify-center bg-gradient-to-b from-white via-violet-50/40 to-white pt-24 pb-16 lg:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full relative">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            
             {/* Left Content */}
             <div className="lg:col-span-6 text-left space-y-6 order-1">
               <div className="scroll-anim opacity-0 translate-y-8 transition-all duration-700 ease-out">
@@ -72,20 +70,19 @@ export default function CommunityPage() {
               </div>
 
               <p className="scroll-anim opacity-0 translate-y-8 transition-all duration-700 delay-100 ease-out max-w-xl text-base sm:text-lg text-zinc-600 font-light leading-relaxed">
-                Connect with members from your school or group. Discuss lessons, complete learning plans together, and share what you learn along the way.
+                Connect with members from your school or group. Discuss lessons,
+                complete learning plans together, and share what you learn along
+                the way.
               </p>
 
               <div className="scroll-anim opacity-0 translate-y-8 transition-all duration-700 delay-200 ease-out flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-                <ProtectedButton
-                  onClick={() => {
-                    window.location.href = "/workspace";
-                  }}
+                <Link
+                  href="/workspace"
                   className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-[#7c3aed] hover:shadow-lg hover:shadow-violet-200 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                  redirectUrl="/workspace"
                 >
                   <span>Go to My Workspace</span>
                   <ArrowUpRight size={16} />
-                </ProtectedButton>
+                </Link>
 
                 <a
                   href="#how-it-works"
@@ -117,7 +114,8 @@ export default function CommunityPage() {
                     What does a safe workplace look like in practice?
                   </h4>
                   <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2">
-                    Learners share practical tips and daily habits that help keep schools and offices respectful.
+                    Learners share practical tips and daily habits that help
+                    keep schools and offices respectful.
                   </p>
                 </div>
 
@@ -130,31 +128,31 @@ export default function CommunityPage() {
                     Questions on the latest assessment activity
                   </h4>
                   <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2">
-                    A helpful exchange on how to apply the gender analysis checklist in group assignments.
+                    A helpful exchange on how to apply the gender analysis
+                    checklist in group assignments.
                   </p>
                 </div>
 
                 {/* <div className="pt-2 text-center">
-                  <ProtectedButton
-                    onClick={() => {
-                      window.location.href = "/workspace";
-                    }}
+                  <Link
+                    href="/workspace"
                     className="text-xs font-semibold text-[#8b5cf6] hover:text-[#7c3aed] inline-flex items-center gap-1 transition-colors cursor-pointer"
-                    redirectUrl="/workspace"
                   >
                     <span>Open workspace to read more</span>
                     <ArrowUpRight size={14} />
-                  </ProtectedButton>
+                  </Link>
                 </div> */}
               </div>
             </div>
-
           </div>
         </div>
       </section>
 
       {/* ================= 3 EASY STEPS ================= */}
-      <section id="how-it-works" className="py-20 bg-zinc-50/70 border-y border-zinc-100">
+      <section
+        id="how-it-works"
+        className="py-20 bg-zinc-50/70 border-y border-zinc-100"
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="scroll-anim opacity-0 translate-y-8 transition-all duration-700 ease-out max-w-2xl mx-auto mb-14">
             <h2 className="text-xs font-bold uppercase tracking-widest text-[#8b5cf6]">
@@ -164,7 +162,8 @@ export default function CommunityPage() {
               What you can do here
             </h3>
             <p className="mt-2 mb-10 text-sm text-zinc-500 max-w-md mx-auto">
-              Everything in GADvance revolves around clear lessons and helpful group discussions.
+              Everything in GADvance revolves around clear lessons and helpful
+              group discussions.
             </p>
           </div>
 
@@ -177,7 +176,8 @@ export default function CommunityPage() {
                 1. Take Courses
               </h4>
               <p className="mt-2 text-xs sm:text-sm text-zinc-500 leading-relaxed flex-1">
-                Enroll in assigned or public learning plans, step through chapters at your own pace, and track your progress.
+                Enroll in assigned or public learning plans, step through
+                chapters at your own pace, and track your progress.
               </p>
             </div>
 
@@ -189,7 +189,8 @@ export default function CommunityPage() {
                 2. Join Your Organization
               </h4>
               <p className="mt-2 text-xs sm:text-sm text-zinc-500 leading-relaxed flex-1">
-                Connect with your specific school or academic organization to access exclusive learning materials and see your peers.
+                Connect with your specific school or academic organization to
+                access exclusive learning materials and see your peers.
               </p>
             </div>
 
@@ -201,7 +202,8 @@ export default function CommunityPage() {
                 3. Ask & Share
               </h4>
               <p className="mt-2 text-xs sm:text-sm text-zinc-500 leading-relaxed flex-1">
-                Post questions when you are stuck, reply to fellow learners, and share insights under each module topic.
+                Post questions when you are stuck, reply to fellow learners, and
+                share insights under each module topic.
               </p>
             </div>
           </div>
@@ -229,9 +231,12 @@ export default function CommunityPage() {
                 <HeartHandshake size={18} />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-zinc-900">Be Kind & Respectful</h4>
+                <h4 className="text-sm font-semibold text-zinc-900">
+                  Be Kind & Respectful
+                </h4>
                 <p className="mt-1 text-xs text-zinc-500 leading-relaxed">
-                  Treat everyone with respect. No insults, hate speech, or rude comments.
+                  Treat everyone with respect. No insults, hate speech, or rude
+                  comments.
                 </p>
               </div>
             </div>
@@ -241,9 +246,12 @@ export default function CommunityPage() {
                 <Compass size={18} />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-zinc-900">Stay on Topic</h4>
+                <h4 className="text-sm font-semibold text-zinc-900">
+                  Stay on Topic
+                </h4>
                 <p className="mt-1 text-xs text-zinc-500 leading-relaxed">
-                  Keep discussions focused on the lessons and assessments. Avoid unrelated topics or spam.
+                  Keep discussions focused on the lessons and assessments. Avoid
+                  unrelated topics or spam.
                 </p>
               </div>
             </div>
@@ -253,9 +261,12 @@ export default function CommunityPage() {
                 <Lock size={18} />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-zinc-900">Respect Privacy</h4>
+                <h4 className="text-sm font-semibold text-zinc-900">
+                  Respect Privacy
+                </h4>
                 <p className="mt-1 text-xs text-zinc-500 leading-relaxed">
-                  Do not share other people&apos;s personal contact info or private details without permission.
+                  Do not share other people&apos;s personal contact info or
+                  private details without permission.
                 </p>
               </div>
             </div>
@@ -265,9 +276,12 @@ export default function CommunityPage() {
                 <ShieldCheck size={18} />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-zinc-900">Honest Work</h4>
+                <h4 className="text-sm font-semibold text-zinc-900">
+                  Honest Work
+                </h4>
                 <p className="mt-1 text-xs text-zinc-500 leading-relaxed">
-                  Help each other understand concepts, but submit your own answers on assessments.
+                  Help each other understand concepts, but submit your own
+                  answers on assessments.
                 </p>
               </div>
             </div>
@@ -290,19 +304,16 @@ export default function CommunityPage() {
             </p>
 
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <ProtectedButton
-                onClick={() => {
-                  window.location.href = "/workspace";
-                }}
-                className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-[#7c3aed] hover:shadow-lg hover:shadow-violet-200 active:scale-95 cursor-pointer"
-                redirectUrl="/workspace"
+              <Link
+                href="/workspace"
+                className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-[#7c3aed] hover:shadow-lg hover:shadow-violet-200 active:scale-95 cursor-pointer flex items-center justify-center"
               >
                 Open Workspace
-              </ProtectedButton>
+              </Link>
 
               <Link
                 href="/"
-                className="w-full sm:w-auto rounded-full border border-zinc-200 bg-white px-10 py-3.5 text-sm font-semibold text-zinc-600 transition-all hover:bg-zinc-50 active:scale-95"
+                className="w-full sm:w-auto rounded-full border border-zinc-200 bg-white px-10 py-3.5 text-sm font-semibold text-zinc-600 transition-all hover:bg-zinc-50 active:scale-95 flex items-center justify-center"
               >
                 Back to Home
               </Link>

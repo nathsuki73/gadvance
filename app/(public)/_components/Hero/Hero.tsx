@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import ProtectedButton from "../../../components/ProtectedButton";
+import Link from "next/link";
 import Image from "next/image";
 import image2 from "@/app/(public)/assets/Subtract.png";
 
@@ -61,17 +61,14 @@ const Hero = () => {
             </p>
           </div>
 
-          {/* 3. Button Animation */}
+          {/* 3. Link Animation */}
           <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-500 ease-out will-change-transform flex justify-center">
-            <ProtectedButton
-              onClick={() => {
-                window.location.href = "/workspace";
-              }}
+            <Link
+              href="/workspace"
               className="rounded-md bg-[#8b5cf6] px-8 py-3 text-base sm:text-lg font-medium text-white transition-colors hover:bg-[#7c3aed]"
-              redirectUrl="/workspace"
             >
               Get Started
-            </ProtectedButton>
+            </Link>
           </div>
 
           {/* 4. Image Animation */}

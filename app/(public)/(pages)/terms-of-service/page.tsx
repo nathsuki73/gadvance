@@ -15,7 +15,6 @@ import {
   BookOpen,
   BarChart3,
 } from "lucide-react";
-import ProtectedButton from "@/app/components/ProtectedButton";
 
 export default function TermsOfServicePage() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -300,15 +299,12 @@ export default function TermsOfServicePage() {
               </h3>
 
               <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <ProtectedButton
-                  onClick={() => {
-                    window.location.href = "/workspace";
-                  }}
+                <Link
                   className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-10 py-4 text-base font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95"
-                  redirectUrl="/workspace"
+                  href="/workspace"
                 >
                   Enter Workspace
-                </ProtectedButton>
+                </Link>
 
                 <Link
                   href="/"

@@ -12,7 +12,7 @@ import {
   Building2,
   CheckCircle2,
 } from "lucide-react";
-import ProtectedButton from "@/app/components/ProtectedButton";
+import Link from "next/link";
 
 export default function AboutPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -77,16 +77,13 @@ export default function AboutPage() {
               </p>
 
               <div className="scroll-anim opacity-0 translate-y-8 transition-all duration-700 delay-200 ease-out mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <ProtectedButton
-                  onClick={() => {
-                    window.location.href = "/workspace";
-                  }}
+                <Link
+                  href="/workspace"
                   className="rounded-full bg-[#8b5cf6] px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-[#7c3aed] hover:shadow-lg hover:shadow-violet-200 active:scale-95 inline-flex items-center justify-center gap-2 cursor-pointer"
-                  redirectUrl="/workspace"
                 >
                   <span>Explore the Platform</span>
                   <ArrowUpRight size={16} />
-                </ProtectedButton>
+                </Link>
               </div>
             </div>
           </div>
@@ -121,7 +118,8 @@ export default function AboutPage() {
                   <strong className="font-semibold text-zinc-900">
                     Laguna State Polytechnic University – San Pablo City Campus
                   </strong>
-                  , GADvance is a web platform built to make Digital lessons and concepts easier to access and learn online.
+                  , GADvance is a web platform built to make Digital lessons and
+                  concepts easier to access and learn online.
                 </p>
               </div>
             </div>

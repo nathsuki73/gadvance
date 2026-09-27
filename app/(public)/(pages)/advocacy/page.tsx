@@ -10,7 +10,6 @@ import {
   ArrowUpRight,
   Sparkles,
 } from "lucide-react";
-import ProtectedButton from "@/app/components/ProtectedButton";
 
 export default function AdvocacyPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -72,16 +71,13 @@ export default function AdvocacyPage() {
           </p>
 
           <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-300 ease-out flex flex-col sm:flex-row items-center justify-center gap-4 pt-10">
-            <ProtectedButton
-              onClick={() => {
-                window.location.href = "/workspace";
-              }}
+            <Link
+              href="/workspace"
               className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-8 py-4 text-base font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-lg hover:shadow-violet-200 active:scale-95 flex items-center justify-center gap-2"
-              redirectUrl="/workspace"
             >
               <span>Join the Advocacy Movement</span>
               <ArrowUpRight size={18} />
-            </ProtectedButton>
+            </Link>
 
             <a
               href="#media"
@@ -268,15 +264,12 @@ export default function AdvocacyPage() {
             </p>
 
             <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <ProtectedButton
-                onClick={() => {
-                  window.location.href = "/workspace";
-                }}
-                className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-10 py-5 text-lg font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95"
-                redirectUrl="/workspace"
+              <Link
+                href="/workspace"
+                className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-10 py-5 text-lg font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95 text-center inline-flex items-center justify-center"
               >
                 Explore Advocacy Workspace
-              </ProtectedButton>
+              </Link>
 
               <Link
                 href="/"

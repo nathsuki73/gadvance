@@ -14,7 +14,6 @@ import {
   X,
   RotateCcw,
 } from "lucide-react";
-import ProtectedButton from "@/app/components/ProtectedButton";
 
 interface Article {
   id: string;
@@ -160,8 +159,6 @@ export default function ResourcesPage() {
       { threshold: 0.1, rootMargin: "0px 0px -50px 0px" },
     );
 
-    // Wait a tick so newly-rendered .scroll-anim nodes (e.g. after
-    // filtering/searching) exist in the DOM before we query for them.
     const frame = requestAnimationFrame(() => {
       const children = scrollRef.current?.querySelectorAll(".scroll-anim");
       children?.forEach((el) => observer.observe(el));
@@ -171,7 +168,7 @@ export default function ResourcesPage() {
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [filteredArticles]); // ← re-run whenever the visible article set changes
+  }, [filteredArticles]);
 
   const resetFilters = () => {
     setSelectedCategory("All");
@@ -259,16 +256,13 @@ export default function ResourcesPage() {
             </div>
 
             <div className="lg:col-span-4 flex lg:justify-end">
-              <ProtectedButton
-                onClick={() => {
-                  window.location.href = "/workspace";
-                }}
+              <Link
+                href="/workspace"
                 className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-8 py-4 text-sm font-medium text-white hover:bg-[#7c3aed] transition-all flex items-center justify-center gap-2"
-                redirectUrl="/workspace"
               >
                 <span>Read Full Analysis</span>
                 <ArrowUpRight size={16} />
-              </ProtectedButton>
+              </Link>
             </div>
           </div>
         </div>
@@ -336,21 +330,17 @@ export default function ResourcesPage() {
                     <span className="text-[11px] text-zinc-400 flex items-center gap-1">
                       <Clock size={12} /> {article.readTime}
                     </span>
-                    <ProtectedButton
-                      onClick={() => {
-                        window.location.href = "/workspace";
-                      }}
+                    <Link
+                      href="/workspace"
                       className="text-xs font-medium text-[#8b5cf6] hover:text-[#7c3aed] flex items-center gap-1"
-                      redirectUrl="/workspace"
                     >
                       <span>Read Article</span>
                       <ArrowUpRight size={14} />
-                    </ProtectedButton>
+                    </Link>
                   </div>
                 </article>
               ))
             ) : (
-              /* No Results State with One-Click Reset */
               <div className="col-span-full py-20 text-center bg-zinc-50/50 rounded-3xl border border-dashed border-zinc-200">
                 <BookOpen size={40} className="mx-auto mb-3 text-violet-300" />
                 <h4 className="text-lg font-medium text-zinc-800">
@@ -415,16 +405,13 @@ export default function ResourcesPage() {
                   </p>
                 </div>
 
-                <ProtectedButton
-                  onClick={() => {
-                    window.location.href = "/workspace";
-                  }}
+                <Link
+                  href="/workspace"
                   className="mt-8 w-full rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-violet-50 hover:border-violet-200 py-3 text-xs font-medium text-zinc-700 hover:text-[#8b5cf6] transition-all flex items-center justify-center gap-2"
-                  redirectUrl="/workspace"
                 >
                   <Download size={14} />
                   <span>Download Toolkit</span>
-                </ProtectedButton>
+                </Link>
               </div>
             ))}
           </div>
@@ -450,19 +437,16 @@ export default function ResourcesPage() {
             </p>
 
             <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <ProtectedButton
-                onClick={() => {
-                  window.location.href = "/workspace";
-                }}
-                className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-10 py-5 text-lg font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95"
-                redirectUrl="/workspace"
+              <Link
+                href="/workspace"
+                className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-10 py-5 text-lg font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95 flex items-center justify-center"
               >
                 Access Learning Workspace
-              </ProtectedButton>
+              </Link>
 
               <Link
                 href="/"
-                className="w-full sm:w-auto rounded-full border border-zinc-200 bg-white px-10 py-5 text-lg font-medium text-zinc-600 transition-all hover:bg-zinc-50 active:scale-95"
+                className="w-full sm:w-auto rounded-full border border-zinc-200 bg-white px-10 py-5 text-lg font-medium text-zinc-600 transition-all hover:bg-zinc-50 active:scale-95 flex items-center justify-center"
               >
                 Back to Overview
               </Link>

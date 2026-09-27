@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 
 import image1 from "@/app/(public)/assets/hero.png";
-import ProtectedButton from "@/app/components/ProtectedButton";
 
 export default function WomenInLeadershipPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -78,16 +77,13 @@ export default function WomenInLeadershipPage() {
               </p>
 
               <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-300 ease-out flex flex-col sm:flex-row items-center gap-4 pt-4">
-                <ProtectedButton
-                  onClick={() => {
-                    window.location.href = "/workspace";
-                  }}
+                <Link
+                  href="/workspace"
                   className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-8 py-4 text-base font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-lg hover:shadow-violet-200 active:scale-95 flex items-center justify-center gap-2"
-                  redirectUrl="/workspace"
                 >
                   <span>Start Track Enrollment</span>
                   <ArrowUpRight size={18} />
-                </ProtectedButton>
+                </Link>
 
                 <a
                   href="#modules"
@@ -288,19 +284,16 @@ export default function WomenInLeadershipPage() {
             </p>
 
             <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <ProtectedButton
-                onClick={() => {
-                  window.location.href = "/workspace";
-                }}
-                className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-10 py-5 text-lg font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95"
-                redirectUrl="/workspace"
+              <Link
+                href="/workspace"
+                className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-10 py-5 text-lg font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95 flex items-center justify-center"
               >
                 Enroll in Leadership Track
-              </ProtectedButton>
+              </Link>
 
               <Link
                 href="/"
-                className="w-full sm:w-auto rounded-full border border-zinc-200 bg-white px-10 py-5 text-lg font-medium text-zinc-600 transition-all hover:bg-zinc-50 active:scale-95"
+                className="w-full sm:w-auto rounded-full border border-zinc-200 bg-white px-10 py-5 text-lg font-medium text-zinc-600 transition-all hover:bg-zinc-50 active:scale-95 flex items-center justify-center"
               >
                 Back to Overview
               </Link>

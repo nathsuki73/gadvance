@@ -14,7 +14,6 @@ import {
   Mail,
   HelpCircle,
 } from "lucide-react";
-import ProtectedButton from "@/app/components/ProtectedButton";
 
 export default function PrivacyPolicyPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -109,8 +108,9 @@ export default function PrivacyPolicyPage() {
                   Full Transparency
                 </h3>
                 <p className="mt-3 text-xs sm:text-sm font-light leading-relaxed text-zinc-500">
-                  The website collects only necessary information to facilitate learning
-                  modules, certifications, and institutional engagement.
+                  The website collects only necessary information to facilitate
+                  learning modules, certifications, and institutional
+                  engagement.
                 </p>
               </div>
 
@@ -122,8 +122,9 @@ export default function PrivacyPolicyPage() {
                   User Control
                 </h3>
                 <p className="mt-3 text-xs sm:text-sm font-light leading-relaxed text-zinc-500">
-                  Users retain complete control over their personal data, including user profile, learning
-                  history, and communication preferences.
+                  Users retain complete control over their personal data,
+                  including user profile, learning history, and communication
+                  preferences.
                 </p>
               </div>
             </div>
@@ -194,9 +195,9 @@ export default function PrivacyPolicyPage() {
                   platform improvements.
                 </li>
                 <li>
-                  Gathering anonymized student data for research on gender development
-                  and digital learning conducted at Laguna
-                  State Polytechnic University – San Pablo City Campus.
+                  Gathering anonymized student data for research on gender
+                  development and digital learning conducted at Laguna State
+                  Polytechnic University – San Pablo City Campus.
                 </li>
                 <li>
                   Ensuring technical stability, preventing fraudulent activity,
@@ -263,8 +264,8 @@ export default function PrivacyPolicyPage() {
               <p className="text-sm font-light text-zinc-600 leading-relaxed">
                 GADvance uses essential cookies and session storage to keep you
                 authenticated across learning sessions and save your module
-                preferences. The website does not use intrusive third-party ad-tracking
-                cookies.
+                preferences. The website does not use intrusive third-party
+                ad-tracking cookies.
               </p>
             </div>
 
@@ -323,19 +324,16 @@ export default function PrivacyPolicyPage() {
               </h3>
 
               <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <ProtectedButton
-                  onClick={() => {
-                    window.location.href = "/workspace";
-                  }}
-                  className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-10 py-4 text-base font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95"
-                  redirectUrl="/workspace"
+                <Link
+                  href="/workspace"
+                  className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-10 py-4 text-base font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95 flex items-center justify-center"
                 >
                   Enter Workspace
-                </ProtectedButton>
+                </Link>
 
                 <Link
                   href="/"
-                  className="w-full sm:w-auto rounded-full border border-zinc-200 bg-white px-10 py-4 text-base font-medium text-zinc-600 transition-all hover:bg-zinc-50 active:scale-95"
+                  className="w-full sm:w-auto rounded-full border border-zinc-200 bg-white px-10 py-4 text-base font-medium text-zinc-600 transition-all hover:bg-zinc-50 active:scale-95 flex items-center justify-center"
                 >
                   Back to Home
                 </Link>
