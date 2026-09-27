@@ -52,10 +52,11 @@ const Footer = () => {
 
             <p className="max-w-md text-sm font-light leading-relaxed text-zinc-500">
               Providing accessible tools and modular education to advance gender
-              awareness and equality across schools, institutions, and workplaces.
+              awareness and equality across schools, institutions, and
+              workplaces.
             </p>
 
-            <div className="flex gap-2.5 pt-1">
+            {/* <div className="flex gap-2.5 pt-1">
               {socialLinks.map(({ name, Icon }) => (
                 <button
                   key={name}
@@ -67,7 +68,7 @@ const Footer = () => {
                   <Icon className="h-4 w-4" />
                 </button>
               ))}
-            </div>
+            </div> */}
           </div>
 
           {/* Platform Navigation */}
@@ -103,7 +104,6 @@ const Footer = () => {
                   My Workspace
                 </Link>
               </li>
-
             </ul>
           </div>
 
