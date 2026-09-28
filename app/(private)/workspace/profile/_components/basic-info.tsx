@@ -54,9 +54,15 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
       const profileObj =
         initialData.profile || initialData.user_profile || initialData;
       setFormData({
-        firstName: initialData.first_name || "",
-        middleName: initialData.middle_name || "",
-        lastName: initialData.last_name || "",
+        firstName: (initialData.first_name || "")
+          .replace(/\d/g, "")
+          .slice(0, MAX_NAME_LENGTH),
+        middleName: (initialData.middle_name || "")
+          .replace(/\d/g, "")
+          .slice(0, MAX_NAME_LENGTH),
+        lastName: (initialData.last_name || "")
+          .replace(/\d/g, "")
+          .slice(0, MAX_NAME_LENGTH),
       });
 
       const bDay = initialData.date_of_birth || initialData.birthday || "";
@@ -73,8 +79,24 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
     }
   }, [initialData]);
 
+  // Strip digits on paste/change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    if (["firstName", "middleName", "lastName"].includes(name)) {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value.replace(/\d/g, "").slice(0, MAX_NAME_LENGTH),
+      }));
+      return;
+    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Block digits 0-9 from being typed
+  const handleKeyDownNoNumbers = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+    }
   };
 
   const handleBirthdayChange = (dateStr: string) => {
@@ -86,15 +108,19 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+    const cleanFirstName = formData.firstName.replace(/\d/g, "").trim();
+    const cleanMiddleName = formData.middleName.replace(/\d/g, "").trim();
+    const cleanLastName = formData.lastName.replace(/\d/g, "").trim();
+
+    if (!cleanFirstName || !cleanLastName) {
       showToast("Please enter your first and last name.", "error");
       return;
     }
 
     if (
-      formData.firstName.length > MAX_NAME_LENGTH ||
-      formData.lastName.length > MAX_NAME_LENGTH ||
-      formData.middleName.length > MAX_NAME_LENGTH
+      cleanFirstName.length > MAX_NAME_LENGTH ||
+      cleanLastName.length > MAX_NAME_LENGTH ||
+      cleanMiddleName.length > MAX_NAME_LENGTH
     ) {
       showToast(
         `Name fields cannot exceed ${MAX_NAME_LENGTH} characters.`,
@@ -129,7 +155,9 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
 
     try {
       const payload = {
-        ...formData,
+        firstName: cleanFirstName,
+        middleName: cleanMiddleName,
+        lastName: cleanLastName,
         birthday,
         date_of_birth: birthday,
         age: ageNumber.toString(),
@@ -184,6 +212,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             maxLength={MAX_NAME_LENGTH}
             value={formData.firstName}
             onChange={handleChange}
+            onKeyDown={handleKeyDownNoNumbers}
             required
             className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
           />
@@ -203,6 +232,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             maxLength={MAX_NAME_LENGTH}
             value={formData.lastName}
             onChange={handleChange}
+            onKeyDown={handleKeyDownNoNumbers}
             required
             className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
           />
@@ -223,6 +253,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
           maxLength={MAX_NAME_LENGTH}
           value={formData.middleName}
           onChange={handleChange}
+          onKeyDown={handleKeyDownNoNumbers}
           placeholder="Optional"
           className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
         />

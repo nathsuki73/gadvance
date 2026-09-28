@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
@@ -16,6 +16,8 @@ import {
   saveOnboardingProfile,
 } from "../service";
 
+const MAX_BIO_LENGTH = 250;
+
 interface CustomSessionUser {
   name?: string | null;
   email?: string | null;
@@ -30,11 +32,10 @@ export default function AvatarAndBio() {
 
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Restore cached bio & avatar preview directly on initial state creation
   const [bio, setBio] = useState<string>(() => {
     if (typeof window === "undefined") return "";
     const p3 = getOnboardingCache<OnboardingP3>(ONBOARDING_CACHE_KEYS.p3);
-    return p3?.bio || "";
+    return (p3?.bio || "").slice(0, MAX_BIO_LENGTH);
   });
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(() => {
@@ -62,7 +63,7 @@ export default function AvatarAndBio() {
 
   const handleBack = (): void => {
     setOnboardingCache<OnboardingP3>(ONBOARDING_CACHE_KEYS.p3, {
-      bio,
+      bio: bio.slice(0, MAX_BIO_LENGTH),
       avatarPreviewUrl: avatarPreview || undefined,
     });
     router.back();
@@ -72,6 +73,12 @@ export default function AvatarAndBio() {
     e: React.FormEvent<HTMLFormElement>,
   ): Promise<void> => {
     e.preventDefault();
+
+    if (bio.length > MAX_BIO_LENGTH) {
+      showToast(`Bio cannot exceed ${MAX_BIO_LENGTH} characters.`, "warning");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -89,14 +96,12 @@ export default function AvatarAndBio() {
       showToast("Profile set up successfully!", "success");
       clearOnboardingCache();
 
-      // 1. Update NextAuth session status
       const updatedUser: CustomSessionUser = {
         ...(session?.user as CustomSessionUser),
         status: "active",
       };
       await update({ user: updatedUser });
 
-      // 2. Refresh router cache & navigate
       router.refresh();
       router.push("/workspace");
     } catch (error: unknown) {
@@ -165,13 +170,25 @@ export default function AvatarAndBio() {
           </div>
         </div>
 
-        {/* Short Bio Field (Optional) */}
+        {/* Short Bio Field */}
         <div>
-          <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
-            Short Bio
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+              Short Bio
+            </label>
+            <span
+              className={`text-[10px] tabular-nums transition-colors ${
+                bio.length >= MAX_BIO_LENGTH
+                  ? "font-semibold text-red-500"
+                  : "text-zinc-400"
+              }`}
+            >
+              {bio.length} / {MAX_BIO_LENGTH}
+            </span>
+          </div>
           <textarea
             value={bio}
+            maxLength={MAX_BIO_LENGTH}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
               setBio(e.target.value)
             }

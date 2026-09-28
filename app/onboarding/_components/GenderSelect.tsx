@@ -3,6 +3,9 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Check, ChevronDown } from "lucide-react";
 
+// Maximum character limit for custom gender specification
+const MAX_GENDER_LENGTH = 50;
+
 const PREDEFINED_GENDERS = ["Male", "Female", "Prefer not to specify"];
 const OPTIONS: { display: string; value: string }[] = [
   { display: "Male", value: "Male" },
@@ -22,7 +25,9 @@ export function GenderSelect({ value, onChange }: GenderSelectProps) {
 
   const [prevValue, setPrevValue] = useState(value);
   const [isEditingCustom, setIsEditingCustom] = useState(isCustom);
-  const [customText, setCustomText] = useState(isCustom ? value : "");
+  const [customText, setCustomText] = useState(
+    isCustom ? value.replace(/\d/g, "").slice(0, MAX_GENDER_LENGTH) : "",
+  );
   const [isOpen, setIsOpen] = useState(false);
 
   const ref = useRef<HTMLDivElement>(null);
@@ -44,7 +49,7 @@ export function GenderSelect({ value, onChange }: GenderSelectProps) {
     const predefined = PREDEFINED_GENDERS.includes(value);
     if (!predefined && value) {
       setIsEditingCustom(false);
-      setCustomText(value);
+      setCustomText(value.replace(/\d/g, "").slice(0, MAX_GENDER_LENGTH));
     } else {
       setIsEditingCustom(false);
       setCustomText("");
@@ -52,9 +57,14 @@ export function GenderSelect({ value, onChange }: GenderSelectProps) {
   }
 
   const handleConfirmCustom = () => {
-    if (customTextRef.current.trim()) {
+    const trimmed = customTextRef.current
+      .replace(/\d/g, "")
+      .trim()
+      .slice(0, MAX_GENDER_LENGTH);
+
+    if (trimmed) {
       setIsEditingCustom(false);
-      onChange(customTextRef.current.trim());
+      onChange(trimmed);
     }
   };
 
@@ -82,7 +92,9 @@ export function GenderSelect({ value, onChange }: GenderSelectProps) {
     setIsOpen(false);
     if (optionValue === "Other") {
       setIsEditingCustom(true);
-      setCustomText(isCustom ? value : "");
+      setCustomText(
+        isCustom ? value.replace(/\d/g, "").slice(0, MAX_GENDER_LENGTH) : "",
+      );
     } else {
       setIsEditingCustom(false);
       setCustomText("");
@@ -104,7 +116,7 @@ export function GenderSelect({ value, onChange }: GenderSelectProps) {
         <span className="text-red-500 ml-1">*</span>
       </label>
 
-      {/* Main Container: Removed heavy purple ring/box when editing custom text */}
+      {/* Main Container */}
       <div
         onClick={() => {
           if (!isEditingCustom) {
@@ -127,15 +139,32 @@ export function GenderSelect({ value, onChange }: GenderSelectProps) {
             <input
               ref={inputRef}
               type="text"
+              maxLength={MAX_GENDER_LENGTH}
               value={customText}
-              onChange={(e) => setCustomText(e.target.value)}
+              onChange={(e) => setCustomText(e.target.value.replace(/\d/g, ""))}
               onKeyDown={(e) => {
+                if (/^[0-9]$/.test(e.key)) {
+                  e.preventDefault();
+                  return;
+                }
                 if (e.key === "Enter") handleConfirmCustom();
               }}
               placeholder="Please specify gender..."
               className="w-full bg-transparent focus:outline-none text-zinc-800 text-sm"
             />
-            {/* Slick, modern check button with purple accent */}
+
+            {/* Character Counter */}
+            <span
+              className={`text-[10px] tabular-nums shrink-0 transition-colors ${
+                customText.length >= MAX_GENDER_LENGTH
+                  ? "font-semibold text-red-500"
+                  : "text-zinc-400"
+              }`}
+            >
+              {customText.length}/{MAX_GENDER_LENGTH}
+            </span>
+
+            {/* Confirm Button */}
             <button
               type="button"
               onClick={handleConfirmCustom}
