@@ -36,6 +36,7 @@ interface PageContainerProps {
   title: string;
   initialCompleted?: boolean;
   isLastItem?: boolean;
+  isLoadingNext?: boolean;
   onComplete: () => void;
   onNext: () => void;
   onExit: () => void;
@@ -85,6 +86,7 @@ export default function PageContainer({
   title,
   initialCompleted = false,
   isLastItem = false,
+  isLoadingNext = false,
   onComplete,
   onNext,
   onExit,
@@ -94,7 +96,6 @@ export default function PageContainer({
   const token = session?.laravelJwt;
 
   const [isCompleted, setIsCompleted] = useState(initialCompleted);
-  const [isNavigating, setIsNavigating] = useState(false);
 
   const [remedialContent, setRemedialContent] =
     useState<RemedialContent | null>(null);
@@ -106,7 +107,6 @@ export default function PageContainer({
 
   useEffect(() => {
     setIsCompleted(initialCompleted);
-    setIsNavigating(false);
     setRemedialContent(null);
     setPortalTarget(null);
     setActiveBlockId(null);
@@ -249,8 +249,7 @@ export default function PageContainer({
   }, []);
 
   const handleNextClick = () => {
-    if (isNavigating) return;
-    setIsNavigating(true);
+    if (isLoadingNext) return;
     if (!isCompleted) {
       setIsCompleted(true);
       onComplete();
@@ -302,7 +301,7 @@ export default function PageContainer({
     return content;
   };
 
-  if (loading || sessionStatus === "loading" || isNavigating) {
+  if (loading || sessionStatus === "loading") {
     return (
       <div className="flex h-full min-h-screen w-full flex-col justify-between bg-white overflow-y-auto">
         <PageContentSkeleton />
@@ -365,7 +364,7 @@ export default function PageContainer({
             <button
               type="button"
               onClick={onExit}
-              disabled={isNavigating}
+              disabled={isLoadingNext}
               className="inline-flex min-h-[48px] w-full max-w-sm items-center justify-center gap-2 rounded-2xl bg-[#8b5cf6] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition-all duration-300 cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-50"
             >
               <span>Complete Module</span>
@@ -376,7 +375,7 @@ export default function PageContainer({
               <button
                 type="button"
                 onClick={handleNextClick}
-                disabled={isNavigating}
+                disabled={isLoadingNext}
                 aria-label="Next Page"
                 className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-50 hover:bg-[#8b5cf6] text-[#8b5cf6] hover:text-white transition-all duration-300 cursor-pointer shadow-sm hover:scale-105 active:scale-95 disabled:opacity-50"
               >

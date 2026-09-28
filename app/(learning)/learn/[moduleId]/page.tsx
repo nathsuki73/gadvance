@@ -364,6 +364,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
             title={activeItem.title}
             initialCompleted={completedItemIds.has(activeItem.id)}
             isLastItem={isLastItem}
+            isLoadingNext={completeMutation.isPending}
             onComplete={() => handleItemComplete(activeItem.id, 100)}
             onNext={handleNext}
             onExit={handleExitModule}
