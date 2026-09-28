@@ -15,7 +15,7 @@ export const InputField: React.FC<InputFieldProps> = ({
   disallowNumbers = false,
   className = "",
   onKeyDown,
-  onInput,
+  onChange,
   ...props
 }) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -26,12 +26,12 @@ export const InputField: React.FC<InputFieldProps> = ({
     onKeyDown?.(e);
   };
 
-  const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
-    // Strip out digits if pasted into the field
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Strip digits when pasting, autofilling, or editing
     if (disallowNumbers) {
       e.currentTarget.value = e.currentTarget.value.replace(/\d/g, "");
     }
-    onInput?.(e);
+    onChange?.(e);
   };
 
   return (
@@ -45,7 +45,7 @@ export const InputField: React.FC<InputFieldProps> = ({
         required={required}
         maxLength={maxLength}
         onKeyDown={handleKeyDown}
-        onInput={handleInput}
+        onChange={handleChange}
         className={`w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50 text-sm ${className}`}
         {...props}
       />
