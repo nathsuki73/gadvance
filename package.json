@@ -5,7 +5,7 @@
   "scripts": {
     "test": "jest",
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "deploy": "next build && rsync -avz -e 'ssh -p 65002' ./out/ u242590936@sg-nme-web613.main-hosting.eu:~/domains/gadvance-lspu.com/public_html/"

@@ -36,11 +36,6 @@ const nextConfig: NextConfig = {
       // { protocol: "https", hostname: "your-azure-app.azurewebsites.net", pathname: "/**" }
     ],
   },
-  experimental: {
-    serverActions: {
-      bodySizeLimit: "4mb",
-    },
-  },
 
   async rewrites() {
     return [

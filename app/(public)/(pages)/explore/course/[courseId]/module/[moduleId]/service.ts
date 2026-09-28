@@ -1,12 +1,12 @@
 "use server";
 
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServerSession } from "next-auth";
 import {
   ModuleProgressResponse,
   ModuleResponse,
   StaticTestResponse,
 } from "./types";
+import { authOptions } from "@/app/lib/auth";
 
 type ApiOptions = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
