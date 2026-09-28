@@ -17,6 +17,7 @@ import {
 } from "../service";
 
 const MAX_BIO_LENGTH = 250;
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
 interface CustomSessionUser {
   name?: string | null;
@@ -54,6 +55,13 @@ export default function AvatarAndBio() {
 
     if (!file.type.startsWith("image/")) {
       showToast("Please upload a valid image file (JPG or PNG).", "warning");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      showToast("Image must be below 2MB.", "warning");
+      e.target.value = ""; // allows re-selecting the same file
       return;
     }
 

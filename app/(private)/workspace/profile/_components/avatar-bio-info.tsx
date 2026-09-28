@@ -15,6 +15,7 @@ const API_BASE_URL = (
 
 // Define your maximum character limit here (e.g., 250 characters)
 const MAX_BIO_LENGTH = 250;
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
 
 // Helper function identical to AuthHeader's avatar resolver
 function resolveAvatarSrc(avatar?: string | null): string | null {
@@ -70,6 +71,13 @@ export default function AvatarBioInfo({
 
     if (!file.type.startsWith("image/")) {
       showToast("Please upload a valid image file (JPG or PNG).", "error");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      showToast("Image must be below 2MB.", "error");
+      e.target.value = ""; // clear the input so the same file can be re-selected
       return;
     }
 
