@@ -159,9 +159,12 @@ export default function WorkspacePage() {
           <p className="text-xs font-semibold tracking-wider text-primary uppercase">
             Workspace Overview
           </p>
-          <h1 className="text-3xl font-light tracking-tight text-zinc-900 sm:text-4xl lg:text-5xl">
+          <h1 className="text-3xl font-light tracking-tight text-zinc-900 sm:text-4xl lg:text-5xl min-w-0">
             Welcome to GADvance,{" "}
-            <span className="font-semibold italic font-serif text-primary inline-block">
+            <span
+              title={firstName}
+              className="font-semibold italic font-serif text-primary inline-block align-bottom max-w-full truncate pb-2 -mb-2 pr-1"
+            >
               {firstName}.
             </span>
           </h1>

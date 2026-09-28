@@ -26,6 +26,10 @@ import {
 const COUNTRIES = ["Philippines"];
 const DIAL_CODES = ["+63"];
 
+// Field length constraints
+const MAX_ADDRESS_LENGTH = 200;
+const POSTAL_CODE_LENGTH = 4;
+
 const formatPhoneNumber = (value: string): string => {
   let digits = value.replace(/\D/g, "");
   if (digits.startsWith("0")) digits = digits.slice(1);
@@ -77,18 +81,18 @@ export default function ContactLocationInfo({
   // 2. Cascading Provinces based on selected Region
   const provinces = useMemo<ProvinceItem[]>(
     () => fetchProvinces(formData.regionCode),
-    [formData.regionCode]
+    [formData.regionCode],
   );
 
   // 3. Cascading Municipalities/Cities based on selected Province
   const muncities = useMemo<MunCityItem[]>(
     () => fetchMunCities(formData.provinceCode),
-    [formData.provinceCode]
+    [formData.provinceCode],
   );
 
   const selectedProvince = useMemo(
     () => provinces.find((p) => p.provCode === formData.provinceCode),
-    [provinces, formData.provinceCode]
+    [provinces, formData.provinceCode],
   );
 
   const isHUC = selectedProvince?.cityClass === "HUC";
@@ -100,7 +104,7 @@ export default function ContactLocationInfo({
   // 4. Cascading Barangays based on selected City
   const barangays = useMemo<BarangayItem[]>(
     () => fetchBarangays(effectiveMunCityCode),
-    [effectiveMunCityCode]
+    [effectiveMunCityCode],
   );
 
   // Sync initial backend data into state & dropdown search queries
@@ -115,18 +119,19 @@ export default function ContactLocationInfo({
         (dataObj.region as string) ||
         "";
       const rawRegCode =
-        (dataObj.region_code as string) ||
-        (dataObj.regionCode as string) ||
-        "";
+        (dataObj.region_code as string) || (dataObj.regionCode as string) || "";
 
       const regObj = regions.find((r) => {
         if (rawRegCode) {
-          if (r.regCode === rawRegCode || r.regCode.startsWith(rawRegCode)) return true;
+          if (r.regCode === rawRegCode || r.regCode.startsWith(rawRegCode))
+            return true;
         }
         if (rawReg) {
           const rName = r.regionName.toLowerCase();
           const target = rawReg.toLowerCase();
-          return rName === target || rName.includes(target) || target.includes(rName);
+          return (
+            rName === target || rName.includes(target) || target.includes(rName)
+          );
         }
         return false;
       });
@@ -149,7 +154,8 @@ export default function ContactLocationInfo({
       const availProvinces = fetchProvinces(regCode);
       const provObj = availProvinces.find((p) => {
         if (rawProvCode) {
-          if (p.provCode === rawProvCode || p.provCode.startsWith(rawProvCode)) return true;
+          if (p.provCode === rawProvCode || p.provCode.startsWith(rawProvCode))
+            return true;
         }
         if (rawProv) {
           return p.provName.toLowerCase() === rawProv.toLowerCase();
@@ -174,7 +180,11 @@ export default function ContactLocationInfo({
       const availMunCities = fetchMunCities(provCode);
       const munObj = availMunCities.find((m) => {
         if (rawMunCode) {
-          if (m.munCityCode === rawMunCode || m.munCityCode.startsWith(rawMunCode)) return true;
+          if (
+            m.munCityCode === rawMunCode ||
+            m.munCityCode.startsWith(rawMunCode)
+          )
+            return true;
         }
         if (rawCity) {
           return m.munCityName.toLowerCase() === rawCity.toLowerCase();
@@ -197,9 +207,7 @@ export default function ContactLocationInfo({
         "";
 
       const effMunCode =
-        provObj?.cityClass === "HUC"
-          ? availMunCities[0]?.munCityCode
-          : munCode;
+        provObj?.cityClass === "HUC" ? availMunCities[0]?.munCityCode : munCode;
       const availBarangays = fetchBarangays(effMunCode);
       const brgyObj = availBarangays.find((b) => {
         if (rawBrgyCode) {
@@ -239,8 +247,10 @@ export default function ContactLocationInfo({
         munCityName: cityName,
         barangayCode: brgyCode,
         barangayName: brgyName,
-        address: initialData.address_line || "",
-        postalCode: (initialData.postal_code || "").replace(/\D/g, "").slice(0, 4),
+        address: (initialData.address_line || "").slice(0, MAX_ADDRESS_LENGTH),
+        postalCode: (initialData.postal_code || "")
+          .replace(/\D/g, "")
+          .slice(0, POSTAL_CODE_LENGTH),
         phoneDialCode: "+63",
         phoneNumber: formattedPhone,
       });
@@ -256,7 +266,7 @@ export default function ContactLocationInfo({
     const { name, value } = e.target;
     // Strip non-digits in real time for postal code
     if (name === "postalCode") {
-      const sanitized = value.replace(/\D/g, "").slice(0, 4);
+      const sanitized = value.replace(/\D/g, "").slice(0, POSTAL_CODE_LENGTH);
       setFormData((prev) => ({ ...prev, postalCode: sanitized }));
       return;
     }
@@ -282,13 +292,24 @@ export default function ContactLocationInfo({
     if (!formData.address.trim())
       return showToast("Please enter your Address Line.", "warning");
 
+    // ─── ADDRESS LINE VALIDATION ───
+    if (formData.address.length > MAX_ADDRESS_LENGTH) {
+      return showToast(
+        `Address Line cannot exceed ${MAX_ADDRESS_LENGTH} characters.`,
+        "warning",
+      );
+    }
+
     // ─── POSTAL CODE VALIDATION ───
     const trimmedPostal = formData.postalCode.trim();
     if (!trimmedPostal) {
       return showToast("Please enter your Postal Code.", "warning");
     }
     if (!/^\d{4}$/.test(trimmedPostal)) {
-      return showToast("Postal Code must be exactly 4 numeric digits.", "warning");
+      return showToast(
+        "Postal Code must be exactly 4 numeric digits.",
+        "warning",
+      );
     }
 
     // ─── PHONE NUMBER VALIDATION ───
@@ -299,7 +320,7 @@ export default function ContactLocationInfo({
     if (!/^9\d{9}$/.test(rawDigits)) {
       return showToast(
         "Mobile Number must be 10 digits starting with 9 (e.g., 912-345-6789).",
-        "warning"
+        "warning",
       );
     }
 
@@ -317,8 +338,12 @@ export default function ContactLocationInfo({
         province_code: formData.provinceCode,
         provinceCode: formData.provinceCode,
         state: formData.provinceName,
-        city: isHUC ? muncities[0]?.munCityName || formData.provinceName : formData.munCityName,
-        mun_city_name: isHUC ? muncities[0]?.munCityName || formData.provinceName : formData.munCityName,
+        city: isHUC
+          ? muncities[0]?.munCityName || formData.provinceName
+          : formData.munCityName,
+        mun_city_name: isHUC
+          ? muncities[0]?.munCityName || formData.provinceName
+          : formData.munCityName,
         mun_city_code: isHUC ? muncities[0]?.munCityCode : formData.munCityCode,
         munCityCode: isHUC ? muncities[0]?.munCityCode : formData.munCityCode,
         barangay: formData.barangayName,
@@ -342,7 +367,7 @@ export default function ContactLocationInfo({
 
       if (!response.ok) {
         throw new Error(
-          result.message || "Failed to update contact & location details."
+          result.message || "Failed to update contact & location details.",
         );
       }
 
@@ -372,9 +397,7 @@ export default function ContactLocationInfo({
           label="Country"
           value={formData.country}
           options={COUNTRIES}
-          onChange={(country) =>
-            setFormData((prev) => ({ ...prev, country }))
-          }
+          onChange={(country) => setFormData((prev) => ({ ...prev, country }))}
           icon={Globe}
           isProfileUpdate={true}
         />
@@ -503,12 +526,28 @@ export default function ContactLocationInfo({
 
       {/* 4. Address Line */}
       <div>
-        <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-          Address Line
-        </label>
+        <div className="flex items-center justify-between mb-1.5">
+          <label
+            htmlFor="address"
+            className="block text-xs font-semibold text-zinc-700"
+          >
+            Address Line
+          </label>
+          <span
+            className={`text-[11px] tabular-nums transition-colors ${
+              formData.address.length >= MAX_ADDRESS_LENGTH
+                ? "font-semibold text-red-500"
+                : "text-zinc-400"
+            }`}
+          >
+            {formData.address.length} / {MAX_ADDRESS_LENGTH}
+          </span>
+        </div>
         <input
+          id="address"
           type="text"
           name="address"
+          maxLength={MAX_ADDRESS_LENGTH}
           value={formData.address}
           onChange={handleChange}
           placeholder="House No., Street Name, Subdivision"
@@ -519,17 +558,21 @@ export default function ContactLocationInfo({
       {/* 5. Postal Code & Mobile Number */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+          <label
+            htmlFor="postalCode"
+            className="block text-xs font-semibold text-zinc-700 mb-1.5"
+          >
             Postal Code
           </label>
           <input
+            id="postalCode"
             type="text"
             inputMode="numeric"
             name="postalCode"
             value={formData.postalCode}
             onChange={handleChange}
             placeholder="4000"
-            maxLength={4}
+            maxLength={POSTAL_CODE_LENGTH}
             className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
           />
         </div>

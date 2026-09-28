@@ -11,6 +11,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { DatePickerField } from "@/app/onboarding/_components/DatePickerField";
 import { GenderSelect } from "@/app/onboarding/_components/GenderSelect";
 
+// Maximum length for name fields (standard database limit)
+const MAX_NAME_LENGTH = 50;
+
 interface BasicInfoProps {
   initialData?: ProfileData;
   onSuccess?: () => void;
@@ -88,6 +91,18 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
       return;
     }
 
+    if (
+      formData.firstName.length > MAX_NAME_LENGTH ||
+      formData.lastName.length > MAX_NAME_LENGTH ||
+      formData.middleName.length > MAX_NAME_LENGTH
+    ) {
+      showToast(
+        `Name fields cannot exceed ${MAX_NAME_LENGTH} characters.`,
+        "error",
+      );
+      return;
+    }
+
     if (!birthday) {
       showToast("Please select your date of birth.", "error");
       return;
@@ -156,13 +171,17 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
     <form onSubmit={handleSubmit} className="w-full space-y-4 sm:space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+          <label
+            htmlFor="firstName"
+            className="block text-xs font-semibold text-zinc-700 mb-1.5"
+          >
             First Name
           </label>
           <input
             id="firstName"
             name="firstName"
             type="text"
+            maxLength={MAX_NAME_LENGTH}
             value={formData.firstName}
             onChange={handleChange}
             required
@@ -171,13 +190,17 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+          <label
+            htmlFor="lastName"
+            className="block text-xs font-semibold text-zinc-700 mb-1.5"
+          >
             Last Name
           </label>
           <input
             id="lastName"
             name="lastName"
             type="text"
+            maxLength={MAX_NAME_LENGTH}
             value={formData.lastName}
             onChange={handleChange}
             required
@@ -187,13 +210,17 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+        <label
+          htmlFor="middleName"
+          className="block text-xs font-semibold text-zinc-700 mb-1.5"
+        >
           Middle Name
         </label>
         <input
           id="middleName"
           name="middleName"
           type="text"
+          maxLength={MAX_NAME_LENGTH}
           value={formData.middleName}
           onChange={handleChange}
           placeholder="Optional"
@@ -205,7 +232,10 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
         <DatePickerField value={birthday} onChange={handleBirthdayChange} />
 
         <div>
-          <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+          <label
+            htmlFor="age"
+            className="block text-xs font-semibold text-zinc-700 mb-1.5"
+          >
             Age
           </label>
           <input

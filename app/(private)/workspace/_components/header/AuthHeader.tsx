@@ -167,28 +167,43 @@ export default function AuthHeader() {
     });
   };
 
-  const displayName = useMemo(() => {
-    const first =
-      session?.user?.firstName ||
-      session?.user?.first_name ||
-      profileInfo?.first_name ||
-      "";
-    const middle =
-      session?.user?.middleName ||
-      session?.user?.middle_name ||
-      profileInfo?.middle_name ||
-      "";
-    const last =
-      session?.user?.lastName ||
-      session?.user?.last_name ||
-      profileInfo?.last_name ||
-      "";
+  function toTitleCase(value?: string | null): string {
+    if (!value) return "";
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(
+        /(^|[\s\-'])(\p{L})/gu,
+        (_, sep, char) => sep + char.toUpperCase(),
+      );
+  }
 
-    const composed = [first, middle, last].filter(Boolean).join(" ").trim();
-    if (composed) return composed;
+  const displayName = useMemo(() => {
+    const first = toTitleCase(
+      session?.user?.firstName ||
+        session?.user?.first_name ||
+        profileInfo?.first_name,
+    );
+    const middle = toTitleCase(
+      session?.user?.middleName ||
+        session?.user?.middle_name ||
+        profileInfo?.middle_name,
+    );
+    const last = toTitleCase(
+      session?.user?.lastName ||
+        session?.user?.last_name ||
+        profileInfo?.last_name,
+    );
+
+    const givenNames = [first, middle].filter(Boolean).join(" ");
+
+    if (last && givenNames) return `${last}, ${givenNames}`;
+    if (last || givenNames) return last || givenNames;
 
     const sessionName = session?.user?.name;
-    if (sessionName && !sessionName.includes("@")) return sessionName;
+    if (sessionName && !sessionName.includes("@")) {
+      return toTitleCase(sessionName);
+    }
 
     return FALLBACK_USER.name;
   }, [session?.user, profileInfo]);
@@ -521,11 +536,20 @@ export default function AuthHeader() {
                     : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
                 }`}
               >
-                <div className="px-3 py-2.5 border-b border-zinc-200 mb-1">
-                  <p className="text-xs font-bold text-zinc-800">
+                {/* Added min-w-0 to prevent flex/block overflow issues */}
+                <div className="px-3 py-2.5 border-b border-zinc-200 mb-1 min-w-0">
+                  {/* Added truncate and title for hover tooltip */}
+                  <p
+                    className="text-xs font-bold text-zinc-800 truncate"
+                    title={currentUser.name}
+                  >
                     {currentUser.name}
                   </p>
-                  <p className="text-[10px] text-zinc-400 font-light truncate mt-0.5">
+                  {/* Already has truncate */}
+                  <p
+                    className="text-[10px] text-zinc-400 font-light truncate mt-0.5"
+                    title={currentUser.email}
+                  >
                     {currentUser.email}
                   </p>
                 </div>
@@ -606,16 +630,21 @@ export default function AuthHeader() {
                 "flex h-full w-full items-center justify-center rounded-xl bg-[#c4b5fd] text-white text-sm font-bold",
               )}
             </div>
-            <div>
-              <p className="text-sm font-semibold text-zinc-800 lowercase">
+            <div className="min-w-0 flex-1">
+              <p
+                title={currentUser.name}
+                className="text-sm font-semibold text-zinc-800 truncate"
+              >
                 {currentUser.name}
               </p>
-              <p className="text-xs text-zinc-400 font-light truncate max-w-[200px]">
+              <p
+                title={currentUser.email}
+                className="text-xs text-zinc-400 font-light truncate"
+              >
                 {currentUser.email}
               </p>
             </div>
           </div>
-
           {AUTH_NAVS.map((link) => (
             <Link
               key={link.href}

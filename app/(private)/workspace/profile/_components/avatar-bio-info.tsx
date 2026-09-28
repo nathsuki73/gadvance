@@ -13,6 +13,9 @@ const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 ).replace(/\/$/, "");
 
+// Define your maximum character limit here (e.g., 250 characters)
+const MAX_BIO_LENGTH = 250;
+
 // Helper function identical to AuthHeader's avatar resolver
 function resolveAvatarSrc(avatar?: string | null): string | null {
   if (!avatar) return null;
@@ -77,6 +80,13 @@ export default function AvatarBioInfo({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Frontend safety check for bio length
+    if (bio.length > MAX_BIO_LENGTH) {
+      showToast(`Bio cannot exceed ${MAX_BIO_LENGTH} characters.`, "error");
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -169,14 +179,27 @@ export default function AvatarBioInfo({
         </div>
       </div>
 
-      {/* Short Bio */}
+      {/* Short Bio with Character Limit */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="bio" className="text-xs font-semibold text-zinc-700">
-          Short Bio
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="bio" className="text-xs font-semibold text-zinc-700">
+            Short Bio
+          </label>
+          <span
+            className={`text-[11px] tabular-nums transition-colors ${
+              bio.length >= MAX_BIO_LENGTH
+                ? "font-semibold text-red-500"
+                : "text-zinc-400"
+            }`}
+          >
+            {bio.length} / {MAX_BIO_LENGTH}
+          </span>
+        </div>
+
         <textarea
           id="bio"
           value={bio}
+          maxLength={MAX_BIO_LENGTH}
           onChange={(e) => setBio(e.target.value)}
           rows={4}
           placeholder="Tell us a bit about yourself..."
