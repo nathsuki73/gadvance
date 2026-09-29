@@ -83,7 +83,7 @@ const Footer = () => {
                   href="/explore"
                   className="transition-colors hover:text-[#8b5cf6]"
                 >
-                  Explore Courses
+                  Explore Learning Plans
                 </Link>
               </li>
 

@@ -10,7 +10,7 @@ export function SearchBar() {
       </div>
       <input
         type="text"
-        placeholder="Search for courses..."
+        placeholder="Search for plans..."
         className="w-full bg-zinc-100/50 border border-transparent rounded-full py-2 pl-10 pr-4 text-sm outline-none transition-all focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/10 placeholder:text-zinc-500"
       />
     </div>

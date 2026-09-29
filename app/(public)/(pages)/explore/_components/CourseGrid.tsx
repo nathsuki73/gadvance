@@ -109,7 +109,7 @@ const CourseGrid = () => {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-zinc-900">
-              Explore Courses
+              Explore Learning Plans
             </h1>
             <p className="mt-2 text-sm text-zinc-500 font-light max-w-xl">
               Discover new modules, sharpen your skills, and advance your
@@ -132,7 +132,7 @@ const CourseGrid = () => {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search courses..."
+              placeholder="Search learning plans..."
               className="w-full pl-10 pr-4 py-2 rounded-full border border-zinc-200 text-sm bg-zinc-50/50 text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:border-transparent transition-all"
             />
             {query && (
@@ -165,7 +165,7 @@ const CourseGrid = () => {
               }`}
             >
               <LayoutGrid size={13} />
-              <span>All Courses</span>
+              <span>All</span>
             </button>
 
             <button
@@ -248,10 +248,10 @@ const CourseGrid = () => {
           <h3 className="text-base font-semibold text-zinc-800">
             {activeSearch
               ? `No results found for "${activeSearch}"`
-              : "No courses available"}
+              : "No plans available"}
           </h3>
           <p className="mt-1 text-xs text-zinc-400 font-light">
-            Try checking your spelling or reset filters to see all courses.
+            Try checking your spelling or reset filters to see all plans.
           </p>
           {isFiltered && (
             <button

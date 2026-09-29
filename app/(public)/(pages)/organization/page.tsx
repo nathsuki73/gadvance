@@ -169,7 +169,7 @@ export default function OrganizationPage() {
                 Explore Organizations
               </h1>
               <p className="mt-2 text-sm text-zinc-500 font-light max-w-xl">
-                Connect with peer groups, join specialized learning hubs, and
+                Connect with organization, and enroll on learning plans, and
                 collaborate across teams.
               </p>
             </div>

@@ -30,7 +30,7 @@ const SEARCH_DEBOUNCE_MS = 250;
 
 const AUTH_NAVS = [
   { href: "/workspace", label: "Workspace" },
-  { href: "/workspace/courses", label: "My Courses" },
+  { href: "/workspace/courses", label: "My Learning Plans" },
   { href: "/explore", label: "Explore" },
   { href: "/organization", label: "Organizations" },
 ] as const;

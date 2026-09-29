@@ -178,7 +178,7 @@ export default function ModulePage({
               size={14}
               className="transition-transform duration-200 group-hover:-translate-x-1"
             />
-            <span>Back to My Courses</span>
+            <span>Back to My Learning Plans</span>
           </button>
         </div>
 
@@ -330,7 +330,7 @@ export default function ModulePage({
               <div className="flex items-center justify-between px-1">
                 <div>
                   <h3 className="text-lg sm:text-xl font-bold tracking-tight text-zinc-900">
-                    Course Modules
+                    Learning Plan Modules
                   </h3>
                   <p className="text-xs text-zinc-500 font-light mt-0.5">
                     Click any module card to inspect it in the overview above.

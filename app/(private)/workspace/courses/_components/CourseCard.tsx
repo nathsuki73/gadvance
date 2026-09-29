@@ -87,7 +87,7 @@ const CourseCard = ({ course }: CourseCardProps) => {
         </div>
 
         <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-primary/80 transition-colors duration-200 group-hover:text-primary whitespace-nowrap">
-          view course
+          view plan
         </span>
       </div>
     </article>
