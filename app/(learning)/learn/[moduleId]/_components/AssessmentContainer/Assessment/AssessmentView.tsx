@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { submitAssessment } from "./assessmentService";
+import { submitAdaptiveAnswer, submitAssessment } from "./assessmentService";
 import { useQueryClient } from "@tanstack/react-query";
 import { AssessmentViewData, Question } from "../types";
 import {
@@ -55,6 +55,9 @@ export default function AssessmentView({
   const effectiveSectionItemId = sectionItemId || itemId;
 
   const [currentData] = useState<AssessmentViewData>(assessmentData);
+  const [questions, setQuestions] = useState<Question[]>(assessmentData.questions || []);
+  const [adaptiveNextQuestion, setAdaptiveNextQuestion] = useState<Question | null>(null);
+  const [adaptiveFinalResult, setAdaptiveFinalResult] = useState<any>(null);
 
   const [initialState] = useState(() =>
     loadInitialAssessmentState(
@@ -88,6 +91,11 @@ export default function AssessmentView({
     initialState.questionTimers,
   );
   const questionStartTimeRef = useRef<number>(Date.now());
+  const isAdaptive = Boolean(currentData.settings?.enableAdaptiveMapping);
+  const adaptiveQuestionLimit = Math.max(
+    1,
+    Number(currentData.settings?.adaptiveQuestionLimit ?? questions.length ?? 1),
+  );
 
   const { showToast } = useToast();
 
@@ -111,8 +119,8 @@ export default function AssessmentView({
     return () => clearTimeout(timeout);
   }, [isRetrying, showToast]);
 
-  const questions: Question[] = currentData.questions || [];
   const totalQuestions = questions.length;
+  const progressQuestionCount = isAdaptive ? adaptiveQuestionLimit : totalQuestions;
   const safeQuestionIndex = Math.min(
     Math.max(0, currentIndex),
     Math.max(0, totalQuestions - 1),
@@ -217,7 +225,7 @@ export default function AssessmentView({
   }, [currentIndex]);
 
   const recordCurrentQuestionTime = () => {
-    if (!currentQuestion) return;
+    if (!currentQuestion) return 0;
     const now = Date.now();
     const elapsed = Math.max(
       1,
@@ -228,6 +236,7 @@ export default function AssessmentView({
       [currentQuestion.id]: (prev[currentQuestion.id] || 0) + elapsed,
     }));
     questionStartTimeRef.current = now;
+    return elapsed;
   };
 
   // Timer loop & Auto-submission when time runs out
@@ -248,15 +257,19 @@ export default function AssessmentView({
   }, [result, totalLimitSeconds]);
 
   useEffect(() => {
-    if (result || isSubmitting || totalLimitSeconds === null) return;
+    if (result || adaptiveFinalResult || isSubmitting || totalLimitSeconds === null) return;
     if (remainingSeconds !== null && remainingSeconds <= 0) {
       showToast(
         "Time's up! Submitting your assessment automatically.",
         "error",
       );
-      handleSubmit();
+      if (isAdaptive) {
+        void handleAdaptiveAnswer(true, true);
+      } else {
+        handleSubmit();
+      }
     }
-  }, [remainingSeconds, result, isSubmitting, totalLimitSeconds]);
+  }, [remainingSeconds, result, adaptiveFinalResult, isSubmitting, totalLimitSeconds, isAdaptive]);
 
   useEffect(() => {
     if (result || !effectiveSectionItemId) return;
@@ -284,8 +297,135 @@ export default function AssessmentView({
     setAnswers((prev) => ({ ...prev, [questionId]: choiceId }));
   };
 
+  const handleAdaptiveAnswer = async (allowEmptyAnswer = false, finishAttempt = false) => {
+    if (!currentQuestion || !effectiveSectionItemId || !moduleId) {
+      showToast("Missing required assessment context. Please reload.", "error");
+      return;
+    }
+
+    const selectedChoiceId = answers[currentQuestion.id] || null;
+    if (!selectedChoiceId && !allowEmptyAnswer) return;
+
+    const timeSpentSeconds = recordCurrentQuestionTime();
+    setIsSubmitting(true);
+    try {
+      const response = await submitAdaptiveAnswer({
+        assessmentId: currentData.id,
+        moduleId,
+        sectionItemId: effectiveSectionItemId,
+        questionId: currentQuestion.id,
+        choiceId: selectedChoiceId,
+        timeSpentSeconds,
+        answeredAt: new Date().toISOString(),
+        finishAttempt,
+      });
+
+      if (!response.success || !response.data) {
+        showToast(response.error || response.message || "Answer submission failed.", "error");
+        return;
+      }
+
+      setCheckedQuestions((prev) => ({ ...prev, [currentQuestion.id]: true }));
+
+      if (process.env.NODE_ENV === "development") {
+        const adaptiveProgress = response.data.adaptive_progress;
+        const masteryBefore =
+          response.data.mastery_before_probability ??
+          response.data.mastery_baseline_probability;
+        const masteryAfter = response.data.mastery_probability;
+        const masteryDelta =
+          masteryBefore === null || masteryBefore === undefined || masteryAfter === null
+            ? null
+            : Number((masteryAfter - masteryBefore).toFixed(4));
+
+        console.info("[Adaptive Assessment] Answer evaluated", {
+          assessmentId: currentData.id,
+          questionId: currentQuestion.id,
+          bloomLevel: adaptiveProgress?.question_bloom_level ?? currentQuestion.bloomLevel ?? null,
+          isCorrect: response.data.is_correct,
+          masteryBeforeProbability: masteryBefore ?? null,
+          masteryAfterProbability: masteryAfter,
+          masteryDelta,
+          answeredCount: adaptiveProgress?.answered_count ?? null,
+          targetQuestionCount: adaptiveProgress?.target_question_count ?? null,
+        });
+
+        console.info("[Adaptive Assessment] Next-question decision", {
+          assessmentId: currentData.id,
+          decisionReason: adaptiveProgress?.decision_reason ?? "server_decision_unavailable",
+          completed: response.data.completed,
+          nextQuestionId: adaptiveProgress?.next_question_id ?? response.data.next_question?.id ?? null,
+          nextQuestionBloomLevel:
+            adaptiveProgress?.next_question_bloom_level ?? response.data.next_question?.bloomLevel ?? null,
+          nextQuestionMasteryProbability:
+            adaptiveProgress?.next_question_mastery_probability ?? null,
+          nextQuestionMasteryBand: adaptiveProgress?.next_question_mastery_band ?? null,
+          nextQuestionBloomPolicy: adaptiveProgress?.next_question_bloom_policy ?? null,
+          minimumQuestionCount: adaptiveProgress?.minimum_question_count ?? null,
+          minimumFloorFallbackUsed: adaptiveProgress?.minimum_floor_fallback_used ?? false,
+          nextQuestionSelectionReason: adaptiveProgress?.next_question_selection_reason ?? null,
+          answeredCount: adaptiveProgress?.answered_count ?? null,
+          targetQuestionCount: adaptiveProgress?.target_question_count ?? null,
+        });
+      }
+
+      if (response.data.completed && response.data.result) {
+        const finalResult = response.data.result;
+        clearLocalDraft(currentData.id, effectiveSectionItemId);
+        queryClient.setQueryData(
+          ["assessmentContainer", assessmentId, effectiveSectionItemId, moduleId],
+          (old: any) => old ? {
+            ...old,
+            data: {
+              ...old.data,
+              user_has_completed: true,
+              previous_attempt: finalResult,
+            },
+          } : old,
+        );
+        if (showImmediateFeedback) {
+          setAdaptiveFinalResult(finalResult);
+        } else {
+          setResult(finalResult);
+        }
+        return;
+      }
+
+      const nextQuestion = response.data.next_question;
+      if (!nextQuestion) {
+        showToast("The adaptive assessment did not return another question.", "error");
+        return;
+      }
+
+      if (showImmediateFeedback) {
+        setAdaptiveNextQuestion(nextQuestion);
+      } else {
+        setQuestions((previous) => [...previous, nextQuestion]);
+        setCurrentIndex((previous) => previous + 1);
+      }
+    } catch (error: any) {
+      showToast(error?.message || "Answer submission failed.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handlePrimaryAction = () => {
     if (!currentQuestion) return;
+
+    if (isAdaptive) {
+      if (checkedQuestions[currentQuestion.id] && adaptiveFinalResult) {
+        setResult(adaptiveFinalResult);
+      } else if (checkedQuestions[currentQuestion.id] && adaptiveNextQuestion) {
+        const nextQuestion = adaptiveNextQuestion;
+        setQuestions((previous) => [...previous, nextQuestion]);
+        setAdaptiveNextQuestion(null);
+        setCurrentIndex((previous) => previous + 1);
+      } else if (!checkedQuestions[currentQuestion.id]) {
+        void handleAdaptiveAnswer();
+      }
+      return;
+    }
 
     const isChecked = Boolean(checkedQuestions[currentQuestion.id]);
 
@@ -498,6 +638,9 @@ export default function AssessmentView({
     : isLastQuestion
       ? "Submit Assessment"
       : "Next";
+  const adaptiveButtonLabel = checkedQuestions[currentQuestion.id]
+    ? adaptiveFinalResult ? "View Results" : "Next"
+    : "Submit Answer";
 
   // Helper to format remaining seconds as MM:SS
   const formatTime = (secs: number) => {
@@ -512,8 +655,9 @@ export default function AssessmentView({
         <div className="flex items-center justify-between gap-3 w-full">
           {/* Segmented Progress Bar */}
           <div className="flex items-center gap-1.5 flex-1">
-            {questions.map((q, idx) => {
-              const isAnswered = Boolean(answers[q.id]);
+            {Array.from({ length: progressQuestionCount }, (_, idx) => {
+              const q = questions[idx];
+              const isAnswered = Boolean(q && answers[q.id]);
               const isCurrent = idx === safeQuestionIndex;
 
               let segmentStyle = "bg-zinc-200";
@@ -528,7 +672,7 @@ export default function AssessmentView({
 
               return (
                 <div
-                  key={q.id}
+                  key={q?.id ?? `unserved-${idx}`}
                   className={`h-2 flex-1 rounded-full transition-all duration-300 ${segmentStyle}`}
                 />
               );
@@ -580,7 +724,7 @@ export default function AssessmentView({
 
             <span className="text-xs sm:text-sm font-bold text-zinc-500 pl-0.5">
               <span className="text-[#8b5cf6]">{safeQuestionIndex + 1}</span>/
-              {totalQuestions}
+              {isAdaptive ? progressQuestionCount : totalQuestions}
             </span>
           </div>
         </div>
@@ -604,7 +748,7 @@ export default function AssessmentView({
       <div className="flex items-center justify-between border-t border-zinc-200/80 pt-6 mt-10">
         <button
           type="button"
-          disabled={isFirstQuestion}
+          disabled={isAdaptive || isFirstQuestion}
           onClick={() => {
             recordCurrentQuestionTime();
             setCurrentIndex((prev) => Math.max(0, prev - 1));
@@ -630,7 +774,7 @@ export default function AssessmentView({
           ) : (
             <ChevronRight size={16} />
           )}
-          <span>{isSubmitting ? "Submitting..." : buttonLabel}</span>
+          <span>{isSubmitting ? "Submitting..." : isAdaptive ? adaptiveButtonLabel : buttonLabel}</span>
         </button>
       </div>
     </div>

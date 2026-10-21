@@ -135,7 +135,11 @@ export default function AssessmentContainer({
       <StartScreen
         title={contentData.title}
         instructions={contentData.instructions}
-        totalItems={contentData.questions?.length || 0}
+        totalItems={
+          contentData.settings.enableAdaptiveMapping
+            ? contentData.settings.adaptiveQuestionMinimum ?? contentData.questions?.length ?? 0
+            : contentData.questions?.length || 0
+        }
         buttonText={"Start Assessment"}
         onStart={() => setHasStarted(true)}
       />

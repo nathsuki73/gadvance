@@ -36,6 +36,8 @@ export interface AssessmentSettings {
   allowReview?: boolean;
   requirePassingToProceed?: boolean;
   enableAdaptiveMapping?: boolean;
+  adaptiveQuestionLimit?: number;
+  adaptiveQuestionMinimum?: number;
   showFinalResults?: boolean;
   showRemediation?: boolean;
   showAnswerStats?: boolean;

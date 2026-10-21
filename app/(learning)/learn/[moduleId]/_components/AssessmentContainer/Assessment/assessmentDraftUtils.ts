@@ -70,7 +70,7 @@ export function loadInitialAssessmentState(
           if (parsed.elapsedSeconds !== undefined) {
             targetElapsed = Number(parsed.elapsedSeconds) || 0;
           }
-          if (parsed.currentIndex !== undefined) {
+          if (parsed.currentIndex !== undefined && !assessmentData.settings?.enableAdaptiveMapping) {
             targetIndex = Number(parsed.currentIndex);
           }
           hasLocalDraft = Object.keys(prunedAnswers).length > 0;

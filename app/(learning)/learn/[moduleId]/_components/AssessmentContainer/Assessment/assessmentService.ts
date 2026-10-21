@@ -73,6 +73,10 @@ export function normalizeAssessmentData(
     allowReview: Boolean(data.allow_review ?? true),
     requirePassingToProceed: Boolean(data.require_passing_to_proceed ?? false),
     enableAdaptiveMapping: Boolean(data.enable_adaptive_mapping ?? true),
+    adaptiveQuestionLimit: Number(data.adaptive_question_limit ?? data.adaptive_question_max ?? data.questions?.length ?? 1),
+    adaptiveQuestionMinimum: Number(
+      data.adaptive_question_minimum ?? data.adaptive_question_min ?? settingsObj.adaptive_question_min ?? 1,
+    ),
     showFinalResults: true,
     showRemediation: true,
     showAnswerStats: true,
@@ -192,6 +196,80 @@ export async function submitAssessment(payload: {
     };
   } catch (error: any) {
     console.error("SUBMIT API ERROR:", error);
+    return { success: false, error: error?.message };
+  }
+}
+
+export async function submitAdaptiveAnswer(payload: {
+  assessmentId: string;
+  moduleId: string;
+  sectionId?: string;
+  sectionItemId: string;
+  questionId: string;
+  choiceId: string | null;
+  timeSpentSeconds: number;
+  answeredAt: string;
+  finishAttempt?: boolean;
+}): Promise<ServiceResponse<{
+  question_id: string;
+  is_correct: boolean;
+  mastery_before_probability: number | null;
+  mastery_baseline_probability: number | null;
+  mastery_probability: number | null;
+  completed: boolean;
+  next_question?: Question | null;
+  adaptive_progress?: {
+    answered_count: number;
+    minimum_question_count: number;
+    target_question_count: number;
+    question_bloom_level: string | number | null;
+    decision_reason: string;
+    minimum_floor_fallback_used: boolean;
+    next_question_selection_reason: string | null;
+    next_question_id: string | null;
+    next_question_bloom_level: string | number | null;
+    next_question_mastery_probability: number | null;
+    next_question_mastery_band: string | null;
+    next_question_bloom_policy: string | null;
+  };
+  result?: any;
+}>> {
+  try {
+    const res = await apiFetch(`/api/assessments/${payload.assessmentId}/answer`, {
+      method: "POST",
+      body: JSON.stringify({
+        module_id: payload.moduleId,
+        section_id: payload.sectionId,
+        section_item_id: payload.sectionItemId,
+        question_id: payload.questionId,
+        choice_id: payload.choiceId,
+        time_spent_seconds: payload.timeSpentSeconds,
+        answered_at: payload.answeredAt,
+        finish_attempt: payload.finishAttempt ?? false,
+      }),
+    });
+
+    if (!res) {
+      return { success: false, error: "Network error: No response received." };
+    }
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return { success: false, error: json?.message };
+
+    const data = json.data ?? json;
+    const nextQuestion = data.next_question
+      ? normalizeAssessmentData(
+          { data: { id: payload.assessmentId, questions: [data.next_question] } },
+          payload.assessmentId,
+        ).questions[0]
+      : null;
+
+    return {
+      success: json.success ?? res.ok,
+      data: { ...data, next_question: nextQuestion },
+      message: json.message,
+    };
+  } catch (error: any) {
     return { success: false, error: error?.message };
   }
 }
