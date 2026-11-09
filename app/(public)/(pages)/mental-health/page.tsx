@@ -77,8 +77,9 @@ export default function MentalHealthPage() {
 
               <p className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-200 ease-out max-w-xl text-lg font-light leading-relaxed text-zinc-600">
                 Mental health encompasses emotional, psychological, and social
-                well-being. GADvance connects you to safe learning tools,
-                community campaigns, and immediate national crisis support.
+                well-being. If you or someone you know needs support, these
+                national hotlines and local services can help. GADvance is a
+                learning platform and does not provide counseling.
               </p>
 
               <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-300 ease-out flex flex-col sm:flex-row items-center gap-4 pt-4">
@@ -218,69 +219,6 @@ export default function MentalHealthPage() {
                 <PhoneCall size={16} /> Call Direct Landline
               </a>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ================= COMMUNITY CAMPAIGNS SECTION (#MentalHealthPH) ================= */}
-      <section className="py-28 bg-white">
-        <div className="mx-auto max-w-7xl px-8 lg:px-12">
-          <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out max-w-3xl">
-            <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-[#8b5cf6]">
-              Advocacy & Campaigns
-            </h2>
-            <h3 className="mt-4 text-3xl font-light leading-tight tracking-tight text-zinc-900 sm:text-5xl">
-              Ending stigma through <br />
-              <span className="font-serif italic font-semibold text-[#8b5cf6]">
-                community dialogue.
-              </span>
-            </h3>
-            <p className="mt-6 text-lg font-light leading-relaxed text-zinc-500">
-              In partnership with nationwide mental health awareness initiatives
-              like <strong className="text-zinc-700">#MentalHealthPH</strong>,
-              we champion open conversations and active support across social
-              channels.
-            </p>
-          </div>
-
-          <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                tag: "#UsapTayo",
-                title: "Regular Online Conversations",
-                desc: "Bi-monthly Twitter/X chat sessions raising awareness on self-care, empathy, and workplace mental health.",
-              },
-              {
-                tag: "#VoicesOfHope",
-                title: "Lived Experience Stories",
-                desc: "Amplifying personal journeys of recovery to inspire others and dismantle societal stigma.",
-              },
-              {
-                tag: "#40SecondsOfHope",
-                title: "Suicide Prevention Drive",
-                desc: "Global awareness initiative encouraging individuals to take 40 seconds to reach out to a friend in need.",
-              },
-              {
-                tag: "#MHTalks",
-                title: "Expert Learning Panels",
-                desc: "Educational webinars featuring mental health professionals, advocates, and policy leaders.",
-              },
-            ].map((campaign, idx) => (
-              <div
-                key={idx}
-                className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out bg-zinc-50/70 p-6 rounded-2xl border border-zinc-100 hover:border-violet-200 transition-all"
-              >
-                <span className="inline-block px-3 py-1 rounded-md bg-violet-100 text-[#8b5cf6] text-xs font-bold font-mono">
-                  {campaign.tag}
-                </span>
-                <h4 className="mt-4 text-lg font-medium text-zinc-900">
-                  {campaign.title}
-                </h4>
-                <p className="mt-2 text-xs font-light leading-relaxed text-zinc-500">
-                  {campaign.desc}
-                </p>
-              </div>
-            ))}
           </div>
         </div>
       </section>

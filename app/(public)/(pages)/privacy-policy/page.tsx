@@ -208,7 +208,7 @@ export default function PrivacyPolicyPage() {
                 </li>
                 <li>
                   Ensuring technical stability, preventing fraudulent activity,
-                  and upholding community safety.
+                  and keeping the platform safe for every learner.
                 </li>
               </ul>
             </div>
