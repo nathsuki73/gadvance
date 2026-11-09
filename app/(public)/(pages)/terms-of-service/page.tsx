@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
+import { SUPPORT_EMAIL, supportMailto } from "@/app/lib/support";
 import {
   FileText,
   Shield,
@@ -72,7 +73,7 @@ export default function TermsOfServicePage() {
 
               <p className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-200 ease-out mt-6 text-lg sm:text-xl text-zinc-500 font-light leading-relaxed">
                 Welcome to GADvance. By accessing or using our e-learning
-                platform, modules, and community workspaces, you agree to comply
+                platform, courses, and organization workspaces, you agree to comply
                 with these Terms of Service.
               </p>
 
@@ -111,7 +112,7 @@ export default function TermsOfServicePage() {
                 </h3>
                 <p className="mt-3 text-xs sm:text-sm font-light leading-relaxed text-zinc-500">
                   Zero tolerance for harassment, discrimination, or abusive
-                  conduct in community discussions under RA 11313 guidelines.
+                  conduct in surveys, profiles, and other learner submissions under RA 11313 guidelines.
                 </p>
               </div>
 
@@ -162,13 +163,13 @@ export default function TermsOfServicePage() {
                   02
                 </span>
                 <h2 className="text-xl sm:text-2xl font-medium text-zinc-900">
-                  User Accounts & Community Conduct
+                  User Accounts & Conduct
                 </h2>
               </div>
               <p className="text-sm font-light text-zinc-600 leading-relaxed">
                 Users are responsible for maintaining the confidentiality of
-                their login credentials. When interacting within community
-                forums and learning spaces, users must follow the following
+                their login credentials. When submitting responses, profile details,
+                or other content on the platform, users must follow the following
                 rules:
               </p>
               <ul className="list-disc pl-6 text-sm font-light text-zinc-600 space-y-2">
@@ -274,11 +275,11 @@ export default function TermsOfServicePage() {
                   </p>
                 </div>
                 <a
-                  href="mailto:gadvanceproject@gmail.com"
+                  href={supportMailto("support")}
                   className="inline-flex items-center gap-2 rounded-full bg-[#8b5cf6] px-6 py-3 text-xs font-medium text-white hover:bg-[#7c3aed] transition-colors shrink-0"
                 >
                   <Mail size={14} />
-                  <span>gadvanceproject@gmail.com</span>
+                  <span>{SUPPORT_EMAIL}</span>
                 </a>
               </div>
             </div>

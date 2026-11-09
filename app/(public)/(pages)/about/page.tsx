@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
+import { SUPPORT_EMAIL, supportMailto } from "@/app/lib/support";
 import Image from "next/image";
 import logoIcon from "@/app/assets/logo.ico";
 import {
@@ -63,17 +64,17 @@ export default function AboutPage() {
           <div className="mx-auto max-w-7xl px-8 lg:px-12 relative">
             <div className="max-w-3xl">
               <h1 className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-100 ease-out text-4xl sm:text-6xl lg:text-7xl font-light tracking-tight text-zinc-900 leading-[1.1]">
-                bridging the gap <br />
+                learning that adapts <br />
                 <span className="font-semibold italic font-serif text-[#8b5cf6]">
-                  in gender leadership.
+                  to every learner.
                 </span>
               </h1>
 
               <p className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-200 ease-out mt-8 text-xl md:text-2xl text-zinc-500 font-light leading-relaxed lowercase">
-                gadvance emerged from an urgent need to address structural
-                disparities that limit professional mobility. we catalyze gender
-                advancement by deploying specialized digital education designed
-                to dismantle systemic barriers.
+                gadvance is an adaptive e-learning platform for gender
+                sensitivity and gender and development (gad) education. it uses
+                bayesian knowledge tracing to estimate what each learner has
+                mastered and adjusts assessments to match.
               </p>
 
               <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-300 ease-out mt-10">
@@ -147,8 +148,8 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <ValueItem
                 icon={<Target size={24} strokeWidth={1.5} />}
-                title="strategic advocacy"
-                desc="modernizing organizational culture by equipping individuals with leadership competencies required for decision-making."
+                title="gender-responsive education"
+                desc="structured gad lessons on core concepts, gender roles, and the policies that promote equality, aligned with sdg 4 (quality education) and sdg 5 (gender equality)."
               />
               <ValueItem
                 icon={<Code size={24} strokeWidth={1.5} />}
@@ -157,8 +158,8 @@ export default function AboutPage() {
               />
               <ValueItem
                 icon={<Globe size={24} strokeWidth={1.5} />}
-                title="cultural transformation"
-                desc="facilitating a shift in institutional frameworks, moving beyond compliance toward genuine belonging and equitable opportunity."
+                title="learning for organizations"
+                desc="organizations can enroll their members through a join code and follow their learning progress from the gadvance admin portal."
               />
             </div>
           </div>
@@ -169,12 +170,12 @@ export default function AboutPage() {
           <div className="mx-auto max-w-7xl px-8 lg:px-12">
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out max-w-2xl mb-16">
               <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-[#8b5cf6] mb-4">
-                advancement framework
+                how learning works
               </h2>
               <h3 className="text-3xl sm:text-5xl font-light tracking-tight text-zinc-900 leading-tight">
-                a methodology for <br />
+                from first lesson <br />
                 <span className="italic font-serif font-semibold text-[#8b5cf6]">
-                  equitable progress.
+                  to mastery.
                 </span>
               </h3>
             </div>
@@ -182,23 +183,23 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12">
               <RoadmapItem
                 phase="01"
-                title="gap analysis"
-                desc="diagnosing specific cultural and structural frictions that hinder gender advancement in local and regional workplaces."
+                title="pre-test"
+                desc="a short pre-test records what you already know before the course begins."
               />
               <RoadmapItem
                 phase="02"
-                title="empowerment modules"
-                desc="delivering targeted e-learning modules designed to build negotiation skills, advocacy, and leadership readiness."
+                title="lessons"
+                desc="work through structured modules and lessons at your own pace."
               />
               <RoadmapItem
                 phase="03"
-                title="institutional alignment"
-                desc="working alongside institutions to integrate inclusive frameworks that foster fair, transparent talent pipelines."
+                title="adaptive checkpoints"
+                desc="checkpoint quizzes choose question difficulty from your estimated mastery and point you to lesson content to review when needed."
               />
               <RoadmapItem
                 phase="04"
-                title="sustainable progress"
-                desc="monitoring long-term learning outcomes to ensure gender advancement remains a permanent organizational priority."
+                title="post-test and results"
+                desc="a post-test and your progress view show how your understanding has grown."
               />
             </div>
           </div>
@@ -233,10 +234,10 @@ export default function AboutPage() {
                   connect with the research team
                 </p>
                 <a
-                  href="mailto:gadvanceproject@gmail.com"
+                  href={supportMailto("support")}
                   className="text-sm font-medium text-zinc-800 hover:text-[#8b5cf6] transition-colors"
                 >
-                  gadvanceproject@gmail.com
+                  {SUPPORT_EMAIL}
                 </a>
               </div>
             </div>

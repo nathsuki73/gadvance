@@ -4,18 +4,18 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Mail,
-  MessageCircle,
-  FileText,
   HelpCircle,
   Code,
   ShieldCheck,
   ChevronDown,
-  Sparkles,
-  ArrowUpRight,
-  PhoneCall,
   Search,
 } from "lucide-react";
 import ProtectedButton from "@/app/components/ProtectedButton";
+import {
+  SUPPORT_EMAIL,
+  supportMailto,
+  type SupportTopic,
+} from "@/app/lib/support";
 
 interface FAQItem {
   question: string;
@@ -28,25 +28,43 @@ const FAQS: FAQItem[] = [
     category: "General",
     question: "What is GADvance and who is it designed for?",
     answer:
-      "GADvance is an e-learning and gender advancement platform tailored for students, educators, public servants, and private institutions in the Philippines. It provides self-paced learning tracks, policy frameworks, and interactive community spaces.",
+      "GADvance is an adaptive e-learning platform for gender sensitivity and Gender and Development (GAD) education. It is designed for students, educators, employees, and organizations in the Philippines who want structured, self-paced GAD learning with assessments that adjust to each learner.",
+  },
+  {
+    category: "Account & Modules",
+    question: "How does the adaptive learning work?",
+    answer:
+      "GADvance uses Bayesian Knowledge Tracing (BKT) to estimate how well you have mastered each topic from your answers. After every response the estimate is updated, and checkpoint quizzes choose questions at a suitable Bloom's Taxonomy difficulty level. If a topic needs more work, GADvance points you back to the related lesson content for review.",
+  },
+  {
+    category: "Account & Modules",
+    question: "How do I join my organization?",
+    answer:
+      "Sign in, open Organizations from your workspace, and enter the join code provided by your organization's administrator. Once you have joined, the organization's learning plans become available to you.",
+  },
+  {
+    category: "Account & Modules",
+    question: "I did not receive my verification or password reset email.",
+    answer:
+      "Check your spam or promotions folder first, then use the resend option on the sign-up or forgot-password page. Links and codes expire for your security, so request a new one if it has expired. If the email still does not arrive, contact projectgadvance@gmail.com with the subject \"GADvance Account Assistance\".",
   },
   {
     category: "Partnerships",
-    question: "How can my university or organization integrate GADvance?",
+    question: "Can my university or organization use GADvance?",
     answer:
-      "We partner with academic institutions, local government units (LGUs), and organizations looking to strengthen their Gender Focal Point System (GFPS) and Safe Spaces Act compliance. Reach out to our partnership desk at gadvanceproject@gmail.com for institutional onboardings.",
+      "Yes. Organizations can be set up with their own administrators, learning plans, and join codes. Email projectgadvance@gmail.com with the subject \"GADvance Organization Inquiry\" to discuss setting up your organization.",
   },
   {
     category: "Technical",
-    question: "What should I do if I encounter platform bugs or login issues?",
+    question: "What should I do if I encounter a bug or login issue?",
     answer:
-      "For technical anomalies, video playback issues, or account recovery support, you can contact our developer desk at gadvanceproject@gmail.com. Please include details about your device and browser for faster troubleshooting.",
+      "Email projectgadvance@gmail.com with the subject \"GADvance Bug Report\". Please include what you were doing, what you expected to happen, and your device and browser so the team can reproduce the issue.",
   },
   {
     category: "General",
-    question: "How is user data protected on GADvance?",
+    question: "How is my data protected?",
     answer:
-      "We prioritize data privacy and research integrity. Personal information and community discussions are safeguarded in compliance with the Data Privacy Act of 2012 (RA 10173).",
+      "Personal information is handled in line with the Data Privacy Act of 2012 (RA 10173) and our Privacy Policy. Never share your password or verification codes with anyone. To report a security concern, email projectgadvance@gmail.com with the subject \"GADvance Security Concern\".",
   },
 ];
 
@@ -118,9 +136,9 @@ export default function SupportPage() {
             </h1>
 
             <p className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-200 ease-out mt-8 text-lg sm:text-xl text-zinc-500 font-light leading-relaxed">
-              Whether you are navigating our e-learning modules or seeking
-              institutional partnership details, our team is ready to provide
-              the clarity you need.
+              Whether you are working through a course, setting up your
+              account, or reporting an issue, every request goes to one
+              support inbox: {SUPPORT_EMAIL}.
             </p>
           </div>
 
@@ -128,15 +146,27 @@ export default function SupportPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16">
             <ContactCard
               icon={<Mail size={24} strokeWidth={1.5} />}
-              title="general inquiries"
-              detail="gadvanceproject@gmail.com"
-              desc="For students and individual learners seeking guidance on access and enrollment."
+              title="general support"
+              topic="support"
+              desc="Questions about access, enrollment, courses, or how GADvance works."
             />
             <ContactCard
-              icon={<MessageCircle size={24} strokeWidth={1.5} />}
-              title="partnership support"
-              detail="gadvanceproject@gmail.com"
-              desc="Dedicated assistance for organizations and universities integrating our GAD frameworks."
+              icon={<HelpCircle size={24} strokeWidth={1.5} />}
+              title="account assistance"
+              topic="account"
+              desc="Help with sign-in, email verification, password resets, or organization membership."
+            />
+            <ContactCard
+              icon={<Code size={24} strokeWidth={1.5} />}
+              title="bug reports"
+              topic="bug"
+              desc="Tell us what went wrong, what you expected, and the device and browser you used."
+            />
+            <ContactCard
+              icon={<ShieldCheck size={24} strokeWidth={1.5} />}
+              title="security concerns"
+              topic="security"
+              desc="Report a suspected vulnerability or suspicious account activity. Never include passwords."
             />
           </div>
         </div>
@@ -230,15 +260,15 @@ export default function SupportPage() {
                 </span>
               </h3>
               <p className="mt-6 text-base text-zinc-500 font-light leading-relaxed">
-                For platform-related bugs, account access issues, or technical
-                integration inquiries, our developer team at Laguna State
-                Polytechnic University (LSPU) Computer Studies is available for
-                direct troubleshooting.
+                GADvance was developed by a College of Computer Studies team at
+                Laguna State Polytechnic University (LSPU). Platform bugs and
+                account access issues are handled through the same support
+                inbox.
               </p>
 
               <div className="mt-8">
                 <span className="text-xs font-medium text-zinc-500">
-                  Developed for GADvance Philippines
+                  Developed at LSPU College of Computer Studies
                 </span>
               </div>
             </div>
@@ -258,15 +288,15 @@ export default function SupportPage() {
                   </h4>
                 </div>
                 <p className="text-sm text-zinc-500 font-light leading-relaxed">
-                  Report platform anomalies, request feature improvements, or
-                  seek help regarding account recovery.
+                  Report a bug, suggest an improvement, or ask for help
+                  recovering your account.
                 </p>
                 <div className="pt-4 border-t border-zinc-200/60">
                   <a
-                    href="mailto:gadvanceproject@gmail.com"
+                    href={supportMailto("bug")}
                     className="text-[#8b5cf6] hover:text-[#7c3aed] text-sm font-semibold transition-colors break-words"
                   >
-                    gadvanceproject@gmail.com
+                    {SUPPORT_EMAIL}
                   </a>
                 </div>
               </div>
@@ -319,12 +349,12 @@ export default function SupportPage() {
 const ContactCard = ({
   icon,
   title,
-  detail,
+  topic,
   desc,
 }: {
   icon: React.ReactNode;
   title: string;
-  detail: string;
+  topic: SupportTopic;
   desc: string;
 }) => (
   <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out p-8 sm:p-10 rounded-3xl bg-zinc-50/80 border border-zinc-200/80 transition-all hover:bg-white hover:border-violet-200 hover:shadow-xl hover:shadow-violet-500/5 group">
@@ -336,10 +366,10 @@ const ContactCard = ({
     </h4>
 
     <a
-      href={`mailto:${detail}`}
+      href={supportMailto(topic)}
       className="text-lg sm:text-2xl font-light text-zinc-900 hover:text-[#8b5cf6] transition-colors mb-4 break-words block leading-tight"
     >
-      {detail}
+      {SUPPORT_EMAIL}
     </a>
 
     <p className="text-xs sm:text-sm text-zinc-500 font-light leading-relaxed">

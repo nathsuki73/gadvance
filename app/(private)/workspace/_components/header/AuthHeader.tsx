@@ -37,7 +37,7 @@ const AUTH_NAVS = [
 
 const FALLBACK_USER = {
   name: "Learner",
-  email: "gadvanceproject@gmail.com",
+  email: "",
 };
 
 type SearchResult = {

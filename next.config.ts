@@ -42,6 +42,17 @@ const nextConfig: NextConfig = {
     },
   },
 
+  // Pages removed in the public content audit: they advertised features,
+  // courses, and articles that the platform does not provide.
+  async redirects() {
+    return [
+      { source: "/community-forum", destination: "/support", permanent: false },
+      { source: "/leadership", destination: "/explore", permanent: false },
+      { source: "/advocacy", destination: "/explore", permanent: false },
+      { source: "/articles-and-news", destination: "/about", permanent: false },
+    ];
+  },
+
   async rewrites() {
     return [
       {

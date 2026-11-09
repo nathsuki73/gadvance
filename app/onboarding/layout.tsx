@@ -30,7 +30,7 @@ const STEP_CONTENT: Record<
       </>
     ),
     description:
-      "Providing your location helps us connect you with local partners and nearby community events in your region.",
+      "Your location is optional. It is saved to your profile so your organization can understand where its learners are participating from.",
   },
   "/onboarding/icon-bio": {
     title: (
