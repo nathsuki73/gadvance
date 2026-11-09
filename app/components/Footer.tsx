@@ -16,6 +16,7 @@ const LEARN_LINKS: FooterLink[] = [
 ];
 
 const HELP_LINKS: FooterLink[] = [
+  { href: "/docs", label: "documentation" },
   { href: "/support", label: "help center" },
   { href: "/about", label: "about gadvance" },
 ];
