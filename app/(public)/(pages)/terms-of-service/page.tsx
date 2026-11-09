@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
+import { SUPPORT_EMAIL, supportMailto } from "@/app/lib/support";
 import {
   FileText,
   Shield,
@@ -274,11 +275,11 @@ export default function TermsOfServicePage() {
                   </p>
                 </div>
                 <a
-                  href="mailto:gadvanceproject@gmail.com"
+                  href={supportMailto("support")}
                   className="inline-flex items-center gap-2 rounded-full bg-[#8b5cf6] px-6 py-3 text-xs font-medium text-white hover:bg-[#7c3aed] transition-colors shrink-0"
                 >
                   <Mail size={14} />
-                  <span>gadvanceproject@gmail.com</span>
+                  <span>{SUPPORT_EMAIL}</span>
                 </a>
               </div>
             </div>

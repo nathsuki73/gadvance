@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
+import { SUPPORT_EMAIL, supportMailto } from "@/app/lib/support";
 import Image from "next/image";
 import logoIcon from "@/app/assets/logo.ico";
 import {
@@ -233,10 +234,10 @@ export default function AboutPage() {
                   connect with the research team
                 </p>
                 <a
-                  href="mailto:gadvanceproject@gmail.com"
+                  href={supportMailto("support")}
                   className="text-sm font-medium text-zinc-800 hover:text-[#8b5cf6] transition-colors"
                 >
-                  gadvanceproject@gmail.com
+                  {SUPPORT_EMAIL}
                 </a>
               </div>
             </div>
