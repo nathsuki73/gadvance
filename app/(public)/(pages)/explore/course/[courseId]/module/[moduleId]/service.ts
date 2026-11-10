@@ -126,38 +126,6 @@ export async function getModule(moduleId: string) {
  * -----------------------------------------------------*/
 
 /**
- * Protected:
- * Get learning module with
- * user progress tracking
- */
-export async function getLearningModule(moduleId: string) {
-  const res = await request<
-    ModuleResponse & {
-      progress?: ModuleProgressResponse;
-    }
-  >(`/learn/modules/${moduleId}`);
-
-  if (res.success && res.data && res.data.status !== "published") {
-    return {
-      success: false,
-      error: "Module is not published",
-    };
-  }
-
-  return res;
-}
-
-/**
- * Protected:
- * Mark block as completed
- */
-export async function completeBlock(blockId: string) {
-  return request(`/learn/blocks/${blockId}/complete`, {
-    method: "POST",
-  });
-}
-
-/**
  * Protected: Fetch user learning progress for a specific module
  */
 export async function getModuleProgress(moduleId: string) {
