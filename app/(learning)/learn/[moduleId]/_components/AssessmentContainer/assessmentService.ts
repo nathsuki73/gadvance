@@ -357,7 +357,8 @@ export async function submitPollVote(
   }>
 > {
   try {
-    const res = await apiFetch(`/api/assessments/${assessmentId}/poll-vote`, {
+    // The API moved poll votes to /polls/{id}/vote (Student\PollController).
+    const res = await apiFetch(`/api/polls/${assessmentId}/vote`, {
       method: "POST",
       body: JSON.stringify({
         section_item_id: itemId,
