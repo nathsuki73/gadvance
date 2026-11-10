@@ -27,7 +27,7 @@ This repository is the learner-facing web app and public website. It works with:
 - Organizations joined with a 6-digit code or invitation link
 - Course (learning plan) browsing and enrollment
 - Lessons, pre-tests, post-tests, and BKT-driven adaptive checkpoint quizzes
-- Remedial review suggestions and per-topic mastery estimates
+- Remedial review suggestions based on per-topic mastery estimates
 - Certificates with public verification codes
 - Learner documentation at `/docs`
 

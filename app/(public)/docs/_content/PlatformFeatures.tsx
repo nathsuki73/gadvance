@@ -45,8 +45,8 @@ export default function PlatformFeatures() {
       <H2 id="progress">Progress and results</H2>
       <P>
         GADvance tracks completed lessons and assessments in each module, and shows your assessment scores and whether
-        you passed. It also keeps a mastery estimate for each topic, which shapes your checkpoint quizzes. While you are
-        in a module, the lesson progress panel shows your estimated mastery for each knowledge component.
+        you passed. It also keeps a mastery estimate for each topic. The estimate is not shown on screen; it is used to
+        choose checkpoint question difficulty and to suggest lessons to review after an assessment.
       </P>
 
       <H2 id="certificates">Certificates</H2>

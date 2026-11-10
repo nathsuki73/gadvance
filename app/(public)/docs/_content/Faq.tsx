@@ -33,8 +33,8 @@ export default function FaqArticle() {
         becomes steadier, and correct answers quickly bring it back up.
       </Faq>
       <Faq question="Can I see my mastery estimate?">
-        Yes. While you are in a module, the lesson progress panel lists the module&apos;s knowledge components and shows
-        your estimated mastery for each one, based on your responses so far. Use the refresh button to update it.
+        Not as a number. GADvance uses your mastery estimate behind the scenes to choose question difficulty and to
+        suggest lessons to review. What you see are your assessment scores, whether you passed, and your module progress.
       </Faq>
 
       <H2 id="assessment-questions">Assessments</H2>
