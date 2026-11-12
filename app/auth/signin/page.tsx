@@ -10,6 +10,7 @@ import ConfirmDialog from "@/app/components/ConfirmDialog";
 import { useToast } from "@/app/components/context/ToastContext";
 import { OnboardingLogo } from "@/app/onboarding/_components/OnboardingLogo";
 import { Eye, EyeOff } from "lucide-react";
+import { safeCallbackUrl } from "@/app/lib/safe-redirect";
 
 // 1. Inner component handling all the sign-in logic and search parameters
 const SignInContent = () => {
@@ -19,7 +20,7 @@ const SignInContent = () => {
   const searchParams = useSearchParams();
 
   // Read callback destination (e.g. /workspace/organization/join?code=ABC123)
-  const callbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
 
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0); // ⏱️ Cooldown state in seconds

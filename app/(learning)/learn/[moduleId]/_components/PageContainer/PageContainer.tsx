@@ -24,6 +24,7 @@ import {
   RemedialContent,
 } from "../../aiRemedialService";
 import { ExplanationCard } from "../../ExplanationCard";
+import SanitizedHtml from "./SanitizedHtml";
 
 const BlockNoteReader = dynamic(() => import("./BlockNoteReader"), {
   ssr: false,
@@ -343,8 +344,8 @@ export default function PageContainer({
             />
           ) : typeof pageData?.content === "string" &&
             pageData.content.length > 0 ? (
-            <div
-              dangerouslySetInnerHTML={{ __html: pageData.content }}
+            <SanitizedHtml
+              html={pageData.content}
               className="prose prose-zinc max-w-none text-xs sm:text-sm leading-relaxed"
             />
           ) : (

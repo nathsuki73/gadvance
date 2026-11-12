@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { OpenRouter } from "@openrouter/sdk";
 
 const openRouter = new OpenRouter({
@@ -9,6 +10,45 @@ const openRouter = new OpenRouter({
 
 const MODEL_NAME = "meta-llama/llama-3.3-70b-instruct";
 const FALLBACK_MODELS = ["google/gemini-2.0-flash-001", "openai/gpt-4o-mini"];
+
+// Each request spends the project's OpenRouter credit, so the route is limited
+// to signed-in learners, bounded inputs, and a per-learner request rate.
+const MAX_TITLE_LENGTH = 300;
+const MAX_CONTENT_LENGTH = 4000;
+const MAX_INSTRUCTION_LENGTH = 300;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 20;
+
+// In-memory, so it applies per server instance. It stops a single account
+// from looping the endpoint; it is not a substitute for an OpenRouter budget.
+const requestLog = new Map<string, number[]>();
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const recent = (requestLog.get(key) ?? []).filter(
+    (time) => now - time < RATE_LIMIT_WINDOW_MS,
+  );
+  if (recent.length >= RATE_LIMIT_MAX_REQUESTS) {
+    requestLog.set(key, recent);
+    return true;
+  }
+  recent.push(now);
+  requestLog.set(key, recent);
+
+  if (requestLog.size > 5000) {
+    for (const [k, times] of requestLog) {
+      if (times.every((time) => now - time >= RATE_LIMIT_WINDOW_MS)) {
+        requestLog.delete(k);
+      }
+    }
+  }
+  return false;
+}
+
+/** Trims and caps text sent to the model; long lesson blocks are cut, not refused. */
+function boundedText(value: unknown, maxLength: number): string {
+  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+}
 
 // Helper to pipe OpenRouter chunks into a Web Response stream
 function createStreamingResponse(stream: any) {
@@ -43,21 +83,50 @@ function createStreamingResponse(stream: any) {
 }
 
 export async function POST(req: NextRequest) {
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  if (!token || typeof token.laravelJwt !== "string" || token.laravelJwtError) {
+    return NextResponse.json({ error: "Sign in to use this feature." }, { status: 401 });
+  }
+
+  if (isRateLimited(String(token.email ?? token.sub ?? "unknown"))) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait a moment and try again." },
+      { status: 429, headers: { "Retry-After": "60" } },
+    );
+  }
+
   try {
-    const body = await req.json();
-    const {
-      action,
-      conceptTitle,
-      blockContent,
-      masteryProbability,
-      instructionPrompt,
-    } = body;
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+
+    const action = body?.action;
+    const conceptTitle = boundedText(body?.conceptTitle, MAX_TITLE_LENGTH);
+    const blockContent = boundedText(body?.blockContent, MAX_CONTENT_LENGTH);
+    const instructionPrompt =
+      action === "followup"
+        ? boundedText(body?.instructionPrompt, MAX_INSTRUCTION_LENGTH)
+        : "";
+    const rawMastery = Number(body?.masteryProbability);
+    const masteryProbability = Number.isFinite(rawMastery)
+      ? Math.min(1, Math.max(0, rawMastery))
+      : 0.3;
+
+    if (action !== "explanation" && action !== "followup" && action !== "quiz") {
+      return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    }
+    if (!blockContent || (action === "followup" && !instructionPrompt)) {
+      return NextResponse.json({ error: "Missing input" }, { status: 400 });
+    }
 
     // ==========================================
     // ACTION 1: STREAMING REMEDIAL EXPLANATION
     // ==========================================
     if (action === "explanation") {
-      const masteryPercent = Math.round((masteryProbability ?? 0.3) * 100);
+      const masteryPercent = Math.round(masteryProbability * 100);
 
       const systemPrompt = `You are a precision instructional designer in Philippine Gender and Development (GAD) and foundational values education.
 
@@ -207,10 +276,11 @@ Target Concept: "${blockContent}"`;
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
-  } catch (err: any) {
+  } catch (err) {
+    // Provider errors can include account details, so they stay in the log.
     console.error("API remedial error:", err);
     return NextResponse.json(
-      { error: err?.message || "Internal server error" },
+      { error: "The explanation could not be generated. Please try again." },
       { status: 500 },
     );
   }

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, LifeBuoy } from "lucide-react";
-import { DOC_GROUPS, docsInGroup } from "./_lib/registry";
+import { ArrowRight, Download, LifeBuoy } from "lucide-react";
+import { DOC_GROUPS, DOCS_PDF_PATH, docsInGroup } from "./_lib/registry";
 import { SUPPORT_EMAIL, supportMailto } from "@/app/lib/support";
 
 export default function DocsHome() {
@@ -20,6 +20,9 @@ export default function DocsHome() {
         <Link href="/docs/how-bkt-works" className="inline-flex items-center gap-2 rounded-full border border-zinc-200 px-5 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
           How BKT works
         </Link>
+        <a href={DOCS_PDF_PATH} download className="inline-flex items-center gap-2 rounded-full border border-zinc-200 px-5 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+          <Download size={16} aria-hidden="true" /> Download PDF
+        </a>
       </div>
 
       {DOC_GROUPS.map((group) => (

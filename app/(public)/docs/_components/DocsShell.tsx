@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BookOpen, Menu, X } from "lucide-react";
-import { DOC_GROUPS, docsInGroup } from "../_lib/registry";
+import { BookOpen, Download, Menu, X } from "lucide-react";
+import { DOC_GROUPS, DOCS_PDF_PATH, docsInGroup } from "../_lib/registry";
 import { DocsSearch } from "./DocsSearch";
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
@@ -48,6 +48,14 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           </ul>
         </div>
       ))}
+      <div className="space-y-0.5 border-t border-zinc-100 pt-5">
+        <a href={DOCS_PDF_PATH} download className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900">
+          <Download size={16} aria-hidden="true" /> Download as PDF
+        </a>
+        <Link href="/docs/print" onClick={onNavigate} className="block rounded-lg px-3 py-2 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900">
+          Printable version
+        </Link>
+      </div>
     </nav>
   );
 }

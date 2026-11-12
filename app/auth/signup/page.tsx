@@ -11,6 +11,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useToast } from "@/app/components/context/ToastContext";
 import { OnboardingLogo } from "@/app/onboarding/_components/OnboardingLogo";
 import { Eye, EyeOff } from "lucide-react";
+import { safeCallbackUrl } from "@/app/lib/safe-redirect";
 
 const signUpSchema = z
   .object({
@@ -34,7 +35,7 @@ const signUpSchema = z
 const SignUp = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
 
   const { showToast } = useToast();
   const { data: session, status } = useSession();

@@ -19,6 +19,9 @@ export type DocMeta = {
   related: string[];
 };
 
+/** The downloadable PDF of every article, built by `npm run docs:pdf`. */
+export const DOCS_PDF_PATH = "/downloads/gadvance-documentation.pdf";
+
 export const DOC_GROUPS: DocGroup[] = ["Start here", "Using GADvance", "Adaptive learning", "Help"];
 
 export const DOCS: DocMeta[] = [
