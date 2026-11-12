@@ -76,8 +76,9 @@ export default function MentalHealthPage() {
 
               <p className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-200 ease-out max-w-xl text-lg font-light leading-relaxed text-zinc-600">
                 Mental health encompasses emotional, psychological, and social
-                well-being. GADvance connects you to safe learning tools,
-                community campaigns, and immediate national crisis support.
+                well-being. If you or someone you know needs support, these
+                national hotlines and local services can help. GADvance is a
+                learning platform and does not provide counseling.
               </p>
 
               <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-300 ease-out flex flex-col sm:flex-row items-center gap-4 pt-4">
@@ -164,12 +165,10 @@ export default function MentalHealthPage() {
                 </p>
               </div>
               <a
-                href="https://ncmh.gov.ph/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-[#8b5cf6] py-3 text-sm font-medium text-white transition-colors hover:bg-[#7c3aed]"
+                href="tel:09178998727"
+                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-violet-50 py-3 text-sm font-medium text-[#8b5cf6] hover:bg-violet-100 transition-colors"
               >
-                <ExternalLink size={16} /> View Official NCMH Source
+                <PhoneCall size={16} /> Call Mobile Hotline
               </a>
             </div>
 
@@ -188,12 +187,10 @@ export default function MentalHealthPage() {
                 </p>
               </div>
               <a
-                href="https://ncmh.gov.ph/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-[#8b5cf6] py-3 text-sm font-medium text-white transition-colors hover:bg-[#7c3aed]"
+                href="tel:1553"
+                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-violet-50 py-3 text-sm font-medium text-[#8b5cf6] hover:bg-violet-100 transition-colors"
               >
-                <ExternalLink size={16} /> View Official NCMH Source
+                <PhoneCall size={16} /> Call Hotline 1553
               </a>
             </div>
 
@@ -212,13 +209,128 @@ export default function MentalHealthPage() {
                 </p>
               </div>
               <a
-                href="https://ncmh.gov.ph/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-[#8b5cf6] py-3 text-sm font-medium text-white transition-colors hover:bg-[#7c3aed]"
+                href="tel:0279898727"
+                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-violet-50 py-3 text-sm font-medium text-[#8b5cf6] hover:bg-violet-100 transition-colors"
               >
-                <ExternalLink size={16} /> View Official NCMH Source
+                <PhoneCall size={16} /> Call Direct Landline
               </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================= LOCAL DIRECTORY SPOTLIGHT (San Pablo City Medical Center) ================= */}
+      <section className="py-24 bg-zinc-50 border-t border-zinc-100">
+        <div className="mx-auto max-w-7xl px-8 lg:px-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div className="lg:col-span-5 scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out">
+              <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-[#8b5cf6]">
+                Validated Resource Directory
+              </h2>
+              <h3 className="mt-4 text-3xl font-light leading-tight tracking-tight text-zinc-900 sm:text-4xl">
+                Grassroots & Regional <br />
+                <span className="font-serif italic font-semibold text-[#8b5cf6]">
+                  Healthcare Facilities
+                </span>
+              </h3>
+              <p className="mt-6 text-sm font-light leading-relaxed text-zinc-500">
+                Access verified mental health services from hospitals,
+                specialized centers, and medical institutions across Region IV-A
+                and the Philippines.
+              </p>
+            </div>
+
+            {/* Directory Feature Card */}
+            <div className="lg:col-span-7 scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-200 ease-out">
+              <div className="bg-white p-8 rounded-3xl border border-zinc-200/80 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between border-b border-zinc-100 pb-4 gap-2">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#8b5cf6] bg-violet-50 px-2.5 py-1 rounded-full">
+                      Private Hospital
+                    </span>
+                    <h4 className="mt-2 text-xl font-semibold text-zinc-900">
+                      San Pablo City Medical Center
+                    </h4>
+                  </div>
+                  <span className="text-xs font-medium bg-violet-50 text-[#8b5cf6] px-3 py-1 rounded-full border border-violet-100">
+                    Hybrid Delivery
+                  </span>
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-zinc-600">
+                  <div>
+                    <span className="font-semibold text-zinc-800 block mb-1">
+                      Services Offered:
+                    </span>
+                    <p className="font-light text-zinc-500">
+                      Consultation, Counseling / Therapy
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-zinc-800 block mb-1">
+                      Mode of Payment:
+                    </span>
+                    <p className="font-light text-zinc-500">Out of pocket</p>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-zinc-800 block mb-1">
+                      MHPSS Support Level:
+                    </span>
+                    <p className="font-light text-zinc-500">
+                      Level 4 – Specialised Mental Health Care
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-zinc-800 block mb-1">
+                      Location:
+                    </span>
+                    <p className="font-light text-zinc-500 flex items-start gap-1">
+                      <MapPin
+                        size={14}
+                        className="text-[#8b5cf6] shrink-0 mt-0.5"
+                      />
+                      <span>
+                        AH 26, Maharlika Highway, San Pablo City, Laguna, Region
+                        IV-A
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Contact Sub-block */}
+                <div className="mt-6 pt-4 border-t border-zinc-100 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <a
+                    href="tel:0495620726"
+                    className="flex items-center gap-2 text-zinc-600 hover:text-[#8b5cf6] transition-colors"
+                  >
+                    <PhoneCall size={14} className="text-[#8b5cf6]" />
+                    <span>049-562-0726</span>
+                  </a>
+                  <a
+                    href="mailto:inquiry@spcmc.com.ph"
+                    className="flex items-center gap-2 text-zinc-600 hover:text-[#8b5cf6] transition-colors truncate"
+                  >
+                    <Mail size={14} className="text-[#8b5cf6] shrink-0" />
+                    <span className="truncate">inquiry@spcmc.com.ph</span>
+                  </a>
+                  <a
+                    href="https://www.spcmc.com.ph/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-zinc-600 hover:text-[#8b5cf6] transition-colors"
+                  >
+                    <Globe size={14} className="text-[#8b5cf6]" />
+                    <span>spcmc.com.ph</span>
+                  </a>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400">
+                  <p>
+                    Source Attribution: #MentalHealthPH Directory & Partner
+                    Agencies
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -245,14 +357,14 @@ export default function MentalHealthPage() {
             <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/workspace"
-                className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-10 py-5 text-lg font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95 flex items-center justify-center"
+                className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-10 py-5 text-lg font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95"
               >
                 Go to Workspace
               </Link>
 
               <Link
                 href="/"
-                className="w-full sm:w-auto rounded-full border border-zinc-200 bg-white px-10 py-5 text-lg font-medium text-zinc-600 transition-all hover:bg-zinc-50 active:scale-95 flex items-center justify-center"
+                className="w-full sm:w-auto rounded-full border border-zinc-200 bg-white px-10 py-5 text-lg font-medium text-zinc-600 transition-all hover:bg-zinc-50 active:scale-95"
               >
                 Back to Overview
               </Link>

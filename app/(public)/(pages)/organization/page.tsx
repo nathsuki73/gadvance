@@ -169,8 +169,8 @@ export default function OrganizationPage() {
                 Explore Organizations
               </h1>
               <p className="mt-2 text-sm text-zinc-500 font-light max-w-xl">
-                Connect with organization, and enroll on learning plans, and
-                collaborate across teams.
+                Join your school or workplace organization to access the learning
+                plans it has prepared for its members.
               </p>
             </div>
 

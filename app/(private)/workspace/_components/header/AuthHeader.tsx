@@ -33,11 +33,12 @@ const AUTH_NAVS = [
   { href: "/workspace/courses", label: "My Learning Plans" },
   { href: "/explore", label: "Explore" },
   { href: "/organization", label: "Organizations" },
+  { href: "/docs", label: "Help" },
 ] as const;
 
 const FALLBACK_USER = {
   name: "Learner",
-  email: "gadvanceproject@gmail.com",
+  email: "",
 };
 
 type SearchResult = {

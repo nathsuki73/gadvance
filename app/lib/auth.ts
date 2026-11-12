@@ -45,7 +45,7 @@ const nextAuthSecret = process.env.NEXTAUTH_SECRET!;
 const laravelAuthExchangeUrl =
   process.env.LARAVEL_AUTH_EXCHANGE_URL ??
   (process.env.NEXT_PUBLIC_API_URL
-    ? `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")}/api/auth/google/exchange`
+    ? `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")}/api/auth/handshake`
     : undefined);
 const laravelAuthRefreshUrl =
   process.env.LARAVEL_AUTH_REFRESH_URL ??
@@ -317,45 +317,52 @@ async function refreshLaravelToken(laravelToken: string) {
   }
 }
 
-async function completeSignupOtp(params: {
-  email: string;
-  otp: string;
-  dateOfBirth?: string;
-}) {
+/**
+ * Exchanges a magic-link (registration id + token) for an API session.
+ * Runs on the server, so the single-use token is only ever sent from this
+ * server to the API, never stored in the browser or a cookie.
+ */
+async function completeMagicLink(params: {
+  registration: string;
+  token: string;
+}): Promise<LaravelIdentity> {
   if (!laravelApiBaseUrl) {
-    console.warn("Missing API URL. Set NEXT_PUBLIC_API_URL.");
-    return null;
+    throw new Error("Missing API URL. Set NEXT_PUBLIC_API_URL.");
   }
 
-  const endpoint = `${laravelApiBaseUrl.replace(/\/$/, "")}/api/auth/signup/complete`;
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
+  const response = await fetch(
+    `${laravelApiBaseUrl.replace(/\/$/, "")}/api/auth/verify-email`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ registration: params.registration, token: params.token }),
+      cache: "no-store",
     },
-    body: JSON.stringify({
-      email: params.email,
-      otp: params.otp,
-      date_of_birth: params.dateOfBirth,
-    }),
-  });
+  );
 
-  let rawData: unknown = {};
+  let rawData: Record<string, unknown> = {};
   try {
     rawData = await response.json();
   } catch {
     rawData = {};
   }
 
+  if (!response.ok) {
+    // The code lets the verification page explain what happened.
+    const code = typeof rawData.code === "string" ? rawData.code : "VERIFICATION_FAILED";
+    throw new Error(code);
+  }
+
   const mapped = mapLaravelIdentityResponse(rawData, "onboarding");
-  if (!response.ok || !mapped.token) return null;
+  if (!mapped.token) {
+    throw new Error("VERIFICATION_FAILED");
+  }
 
   return {
     token: mapped.token,
     status: normalizeStatus(mapped.status) || "onboarding",
     name: mapped.name,
-    email: mapped.email || params.email,
+    email: mapped.email,
     sessionToken: mapped.sessionToken,
   };
 }
@@ -366,40 +373,47 @@ export const authOptions: NextAuthOptions = {
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        otp: { label: "OTP", type: "text" },
         password: { label: "Password", type: "password" },
-        dateOfBirth: { label: "Birthday", type: "text" },
+        registration: { label: "Registration", type: "text" },
+        verificationToken: { label: "Verification token", type: "text" },
       },
       async authorize(credentials) {
-        const email = credentials?.email?.trim();
-        const otp = credentials?.otp?.trim();
-        const password = credentials?.password;
-        const dateOfBirth = credentials?.dateOfBirth;
+        // Magic link: verify the new account and sign the learner in.
+        const registration = credentials?.registration?.trim();
+        const verificationToken = credentials?.verificationToken?.trim();
 
-        if (!email) throw new Error("Email address is required.");
+        if (registration || verificationToken) {
+          if (!registration || !verificationToken) {
+            throw new Error("INVALID_LINK");
+          }
 
-        if (otp) {
-          const completed = await completeSignupOtp({
-            email,
-            otp,
-            dateOfBirth,
+          const completed = await completeMagicLink({
+            registration,
+            token: verificationToken,
           });
-          if (!completed) throw new Error("Invalid verification code.");
-
           const status = completed.status || "onboarding";
+          const email = completed.email || "";
+
           return {
             id: email,
-            email: completed.email || email,
+            email,
             name: completed.name,
             status,
             laravelAuth: {
               token: completed.token,
               status,
               name: completed.name,
-              email: completed.email || email,
+              email,
               sessionToken: completed.sessionToken,
             },
           };
+        }
+
+        const email = credentials?.email?.trim();
+        const password = credentials?.password;
+
+        if (!email) {
+          throw new Error("Email address is required.");
         }
 
         if (!password || password.length === 0) {
@@ -501,8 +515,15 @@ export const authOptions: NextAuthOptions = {
 
       return session;
     },
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
+        // Only accept addresses Google has verified. Sign-in links to an
+        // existing GADvance account by email, so an unverified address could
+        // otherwise take over someone else's account.
+        if ((profile as { email_verified?: boolean } | undefined)?.email_verified !== true) {
+          return `/auth/error?error=AccessDenied&message=${encodeURIComponent("Your Google email address is not verified. Verify it with Google, then try again.")}`;
+        }
+
         try {
           const exchanged = await exchangeGoogleForLaravelToken({
             email: user.email,

@@ -368,9 +368,8 @@ const SignUp = () => {
             </span>
           </h2>
           <p className="text-white/80 text-sm leading-relaxed max-w-sm mx-auto font-light">
-            Your journey starts here. join our community of leaders and learners
-            dedicated to reshaping the philippine workplace, one module at a
-            time.
+            Your journey starts here. Create your account to start adaptive,
+            self-paced Gender and Development learning with GADvance.
           </p>
         </div>
 

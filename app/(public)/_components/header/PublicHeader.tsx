@@ -9,12 +9,12 @@ import { Menu, X } from "lucide-react";
 import logoIcon from "@/app/assets/logo.ico";
 
 import { NavLink } from "./NavLink";
-import { Button } from "../Button/Button";
+import { Button } from "../Button/button";
 
 const PUBLIC_NAVS = [
   { href: "/about", label: "About" },
   { href: "/explore", label: "Explore" },
-  { href: "/community-forum", label: "Community" },
+  { href: "/docs", label: "Docs" },
   { href: "/support", label: "Support" },
   { href: "/organization", label: "Organizations" },
 ];

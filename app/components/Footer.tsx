@@ -4,22 +4,44 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import logoIcon from "@/app/assets/logo.ico";
-import { Twitter, Linkedin, Instagram, ArrowUp } from "lucide-react";
-import { useToast } from "./context/ToastContext";
+import { ArrowUp, Mail } from "lucide-react";
+import { SUPPORT_EMAIL, supportMailto } from "@/app/lib/support";
+
+type FooterLink = { href: string; label: string };
+
+const LEARN_LINKS: FooterLink[] = [
+  { href: "/explore", label: "explore courses" },
+  { href: "/organization", label: "organizations" },
+  { href: "/mental-health", label: "mental health resources" },
+];
+
+const HELP_LINKS: FooterLink[] = [
+  { href: "/docs", label: "documentation" },
+  { href: "/support", label: "help center" },
+  { href: "/about", label: "about gadvance" },
+];
+
+const FooterColumn = ({ title, links }: { title: string; links: FooterLink[] }) => (
+  <div className="lg:col-span-2">
+    <h4 className="text-xs font-bold text-zinc-900 mb-4 uppercase tracking-[0.2em]">
+      {title}
+    </h4>
+    <ul className="space-y-2.5 text-sm text-zinc-500 font-light lowercase">
+      {links.map((link) => (
+        <li key={link.href}>
+          <Link
+            href={link.href}
+            className="hover:text-[#8b5cf6] transition-colors"
+          >
+            {link.label}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
 
 const Footer = () => {
-  const { showToast } = useToast();
-
-  const socialLinks = [
-    { name: "Twitter", Icon: Twitter },
-    { name: "LinkedIn", Icon: Linkedin },
-    { name: "Instagram", Icon: Instagram },
-  ];
-
-  const handleSocialClick = (platform: string) => {
-    showToast(`${platform} coming soon!`, "info");
-  };
-
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -30,10 +52,9 @@ const Footer = () => {
   return (
     <footer className="bg-white border-t border-zinc-100 py-10 sm:py-12 overflow-hidden">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
-        {/* Main Grid */}
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-8 items-start">
-          {/* Brand Identity */}
-          <div className="flex flex-col space-y-4 sm:col-span-2 lg:col-span-5">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8 items-start">
+          {/* Brand */}
+          <div className="flex flex-col space-y-4 lg:col-span-4">
             <div className="flex items-center gap-3">
               <div className="relative h-8 w-8 shrink-0">
                 <Image
@@ -44,128 +65,47 @@ const Footer = () => {
                   sizes="32px"
                 />
               </div>
-
-              <span className="text-xl font-semibold tracking-tight text-zinc-900">
-                GADvance
+              <span className="text-xl font-semibold tracking-tight text-zinc-900 lowercase">
+                gadvance
               </span>
             </div>
-
-            <p className="max-w-md text-sm font-light leading-relaxed text-zinc-500">
-              Providing accessible tools and modular education to advance gender
-              awareness and equality across schools, institutions, and
-              workplaces.
+            <p className="text-zinc-500 text-sm leading-relaxed max-w-sm font-light">
+              Adaptive Gender and Development (GAD) e-learning. Assessments
+              adjust to each learner using Bayesian Knowledge Tracing.
             </p>
-
-            {/* <div className="flex gap-2.5 pt-1">
-              {socialLinks.map(({ name, Icon }) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => handleSocialClick(name)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-100 bg-zinc-50 text-zinc-400 transition-all duration-300 hover:bg-violet-50 hover:text-[#8b5cf6] focus:outline-none touch-manipulation cursor-pointer"
-                  aria-label={name}
-                >
-                  <Icon className="h-4 w-4" />
-                </button>
-              ))}
-            </div> */}
           </div>
 
-          {/* Platform Navigation */}
-          <div className="lg:col-span-2">
-            <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-zinc-900">
-              Platform
-            </h4>
+          <FooterColumn title="learn" links={LEARN_LINKS} />
+          <FooterColumn title="help" links={HELP_LINKS} />
 
-            <ul className="space-y-2.5 text-sm font-light text-zinc-500">
-              <li>
-                <Link
-                  href="/explore"
-                  className="transition-colors hover:text-[#8b5cf6]"
-                >
-                  Explore Learning Plans
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  href="/organization"
-                  className="transition-colors hover:text-[#8b5cf6]"
-                >
-                  Organizations
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  href="/workspace"
-                  className="transition-colors hover:text-[#8b5cf6]"
-                >
-                  My Workspace
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* About & Support Navigation */}
-          <div className="lg:col-span-2">
-            <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-zinc-900">
-              About GADvance
-            </h4>
-
-            <ul className="space-y-2.5 text-sm font-light text-zinc-500">
-              <li>
-                <Link
-                  href="/about"
-                  className="transition-colors hover:text-[#8b5cf6]"
-                >
-                  About the Project
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  href="/community-forum"
-                  className="transition-colors hover:text-[#8b5cf6]"
-                >
-                  Community Forum
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  href="/support"
-                  className="transition-colors hover:text-[#8b5cf6]"
-                >
-                  Support Center
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Resources Navigation */}
-          <div className="lg:col-span-3">
-            <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-zinc-900">
-              Resources
-            </h4>
-
-            <ul className="space-y-2.5 text-sm font-light text-zinc-500">
-              <li>
-                <Link
-                  href="/mental-health"
-                  className="transition-colors hover:text-[#8b5cf6]"
-                >
-                  Mental Health Support
-                </Link>
-              </li>
-            </ul>
+          {/* Support contact */}
+          <div className="bg-gradient-to-br from-violet-50/60 via-zinc-50 to-white rounded-2xl p-5 border border-violet-100 shadow-sm sm:col-span-2 lg:col-span-4 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <Mail size={14} className="text-[#8b5cf6]" aria-hidden="true" />
+                <h4 className="text-xs font-bold text-zinc-900 uppercase tracking-[0.2em]">
+                  contact support
+                </h4>
+              </div>
+              <p className="text-xs text-zinc-500 font-light leading-relaxed">
+                Questions, bug reports, account help, and security concerns
+                all go to one inbox.
+              </p>
+            </div>
+            <a
+              href={supportMailto("support")}
+              className="mt-4 inline-flex w-fit items-center gap-2 rounded-xl bg-[#8b5cf6] py-2.5 px-4 text-xs font-semibold tracking-wide text-white shadow-md shadow-violet-500/10 transition-all hover:bg-[#7c3aed] break-all"
+            >
+              {SUPPORT_EMAIL}
+            </a>
           </div>
         </div>
 
         {/* Bottom Bar */}
         <div className="mt-10 pt-6 border-t border-zinc-100 flex flex-col items-center justify-between gap-4 md:flex-row">
           <p className="text-[11px] text-zinc-400 tracking-widest uppercase text-center md:text-left">
-            © {new Date().getFullYear()} GADvance. All rights reserved.
+            © {new Date().getFullYear()} gadvance · lspu college of computer
+            studies
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
@@ -174,31 +114,29 @@ const Footer = () => {
                 href="/privacy-policy"
                 className="hover:text-[#8b5cf6] transition-colors"
               >
-                Privacy Policy
+                privacy policy
               </Link>
               <Link
                 href="/terms-of-service"
                 className="hover:text-[#8b5cf6] transition-colors"
               >
-                Terms of Service
+                terms of service
               </Link>
-              <a
-                href="mailto:gadvanceproject@gmail.com"
+              <Link
+                href="/support"
                 className="hover:text-[#8b5cf6] transition-colors"
               >
-                Support Desk
-              </a>
+                contact support
+              </Link>
             </div>
 
-            {/* Back to Top Button */}
             <button
-              type="button"
               onClick={scrollToTop}
-              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-600 hover:border-violet-200 hover:bg-violet-50 hover:text-[#8b5cf6] transition-all active:scale-95 shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-600 hover:border-violet-200 hover:bg-violet-50 hover:text-[#8b5cf6] transition-all active:scale-95 shrink-0"
               aria-label="Back to top"
             >
               <span>Top</span>
-              <ArrowUp size={12} />
+              <ArrowUp size={12} aria-hidden="true" />
             </button>
           </div>
         </div>
