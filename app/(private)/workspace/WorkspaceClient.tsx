@@ -339,7 +339,7 @@ function InstitutionSection({
             onClick={() => onGoToOrgPage(currentOrg.id)}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide bg-primary hover:bg-primary-hover text-white transition-all shadow-sm active:scale-[0.98] cursor-pointer group"
           >
-            <span>View Modules</span>
+            <span>View Learning Plans</span>
             <ExternalLink
               size={13}
               className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
