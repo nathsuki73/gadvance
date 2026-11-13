@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 
-import logoIcon from "@/app/assets/logo.ico";
+import logoIcon from "@/app/assets/logo.png";
 
 import { NavLink } from "./NavLink";
 import { Button } from "../Button/button";

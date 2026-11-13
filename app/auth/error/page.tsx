@@ -3,7 +3,7 @@
 import React, { use } from "react";
 import Link from "next/link";
 import { AlertCircle, ArrowLeft, Home } from "lucide-react";
-import logoIcon from "@/app/assets/logo.ico";
+import logoIcon from "@/app/assets/logo.png";
 
 export default function AuthErrorPage({
   searchParams,

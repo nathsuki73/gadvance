@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Mail, CheckCircle2, Loader2 } from "lucide-react";
 import { sendForgotPasswordLink } from "./actions"; // Updated action call
-import logoIcon from "@/app/assets/logo.ico";
+import logoIcon from "@/app/assets/logo.png";
 import { useToast } from "@/app/components/context/ToastContext";
 
 const ForgotPassword = () => {

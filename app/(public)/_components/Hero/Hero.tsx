@@ -75,8 +75,12 @@ const Hero = () => {
           <div className="scroll-anim opacity-0 translate-y-20 transition-all duration-[1500ms] delay-700 ease-out will-change-transform">
             <Image
               src={image2}
-              width={1200}
-              height={1200}
+              // The file's real size. A different ratio here makes the page
+              // jump when the image finishes loading.
+              width={1536}
+              height={1024}
+              sizes="(min-width: 1024px) 672px, (min-width: 640px) 576px, 100vw"
+              priority
               alt="Hero illustration"
               className="w-full max-w-lg sm:max-w-xl lg:max-w-2xl object-contain -translate-y-10 sm:-translate-y-16 lg:-translate-y-24 pointer-events-none"
             />

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import logoIcon from "@/app/assets/logo.ico";
+import logoIcon from "@/app/assets/logo.png";
 import { useToast } from "@/app/components/context/ToastContext";
 
 type ErrorType = "expired" | "already_exists" | "invalid" | "network";

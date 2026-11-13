@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { SUPPORT_EMAIL, supportMailto } from "@/app/lib/support";
 import Image from "next/image";
-import logoIcon from "@/app/assets/logo.ico";
+import logoIcon from "@/app/assets/logo.png";
 import {
   ArrowRight,
   Target,

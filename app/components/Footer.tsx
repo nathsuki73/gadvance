@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import logoIcon from "@/app/assets/logo.ico";
+import logoIcon from "@/app/assets/logo.png";
 import { ArrowUp, Mail } from "lucide-react";
 import { SUPPORT_EMAIL, supportMailto } from "@/app/lib/support";
 

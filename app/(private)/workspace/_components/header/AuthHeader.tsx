@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 import Notification from "../Notification";
-import logoIcon from "@/app/assets/logo.ico";
+import logoIcon from "@/app/assets/logo.png";
 import SearchBar from "./SearchBar";
 import LogoutConfirmationDialog from "./LogoutConfirmation";
 import { useQuery } from "@tanstack/react-query";

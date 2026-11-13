@@ -89,8 +89,9 @@ const TheVisionSection = () => {
             <div className="absolute inset-0 flex items-center justify-center bg-zinc-100">
               <Image
                 src={image1}
-                width={1200}
-                height={1200}
+                width={1028}
+                height={762}
+                sizes="(min-width: 1024px) 576px, 100vw"
                 alt="Vision illustration"
                 className="pointer-events-none h-full w-full object-cover transition-transform duration-[3000ms] hover:scale-110"
               />

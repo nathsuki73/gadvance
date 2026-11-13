@@ -43,6 +43,7 @@ const SignInContent = () => {
   const isSessionValid = Boolean(
     session && !session?.error && session?.laravelJwt,
   );
+  const isCheckingSession = status === "loading";
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -155,14 +156,7 @@ const SignInContent = () => {
         </div>
 
         <div className="w-full max-w-md mx-auto lg:mx-0">
-          {status === "loading" ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p className="text-sm text-zinc-400 font-medium tracking-tight">
-                Verifying session...
-              </p>
-            </div>
-          ) : isSessionValid ? (
+          {isSessionValid ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h1 className="text-3xl font-bold text-zinc-900 mb-2 tracking-tight">
                 Welcome back
@@ -182,102 +176,123 @@ const SignInContent = () => {
               </p>
             </div>
           ) : (
-            <>
-              <h1 className="text-3xl font-bold text-zinc-900 mb-2 mt-20 tracking-tight">
-                Welcome Back!
-              </h1>
-              <p className="text-zinc-400 mb-10 text-sm font-light">
-                Sign in to access your dashboard
-              </p>
-
-              <form className="space-y-5" onSubmit={handleSubmit}>
-                <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
-                    Email Address
-                  </label>
-                  <input
-                    name="email"
-                    type="email"
-                    required
-                    placeholder="sample@example.com"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                      Password
-                    </label>
-                  </div>
-                  <div className="relative">
-                    <input
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      required
-                      placeholder="Enter your password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3.5 pr-10 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
-                      aria-label={
-                        showPassword ? "Hide password" : "Show password"
-                      }
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                  <Link
-                    href="/auth/forgot-password"
-                    className="text-[10px] font-bold text-[#8b5cf6] hover:text-[#7c3aed] uppercase tracking-widest transition-colors mt-3 block text-right"
-                  >
-                    forgot password?
-                  </Link>
-                </div>
-
-                {/* Submit Button with Dynamic Cooldown & Loading states */}
-                <button
-                  type="submit"
-                  disabled={loading || cooldown > 0}
-                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+            // While the session loads, the form keeps its space but stays
+            // hidden under the spinner, so the page does not jump when it
+            // appears.
+            <div className="relative">
+              {isCheckingSession && (
+                <div
+                  className="absolute inset-0 flex flex-col items-center justify-center"
+                  role="status"
                 >
-                  {loading
-                    ? "Signing In..."
-                    : cooldown > 0
-                      ? `Try again in ${cooldown}s`
-                      : "Sign In"}
-                </button>
-
-                <div className="relative flex items-center py-4">
-                  <div className="grow border-t border-zinc-100"></div>
-                  <span className="shrink mx-4 text-zinc-300 text-[12px] uppercase tracking-[0.2em] font-bold">
-                    Or
-                  </span>
-                  <div className="grow border-t border-zinc-100"></div>
+                  <div className="w-6 h-6 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="text-sm text-zinc-400 font-medium tracking-tight">
+                    Verifying session...
+                  </p>
                 </div>
-
-                <GoogleButton onClick={handleSignIn} />
-              </form>
-            </>
-          )}
-
-          {/* Show "Create Account" footer whenever the user is NOT in a valid active session */}
-          {!isSessionValid && status !== "loading" && (
-            <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mt-10 text-center">
-              No account?{" "}
-              <Link
-                href={signUpHref}
-                className="text-[#8b5cf6] hover:underline transition-colors"
+              )}
+              <div
+                className={isCheckingSession ? "invisible" : undefined}
+                inert={isCheckingSession}
               >
-                create account
-              </Link>
-            </p>
+                <h1 className="text-3xl font-bold text-zinc-900 mb-2 mt-20 tracking-tight">
+                  Welcome Back!
+                </h1>
+                <p className="text-zinc-400 mb-10 text-sm font-light">
+                  Sign in to access your dashboard
+                </p>
+
+                <form className="space-y-5" onSubmit={handleSubmit}>
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+                      Email Address
+                    </label>
+                    <input
+                      name="email"
+                      type="email"
+                      required
+                      placeholder="sample@example.com"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                        Password
+                      </label>
+                    </div>
+                    <div className="relative">
+                      <input
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                        placeholder="Enter your password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3.5 pr-10 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showPassword ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                    </div>
+                    <Link
+                      href="/auth/forgot-password"
+                      className="text-[10px] font-bold text-[#8b5cf6] hover:text-[#7c3aed] uppercase tracking-widest transition-colors mt-3 block text-right"
+                    >
+                      forgot password?
+                    </Link>
+                  </div>
+
+                  {/* Submit Button with Dynamic Cooldown & Loading states */}
+                  <button
+                    type="submit"
+                    disabled={loading || cooldown > 0}
+                    className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {loading
+                      ? "Signing In..."
+                      : cooldown > 0
+                        ? `Try again in ${cooldown}s`
+                        : "Sign In"}
+                  </button>
+
+                  <div className="relative flex items-center py-4">
+                    <div className="grow border-t border-zinc-100"></div>
+                    <span className="shrink mx-4 text-zinc-300 text-[12px] uppercase tracking-[0.2em] font-bold">
+                      Or
+                    </span>
+                    <div className="grow border-t border-zinc-100"></div>
+                  </div>
+
+                  <GoogleButton onClick={handleSignIn} />
+                </form>
+
+                {/* "Create Account" footer, shown whenever there is no active session */}
+                <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mt-10 text-center">
+                  No account?{" "}
+                  <Link
+                    href={signUpHref}
+                    className="text-[#8b5cf6] hover:underline transition-colors"
+                  >
+                    create account
+                  </Link>
+                </p>
+              </div>
+            </div>
           )}
         </div>
       </div>
