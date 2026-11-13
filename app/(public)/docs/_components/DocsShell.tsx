@@ -25,7 +25,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       </Link>
       {DOC_GROUPS.map((group) => (
         <div key={group}>
-          <p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-400">{group}</p>
+          <p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500">{group}</p>
           <ul className="space-y-0.5">
             {docsInGroup(group).map((doc) => {
               const href = `/docs/${doc.slug}`;

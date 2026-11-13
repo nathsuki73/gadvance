@@ -17,10 +17,10 @@ import {
   fetchProvinces,
   fetchMunCities,
   fetchBarangays,
+  useBarangays,
   RegionItem,
   ProvinceItem,
   MunCityItem,
-  BarangayItem,
 } from "@/app/onboarding/contact-location/service";
 
 const COUNTRIES = ["Philippines"];
@@ -102,10 +102,11 @@ export default function ContactLocationInfo({
     : formData.munCityCode;
 
   // 4. Cascading Barangays based on selected City
-  const barangays = useMemo<BarangayItem[]>(
-    () => fetchBarangays(effectiveMunCityCode),
-    [effectiveMunCityCode],
-  );
+  const {
+    barangays,
+    loading: barangaysLoading,
+    failed: barangaysFailed,
+  } = useBarangays(effectiveMunCityCode);
 
   // Sync initial backend data into state & dropdown search queries
   useEffect(() => {
@@ -500,9 +501,19 @@ export default function ContactLocationInfo({
       <SearchableDropdown
         label="Barangay"
         required
-        disabled={!formData.provinceCode || (!isHUC && !formData.munCityCode)}
+        disabled={
+          !formData.provinceCode || (!isHUC && !formData.munCityCode) ||
+          barangaysLoading ||
+          barangaysFailed
+        }
         placeholder="Select Barangay"
-        disabledPlaceholder="Select Location first"
+        disabledPlaceholder={
+          !formData.provinceCode || (!isHUC && !formData.munCityCode)
+            ? "Select Location first"
+            : barangaysFailed
+              ? "Could not load barangays. Retrying..."
+              : "Loading barangays..."
+        }
         query={barangayQuery}
         onQueryChange={setBarangayQuery}
         items={barangays}
@@ -537,7 +548,7 @@ export default function ContactLocationInfo({
             className={`text-[11px] tabular-nums transition-colors ${
               formData.address.length >= MAX_ADDRESS_LENGTH
                 ? "font-semibold text-red-500"
-                : "text-zinc-400"
+                : "text-zinc-500"
             }`}
           >
             {formData.address.length} / {MAX_ADDRESS_LENGTH}
@@ -551,7 +562,7 @@ export default function ContactLocationInfo({
           value={formData.address}
           onChange={handleChange}
           placeholder="House No., Street Name, Subdivision"
-          className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+          className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#7d49f5] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
         />
       </div>
 
@@ -573,7 +584,7 @@ export default function ContactLocationInfo({
             onChange={handleChange}
             placeholder="4000"
             maxLength={POSTAL_CODE_LENGTH}
-            className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+            className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#7d49f5] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
           />
         </div>
 
@@ -594,7 +605,7 @@ export default function ContactLocationInfo({
         <button
           type="submit"
           disabled={isSaving}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-70 active:scale-[0.98] cursor-pointer"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#7d49f5] hover:bg-[#7c3aed] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-70 active:scale-[0.98] cursor-pointer"
         >
           {isSaving ? (
             <>

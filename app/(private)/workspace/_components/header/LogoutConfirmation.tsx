@@ -27,7 +27,7 @@ const LogoutConfirmationDialog = ({
             <span className="italic font-serif text-[#e05353]">sign out?</span>
           </h2>
 
-          <p className="mt-4 text-base text-zinc-400 font-light leading-relaxed lowercase">
+          <p className="mt-4 text-base text-zinc-500 font-light leading-relaxed lowercase">
             you will need to enter your account credentials to access your
             professional workspace again.
           </p>

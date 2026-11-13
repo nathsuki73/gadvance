@@ -86,7 +86,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   e.stopPropagation();
                   dismissToast(toast.id);
                 }}
-                className="text-zinc-400 hover:text-zinc-600 transition-colors p-1.5 rounded-xl focus:outline-none shrink-0 cursor-pointer"
+                className="text-zinc-500 hover:text-zinc-600 transition-colors p-1.5 rounded-xl focus:outline-none shrink-0 cursor-pointer"
                 aria-label="Close notification"
               >
                 <svg
@@ -112,7 +112,7 @@ function ToastIcon({ type }: { type: ToastType }) {
     case "success":
       return (
         <svg
-          className="w-4 h-4 text-[#8b5cf6]"
+          className="w-4 h-4 text-[#7d49f5]"
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
@@ -159,7 +159,7 @@ function ToastIcon({ type }: { type: ToastType }) {
     default:
       return (
         <svg
-          className="w-4 h-4 text-[#8b5cf6]"
+          className="w-4 h-4 text-[#7d49f5]"
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"

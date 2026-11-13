@@ -86,18 +86,18 @@ export function RemedialSuggestionsCard({
             >
               <Link
                 href={reviewUrl}
-                className="group flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 text-xs font-semibold text-zinc-800 transition-all hover:border-[#8b5cf6] hover:shadow-xs hover:-translate-y-0.5"
+                className="group flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 text-xs font-semibold text-zinc-800 transition-all hover:border-[#7d49f5] hover:shadow-xs hover:-translate-y-0.5"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-[11px] font-bold text-[#8b5cf6]">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-[11px] font-bold text-[#7d49f5]">
                     {idx + 1}
                   </span>
-                  <span className="text-zinc-800 group-hover:text-[#8b5cf6] transition-colors">
+                  <span className="text-zinc-800 group-hover:text-[#7d49f5] transition-colors">
                     Concept Review Module #{idx + 1}
                   </span>
                 </div>
 
-                <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 px-3.5 py-2 text-xs font-bold text-[#8b5cf6] group-hover:bg-[#8b5cf6] group-hover:text-white transition-all">
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 px-3.5 py-2 text-xs font-bold text-[#7d49f5] group-hover:bg-[#7d49f5] group-hover:text-white transition-all">
                   <span>Review Section</span>
                   <ExternalLink size={13} />
                 </span>
@@ -124,7 +124,7 @@ export function RemedialSuggestionsCard({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-purple-100 hover:bg-purple-200 px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#8b5cf6] transition-all cursor-pointer shadow-xs"
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-purple-100 hover:bg-purple-200 px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#7d49f5] transition-all cursor-pointer shadow-xs"
           >
             <RotateCcw size={16} />
             <span>Try Again</span>
@@ -133,7 +133,7 @@ export function RemedialSuggestionsCard({
         <button
           type="button"
           onClick={onNext}
-          className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-5 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-[#8b5cf6]/20 transition-all hover:bg-[#7c3aed] cursor-pointer"
+          className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#7d49f5] px-5 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-[#7d49f5]/20 transition-all hover:bg-[#7c3aed] cursor-pointer"
         >
           <span>Continue</span>
           <ChevronRight size={16} />

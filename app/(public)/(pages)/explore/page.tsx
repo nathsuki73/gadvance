@@ -8,7 +8,7 @@ const ExplorePage = () => {
         <Suspense
           fallback={
             <div className="flex h-64 w-full items-center justify-center">
-              <div className="w-6 h-6 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-6 h-6 border-2 border-[#7d49f5] border-t-transparent rounded-full animate-spin"></div>
             </div>
           }
         >

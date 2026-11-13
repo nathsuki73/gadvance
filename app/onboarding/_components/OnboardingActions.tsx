@@ -31,7 +31,7 @@ export function OnboardingActions({
           type="button"
           onClick={onBack}
           disabled={loading}
-          className="w-full sm:w-1/3 border border-zinc-100 text-zinc-400 py-3.5 sm:py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-violet-50 hover:text-[#8b5cf6] transition-all disabled:opacity-50"
+          className="w-full sm:w-1/3 border border-zinc-100 text-zinc-500 py-3.5 sm:py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest hover:bg-violet-50 hover:text-[#7d49f5] transition-all disabled:opacity-50"
         >
           {backLabel}
         </button>
@@ -41,7 +41,7 @@ export function OnboardingActions({
         disabled={loading}
         className={`w-full ${
           showBack ? "sm:w-2/3" : ""
-        } bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-3.5 sm:py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70`}
+        } bg-[#7d49f5] hover:bg-[#7c3aed] text-white py-3.5 sm:py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70`}
       >
         {loading && loadingLabel ? loadingLabel : nextLabel}
       </button>

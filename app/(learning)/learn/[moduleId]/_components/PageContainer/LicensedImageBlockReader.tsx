@@ -40,12 +40,12 @@ export const createLicensedImageBlockReader = createReactBlockSpec(
       const renderAttributionContent = () => (
         <>
           <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
               TASL Attribution
             </span>
             <button
               onClick={() => setShowPopover(false)}
-              className="text-zinc-400 hover:text-zinc-700 cursor-pointer p-1 rounded-lg hover:bg-zinc-100 transition-colors"
+              className="text-zinc-500 hover:text-zinc-700 cursor-pointer p-1 rounded-lg hover:bg-zinc-100 transition-colors"
             >
               <X size={14} />
             </button>
@@ -81,7 +81,7 @@ export const createLicensedImageBlockReader = createReactBlockSpec(
                   </span>
                 </a>
               ) : (
-                <span className="text-xs text-zinc-400 italic">
+                <span className="text-xs text-zinc-500 italic">
                   No source link provided.
                 </span>
               )}

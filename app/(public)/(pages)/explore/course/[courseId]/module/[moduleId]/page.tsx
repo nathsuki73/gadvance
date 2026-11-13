@@ -54,14 +54,14 @@ export type ModuleResponse = {
 const getItemIcon = (itemType?: string, assessmentType?: string | null) => {
   if (itemType === "assessment") {
     if (assessmentType === "pre_test" || assessmentType === "post_test") {
-      return <GraduationCap size={15} className="text-[#8b5cf6] shrink-0" />;
+      return <GraduationCap size={15} className="text-[#7d49f5] shrink-0" />;
     }
-    return <ClipboardCheck size={15} className="text-[#8b5cf6] shrink-0" />;
+    return <ClipboardCheck size={15} className="text-[#7d49f5] shrink-0" />;
   }
   if (itemType === "page") {
-    return <FileText size={15} className="text-[#8b5cf6] shrink-0" />;
+    return <FileText size={15} className="text-[#7d49f5] shrink-0" />;
   }
-  return <PlayCircle size={15} className="text-[#8b5cf6] shrink-0" />;
+  return <PlayCircle size={15} className="text-[#7d49f5] shrink-0" />;
 };
 
 export default function ModulePage({
@@ -155,7 +155,7 @@ export default function ModulePage({
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
-        <Loader2 className="animate-spin text-[#8b5cf6]" size={32} />
+        <Loader2 className="animate-spin text-[#7d49f5]" size={32} />
       </div>
     );
   }
@@ -211,7 +211,7 @@ export default function ModulePage({
                           <div className="mt-6 sm:mt-8">
                             <Link
                               href={`/learn/${mod.id}`}
-                              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-purple-500/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] cursor-pointer"
+                              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#7d49f5] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-purple-500/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] cursor-pointer"
                             >
                               {modProgress > 0
                                 ? "Continue Learning"
@@ -223,10 +223,10 @@ export default function ModulePage({
                           {/* Stat Cards */}
                           <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-3 sm:gap-4 max-w-md">
                             <div className="rounded-2xl border border-zinc-100 bg-white p-3.5 sm:p-4 shadow-xs">
-                              <div className="flex items-center gap-2 text-zinc-400">
+                              <div className="flex items-center gap-2 text-zinc-500">
                                 <BookOpen
                                   size={16}
-                                  className="text-[#8b5cf6]"
+                                  className="text-[#7d49f5]"
                                 />
                                 <span className="text-[9px] font-bold uppercase tracking-[0.2em]">
                                   SECTIONS
@@ -238,8 +238,8 @@ export default function ModulePage({
                             </div>
 
                             <div className="rounded-2xl border border-zinc-100 bg-white p-3.5 sm:p-4 shadow-xs">
-                              <div className="flex items-center gap-2 text-zinc-400">
-                                <Clock3 size={16} className="text-[#8b5cf6]" />
+                              <div className="flex items-center gap-2 text-zinc-500">
+                                <Clock3 size={16} className="text-[#7d49f5]" />
                                 <span className="text-[9px] font-bold uppercase tracking-[0.2em]">
                                   PROGRESS
                                 </span>
@@ -259,7 +259,7 @@ export default function ModulePage({
                               <h2 className="text-lg sm:text-xl font-bold tracking-tight text-zinc-900">
                                 Overview
                               </h2>
-                              <p className="text-xs text-zinc-400 font-light mt-0.5">
+                              <p className="text-xs text-zinc-500 font-light mt-0.5">
                                 A structured overview of the lessons and
                                 assessments.
                               </p>
@@ -303,14 +303,14 @@ export default function ModulePage({
                                       ))}
                                     </div>
                                   ) : (
-                                    <div className="px-4 sm:px-6 py-3 text-xs text-zinc-400 font-light">
+                                    <div className="px-4 sm:px-6 py-3 text-xs text-zinc-500 font-light">
                                       No items in this section.
                                     </div>
                                   )}
                                 </div>
                               ))
                             ) : (
-                              <div className="rounded-2xl border border-dashed border-zinc-200 p-6 sm:p-8 text-center text-xs text-zinc-400 font-light">
+                              <div className="rounded-2xl border border-dashed border-zinc-200 p-6 sm:p-8 text-center text-xs text-zinc-500 font-light">
                                 No sections found for this module.
                               </div>
                             )}
@@ -380,7 +380,7 @@ export default function ModulePage({
                         onClick={() => handleSelectModule(idx)}
                         className={`group relative flex flex-col justify-between rounded-3xl p-6 sm:p-7 text-left transition-all duration-300 cursor-pointer snap-center flex-[0_0_100%] sm:flex-[0_0_calc((100%-1.5rem)/2)] h-[210px] sm:h-[225px] overflow-hidden ${
                           isCurrent
-                            ? "bg-white border-2 border-[#8b5cf6] shadow-lg shadow-purple-500/10"
+                            ? "bg-white border-2 border-[#7d49f5] shadow-lg shadow-purple-500/10"
                             : "bg-white/80 border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md"
                         }`}
                       >
@@ -390,7 +390,7 @@ export default function ModulePage({
                             <span
                               className={`font-mono text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 sm:py-1 rounded-lg shrink-0 ${
                                 isCurrent
-                                  ? "bg-[#8b5cf6] text-white"
+                                  ? "bg-[#7d49f5] text-white"
                                   : "bg-zinc-100 text-zinc-600 group-hover:bg-zinc-200/80"
                               }`}
                             >
@@ -409,7 +409,7 @@ export default function ModulePage({
                           </div>
 
                           {/* Title */}
-                          <h4 className="text-base sm:text-lg font-bold text-zinc-900 group-hover:text-[#8b5cf6] transition-colors truncate block w-full mt-1">
+                          <h4 className="text-base sm:text-lg font-bold text-zinc-900 group-hover:text-[#7d49f5] transition-colors truncate block w-full mt-1">
                             {m.title}
                           </h4>
 
@@ -420,16 +420,16 @@ export default function ModulePage({
                         </div>
 
                         {/* Card Bottom Meta */}
-                        <div className="w-full mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400 shrink-0">
+                        <div className="w-full mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-500 shrink-0">
                           <div className="flex items-center gap-3 truncate pr-1">
                             <span className="flex items-center gap-1 shrink-0">
-                              <BookOpen size={13} className="text-[#8b5cf6]" />
+                              <BookOpen size={13} className="text-[#7d49f5]" />
                               {m.sections?.length == 1
                                 ? `${m.sections?.length} Section`
                                 : `${m.sections?.length} Sections`}
                             </span>
                             <span className="flex items-center gap-1 shrink-0">
-                              <Layers size={13} className="text-[#8b5cf6]" />
+                              <Layers size={13} className="text-[#7d49f5]" />
                               {totalLessons == 1
                                 ? `${totalLessons} Lesson`
                                 : `${totalLessons} Lessons`}
@@ -466,7 +466,7 @@ export default function ModulePage({
                     onClick={() => handleSelectModule(idx)}
                     className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                       idx === activeIndex
-                        ? "w-8 bg-[#8b5cf6]"
+                        ? "w-8 bg-[#7d49f5]"
                         : "w-2 bg-zinc-200 hover:bg-zinc-300"
                     }`}
                     aria-label={`Go to module ${idx + 1}`}

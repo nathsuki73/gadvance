@@ -27,7 +27,7 @@ export default function DocsHome() {
 
       {DOC_GROUPS.map((group) => (
         <section key={group} aria-labelledby={`group-${group}`} className="mt-12">
-          <h2 id={`group-${group}`} className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-400">{group}</h2>
+          <h2 id={`group-${group}`} className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500">{group}</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {docsInGroup(group).map((doc) => (
               <Link key={doc.slug} href={`/docs/${doc.slug}`} className="group rounded-2xl border border-zinc-200 p-5 transition-colors hover:border-violet-200 hover:bg-violet-50/40">

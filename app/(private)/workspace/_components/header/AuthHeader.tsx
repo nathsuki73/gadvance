@@ -393,7 +393,7 @@ export default function AuthHeader() {
         {isSearching && (
           <div className="flex flex-col gap-2 p-2">
             <div className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-500">
-              <Loader2 className="h-4 w-4 animate-spin text-[#8b5cf6]" />
+              <Loader2 className="h-4 w-4 animate-spin text-[#7d49f5]" />
               <span>Searching titles and courses...</span>
             </div>
             <div className="space-y-2 px-1">
@@ -413,15 +413,15 @@ export default function AuthHeader() {
                 className="flex w-full flex-col gap-0.5 rounded-xl px-4 py-2.5 text-left text-sm hover:bg-zinc-50 transition-all group"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-zinc-800 group-hover:text-[#8b5cf6] transition-colors">
+                  <span className="font-semibold text-zinc-800 group-hover:text-[#7d49f5] transition-colors">
                     {item.title}
                   </span>
-                  <span className="text-[10px] bg-zinc-100 group-hover:bg-[#8b5cf6]/10 group-hover:text-[#8b5cf6] text-zinc-500 rounded-md px-1.5 py-0.5 font-medium transition-colors">
+                  <span className="text-[10px] bg-zinc-100 group-hover:bg-[#7d49f5]/10 group-hover:text-[#7d49f5] text-zinc-500 rounded-md px-1.5 py-0.5 font-medium transition-colors">
                     {item.type}
                   </span>
                 </div>
                 {item.description && (
-                  <p className="text-xs text-zinc-400 truncate w-full">
+                  <p className="text-xs text-zinc-500 truncate w-full">
                     {item.description}
                   </p>
                 )}
@@ -433,12 +433,12 @@ export default function AuthHeader() {
         {!isSearching && hasSearched && searchResults.length === 0 && (
           <div className="flex flex-col items-center justify-center py-6 px-4 text-center">
             <div className="p-2.5 rounded-full bg-zinc-50 mb-2">
-              <AlertCircle className="h-5 w-5 text-zinc-400" />
+              <AlertCircle className="h-5 w-5 text-zinc-500" />
             </div>
             <p className="text-sm font-semibold text-zinc-700">
               No results found
             </p>
-            <p className="text-xs text-zinc-400 mt-1 max-w-[240px]">
+            <p className="text-xs text-zinc-500 mt-1 max-w-[240px]">
               We couldn&apos;t find anything matching &ldquo;
               {searchQuery.trim()}&rdquo;
             </p>
@@ -548,7 +548,7 @@ export default function AuthHeader() {
                   </p>
                   {/* Already has truncate */}
                   <p
-                    className="text-[10px] text-zinc-400 font-light truncate mt-0.5"
+                    className="text-[10px] text-zinc-500 font-light truncate mt-0.5"
                     title={currentUser.email}
                   >
                     {currentUser.email}
@@ -640,7 +640,7 @@ export default function AuthHeader() {
               </p>
               <p
                 title={currentUser.email}
-                className="text-xs text-zinc-400 font-light truncate"
+                className="text-xs text-zinc-500 font-light truncate"
               >
                 {currentUser.email}
               </p>
@@ -667,7 +667,7 @@ export default function AuthHeader() {
               onClick={(e) => handleSafeLinkClick(e, "/workspace/profile")}
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 font-medium select-none"
             >
-              <Settings size={16} className="text-zinc-400" />
+              <Settings size={16} className="text-zinc-500" />
               Profile Settings
             </Link>
             <button
@@ -746,7 +746,7 @@ function DropdownLink({
       onClick={handleClick}
       className="flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-zinc-600 font-medium hover:bg-zinc-50 transition-colors lowercase select-none cursor-pointer"
     >
-      <span className="text-zinc-400">{icon}</span>
+      <span className="text-zinc-500">{icon}</span>
       {label}
     </Link>
   );

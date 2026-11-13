@@ -45,8 +45,8 @@ export default function ProfilePage() {
     return (
       <div className="flex min-h-[70vh] items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3 text-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-3 border-violet-100 border-t-[#8b5cf6]" />
-          <p className="text-xs font-medium text-zinc-400">
+          <div className="h-10 w-10 animate-spin rounded-full border-3 border-violet-100 border-t-[#7d49f5]" />
+          <p className="text-xs font-medium text-zinc-500">
             Loading profile...
           </p>
         </div>
@@ -73,7 +73,7 @@ export default function ProfilePage() {
           {/* Navigation Sidebar */}
           <aside className="w-full min-w-0 rounded-2xl border border-zinc-200/80 bg-white p-2 sm:p-3 shadow-sm">
             <div className="hidden md:block mb-2 px-3 py-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
                 Navigation
               </span>
             </div>
@@ -88,13 +88,13 @@ export default function ProfilePage() {
                     onClick={() => setActiveTab(item.id)}
                     className={`flex shrink-0 items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all duration-200 whitespace-nowrap md:w-full ${
                       isActive
-                        ? "bg-violet-50 text-[#8b5cf6] shadow-sm shadow-violet-500/5"
+                        ? "bg-violet-50 text-[#7d49f5] shadow-sm shadow-violet-500/5"
                         : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
                     }`}
                   >
                     <Icon
                       className={`h-4 w-4 shrink-0 ${
-                        isActive ? "text-[#8b5cf6]" : "text-zinc-400"
+                        isActive ? "text-[#7d49f5]" : "text-zinc-500"
                       }`}
                     />
                     <span>{item.label}</span>

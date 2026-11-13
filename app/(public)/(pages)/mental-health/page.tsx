@@ -65,7 +65,7 @@ export default function MentalHealthPage() {
             <div className="lg:col-span-6 text-left space-y-6">
               <h1 className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-100 ease-out text-4xl font-light leading-[1.1] tracking-tight text-zinc-900 sm:text-6xl">
                 Kumusta ka? <br />
-                <span className="font-semibold text-[#8b5cf6]">
+                <span className="font-semibold text-[#7d49f5]">
                   Your mind matters.
                 </span>{" "}
                 <br />
@@ -84,7 +84,7 @@ export default function MentalHealthPage() {
               <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-300 ease-out flex flex-col sm:flex-row items-center gap-4 pt-4">
                 <Link
                   href="/workspace"
-                  className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-8 py-4 text-base font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-lg hover:shadow-violet-200 active:scale-95 flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto rounded-full bg-[#7d49f5] px-8 py-4 text-base font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-lg hover:shadow-violet-200 active:scale-95 flex items-center justify-center gap-2"
                 >
                   <span>Explore Well-being Modules</span>
                   <ArrowUpRight size={18} />
@@ -92,7 +92,7 @@ export default function MentalHealthPage() {
 
                 <a
                   href="#hotlines"
-                  className="w-full sm:w-auto rounded-full border border-violet-200 bg-violet-50/50 px-8 py-4 text-center text-base font-medium text-[#8b5cf6] transition-all hover:bg-violet-100 active:scale-95"
+                  className="w-full sm:w-auto rounded-full border border-violet-200 bg-violet-50/50 px-8 py-4 text-center text-base font-medium text-[#7d49f5] transition-all hover:bg-violet-100 active:scale-95"
                 >
                   24/7 Emergency Hotlines
                 </a>
@@ -115,7 +115,7 @@ export default function MentalHealthPage() {
                 </div>
                 <div className="p-4 flex items-center justify-between text-xs text-zinc-500">
                   <span className="font-medium text-zinc-700 flex items-center gap-1.5">
-                    <Activity size={14} className="text-[#8b5cf6]" /> DOH Mental
+                    <Activity size={14} className="text-[#7d49f5]" /> DOH Mental
                     Health Awareness
                   </span>
                   <span>Healthy Pilipinas</span>
@@ -133,12 +133,12 @@ export default function MentalHealthPage() {
       >
         <div className="mx-auto max-w-7xl px-8 lg:px-12">
           <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out max-w-3xl mb-12">
-            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#8b5cf6] mb-3">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#7d49f5] mb-3">
               <LifeBuoy size={16} /> Immediate Support
             </div>
             <h2 className="text-3xl font-light leading-tight tracking-tight text-zinc-900 sm:text-5xl">
               National Crisis Hotlines <br />
-              <span className="font-serif italic font-semibold text-[#8b5cf6]">
+              <span className="font-serif italic font-semibold text-[#7d49f5]">
                 Ready & Available 24/7
               </span>
             </h2>
@@ -153,10 +153,10 @@ export default function MentalHealthPage() {
             {/* Hotline Card 1 */}
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 delay-100 ease-out bg-white p-8 rounded-3xl border border-violet-100 shadow-sm flex flex-col justify-between">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                   Mobile Hotline
                 </span>
-                <p className="mt-2 text-2xl font-bold text-[#8b5cf6] font-mono">
+                <p className="mt-2 text-2xl font-bold text-[#7d49f5] font-mono">
                   0917-899-8727
                 </p>
                 <p className="mt-3 text-xs text-zinc-500 font-light leading-relaxed">
@@ -166,7 +166,7 @@ export default function MentalHealthPage() {
               </div>
               <a
                 href="tel:09178998727"
-                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-violet-50 py-3 text-sm font-medium text-[#8b5cf6] hover:bg-violet-100 transition-colors"
+                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-violet-50 py-3 text-sm font-medium text-[#7d49f5] hover:bg-violet-100 transition-colors"
               >
                 <PhoneCall size={16} /> Call Mobile Hotline
               </a>
@@ -175,10 +175,10 @@ export default function MentalHealthPage() {
             {/* Hotline Card 2 */}
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 delay-200 ease-out bg-white p-8 rounded-3xl border border-violet-100 shadow-sm flex flex-col justify-between">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                   Toll-Free Hotline
                 </span>
-                <p className="mt-2 text-2xl font-bold text-[#8b5cf6] font-mono">
+                <p className="mt-2 text-2xl font-bold text-[#7d49f5] font-mono">
                   (02) 1553
                 </p>
                 <p className="mt-3 text-xs text-zinc-500 font-light leading-relaxed">
@@ -188,7 +188,7 @@ export default function MentalHealthPage() {
               </div>
               <a
                 href="tel:1553"
-                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-violet-50 py-3 text-sm font-medium text-[#8b5cf6] hover:bg-violet-100 transition-colors"
+                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-violet-50 py-3 text-sm font-medium text-[#7d49f5] hover:bg-violet-100 transition-colors"
               >
                 <PhoneCall size={16} /> Call Hotline 1553
               </a>
@@ -197,10 +197,10 @@ export default function MentalHealthPage() {
             {/* Hotline Card 3 */}
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 delay-300 ease-out bg-white p-8 rounded-3xl border border-violet-100 shadow-sm flex flex-col justify-between">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                   Direct Landline
                 </span>
-                <p className="mt-2 text-2xl font-bold text-[#8b5cf6] font-mono">
+                <p className="mt-2 text-2xl font-bold text-[#7d49f5] font-mono">
                   (02) 7-989-8727
                 </p>
                 <p className="mt-3 text-xs text-zinc-500 font-light leading-relaxed">
@@ -210,7 +210,7 @@ export default function MentalHealthPage() {
               </div>
               <a
                 href="tel:0279898727"
-                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-violet-50 py-3 text-sm font-medium text-[#8b5cf6] hover:bg-violet-100 transition-colors"
+                className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-violet-50 py-3 text-sm font-medium text-[#7d49f5] hover:bg-violet-100 transition-colors"
               >
                 <PhoneCall size={16} /> Call Direct Landline
               </a>
@@ -224,12 +224,12 @@ export default function MentalHealthPage() {
         <div className="mx-auto max-w-7xl px-8 lg:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-5 scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out">
-              <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-[#8b5cf6]">
+              <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-[#7d49f5]">
                 Validated Resource Directory
               </h2>
               <h3 className="mt-4 text-3xl font-light leading-tight tracking-tight text-zinc-900 sm:text-4xl">
                 Grassroots & Regional <br />
-                <span className="font-serif italic font-semibold text-[#8b5cf6]">
+                <span className="font-serif italic font-semibold text-[#7d49f5]">
                   Healthcare Facilities
                 </span>
               </h3>
@@ -245,14 +245,14 @@ export default function MentalHealthPage() {
               <div className="bg-white p-8 rounded-3xl border border-zinc-200/80 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between border-b border-zinc-100 pb-4 gap-2">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#8b5cf6] bg-violet-50 px-2.5 py-1 rounded-full">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#7d49f5] bg-violet-50 px-2.5 py-1 rounded-full">
                       Private Hospital
                     </span>
                     <h4 className="mt-2 text-xl font-semibold text-zinc-900">
                       San Pablo City Medical Center
                     </h4>
                   </div>
-                  <span className="text-xs font-medium bg-violet-50 text-[#8b5cf6] px-3 py-1 rounded-full border border-violet-100">
+                  <span className="text-xs font-medium bg-violet-50 text-[#7d49f5] px-3 py-1 rounded-full border border-violet-100">
                     Hybrid Delivery
                   </span>
                 </div>
@@ -287,7 +287,7 @@ export default function MentalHealthPage() {
                     <p className="font-light text-zinc-500 flex items-start gap-1">
                       <MapPin
                         size={14}
-                        className="text-[#8b5cf6] shrink-0 mt-0.5"
+                        className="text-[#7d49f5] shrink-0 mt-0.5"
                       />
                       <span>
                         AH 26, Maharlika Highway, San Pablo City, Laguna, Region
@@ -301,30 +301,30 @@ export default function MentalHealthPage() {
                 <div className="mt-6 pt-4 border-t border-zinc-100 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                   <a
                     href="tel:0495620726"
-                    className="flex items-center gap-2 text-zinc-600 hover:text-[#8b5cf6] transition-colors"
+                    className="flex items-center gap-2 text-zinc-600 hover:text-[#7d49f5] transition-colors"
                   >
-                    <PhoneCall size={14} className="text-[#8b5cf6]" />
+                    <PhoneCall size={14} className="text-[#7d49f5]" />
                     <span>049-562-0726</span>
                   </a>
                   <a
                     href="mailto:inquiry@spcmc.com.ph"
-                    className="flex items-center gap-2 text-zinc-600 hover:text-[#8b5cf6] transition-colors truncate"
+                    className="flex items-center gap-2 text-zinc-600 hover:text-[#7d49f5] transition-colors truncate"
                   >
-                    <Mail size={14} className="text-[#8b5cf6] shrink-0" />
+                    <Mail size={14} className="text-[#7d49f5] shrink-0" />
                     <span className="truncate">inquiry@spcmc.com.ph</span>
                   </a>
                   <a
                     href="https://www.spcmc.com.ph/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-zinc-600 hover:text-[#8b5cf6] transition-colors"
+                    className="flex items-center gap-2 text-zinc-600 hover:text-[#7d49f5] transition-colors"
                   >
-                    <Globe size={14} className="text-[#8b5cf6]" />
+                    <Globe size={14} className="text-[#7d49f5]" />
                     <span>spcmc.com.ph</span>
                   </a>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400">
+                <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-500">
                   <p>
                     Source Attribution: #MentalHealthPH Directory & Partner
                     Agencies
@@ -340,12 +340,12 @@ export default function MentalHealthPage() {
       <section className="relative overflow-hidden bg-gradient-to-b from-white via-violet-50 to-white py-32 text-center">
         <div className="mx-auto max-w-4xl px-8 relative z-10">
           <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out">
-            <h2 className="text-sm font-bold uppercase tracking-[0.4em] text-[#8b5cf6]">
+            <h2 className="text-sm font-bold uppercase tracking-[0.4em] text-[#7d49f5]">
               Prioritize Your Well-Being
             </h2>
             <h3 className="mt-6 text-4xl font-light leading-tight tracking-tight text-zinc-900 sm:text-6xl">
               Start building a healthier <br />
-              <span className="font-serif italic font-semibold text-[#8b5cf6]">
+              <span className="font-serif italic font-semibold text-[#7d49f5]">
                 relationship with your mind.
               </span>
             </h3>
@@ -357,7 +357,7 @@ export default function MentalHealthPage() {
             <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/workspace"
-                className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-10 py-5 text-lg font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95"
+                className="w-full sm:w-auto rounded-full bg-[#7d49f5] px-10 py-5 text-lg font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95"
               >
                 Go to Workspace
               </Link>

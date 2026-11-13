@@ -130,7 +130,7 @@ export default function AvatarAndBio() {
       <form className="space-y-6" onSubmit={handleFinalSubmit}>
         {/* Profile Photo Section */}
         <div>
-          <label className="block text-[10px] font-bold text-zinc-400 mb-3 uppercase tracking-widest">
+          <label className="block text-[10px] font-bold text-zinc-500 mb-3 uppercase tracking-widest">
             Profile Photo
           </label>
 
@@ -163,7 +163,7 @@ export default function AvatarAndBio() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="bg-violet-50 hover:bg-violet-100 text-[#8b5cf6] font-semibold text-xs px-4 py-2.5 rounded-full transition-colors active:scale-95"
+                  className="bg-violet-50 hover:bg-violet-100 text-[#7d49f5] font-semibold text-xs px-4 py-2.5 rounded-full transition-colors active:scale-95"
                 >
                   Choose File
                 </button>
@@ -171,7 +171,7 @@ export default function AvatarAndBio() {
                   {avatarFile ? avatarFile.name : "No file chosen"}
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400 font-light">
+              <p className="text-[11px] text-zinc-500 font-light">
                 JPG or PNG accepted.
               </p>
             </div>
@@ -181,14 +181,14 @@ export default function AvatarAndBio() {
         {/* Short Bio Field */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+            <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
               Short Bio
             </label>
             <span
               className={`text-[10px] tabular-nums transition-colors ${
                 bio.length >= MAX_BIO_LENGTH
                   ? "font-semibold text-red-500"
-                  : "text-zinc-400"
+                  : "text-zinc-500"
               }`}
             >
               {bio.length} / {MAX_BIO_LENGTH}
@@ -202,7 +202,7 @@ export default function AvatarAndBio() {
             }
             rows={5}
             placeholder="Tell us a bit about yourself..."
-            className="w-full rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#8b5cf6] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all resize-none"
+            className="w-full rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#7d49f5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all resize-none"
           />
         </div>
 

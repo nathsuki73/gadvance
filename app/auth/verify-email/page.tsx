@@ -146,13 +146,13 @@ const VerifyEmailContent = () => {
         <div className="w-full max-w-md mx-auto lg:mx-0">
           {status === "verifying" && (
             <div className="flex flex-col items-center text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-violet-50 text-[#8b5cf6] rounded-2xl mb-6 shadow-sm">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-violet-50 text-[#7d49f5] rounded-2xl mb-6 shadow-sm">
                 <Loader2 size={32} className="animate-spin" />
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-zinc-900 mb-2">
                 Verifying Email...
               </h1>
-              <p className="text-zinc-400 text-sm font-light leading-relaxed">
+              <p className="text-zinc-500 text-sm font-light leading-relaxed">
                 Please wait a moment while we validate your activation code.
               </p>
             </div>
@@ -166,13 +166,13 @@ const VerifyEmailContent = () => {
               <h1 className="text-3xl font-bold tracking-tight text-zinc-900 mb-2">
                 Email Verified!
               </h1>
-              <p className="text-zinc-400 text-sm font-light leading-relaxed mb-8">
+              <p className="text-zinc-500 text-sm font-light leading-relaxed mb-8">
                 You are signed in. Taking you to set up your profile...
               </p>
 
               <Link
                 href="/onboarding"
-                className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
+                className="w-full bg-[#7d49f5] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 Continue Setup <ArrowRight size={14} />
               </Link>
@@ -218,7 +218,7 @@ const VerifyEmailContent = () => {
                 {errorType === "already_exists" ? (
                   <Link
                     href="/auth/signin"
-                    className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
+                    className="w-full bg-[#7d49f5] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
                   >
                     <LogIn size={14} /> Sign In Now
                   </Link>
@@ -226,7 +226,7 @@ const VerifyEmailContent = () => {
                   <>
                     <Link
                       href="/auth/signup"
-                      className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
+                      className="w-full bg-[#7d49f5] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
                     >
                       <RefreshCw size={14} /> Request New Link
                     </Link>
@@ -246,7 +246,7 @@ const VerifyEmailContent = () => {
       </div>
 
       <div
-        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
+        className="hidden lg:flex lg:w-1/2 bg-[#7d49f5] flex-col items-center justify-center p-12 text-white relative"
         style={{ clipPath: "ellipse(100% 100% at 100% 50%)" }}
       >
         <div className="text-center px-12 relative z-10">

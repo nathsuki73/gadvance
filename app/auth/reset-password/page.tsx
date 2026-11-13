@@ -168,7 +168,7 @@ const ResetPasswordContent = () => {
               <div className="flex flex-col gap-3 w-full">
                 <Link
                   href="/auth/forgot-password"
-                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
+                  className="w-full bg-[#7d49f5] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   <RefreshCw size={14} /> Request New Reset Link
                 </Link>
@@ -185,7 +185,7 @@ const ResetPasswordContent = () => {
             /* Main Valid Reset Form */
             <>
               <div className="mb-6">
-                <div className="h-16 w-16 bg-violet-50 border border-violet-100 rounded-2xl flex items-center justify-center text-[#8b5cf6] mb-6 shadow-sm">
+                <div className="h-16 w-16 bg-violet-50 border border-violet-100 rounded-2xl flex items-center justify-center text-[#7d49f5] mb-6 shadow-sm">
                   <KeyRound size={30} strokeWidth={1.5} />
                 </div>
                 <h1 className="text-3xl font-bold text-zinc-900 mb-2 tracking-tight">
@@ -220,7 +220,7 @@ const ResetPasswordContent = () => {
                 )}
 
                 <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">
                     New Password
                     <span className="text-red-500 ml-1">*</span>
                   </label>
@@ -240,7 +240,7 @@ const ResetPasswordContent = () => {
                       placeholder="Enter new password"
                       className={`w-full pl-11 pr-4 py-3.5 rounded-xl border ${
                         errors.password ? "border-red-400" : "border-zinc-100"
-                      } focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-700 placeholder-zinc-300 bg-zinc-50/50`}
+                      } focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#7d49f5] transition-all text-zinc-700 placeholder-zinc-300 bg-zinc-50/50`}
                     />
                     <Lock
                       size={18}
@@ -255,7 +255,7 @@ const ResetPasswordContent = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">
                     Confirm New Password
                     <span className="text-red-500 ml-1">*</span>
                   </label>
@@ -277,7 +277,7 @@ const ResetPasswordContent = () => {
                         errors.confirmPassword
                           ? "border-red-400"
                           : "border-zinc-100"
-                      } focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-700 placeholder-zinc-300 bg-zinc-50/50`}
+                      } focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#7d49f5] transition-all text-zinc-700 placeholder-zinc-300 bg-zinc-50/50`}
                     />
                     <KeyRound
                       size={18}
@@ -294,7 +294,7 @@ const ResetPasswordContent = () => {
                 <button
                   type="submit"
                   disabled={!canSubmit}
-                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 mt-2 cursor-pointer"
+                  className="w-full bg-[#7d49f5] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 mt-2 cursor-pointer"
                 >
                   {loading ? (
                     <>
@@ -322,7 +322,7 @@ const ResetPasswordContent = () => {
 
       {/* Right Side: Decorative Panel */}
       <div
-        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
+        className="hidden lg:flex lg:w-1/2 bg-[#7d49f5] flex-col items-center justify-center p-12 text-white relative"
         style={{ clipPath: "ellipse(100% 100% at 100% 50%)" }}
       >
         <div className="text-center px-12 relative z-10">

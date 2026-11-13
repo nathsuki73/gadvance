@@ -33,7 +33,7 @@ const SearchBar = ({
     <div className="relative group w-full max-w-[400px]">
       {/* Left Icon */}
       <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-        <Search className="h-4 w-4 text-zinc-400 transition-colors group-focus-within:text-primary" />
+        <Search className="h-4 w-4 text-zinc-500 transition-colors group-focus-within:text-primary" />
       </div>
 
       {/* Input */}

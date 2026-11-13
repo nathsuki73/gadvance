@@ -214,7 +214,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             onChange={handleChange}
             onKeyDown={handleKeyDownNoNumbers}
             required
-            className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+            className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#7d49f5] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
           />
         </div>
 
@@ -234,7 +234,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             onChange={handleChange}
             onKeyDown={handleKeyDownNoNumbers}
             required
-            className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+            className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#7d49f5] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
           />
         </div>
       </div>
@@ -255,7 +255,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
           onChange={handleChange}
           onKeyDown={handleKeyDownNoNumbers}
           placeholder="Optional"
-          className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+          className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#7d49f5] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
         />
       </div>
 
@@ -277,7 +277,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             readOnly
             placeholder="Auto-calculated"
             required
-            className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+            className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#7d49f5] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
           />
         </div>
       </div>
@@ -288,7 +288,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
         <button
           type="submit"
           disabled={isSaving}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-70 active:scale-[0.98]"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#7d49f5] hover:bg-[#7c3aed] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-70 active:scale-[0.98]"
         >
           {isSaving ? (
             <>

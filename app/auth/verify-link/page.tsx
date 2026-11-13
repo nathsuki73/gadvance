@@ -140,7 +140,7 @@ const MagicLinkContent = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans text-zinc-900">
       <div className="bg-white w-full max-w-[22rem] md:max-w-md rounded-[2.5rem] shadow-sm p-6 sm:p-8 md:p-12 border border-zinc-100 text-center">
         {/* Header Icon */}
-        <div className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-violet-50 text-[#8b5cf6] rounded-2xl mb-6">
+        <div className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-violet-50 text-[#7d49f5] rounded-2xl mb-6">
           <Mail size={32} />
         </div>
 
@@ -153,7 +153,7 @@ const MagicLinkContent = () => {
         {/* Email Display */}
         <div className="flex flex-col items-center gap-3 mb-8 bg-zinc-50/80 p-4 rounded-2xl border border-zinc-100">
           <div className="flex items-center gap-2 text-xs font-bold text-zinc-700">
-            <Mail size={14} className="text-[#8b5cf6]" />
+            <Mail size={14} className="text-[#7d49f5]" />
             <span>{email || "your email address"}</span>
           </div>
         </div>
@@ -176,12 +176,12 @@ const MagicLinkContent = () => {
             <button
               onClick={handleResend}
               disabled={resending || !emailRegex.test(email)}
-              className="text-[#8b5cf6] font-black text-sm hover:underline disabled:opacity-50 cursor-pointer"
+              className="text-[#7d49f5] font-black text-sm hover:underline disabled:opacity-50 cursor-pointer"
             >
               {resending ? "Resending Link..." : "Resend Verification Link"}
             </button>
           ) : (
-            <p className="text-zinc-400 text-sm font-medium">
+            <p className="text-zinc-500 text-sm font-medium">
               Resend link in{" "}
               <span className="text-zinc-900 font-mono font-bold">
                 {timer}s
@@ -191,7 +191,7 @@ const MagicLinkContent = () => {
 
           <Link
             href="/auth/signup"
-            className="flex items-center gap-2 text-zinc-400 text-xs font-bold uppercase tracking-widest hover:text-zinc-600 transition-colors mt-2 cursor-pointer"
+            className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase tracking-widest hover:text-zinc-600 transition-colors mt-2 cursor-pointer"
           >
             <ArrowLeft size={14} /> Back to Sign Up
           </Link>

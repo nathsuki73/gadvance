@@ -177,13 +177,13 @@ export function DetailedSummary({
       {/* --- Skill Breakdown Cards / Empty State --- */}
       {skills.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-6 text-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50">
-          <div className="p-2 rounded-full bg-zinc-100 text-zinc-400 mb-2">
+          <div className="p-2 rounded-full bg-zinc-100 text-zinc-500 mb-2">
             <Layers size={18} />
           </div>
           <p className="text-xs font-semibold text-zinc-700">
             No Detected Topics
           </p>
-          <p className="text-[11px] text-zinc-400 mt-0.5 max-w-xs">
+          <p className="text-[11px] text-zinc-500 mt-0.5 max-w-xs">
             There are no skill or concept mappings assigned to these questions.
           </p>
         </div>
@@ -204,7 +204,7 @@ export function DetailedSummary({
               ? "text-emerald-600"
               : delta < -2
                 ? "text-amber-600"
-                : "text-zinc-400";
+                : "text-zinc-500";
 
           return (
             <div
@@ -221,7 +221,7 @@ export function DetailedSummary({
                     },
                     title: "Click to review concept in Study tab",
                     className:
-                      "rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-2xs transition-all cursor-pointer hover:border-[#8b5cf6] hover:bg-purple-50/20 hover:shadow-sm",
+                      "rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-2xs transition-all cursor-pointer hover:border-[#7d49f5] hover:bg-purple-50/20 hover:shadow-sm",
                   }
                 : {
                     className:
@@ -259,7 +259,7 @@ export function DetailedSummary({
                       {before}% to {pct}% ({delta > 0 ? "+" : ""}
                       {delta})
                     </span>
-                    <span className="text-zinc-400 font-normal">
+                    <span className="text-zinc-500 font-normal">
                       {skill.questionsAttempted}{" "}
                       {skill.questionsAttempted === 1
                         ? "question"

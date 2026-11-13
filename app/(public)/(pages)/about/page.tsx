@@ -55,7 +55,7 @@ export default function AboutPage() {
   return (
     <div
       ref={scrollRef}
-      className="bg-white overflow-hidden text-zinc-900 selection:bg-violet-50 selection:text-[#8b5cf6]"
+      className="bg-white overflow-hidden text-zinc-900 selection:bg-violet-50 selection:text-[#7d49f5]"
     >
       <main>
         {/* ================= SECTION 1: HERO / THE MISSION ================= */}
@@ -64,7 +64,7 @@ export default function AboutPage() {
             <div className="max-w-3xl">
               <h1 className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-100 ease-out text-4xl sm:text-6xl lg:text-7xl font-light tracking-tight text-zinc-900 leading-[1.1]">
                 learning that adapts <br />
-                <span className="font-semibold italic font-serif text-[#8b5cf6]">
+                <span className="font-semibold italic font-serif text-[#7d49f5]">
                   to every learner.
                 </span>
               </h1>
@@ -79,7 +79,7 @@ export default function AboutPage() {
               <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-300 ease-out mt-10">
                 <Link
                   href="/workspace"
-                  className="rounded-full bg-[#8b5cf6] px-8 py-4 text-base font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-lg hover:shadow-violet-200 active:scale-95 inline-flex items-center gap-2"
+                  className="rounded-full bg-[#7d49f5] px-8 py-4 text-base font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-lg hover:shadow-violet-200 active:scale-95 inline-flex items-center gap-2"
                 >
                   <span>Explore the Platform</span>
                   <ArrowUpRight size={18} />
@@ -106,7 +106,7 @@ export default function AboutPage() {
               </div>
 
               <div className="space-y-3">
-                <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-[#8b5cf6]">
+                <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-[#7d49f5]">
                   the academic foundation
                 </h2>
                 <p className="text-lg sm:text-xl text-zinc-600 font-light leading-relaxed">
@@ -130,12 +130,12 @@ export default function AboutPage() {
         <section className="py-28 bg-white">
           <div className="mx-auto max-w-7xl px-8 lg:px-12">
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out max-w-3xl mb-16">
-              <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-[#8b5cf6]">
+              <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-[#7d49f5]">
                 core values
               </h2>
               <h3 className="mt-4 text-3xl sm:text-5xl font-light tracking-tight text-zinc-900">
                 Pillars of{" "}
-                <span className="italic font-serif font-semibold text-[#8b5cf6]">
+                <span className="italic font-serif font-semibold text-[#7d49f5]">
                   advancement.
                 </span>
               </h3>
@@ -165,12 +165,12 @@ export default function AboutPage() {
         <section className="py-28 bg-zinc-50/50 border-t border-zinc-100">
           <div className="mx-auto max-w-7xl px-8 lg:px-12">
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out max-w-2xl mb-16">
-              <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-[#8b5cf6] mb-4">
+              <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-[#7d49f5] mb-4">
                 how learning works
               </h2>
               <h3 className="text-3xl sm:text-5xl font-light tracking-tight text-zinc-900 leading-tight">
                 from first lesson <br />
-                <span className="italic font-serif font-semibold text-[#8b5cf6]">
+                <span className="italic font-serif font-semibold text-[#7d49f5]">
                   to mastery.
                 </span>
               </h3>
@@ -207,13 +207,13 @@ export default function AboutPage() {
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out">
               <div className="inline-flex items-center gap-3 mb-8">
                 <div className="h-px w-10 bg-zinc-200" />
-                <School size={20} className="text-[#8b5cf6]" />
+                <School size={20} className="text-[#7d49f5]" />
                 <div className="h-px w-10 bg-zinc-200" />
               </div>
 
               <h2 className="text-2xl sm:text-4xl font-light tracking-tight text-zinc-900 lowercase mb-6">
                 engineered at{" "}
-                <span className="text-[#8b5cf6] font-semibold italic font-serif">
+                <span className="text-[#7d49f5] font-semibold italic font-serif">
                   lspu-spcc ccs department
                 </span>
               </h2>
@@ -225,13 +225,13 @@ export default function AboutPage() {
                 gender equity and social inclusion in the professional sphere.
               </p>
 
-              <div className="inline-block border-b border-zinc-200 pb-2 hover:border-[#8b5cf6] transition-colors">
-                <p className="text-[10px] font-bold tracking-[0.3em] text-zinc-400 uppercase mb-1">
+              <div className="inline-block border-b border-zinc-200 pb-2 hover:border-[#7d49f5] transition-colors">
+                <p className="text-[10px] font-bold tracking-[0.3em] text-zinc-500 uppercase mb-1">
                   connect with the research team
                 </p>
                 <a
                   href={supportMailto("support")}
-                  className="text-sm font-medium text-zinc-800 hover:text-[#8b5cf6] transition-colors"
+                  className="text-sm font-medium text-zinc-800 hover:text-[#7d49f5] transition-colors"
                 >
                   {SUPPORT_EMAIL}
                 </a>
@@ -256,7 +256,7 @@ const ValueItem = ({
   desc: string;
 }) => (
   <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out bg-zinc-50/60 p-8 rounded-3xl border border-zinc-100 flex flex-col space-y-4 hover:border-violet-200 hover:bg-white hover:shadow-lg hover:shadow-violet-500/5 transition-all">
-    <div className="h-12 w-12 rounded-2xl bg-white border border-zinc-100 shadow-sm flex items-center justify-center text-[#8b5cf6]">
+    <div className="h-12 w-12 rounded-2xl bg-white border border-zinc-100 shadow-sm flex items-center justify-center text-[#7d49f5]">
       {icon}
     </div>
     <h4 className="text-xl font-medium text-zinc-900 lowercase">{title}</h4>
@@ -276,7 +276,7 @@ const RoadmapItem = ({
   desc: string;
 }) => (
   <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out flex flex-col border-t border-zinc-200/80 pt-8">
-    <span className="text-[10px] font-bold tracking-[0.3em] text-[#8b5cf6] mb-4 uppercase">
+    <span className="text-[10px] font-bold tracking-[0.3em] text-[#7d49f5] mb-4 uppercase">
       phase {phase}
     </span>
     <h4 className="text-xl font-medium text-zinc-900 lowercase">{title}</h4>

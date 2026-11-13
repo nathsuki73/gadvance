@@ -129,8 +129,8 @@ function OnboardingContent({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-6 font-sans overflow-hidden">
         <div className="text-center">
-          <div className="w-12 h-12 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.3em]">
+          <div className="w-12 h-12 border-2 border-[#7d49f5] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.3em]">
             verifying session...
           </p>
         </div>
@@ -151,7 +151,7 @@ function OnboardingContent({ children }: { children: React.ReactNode }) {
 
       {/* Right Side: Decorative Branding Panel */}
       <div
-        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
+        className="hidden lg:flex lg:w-1/2 bg-[#7d49f5] flex-col items-center justify-center p-12 text-white relative"
         style={{ clipPath: "ellipse(100% 100% at 100% 50%)" }}
       >
         <div className="text-center px-12 relative z-10">

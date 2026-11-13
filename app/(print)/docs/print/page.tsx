@@ -65,7 +65,7 @@ export default function DocsPrintPage() {
           <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">Contents</h2>
           {DOC_GROUPS.map((group) => (
             <div key={group} className="mt-8">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-400">{group}</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500">{group}</p>
               <ol className="mt-3 space-y-3">
                 {docsInGroup(group).map((doc) => (
                   <li key={doc.slug}>

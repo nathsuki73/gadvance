@@ -74,7 +74,7 @@ function VerifyContent() {
     <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-4 font-sans">
       <div className="w-full max-w-md bg-white border border-zinc-200 rounded-3xl shadow-xl overflow-hidden p-8">
         <div className="flex justify-center mb-4">
-          <div className="p-3 bg-purple-50 rounded-2xl text-[#8b5cf6]">
+          <div className="p-3 bg-purple-50 rounded-2xl text-[#7d49f5]">
             <ShieldCheck size={32} />
           </div>
         </div>
@@ -94,13 +94,13 @@ function VerifyContent() {
               placeholder="Enter certificate code (e.g., CERT-XXXXXX)"
               value={inputCode}
               onChange={(e) => setInputCode(e.target.value)}
-              className="w-full text-xs font-mono font-medium border border-zinc-200 rounded-xl px-4 py-3 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-[#8b5cf6] outline-none transition-all uppercase"
+              className="w-full text-xs font-mono font-medium border border-zinc-200 rounded-xl px-4 py-3 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-[#7d49f5] outline-none transition-all uppercase"
             />
           </div>
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] py-3 text-xs font-bold text-white hover:bg-[#7c3aed] transition-all cursor-pointer disabled:opacity-50 shadow-xs"
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#7d49f5] py-3 text-xs font-bold text-white hover:bg-[#7c3aed] transition-all cursor-pointer disabled:opacity-50 shadow-xs"
           >
             {isLoading ? (
               <Loader2 size={15} className="animate-spin" />
@@ -114,7 +114,7 @@ function VerifyContent() {
         {/* Results Area */}
         {isLoading && !certData ? (
           <div className="flex flex-col items-center justify-center py-8 space-y-3 border-t border-zinc-100 pt-6">
-            <Loader2 className="animate-spin text-[#8b5cf6]" size={28} />
+            <Loader2 className="animate-spin text-[#7d49f5]" size={28} />
             <p className="text-xs text-zinc-500 font-medium">
               Verifying certificate details...
             </p>
@@ -128,7 +128,7 @@ function VerifyContent() {
 
             <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-left space-y-3">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                   Recipient Name
                 </span>
                 <p className="text-sm font-bold text-zinc-800">
@@ -136,7 +136,7 @@ function VerifyContent() {
                 </p>
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                   Completed Program
                 </span>
                 <p className="text-sm font-bold text-zinc-800">
@@ -145,15 +145,15 @@ function VerifyContent() {
               </div>
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-200/60">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                     Verification Code
                   </span>
-                  <p className="text-xs font-mono font-bold text-[#8b5cf6]">
+                  <p className="text-xs font-mono font-bold text-[#7d49f5]">
                     {certData.verify_code}
                   </p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                     Issued Date
                   </span>
                   <p className="text-xs font-semibold text-zinc-700">
@@ -195,7 +195,7 @@ export default function VerifyPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
-          <Loader2 className="animate-spin text-[#8b5cf6]" size={32} />
+          <Loader2 className="animate-spin text-[#7d49f5]" size={32} />
         </div>
       }
     >

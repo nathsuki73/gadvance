@@ -16,11 +16,10 @@ import {
   fetchRegions,
   fetchProvinces,
   fetchMunCities,
-  fetchBarangays,
+  useBarangays,
   RegionItem,
   ProvinceItem,
   MunCityItem,
-  BarangayItem,
 } from "./service";
 
 const COUNTRIES = ["Philippines"];
@@ -87,10 +86,11 @@ export default function ContactLocation() {
     ? muncities[0]?.munCityCode
     : formData.munCityCode;
 
-  const barangays = useMemo<BarangayItem[]>(
-    () => (effectiveMunCityCode ? fetchBarangays(effectiveMunCityCode) : []),
-    [effectiveMunCityCode],
-  );
+  const {
+    barangays,
+    loading: barangaysLoading,
+    failed: barangaysFailed,
+  } = useBarangays(effectiveMunCityCode);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -294,9 +294,19 @@ export default function ContactLocation() {
         <SearchableDropdown
           label="Barangay"
           required
-          disabled={!formData.provinceCode || (!isHUC && !formData.munCityCode)}
+          disabled={
+            !formData.provinceCode || (!isHUC && !formData.munCityCode) ||
+            barangaysLoading ||
+            barangaysFailed
+          }
           placeholder="Search Barangay"
-          disabledPlaceholder="Select Location first"
+          disabledPlaceholder={
+            !formData.provinceCode || (!isHUC && !formData.munCityCode)
+              ? "Select Location first"
+              : barangaysFailed
+                ? "Could not load barangays. Retrying..."
+                : "Loading barangays..."
+          }
           query={barangayQuery}
           onQueryChange={setBarangayQuery}
           items={barangays}
@@ -320,14 +330,14 @@ export default function ContactLocation() {
         {/* Address Line */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+            <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
               Address Line <span className="text-red-500">*</span>
             </label>
             <span
               className={`text-[10px] tabular-nums transition-colors ${
                 formData.address.length >= MAX_ADDRESS_LENGTH
                   ? "font-semibold text-red-500"
-                  : "text-zinc-400"
+                  : "text-zinc-500"
               }`}
             >
               {formData.address.length} / {MAX_ADDRESS_LENGTH}
@@ -340,14 +350,14 @@ export default function ContactLocation() {
             value={formData.address}
             onChange={handleChange}
             placeholder="House No., Street Name, Subdivision"
-            className="w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#8b5cf6] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all"
+            className="w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#7d49f5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all"
           />
         </div>
 
         {/* Postal Code & Phone Number */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] font-bold text-zinc-400 mb-1.5 uppercase tracking-widest">
+            <label className="block text-[10px] font-bold text-zinc-500 mb-1.5 uppercase tracking-widest">
               Postal Code <span className="text-red-500">*</span>
             </label>
             <input
@@ -358,7 +368,7 @@ export default function ContactLocation() {
               onChange={handleChange}
               placeholder="4000"
               maxLength={POSTAL_CODE_LENGTH}
-              className="w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#8b5cf6] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all"
+              className="w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#7d49f5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all"
             />
           </div>
 

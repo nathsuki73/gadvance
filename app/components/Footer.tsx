@@ -23,15 +23,15 @@ const HELP_LINKS: FooterLink[] = [
 
 const FooterColumn = ({ title, links }: { title: string; links: FooterLink[] }) => (
   <div className="lg:col-span-2">
-    <h4 className="text-xs font-bold text-zinc-900 mb-4 uppercase tracking-[0.2em]">
+    <h2 className="text-xs font-bold text-zinc-900 mb-4 uppercase tracking-[0.2em]">
       {title}
-    </h4>
+    </h2>
     <ul className="space-y-2.5 text-sm text-zinc-500 font-light lowercase">
       {links.map((link) => (
         <li key={link.href}>
           <Link
             href={link.href}
-            className="hover:text-[#8b5cf6] transition-colors"
+            className="hover:text-[#7d49f5] transition-colors"
           >
             {link.label}
           </Link>
@@ -82,10 +82,10 @@ const Footer = () => {
           <div className="bg-gradient-to-br from-violet-50/60 via-zinc-50 to-white rounded-2xl p-5 border border-violet-100 shadow-sm sm:col-span-2 lg:col-span-4 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-2 mb-1.5">
-                <Mail size={14} className="text-[#8b5cf6]" aria-hidden="true" />
-                <h4 className="text-xs font-bold text-zinc-900 uppercase tracking-[0.2em]">
+                <Mail size={14} className="text-[#7d49f5]" aria-hidden="true" />
+                <h2 className="text-xs font-bold text-zinc-900 uppercase tracking-[0.2em]">
                   contact support
-                </h4>
+                </h2>
               </div>
               <p className="text-xs text-zinc-500 font-light leading-relaxed">
                 Questions, bug reports, account help, and security concerns
@@ -94,7 +94,7 @@ const Footer = () => {
             </div>
             <a
               href={supportMailto("support")}
-              className="mt-4 inline-flex w-fit items-center gap-2 rounded-xl bg-[#8b5cf6] py-2.5 px-4 text-xs font-semibold tracking-wide text-white shadow-md shadow-violet-500/10 transition-all hover:bg-[#7c3aed] break-all"
+              className="mt-4 inline-flex w-fit items-center gap-2 rounded-xl bg-[#7d49f5] py-2.5 px-4 text-xs font-semibold tracking-wide text-white shadow-md shadow-violet-500/10 transition-all hover:bg-[#7c3aed] break-all"
             >
               {SUPPORT_EMAIL}
             </a>
@@ -103,28 +103,28 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="mt-10 pt-6 border-t border-zinc-100 flex flex-col items-center justify-between gap-4 md:flex-row">
-          <p className="text-[11px] text-zinc-400 tracking-widest uppercase text-center md:text-left">
+          <p className="text-[11px] text-zinc-500 tracking-widest uppercase text-center md:text-left">
             © {new Date().getFullYear()} gadvance · lspu college of computer
             studies
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[11px] font-bold uppercase tracking-widest text-zinc-400">
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[11px] font-bold uppercase tracking-widest text-zinc-500">
               <Link
                 href="/privacy-policy"
-                className="hover:text-[#8b5cf6] transition-colors"
+                className="hover:text-[#7d49f5] transition-colors"
               >
                 privacy policy
               </Link>
               <Link
                 href="/terms-of-service"
-                className="hover:text-[#8b5cf6] transition-colors"
+                className="hover:text-[#7d49f5] transition-colors"
               >
                 terms of service
               </Link>
               <Link
                 href="/support"
-                className="hover:text-[#8b5cf6] transition-colors"
+                className="hover:text-[#7d49f5] transition-colors"
               >
                 contact support
               </Link>
@@ -132,7 +132,7 @@ const Footer = () => {
 
             <button
               onClick={scrollToTop}
-              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-600 hover:border-violet-200 hover:bg-violet-50 hover:text-[#8b5cf6] transition-all active:scale-95 shrink-0"
+              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-600 hover:border-violet-200 hover:bg-violet-50 hover:text-[#7d49f5] transition-all active:scale-95 shrink-0"
               aria-label="Back to top"
             >
               <span>Top</span>

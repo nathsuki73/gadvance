@@ -53,7 +53,7 @@ function DownloadCertificateContent() {
         {/* Loading State */}
         {status === "loading" && (
           <div className="space-y-3">
-            <Loader2 className="mx-auto h-10 w-10 animate-spin text-[#8b5cf6]" />
+            <Loader2 className="mx-auto h-10 w-10 animate-spin text-[#7d49f5]" />
             <h2 className="text-base font-bold text-zinc-900">
               Verifying Link...
             </h2>
@@ -78,7 +78,7 @@ function DownloadCertificateContent() {
 
             <a
               href={fileUrl}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200 transition-all hover:bg-[#7c3aed]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#7d49f5] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200 transition-all hover:bg-[#7c3aed]"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -110,7 +110,7 @@ export default function DownloadCertificatePage() {
         <div className="flex h-screen w-full items-center justify-center bg-zinc-50 p-4 font-sans">
           <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 text-center shadow-xl space-y-6">
             <div className="space-y-3">
-              <Loader2 className="mx-auto h-10 w-10 animate-spin text-[#8b5cf6]" />
+              <Loader2 className="mx-auto h-10 w-10 animate-spin text-[#7d49f5]" />
               <h2 className="text-base font-bold text-zinc-900">Loading...</h2>
               <p className="text-xs text-zinc-500">Preparing download page.</p>
             </div>

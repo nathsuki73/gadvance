@@ -156,11 +156,11 @@ export function ExplanationCard({
   };
 
   return (
-    <div className="w-full border-l-2 sm:border-l-[3px] border-[#8b5cf6] pl-4 sm:pl-5 py-2 my-5 space-y-4 bg-transparent font-sans">
+    <div className="w-full border-l-2 sm:border-l-[3px] border-[#7d49f5] pl-4 sm:pl-5 py-2 my-5 space-y-4 bg-transparent font-sans">
       {/* Top Meta Bar */}
       <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
         <div className="flex items-center gap-2">
-          <span className="rounded-lg bg-purple-50 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[#8b5cf6]">
+          <span className="rounded-lg bg-purple-50 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[#7d49f5]">
             {currentPage.label}
           </span>
           <span className="text-zinc-300">•</span>
@@ -229,7 +229,7 @@ export function ExplanationCard({
           {/* Analogy Card */}
           {remedialContent.analogy ? (
             <div className="rounded-r-xl border-l-2 border-purple-300 bg-purple-50/40 p-3.5 text-sm sm:text-base text-purple-950 leading-relaxed">
-              <span className="font-semibold text-[#8b5cf6]">
+              <span className="font-semibold text-[#7d49f5]">
                 Real-world analogy:{" "}
               </span>
               {lowerFirst(remedialContent.analogy)}
@@ -280,7 +280,7 @@ export function ExplanationCard({
                 key={option.id}
                 type="button"
                 onClick={() => handleChipClick(option)}
-                className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-semibold text-zinc-700 hover:border-[#8b5cf6] hover:text-[#8b5cf6] active:scale-[0.98] transition-all cursor-pointer"
+                className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-semibold text-zinc-700 hover:border-[#7d49f5] hover:text-[#7d49f5] active:scale-[0.98] transition-all cursor-pointer"
               >
                 {option.label}
               </button>
@@ -290,7 +290,7 @@ export function ExplanationCard({
               <button
                 type="button"
                 onClick={onGoToAssessment}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#8b5cf6] px-4 py-2 text-xs sm:text-sm font-bold text-white hover:bg-[#7c3aed] active:scale-[0.98] transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#7d49f5] px-4 py-2 text-xs sm:text-sm font-bold text-white hover:bg-[#7c3aed] active:scale-[0.98] transition-all cursor-pointer"
               >
                 <span>Back to assessment</span>
                 <ArrowRight size={14} />
@@ -314,7 +314,7 @@ export function ExplanationCard({
               <button
                 type="button"
                 onClick={onGoToAssessment}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#8b5cf6] px-4 py-2 text-xs sm:text-sm font-bold text-white hover:bg-[#7c3aed] active:scale-[0.98] transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#7d49f5] px-4 py-2 text-xs sm:text-sm font-bold text-white hover:bg-[#7c3aed] active:scale-[0.98] transition-all cursor-pointer"
               >
                 <span>Back to assessment</span>
                 <ArrowRight size={14} />
@@ -369,7 +369,7 @@ function MiniQuiz({
           const isCorrect = choice.id === quiz.correctChoiceId;
 
           let style =
-            "border-zinc-200 bg-white hover:border-[#8b5cf6] hover:bg-purple-50/20 text-zinc-700";
+            "border-zinc-200 bg-white hover:border-[#7d49f5] hover:bg-purple-50/20 text-zinc-700";
 
           if (revealed && isSelected && isCorrect)
             style =

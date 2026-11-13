@@ -45,7 +45,7 @@ export function PollQuestionCard({
         <div className="flex-1 space-y-1">
           {showQuestionNumber && (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#8b5cf6]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#7d49f5]">
                 Question {index + 1}
               </span>
             </div>
@@ -67,7 +67,7 @@ export function PollQuestionCard({
           let radioCircleStyle =
             "border-zinc-300 bg-transparent text-transparent";
           if (isSelected) {
-            radioCircleStyle = "border-[#8b5cf6] bg-[#8b5cf6] text-white";
+            radioCircleStyle = "border-[#7d49f5] bg-[#7d49f5] text-white";
           }
 
           return (
@@ -75,7 +75,7 @@ export function PollQuestionCard({
               key={choice.id}
               className={`relative overflow-hidden rounded-xl border transition-all ${
                 isSelected
-                  ? "border-[#8b5cf6] bg-purple-50/20 shadow-2xs"
+                  ? "border-[#7d49f5] bg-purple-50/20 shadow-2xs"
                   : "border-zinc-200 bg-white hover:border-zinc-300"
               }`}
             >

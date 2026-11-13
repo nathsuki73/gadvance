@@ -128,7 +128,7 @@ const WhyItMattersSection = () => {
               , and help them grow from there.
             </p>
 
-            <p className="mt-12 text-sm font-medium lowercase tracking-[0.2em] text-zinc-400">
+            <p className="mt-12 text-sm font-medium lowercase tracking-[0.2em] text-zinc-500">
               — the gadvance mission
             </p>
           </div>

@@ -159,7 +159,7 @@ export default function ModuleSidebar({
                       </h3>
                     </div>
 
-                    <div className="flex items-center shrink-0 text-zinc-400">
+                    <div className="flex items-center shrink-0 text-zinc-500">
                       {isExpanded ? (
                         <ChevronDown size={14} />
                       ) : (

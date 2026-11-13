@@ -163,7 +163,7 @@ const SignInContent = () => {
                 {displayName ? (
                   <>
                     ,{" "}
-                    <span className="text-[#8b5cf6] font-serif italic">
+                    <span className="text-[#7d49f5] font-serif italic">
                       {displayName}
                     </span>
                   </>
@@ -171,7 +171,7 @@ const SignInContent = () => {
                   "!"
                 )}
               </h1>
-              <p className="text-zinc-400 mb-10 text-sm lowercase font-light">
+              <p className="text-zinc-500 mb-10 text-sm lowercase font-light">
                 Redirecting to your workspace...
               </p>
             </div>
@@ -185,8 +185,8 @@ const SignInContent = () => {
                   className="absolute inset-0 flex flex-col items-center justify-center"
                   role="status"
                 >
-                  <div className="w-6 h-6 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-sm text-zinc-400 font-medium tracking-tight">
+                  <div className="w-6 h-6 border-2 border-[#7d49f5] border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="text-sm text-zinc-500 font-medium tracking-tight">
                     Verifying session...
                   </p>
                 </div>
@@ -198,13 +198,13 @@ const SignInContent = () => {
                 <h1 className="text-3xl font-bold text-zinc-900 mb-2 mt-20 tracking-tight">
                   Welcome Back!
                 </h1>
-                <p className="text-zinc-400 mb-10 text-sm font-light">
+                <p className="text-zinc-500 mb-10 text-sm font-light">
                   Sign in to access your dashboard
                 </p>
 
                 <form className="space-y-5" onSubmit={handleSubmit}>
                   <div>
-                    <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+                    <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-widest">
                       Email Address
                     </label>
                     <input
@@ -214,13 +214,13 @@ const SignInContent = () => {
                       placeholder="sample@example.com"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
+                      className="w-full px-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#7d49f5] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
                     />
                   </div>
 
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest">
                         Password
                       </label>
                     </div>
@@ -232,12 +232,12 @@ const SignInContent = () => {
                         placeholder="Enter your password"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-3.5 pr-10 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
+                        className="w-full px-4 py-3.5 pr-10 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#7d49f5] transition-all text-zinc-600 placeholder-zinc-300 bg-zinc-50/50"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-zinc-500 hover:text-zinc-600 transition-colors cursor-pointer"
                         aria-label={
                           showPassword ? "Hide password" : "Show password"
                         }
@@ -251,7 +251,7 @@ const SignInContent = () => {
                     </div>
                     <Link
                       href="/auth/forgot-password"
-                      className="text-[10px] font-bold text-[#8b5cf6] hover:text-[#7c3aed] uppercase tracking-widest transition-colors mt-3 block text-right"
+                      className="text-xs font-bold text-[#7d49f5] hover:text-[#7c3aed] uppercase tracking-widest transition-colors mt-3 block text-right"
                     >
                       forgot password?
                     </Link>
@@ -261,7 +261,7 @@ const SignInContent = () => {
                   <button
                     type="submit"
                     disabled={loading || cooldown > 0}
-                    className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+                    className="w-full bg-[#7d49f5] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {loading
                       ? "Signing In..."
@@ -272,7 +272,7 @@ const SignInContent = () => {
 
                   <div className="relative flex items-center py-4">
                     <div className="grow border-t border-zinc-100"></div>
-                    <span className="shrink mx-4 text-zinc-300 text-[12px] uppercase tracking-[0.2em] font-bold">
+                    <span className="shrink mx-4 text-zinc-500 text-[12px] uppercase tracking-[0.2em] font-bold">
                       Or
                     </span>
                     <div className="grow border-t border-zinc-100"></div>
@@ -282,11 +282,11 @@ const SignInContent = () => {
                 </form>
 
                 {/* "Create Account" footer, shown whenever there is no active session */}
-                <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mt-10 text-center">
+                <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mt-10 text-center">
                   No account?{" "}
                   <Link
                     href={signUpHref}
-                    className="text-[#8b5cf6] hover:underline transition-colors"
+                    className="text-[#7d49f5] underline underline-offset-2 hover:text-[#7c3aed] transition-colors"
                   >
                     create account
                   </Link>
@@ -299,7 +299,7 @@ const SignInContent = () => {
 
       {/* Right Side: Decorative Panel */}
       <div
-        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
+        className="hidden lg:flex lg:w-1/2 bg-[#7d49f5] flex-col items-center justify-center p-12 text-white relative"
         style={{
           clipPath: "ellipse(100% 100% at 100% 50%)",
         }}
@@ -317,7 +317,7 @@ const SignInContent = () => {
           </p>
         </div>
 
-        <div className="absolute bottom-12 left-0 right-0 text-center text-[10px] tracking-[0.4em] text-white/40 uppercase">
+        <div className="absolute bottom-12 left-0 right-0 text-center text-xs tracking-[0.4em] text-white/40 uppercase">
           © 2026 gadvance. all rights reserved.
         </div>
       </div>
@@ -344,7 +344,7 @@ const SignIn = () => {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-white">
-          <div className="w-6 h-6 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-6 h-6 border-2 border-[#7d49f5] border-t-transparent rounded-full animate-spin"></div>
         </div>
       }
     >

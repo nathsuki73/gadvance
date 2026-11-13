@@ -62,7 +62,7 @@ export function ReviewQuestionCard({
     >
       {/* Header with Status & Bloom Badge */}
       <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-        <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+        <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
           Question {index + 1}
         </span>
         <div className="flex items-center gap-3">

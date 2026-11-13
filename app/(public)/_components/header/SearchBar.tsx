@@ -6,7 +6,7 @@ export function SearchBar() {
   return (
     <div className="relative group w-full max-w-[400px] ">
       <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-        <Search className="h-4 w-4 text-zinc-400 group-focus-within:text-primary transition-colors" />
+        <Search className="h-4 w-4 text-zinc-500 group-focus-within:text-primary transition-colors" />
       </div>
       <input
         type="text"

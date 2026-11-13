@@ -25,7 +25,7 @@ export default function AboutLearningPlan() {
                 className={`flex h-9 w-9 items-center justify-center rounded-full border-2 ${
                   isCompleted || isActive
                     ? "border-[#11B5AA] bg-[#11B5AA] text-white"
-                    : "border-zinc-300 bg-[#F4F5F7] text-zinc-400"
+                    : "border-zinc-300 bg-[#F4F5F7] text-zinc-500"
                 }`}
               >
                 {isCompleted ? (

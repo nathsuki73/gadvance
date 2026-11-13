@@ -49,8 +49,8 @@ const Hero = () => {
           <div className="space-y-4">
             {/* 1. Header Animation */}
             <h1 className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 ease-out will-change-transform text-4xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-5xl md:text-6xl lg:text-7xl">
-              <span className="text-[#8b5cf6]">Empower.</span> Educate. <br />
-              Advance <span className="text-[#8b5cf6]">Gender Equality.</span>
+              <span className="text-[#7d49f5]">Empower.</span> Educate. <br />
+              Advance <span className="text-[#7d49f5]">Gender Equality.</span>
             </h1>
 
             {/* 2. Paragraph Animation */}
@@ -65,7 +65,7 @@ const Hero = () => {
           <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-500 ease-out will-change-transform flex justify-center">
             <Link
               href="/workspace"
-              className="rounded-md bg-[#8b5cf6] px-8 py-3 text-base sm:text-lg font-medium text-white transition-colors hover:bg-[#7c3aed]"
+              className="rounded-md bg-[#7d49f5] px-8 py-3 text-base sm:text-lg font-medium text-white transition-colors hover:bg-[#7c3aed]"
             >
               Get Started
             </Link>

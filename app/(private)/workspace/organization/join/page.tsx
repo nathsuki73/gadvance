@@ -151,7 +151,7 @@ export default function JoinOrganizationPage() {
         <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
           <button
             onClick={() => router.push("/workspace/organization")}
-            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary-hover cursor-pointer"
+            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 transition-colors hover:text-primary-hover cursor-pointer"
           >
             <ArrowLeft
               size={16}
@@ -231,7 +231,7 @@ export default function JoinOrganizationPage() {
                   Notice
                 </span>
 
-                <div className="p-4 rounded-2xl bg-zinc-100 text-zinc-400 mt-2">
+                <div className="p-4 rounded-2xl bg-zinc-100 text-zinc-500 mt-2">
                   <SearchX size={32} />
                 </div>
 

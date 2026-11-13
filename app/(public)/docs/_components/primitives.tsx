@@ -120,7 +120,7 @@ export function Breadcrumbs({ doc }: { doc: DocMeta }) {
 export function TableOfContents({ doc }: { doc: DocMeta }) {
   return (
     <nav aria-label="On this page" className="text-sm">
-      <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-400">On this page</p>
+      <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500">On this page</p>
       <ul className="space-y-2 border-l border-zinc-100">
         {doc.toc.map((entry) => (
           <li key={entry.id}>
@@ -154,7 +154,7 @@ export function DocArticle({ doc, children }: { doc: DocMeta; children: ReactNod
 
         {related.length > 0 && (
           <section aria-labelledby="related-articles" className="mt-16 border-t border-zinc-100 pt-8">
-            <h2 id="related-articles" className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-400">Related articles</h2>
+            <h2 id="related-articles" className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500">Related articles</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {related.map((r) => (
                 <Link key={r.slug} href={`/docs/${r.slug}`} className="rounded-xl border border-zinc-200 p-4 transition-colors hover:border-violet-200 hover:bg-violet-50/40">

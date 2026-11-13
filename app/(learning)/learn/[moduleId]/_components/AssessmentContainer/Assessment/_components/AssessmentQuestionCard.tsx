@@ -76,7 +76,7 @@ export function QuizQuestionCard({
         <div className="flex-1 space-y-1">
           {showQuestionNumber && (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#8b5cf6]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#7d49f5]">
                 Question {index + 1}
               </span>
             </div>

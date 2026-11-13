@@ -321,8 +321,8 @@ function InstitutionSection({
           </p>
 
           {typeof memberCount === "number" && (
-            <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-medium pt-1">
-              <Users size={13} className="text-zinc-400" />
+            <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-medium pt-1">
+              <Users size={13} className="text-zinc-500" />
               <span>
                 {memberCount} {memberCount === 1 ? "member" : "members"}
               </span>
@@ -345,7 +345,7 @@ function InstitutionSection({
           <button
             disabled={isFetching}
             onClick={() => onLeaveOrg(currentOrg.id, orgTitle)}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
           >
             <LogOut size={12} />
             <span>Leave Organization</span>
@@ -422,7 +422,7 @@ function RecentlyViewedSection({
   if (!modules || modules.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-purple-200/60 bg-white/80 p-8 text-center flex flex-col items-center justify-center min-h-[260px]">
-        <p className="text-sm text-zinc-400 font-light">
+        <p className="text-sm text-zinc-500 font-light">
           No active modules assigned to your account yet.
         </p>
       </div>
@@ -443,8 +443,8 @@ function RecentlyViewedSection({
   return (
     <div className="rounded-2xl border border-purple-200/50 bg-white/90 p-8 relative overflow-hidden flex flex-col justify-between min-h-[280px] shadow-xs">
       {modules.length > 1 && (
-        <div className="flex items-center justify-between border-b border-[#8b5cf6] pb-3 mb-4">
-          <span className="text-[10px] font-bold tracking-wider text-[#8b5cf6] uppercase">
+        <div className="flex items-center justify-between border-b border-[#7d49f5] pb-3 mb-4">
+          <span className="text-[10px] font-bold tracking-wider text-[#7d49f5] uppercase">
             Module {currentIndex + 1} of {modules.length}
           </span>
 
@@ -479,7 +479,7 @@ function RecentlyViewedSection({
               style={{ width: `${currentModule.progress}%` }}
             />
           </div>
-          <div className="flex items-center text-[11px] font-medium text-zinc-400">
+          <div className="flex items-center text-[11px] font-medium text-zinc-500">
             <span>Module Progress:&nbsp;</span>
             <span className="font-bold text-primary">
               {currentModule.progress}% Completed
@@ -537,16 +537,16 @@ function StatCard({ icon, label, count }: StatCardProps) {
   return (
     <div className="border border-purple-200/50 bg-white/90 rounded-2xl p-5 transition-all duration-300 flex flex-col justify-between min-h-[120px]">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase">
+        <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">
           {label}
         </span>
         {icon}
       </div>
       <div className="flex items-baseline gap-2 mt-2">
-        <span className="text-4xl font-light tracking-tight text-[#8b5cf6]">
+        <span className="text-4xl font-light tracking-tight text-[#7d49f5]">
           {count}
         </span>
-        <span className="text-xs text-zinc-400 font-light lowercase">
+        <span className="text-xs text-zinc-500 font-light lowercase">
           {count === 1 || count === 0 ? "module" : "modules"}
         </span>
       </div>

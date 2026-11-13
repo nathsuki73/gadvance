@@ -39,7 +39,7 @@ export default function LeaveConfirmModal({
             </span>
           </h2>
 
-          <p className="mt-4 text-base text-zinc-400 font-light leading-relaxed lowercase">
+          <p className="mt-4 text-base text-zinc-500 font-light leading-relaxed lowercase">
             are you sure you want to leave{" "}
             <span className="font-medium text-zinc-600">{orgName}</span>? you
             may lose access to courses and materials linked to this

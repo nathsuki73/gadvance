@@ -111,7 +111,7 @@ export function GenderSelect({ value, onChange }: GenderSelectProps) {
 
   return (
     <div className="relative" ref={ref}>
-      <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+      <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">
         Gender
         <span className="text-red-500 ml-1">*</span>
       </label>
@@ -127,7 +127,7 @@ export function GenderSelect({ value, onChange }: GenderSelectProps) {
           isEditingCustom
             ? "border-zinc-200 bg-white text-zinc-800 cursor-default"
             : isOpen
-              ? "border-[#8b5cf6] ring-4 ring-violet-50/50 bg-white text-zinc-800 cursor-pointer"
+              ? "border-[#7d49f5] ring-4 ring-violet-50/50 bg-white text-zinc-800 cursor-pointer"
               : "border-zinc-100 bg-zinc-50/50 text-zinc-600 cursor-pointer"
         }`}
       >
@@ -158,7 +158,7 @@ export function GenderSelect({ value, onChange }: GenderSelectProps) {
               className={`text-[10px] tabular-nums shrink-0 transition-colors ${
                 customText.length >= MAX_GENDER_LENGTH
                   ? "font-semibold text-red-500"
-                  : "text-zinc-400"
+                  : "text-zinc-500"
               }`}
             >
               {customText.length}/{MAX_GENDER_LENGTH}
@@ -168,7 +168,7 @@ export function GenderSelect({ value, onChange }: GenderSelectProps) {
             <button
               type="button"
               onClick={handleConfirmCustom}
-              className="h-7 w-7 rounded-lg bg-[#8b5cf6] text-white flex items-center justify-center hover:bg-[#7c3aed] transition-all shadow-xs cursor-pointer shrink-0"
+              className="h-7 w-7 rounded-lg bg-[#7d49f5] text-white flex items-center justify-center hover:bg-[#7c3aed] transition-all shadow-xs cursor-pointer shrink-0"
               title="Confirm Custom Gender"
             >
               <Check size={14} strokeWidth={2.5} />
@@ -179,7 +179,7 @@ export function GenderSelect({ value, onChange }: GenderSelectProps) {
             <span className="truncate">{getDisplayText()}</span>
             <ChevronDown
               size={16}
-              className={`text-zinc-400 transition-transform duration-200 shrink-0 ${
+              className={`text-zinc-500 transition-transform duration-200 shrink-0 ${
                 isOpen ? "rotate-180" : ""
               }`}
             />
@@ -199,12 +199,12 @@ export function GenderSelect({ value, onChange }: GenderSelectProps) {
                 onClick={() => handleSelectOption(opt.value)}
                 className={`px-4 py-3 text-sm flex items-center justify-between transition-colors cursor-pointer ${
                   isSelected
-                    ? "bg-violet-50/60 font-semibold text-[#8b5cf6]"
-                    : "text-zinc-600 hover:bg-violet-50/60 hover:text-[#8b5cf6]"
+                    ? "bg-violet-50/60 font-semibold text-[#7d49f5]"
+                    : "text-zinc-600 hover:bg-violet-50/60 hover:text-[#7d49f5]"
                 } ${idx > 0 ? "border-t border-zinc-50" : ""}`}
               >
                 <span>{opt.display}</span>
-                {isSelected && <Check size={14} className="text-[#8b5cf6]" />}
+                {isSelected && <Check size={14} className="text-[#7d49f5]" />}
               </div>
             );
           })}

@@ -21,7 +21,7 @@ export function DocsSearch({ onNavigate }: { onNavigate?: () => void }) {
       <Search
         size={16}
         aria-hidden="true"
-        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
       />
       <input
         ref={inputRef}
@@ -60,7 +60,7 @@ export function DocsSearch({ onNavigate }: { onNavigate?: () => void }) {
             setQuery("");
             inputRef.current?.focus();
           }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-zinc-400 hover:text-zinc-700"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-zinc-500 hover:text-zinc-700"
           aria-label="Clear search"
         >
           <X size={14} />

@@ -174,7 +174,7 @@ export default function AvatarBioInfo({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-violet-50 hover:bg-violet-100 text-[#8b5cf6] font-semibold text-xs px-4 py-2 rounded-full transition-colors active:scale-95"
+                className="bg-violet-50 hover:bg-violet-100 text-[#7d49f5] font-semibold text-xs px-4 py-2 rounded-full transition-colors active:scale-95"
               >
                 Choose File
               </button>
@@ -182,7 +182,7 @@ export default function AvatarBioInfo({
                 {avatarFile ? avatarFile.name : "No new file chosen"}
               </span>
             </div>
-            <p className="text-[11px] text-zinc-400">JPG or PNG accepted.</p>
+            <p className="text-[11px] text-zinc-500">JPG or PNG accepted.</p>
           </div>
         </div>
       </div>
@@ -197,7 +197,7 @@ export default function AvatarBioInfo({
             className={`text-[11px] tabular-nums transition-colors ${
               bio.length >= MAX_BIO_LENGTH
                 ? "font-semibold text-red-500"
-                : "text-zinc-400"
+                : "text-zinc-500"
             }`}
           >
             {bio.length} / {MAX_BIO_LENGTH}
@@ -211,7 +211,7 @@ export default function AvatarBioInfo({
           onChange={(e) => setBio(e.target.value)}
           rows={4}
           placeholder="Tell us a bit about yourself..."
-          className="w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50 resize-none"
+          className="w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#7d49f5] focus:ring-2 focus:ring-violet-50 resize-none"
         />
       </div>
 
@@ -219,7 +219,7 @@ export default function AvatarBioInfo({
         <button
           type="submit"
           disabled={isSaving}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all disabled:opacity-70"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#7d49f5] hover:bg-[#7c3aed] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all disabled:opacity-70"
         >
           {isSaving ? (
             <>

@@ -131,7 +131,7 @@ const CourseOverviewHeader = ({
                   <button
                     type="button"
                     disabled
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-200 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-zinc-400 cursor-not-allowed"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-200 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-zinc-500 cursor-not-allowed"
                   >
                     No Modules Available
                   </button>
@@ -220,13 +220,13 @@ const CourseOverviewHeader = ({
                             <div className="flex items-center gap-2">
                               <BookOpen
                                 size={15}
-                                className="shrink-0 text-[#8b5cf6]"
+                                className="shrink-0 text-[#7d49f5]"
                               />
-                              <h3 className="text-[0.95rem] font-medium tracking-tight text-zinc-800 group-hover:text-[#8b5cf6] transition-colors truncate">
+                              <h3 className="text-[0.95rem] font-medium tracking-tight text-zinc-800 group-hover:text-[#7d49f5] transition-colors truncate">
                                 {module.title || `Module ${index + 1}`}
                               </h3>
                             </div>
-                            <p className="text-xs font-light leading-relaxed text-zinc-400 line-clamp-2 mt-0.5">
+                            <p className="text-xs font-light leading-relaxed text-zinc-500 line-clamp-2 mt-0.5">
                               {module.about ||
                                 module.description ||
                                 "Interactive learning module"}
@@ -268,7 +268,7 @@ const CourseOverviewHeader = ({
                   <p className="text-xs font-medium text-zinc-500">
                     No modules published yet
                   </p>
-                  <p className="mt-1 text-[11px] font-light text-zinc-400">
+                  <p className="mt-1 text-[11px] font-light text-zinc-500">
                     Course content is being prepared and will appear here once
                     released.
                   </p>
@@ -304,7 +304,7 @@ type StatCardProps = {
 
 const StatCard = ({ icon, label, value }: StatCardProps) => (
   <div className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-xs">
-    <div className="flex items-center gap-2 text-zinc-400">
+    <div className="flex items-center gap-2 text-zinc-500">
       {icon}
       <span className="text-[9px] font-bold uppercase tracking-[0.25em]">
         {label}

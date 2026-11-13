@@ -206,7 +206,7 @@ export function ResultsSummary({
             onClick={activateRemedial}
             className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
               activeView === "remedial"
-                ? "bg-[#8b5cf6] text-white shadow-2xs"
+                ? "bg-[#7d49f5] text-white shadow-2xs"
                 : "text-zinc-500 hover:text-zinc-800"
             }`}
           >
@@ -220,7 +220,7 @@ export function ResultsSummary({
           onClick={() => setActiveView("detailed")}
           className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
             activeView === "detailed"
-              ? "bg-[#8b5cf6] text-white shadow-2xs"
+              ? "bg-[#7d49f5] text-white shadow-2xs"
               : "text-zinc-500 hover:text-zinc-800"
           }`}
         >
@@ -268,7 +268,7 @@ export function ResultsSummary({
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
                   strokeLinecap="round"
-                  className="text-[#8b5cf6] transition-all duration-300 ease-out group-hover:text-[#7c3aed]"
+                  className="text-[#7d49f5] transition-all duration-300 ease-out group-hover:text-[#7c3aed]"
                   fill="transparent"
                 />
               </svg>
@@ -285,7 +285,7 @@ export function ResultsSummary({
                   stroke="currentColor"
                   strokeWidth="1.5"
                   strokeLinecap="round"
-                  className="text-zinc-400 transition-all duration-700"
+                  className="text-zinc-500 transition-all duration-700"
                 />
                 <line
                   x1={tickX2}
@@ -295,7 +295,7 @@ export function ResultsSummary({
                   stroke="currentColor"
                   strokeWidth="1.5"
                   strokeLinecap="round"
-                  className="text-zinc-400 transition-all duration-700"
+                  className="text-zinc-500 transition-all duration-700"
                 />
               </svg>
 
@@ -318,17 +318,17 @@ export function ResultsSummary({
               </div>
 
               <div className="absolute flex flex-col items-center justify-center text-center">
-                <span className="text-3xl font-black tracking-tight text-[#8b5cf6] group-hover:scale-105 transition-transform">
+                <span className="text-3xl font-black tracking-tight text-[#7d49f5] group-hover:scale-105 transition-transform">
                   {animatedPercentage}%
                 </span>
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5 group-hover:text-[#8b5cf6] transition-colors">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5 group-hover:text-[#7d49f5] transition-colors">
                   Score
                 </span>
               </div>
             </div>
 
             <div className="flex flex-col items-center justify-center space-y-2 text-center max-w-sm mt-1">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-[#8b5cf6] border border-purple-200">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-[#7d49f5] border border-purple-200">
                 <CheckCircle size={13} />
                 <span>
                   {isPassed ? "Goal Achieved!" : "Good Progress Made!"}
@@ -389,7 +389,7 @@ export function ResultsSummary({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-purple-100 hover:bg-purple-200 px-6 py-3 text-xs font-bold uppercase tracking-wider text-[#8b5cf6] active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-purple-100 hover:bg-purple-200 px-6 py-3 text-xs font-bold uppercase tracking-wider text-[#7d49f5] active:scale-[0.98] transition-all cursor-pointer shadow-xs"
           >
             <RotateCcw size={16} />
             <span>Try Again</span>
@@ -400,7 +400,7 @@ export function ResultsSummary({
           <button
             type="button"
             onClick={isLastItem && onExit ? onExit : onNext}
-            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-[#8b5cf6]/20 transition-all cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98]"
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#7d49f5] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-[#7d49f5]/20 transition-all cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98]"
           >
             <span>{isLastItem ? "Complete Module" : "Continue"}</span>
             {isLastItem ? (
@@ -414,7 +414,7 @@ export function ResultsSummary({
             <button
               type="button"
               disabled
-              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-zinc-200 px-6 py-3 text-xs font-bold uppercase tracking-wider text-zinc-400 cursor-not-allowed opacity-75"
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-zinc-200 px-6 py-3 text-xs font-bold uppercase tracking-wider text-zinc-500 cursor-not-allowed opacity-75"
             >
               <span>{isLastItem ? "Complete Module" : "Continue"}</span>
               {isLastItem ? (
@@ -494,20 +494,20 @@ function AnimatedRemedialList({
             >
               <Link
                 href={reviewUrl}
-                className="group relative flex items-center justify-between rounded-2xl border-2 border-zinc-200/80 bg-white p-4 text-xs font-medium text-zinc-800 transition-all hover:border-[#8b5cf6] hover:bg-purple-50/20 hover:shadow-md hover:-translate-y-0.5 cursor-pointer w-full text-left"
+                className="group relative flex items-center justify-between rounded-2xl border-2 border-zinc-200/80 bg-white p-4 text-xs font-medium text-zinc-800 transition-all hover:border-[#7d49f5] hover:bg-purple-50/20 hover:shadow-md hover:-translate-y-0.5 cursor-pointer w-full text-left"
               >
                 <div className="flex items-center gap-3.5 pr-2">
                   <div>
-                    <span className="block font-bold text-zinc-900 group-hover:text-[#8b5cf6] transition-colors text-xs sm:text-sm line-clamp-1">
+                    <span className="block font-bold text-zinc-900 group-hover:text-[#7d49f5] transition-colors text-xs sm:text-sm line-clamp-1">
                       {displayTitle}
                     </span>
-                    <span className="block text-[11px] text-zinc-400 font-normal mt-0.5 line-clamp-1">
+                    <span className="block text-[11px] text-zinc-500 font-normal mt-0.5 line-clamp-1">
                       {displaySubtitle}
                     </span>
                   </div>
                 </div>
 
-                <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 px-3.5 py-2 text-xs font-bold text-[#8b5cf6] group-hover:bg-[#8b5cf6] group-hover:text-white transition-all shadow-xs shrink-0">
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 px-3.5 py-2 text-xs font-bold text-[#7d49f5] group-hover:bg-[#7d49f5] group-hover:text-white transition-all shadow-xs shrink-0">
                   <span>Review</span>
                   <ExternalLink
                     size={13}

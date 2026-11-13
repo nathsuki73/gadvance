@@ -663,11 +663,11 @@ export default function AssessmentView({
               let segmentStyle = "bg-zinc-200";
 
               if (isAnswered) {
-                segmentStyle = "bg-[#8b5cf6]";
+                segmentStyle = "bg-[#7d49f5]";
               }
 
               if (isCurrent) {
-                segmentStyle = "bg-[#8b5cf6] ring-2 ring-purple-200";
+                segmentStyle = "bg-[#7d49f5] ring-2 ring-purple-200";
               }
 
               return (
@@ -723,7 +723,7 @@ export default function AssessmentView({
             )}
 
             <span className="text-xs sm:text-sm font-bold text-zinc-500 pl-0.5">
-              <span className="text-[#8b5cf6]">{safeQuestionIndex + 1}</span>/
+              <span className="text-[#7d49f5]">{safeQuestionIndex + 1}</span>/
               {isAdaptive ? progressQuestionCount : totalQuestions}
             </span>
           </div>
@@ -763,7 +763,7 @@ export default function AssessmentView({
           type="button"
           disabled={!canProceed || isSubmitting}
           onClick={handlePrimaryAction}
-          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#8b5cf6]/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-40 cursor-pointer"
+          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#7d49f5] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#7d49f5]/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-40 cursor-pointer"
         >
           {isSubmitting ? (
             <Loader2 size={16} className="animate-spin" />

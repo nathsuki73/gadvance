@@ -121,7 +121,7 @@ export default function SupportPage() {
   return (
     <div
       ref={scrollRef}
-      className="bg-white overflow-hidden text-zinc-900 selection:bg-violet-50 selection:text-[#8b5cf6]"
+      className="bg-white overflow-hidden text-zinc-900 selection:bg-violet-50 selection:text-[#7d49f5]"
     >
       {/* ================= HERO & DIRECT ASSISTANCE ================= */}
       <section className="relative pt-28 pb-20 sm:pt-36 sm:pb-28 overflow-hidden bg-gradient-to-b from-white via-violet-50/40 to-white">
@@ -129,7 +129,7 @@ export default function SupportPage() {
           <div className="max-w-3xl">
             <h1 className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-100 ease-out text-4xl sm:text-6xl lg:text-7xl font-light tracking-tight text-zinc-900 leading-[1.1]">
               We are here to <br />
-              <span className="font-semibold italic font-serif text-[#8b5cf6]">
+              <span className="font-semibold italic font-serif text-[#7d49f5]">
                 facilitate your growth.
               </span>
             </h1>
@@ -175,12 +175,12 @@ export default function SupportPage() {
       <section className="py-24 bg-zinc-50/70 border-y border-zinc-100">
         <div className="mx-auto max-w-5xl px-8 lg:px-12">
           <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-400 mb-3">
+            <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-3">
               Knowledge Base
             </h2>
             <h3 className="text-3xl sm:text-5xl font-light tracking-tight text-zinc-900">
               Frequently asked <br />
-              <span className="italic font-serif font-semibold text-[#8b5cf6]">
+              <span className="italic font-serif font-semibold text-[#7d49f5]">
                 questions.
               </span>
             </h3>
@@ -189,14 +189,14 @@ export default function SupportPage() {
             <div className="mt-8 relative max-w-md mx-auto">
               <Search
                 size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
               />
               <input
                 type="text"
                 placeholder="Search help topics..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 rounded-full border border-zinc-200 bg-white text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-[#8b5cf6] transition-all shadow-sm"
+                className="w-full pl-11 pr-4 py-3 rounded-full border border-zinc-200 bg-white text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-[#7d49f5] transition-all shadow-sm"
               />
             </div>
           </div>
@@ -220,7 +220,7 @@ export default function SupportPage() {
                       </span>
                       <ChevronDown
                         size={20}
-                        className={`text-[#8b5cf6] transition-transform duration-300 shrink-0 ${
+                        className={`text-[#7d49f5] transition-transform duration-300 shrink-0 ${
                           isOpen ? "rotate-180" : ""
                         }`}
                       />
@@ -235,7 +235,7 @@ export default function SupportPage() {
                 );
               })
             ) : (
-              <div className="text-center py-12 text-zinc-400 text-sm">
+              <div className="text-center py-12 text-zinc-500 text-sm">
                 No matching help topics found for &quot;{searchQuery}&quot;.
               </div>
             )}
@@ -249,12 +249,12 @@ export default function SupportPage() {
           <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
             {/* Left Column */}
             <div className="lg:w-1/2 scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out">
-              <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-[#8b5cf6] mb-4">
+              <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-[#7d49f5] mb-4">
                 Technical Support
               </h2>
               <h3 className="text-3xl sm:text-5xl font-light tracking-tight text-zinc-900 leading-tight">
                 Created by the <br />
-                <span className="font-semibold italic font-serif text-[#8b5cf6]">
+                <span className="font-semibold italic font-serif text-[#7d49f5]">
                   LSPU CCS Team.
                 </span>
               </h3>
@@ -275,11 +275,11 @@ export default function SupportPage() {
             {/* Right Desk Card */}
             <div className="lg:w-1/2 w-full scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-200 ease-out">
               <div className="p-8 sm:p-10 rounded-3xl bg-zinc-50 border border-zinc-200/80 shadow-sm space-y-4">
-                <div className="h-12 w-12 rounded-2xl bg-white border border-zinc-100 flex items-center justify-center text-[#8b5cf6] shadow-sm">
+                <div className="h-12 w-12 rounded-2xl bg-white border border-zinc-100 flex items-center justify-center text-[#7d49f5] shadow-sm">
                   <Code size={24} strokeWidth={1.5} />
                 </div>
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-zinc-400">
+                  <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">
                     Developer Desk
                   </span>
                   <h4 className="text-xl font-semibold text-zinc-900 mt-1">
@@ -293,7 +293,7 @@ export default function SupportPage() {
                 <div className="pt-4 border-t border-zinc-200/60">
                   <a
                     href={supportMailto("bug")}
-                    className="text-[#8b5cf6] hover:text-[#7c3aed] text-sm font-semibold transition-colors break-words"
+                    className="text-[#7d49f5] hover:text-[#7c3aed] text-sm font-semibold transition-colors break-words"
                   >
                     {SUPPORT_EMAIL}
                   </a>
@@ -308,12 +308,12 @@ export default function SupportPage() {
       <section className="relative overflow-hidden bg-gradient-to-b from-white via-violet-50 to-white py-28 text-center">
         <div className="mx-auto max-w-4xl px-8 relative z-10">
           <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out">
-            <h2 className="text-sm font-bold uppercase tracking-[0.4em] text-[#8b5cf6]">
+            <h2 className="text-sm font-bold uppercase tracking-[0.4em] text-[#7d49f5]">
               Still Have Questions?
             </h2>
             <h3 className="mt-6 text-3xl sm:text-5xl font-light leading-tight tracking-tight text-zinc-900">
               Access your personalized <br />
-              <span className="font-serif italic font-semibold text-[#8b5cf6]">
+              <span className="font-serif italic font-semibold text-[#7d49f5]">
                 learning workspace.
               </span>
             </h3>
@@ -321,7 +321,7 @@ export default function SupportPage() {
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/workspace"
-                className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-10 py-4 text-base font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95"
+                className="w-full sm:w-auto rounded-full bg-[#7d49f5] px-10 py-4 text-base font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95"
               >
                 Go to Workspace Dashboard
               </Link>
@@ -354,16 +354,16 @@ const ContactCard = ({
   desc: string;
 }) => (
   <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out p-8 sm:p-10 rounded-3xl bg-zinc-50/80 border border-zinc-200/80 transition-all hover:bg-white hover:border-violet-200 hover:shadow-xl hover:shadow-violet-500/5 group">
-    <div className="h-12 w-12 rounded-2xl bg-white border border-zinc-100 flex items-center justify-center text-[#8b5cf6] mb-6 shadow-sm">
+    <div className="h-12 w-12 rounded-2xl bg-white border border-zinc-100 flex items-center justify-center text-[#7d49f5] mb-6 shadow-sm">
       {icon}
     </div>
-    <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 mb-2">
+    <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 mb-2">
       {title}
-    </h4>
+    </h2>
 
     <a
       href={supportMailto(topic)}
-      className="text-lg sm:text-2xl font-light text-zinc-900 hover:text-[#8b5cf6] transition-colors mb-4 break-words block leading-tight"
+      className="text-lg sm:text-2xl font-light text-zinc-900 hover:text-[#7d49f5] transition-colors mb-4 break-words block leading-tight"
     >
       {SUPPORT_EMAIL}
     </a>

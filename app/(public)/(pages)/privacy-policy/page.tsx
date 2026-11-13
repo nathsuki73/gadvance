@@ -55,7 +55,7 @@ export default function PrivacyPolicyPage() {
   return (
     <div
       ref={scrollRef}
-      className="bg-white overflow-hidden text-zinc-900 selection:bg-violet-50 selection:text-[#8b5cf6]"
+      className="bg-white overflow-hidden text-zinc-900 selection:bg-violet-50 selection:text-[#7d49f5]"
     >
       <main>
         {/* ================= HERO SECTION ================= */}
@@ -64,7 +64,7 @@ export default function PrivacyPolicyPage() {
             <div className="max-w-3xl">
               <h1 className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-100 ease-out text-4xl sm:text-6xl lg:text-7xl font-light tracking-tight text-zinc-900 leading-[1.1]">
                 Your privacy is <br />
-                <span className="font-semibold italic font-serif text-[#8b5cf6]">
+                <span className="font-semibold italic font-serif text-[#7d49f5]">
                   our priority.
                 </span>
               </h1>
@@ -75,7 +75,7 @@ export default function PrivacyPolicyPage() {
                 rights under the Data Privacy Act of 2012 (RA 10173).
               </p>
 
-              <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-300 ease-out mt-6 flex items-center gap-4 text-xs font-medium text-zinc-400">
+              <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-300 ease-out mt-6 flex items-center gap-4 text-xs font-medium text-zinc-500">
                 <span>Effective Date: 2026</span>
                 <span>•</span>
                 <span>Version 1.0</span>
@@ -89,7 +89,7 @@ export default function PrivacyPolicyPage() {
           <div className="mx-auto max-w-7xl px-8 lg:px-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 delay-100 ease-out bg-white p-8 rounded-3xl border border-zinc-200/80 shadow-sm">
-                <div className="h-12 w-12 rounded-2xl bg-violet-50 text-[#8b5cf6] flex items-center justify-center mb-6">
+                <div className="h-12 w-12 rounded-2xl bg-violet-50 text-[#7d49f5] flex items-center justify-center mb-6">
                   <Lock size={24} />
                 </div>
                 <h3 className="text-lg font-medium text-zinc-900">
@@ -102,7 +102,7 @@ export default function PrivacyPolicyPage() {
               </div>
 
               <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 delay-200 ease-out bg-white p-8 rounded-3xl border border-zinc-200/80 shadow-sm">
-                <div className="h-12 w-12 rounded-2xl bg-violet-50 text-[#8b5cf6] flex items-center justify-center mb-6">
+                <div className="h-12 w-12 rounded-2xl bg-violet-50 text-[#7d49f5] flex items-center justify-center mb-6">
                   <Eye size={24} />
                 </div>
                 <h3 className="text-lg font-medium text-zinc-900">
@@ -116,7 +116,7 @@ export default function PrivacyPolicyPage() {
               </div>
 
               <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 delay-300 ease-out bg-white p-8 rounded-3xl border border-zinc-200/80 shadow-sm">
-                <div className="h-12 w-12 rounded-2xl bg-violet-50 text-[#8b5cf6] flex items-center justify-center mb-6">
+                <div className="h-12 w-12 rounded-2xl bg-violet-50 text-[#7d49f5] flex items-center justify-center mb-6">
                   <UserCheck size={24} />
                 </div>
                 <h3 className="text-lg font-medium text-zinc-900">
@@ -138,7 +138,7 @@ export default function PrivacyPolicyPage() {
             {/* 1. Information We Collect */}
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out border-b border-zinc-100 pb-12 space-y-4">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold font-mono text-[#8b5cf6] bg-violet-50 px-2.5 py-1 rounded-md">
+                <span className="text-xs font-bold font-mono text-[#7d49f5] bg-violet-50 px-2.5 py-1 rounded-md">
                   01
                 </span>
                 <h2 className="text-xl sm:text-2xl font-medium text-zinc-900">
@@ -176,7 +176,7 @@ export default function PrivacyPolicyPage() {
             {/* 2. How We Use Your Information */}
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out border-b border-zinc-100 pb-12 space-y-4">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold font-mono text-[#8b5cf6] bg-violet-50 px-2.5 py-1 rounded-md">
+                <span className="text-xs font-bold font-mono text-[#7d49f5] bg-violet-50 px-2.5 py-1 rounded-md">
                   02
                 </span>
                 <h2 className="text-xl sm:text-2xl font-medium text-zinc-900">
@@ -210,7 +210,7 @@ export default function PrivacyPolicyPage() {
             {/* 3. Data Protection Rights (RA 10173) */}
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out border-b border-zinc-100 pb-12 space-y-4">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold font-mono text-[#8b5cf6] bg-violet-50 px-2.5 py-1 rounded-md">
+                <span className="text-xs font-bold font-mono text-[#7d49f5] bg-violet-50 px-2.5 py-1 rounded-md">
                   03
                 </span>
                 <h2 className="text-xl sm:text-2xl font-medium text-zinc-900">
@@ -255,7 +255,7 @@ export default function PrivacyPolicyPage() {
             {/* 4. Cookies & Analytical Data */}
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out border-b border-zinc-100 pb-12 space-y-4">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold font-mono text-[#8b5cf6] bg-violet-50 px-2.5 py-1 rounded-md">
+                <span className="text-xs font-bold font-mono text-[#7d49f5] bg-violet-50 px-2.5 py-1 rounded-md">
                   04
                 </span>
                 <h2 className="text-xl sm:text-2xl font-medium text-zinc-900">
@@ -273,7 +273,7 @@ export default function PrivacyPolicyPage() {
             {/* 5. Contact Information */}
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out space-y-4">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold font-mono text-[#8b5cf6] bg-violet-50 px-2.5 py-1 rounded-md">
+                <span className="text-xs font-bold font-mono text-[#7d49f5] bg-violet-50 px-2.5 py-1 rounded-md">
                   05
                 </span>
                 <h2 className="text-xl sm:text-2xl font-medium text-zinc-900">
@@ -288,7 +288,7 @@ export default function PrivacyPolicyPage() {
 
               <div className="p-6 rounded-3xl bg-zinc-50 border border-zinc-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                     Data Protection Inquiry
                   </p>
                   <p className="text-base font-semibold text-zinc-900 mt-1">
@@ -300,7 +300,7 @@ export default function PrivacyPolicyPage() {
                 </div>
                 <a
                   href={supportMailto("support")}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#8b5cf6] px-6 py-3 text-xs font-medium text-white hover:bg-[#7c3aed] transition-colors"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#7d49f5] px-6 py-3 text-xs font-medium text-white hover:bg-[#7c3aed] transition-colors"
                 >
                   <Mail size={14} />
                   <span>{SUPPORT_EMAIL}</span>
@@ -314,12 +314,12 @@ export default function PrivacyPolicyPage() {
         <section className="relative overflow-hidden bg-gradient-to-b from-white via-violet-50 to-white py-28 text-center">
           <div className="mx-auto max-w-4xl px-8 relative z-10">
             <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-700 ease-out">
-              <h2 className="text-sm font-bold uppercase tracking-[0.4em] text-[#8b5cf6]">
+              <h2 className="text-sm font-bold uppercase tracking-[0.4em] text-[#7d49f5]">
                 Secure & Empowered
               </h2>
               <h3 className="mt-6 text-3xl sm:text-5xl font-light leading-tight tracking-tight text-zinc-900">
                 Ready to continue your <br />
-                <span className="font-serif italic font-semibold text-[#8b5cf6]">
+                <span className="font-serif italic font-semibold text-[#7d49f5]">
                   learning journey?
                 </span>
               </h3>
@@ -327,7 +327,7 @@ export default function PrivacyPolicyPage() {
               <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link
                   href="/workspace"
-                  className="w-full sm:w-auto rounded-full bg-[#8b5cf6] px-10 py-4 text-base font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95 flex items-center justify-center"
+                  className="w-full sm:w-auto rounded-full bg-[#7d49f5] px-10 py-4 text-base font-medium text-white transition-all hover:bg-[#7c3aed] hover:shadow-xl hover:shadow-violet-200 active:scale-95 flex items-center justify-center"
                 >
                   Enter Workspace
                 </Link>

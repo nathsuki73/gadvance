@@ -88,7 +88,7 @@ export default function AssessmentContainer({
   if (isLoading) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white p-6">
-        <div className="flex flex-col items-center gap-3 text-[#8b5cf6]">
+        <div className="flex flex-col items-center gap-3 text-[#7d49f5]">
           <Loader2 size={32} className="animate-spin" />
           <p className="text-xs font-semibold text-zinc-500">
             Loading module content...

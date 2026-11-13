@@ -49,7 +49,7 @@ const CourseCard = ({ module }: CourseCardProps) => {
 
       {/* Header */}
       <div className="relative flex items-start justify-end">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-purple-200 bg-white/60 text-zinc-400 transition-all duration-300 group-hover:border-primary/40 group-hover:bg-primary group-hover:text-white">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-purple-200 bg-white/60 text-zinc-500 transition-all duration-300 group-hover:border-primary/40 group-hover:bg-primary group-hover:text-white">
           <ArrowUpRight
             size={15}
             className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
@@ -59,9 +59,9 @@ const CourseCard = ({ module }: CourseCardProps) => {
 
       {/* Content */}
       <div className="relative flex-1">
-        <h3 className="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight sm:leading-snug tracking-tight text-zinc-900 transition-colors duration-200 group-hover:text-primary wrap-break-word">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight sm:leading-snug tracking-tight text-zinc-900 transition-colors duration-200 group-hover:text-primary wrap-break-word">
           {module.title}
-        </h3>
+        </h2>
 
         <p className="mt-2 text-xs sm:text-sm leading-relaxed text-zinc-600 line-clamp-2">
           {module.description ||

@@ -124,7 +124,7 @@ const CourseGrid = () => {
           >
             <Search
               size={16}
-              className="absolute left-3.5 text-zinc-400 pointer-events-none"
+              className="absolute left-3.5 text-zinc-500 pointer-events-none"
             />
             <input
               id="course-search-input"
@@ -133,7 +133,7 @@ const CourseGrid = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search learning plans..."
-              className="w-full pl-10 pr-4 py-2 rounded-full border border-zinc-200 text-sm bg-zinc-50/50 text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:border-transparent transition-all"
+              className="w-full pl-10 pr-4 py-2 rounded-full border border-zinc-200 text-sm bg-zinc-50/50 text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#7d49f5] focus:border-transparent transition-all"
             />
             {query && (
               <button
@@ -143,7 +143,7 @@ const CourseGrid = () => {
                   setActiveSearch("");
                   updateUrlParams("", filter);
                 }}
-                className="absolute right-3 text-zinc-400 hover:text-zinc-600 transition-colors"
+                className="absolute right-3 text-zinc-500 hover:text-zinc-600 transition-colors"
                 title="Clear input"
               >
                 <X size={14} />
@@ -161,7 +161,7 @@ const CourseGrid = () => {
               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filter === "all"
                   ? "bg-primary text-white shadow-xs"
-                  : "text-zinc-500 hover:text-[#8b5cf6] hover:bg-zinc-100/80"
+                  : "text-zinc-500 hover:text-[#7d49f5] hover:bg-zinc-100/80"
               }`}
             >
               <LayoutGrid size={13} />
@@ -174,7 +174,7 @@ const CourseGrid = () => {
               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filter === "public"
                   ? "bg-primary text-white shadow-xs"
-                  : "text-zinc-500 hover:text-[#8b5cf6] hover:bg-zinc-100/80"
+                  : "text-zinc-500 hover:text-[#7d49f5] hover:bg-zinc-100/80"
               }`}
             >
               <Globe2 size={13} />
@@ -188,7 +188,7 @@ const CourseGrid = () => {
                 className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   filter === "organization"
                     ? "bg-primary text-white shadow-xs"
-                    : "text-zinc-500 hover:text-[#8b5cf6] hover:bg-zinc-100/80"
+                    : "text-zinc-500 hover:text-[#7d49f5] hover:bg-zinc-100/80"
                 }`}
               >
                 <Building2 size={13} />
@@ -201,7 +201,7 @@ const CourseGrid = () => {
             <button
               type="button"
               onClick={handleReset}
-              className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-primary-hover transition-colors font-medium px-2 py-1 rounded-md hover:bg-purple-50"
+              className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-primary-hover transition-colors font-medium px-2 py-1 rounded-md hover:bg-purple-50"
             >
               <RotateCcw size={12} />
               <span>Reset Filters</span>
@@ -224,7 +224,7 @@ const CourseGrid = () => {
                 setActiveSearch("");
                 updateUrlParams("", filter);
               }}
-              className="text-zinc-400 hover:text-primary-hover transition-colors"
+              className="text-zinc-500 hover:text-primary-hover transition-colors"
               title="Clear search"
             >
               <X size={14} />
@@ -245,12 +245,12 @@ const CourseGrid = () => {
         </div>
       ) : courses.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-200 py-16 text-center">
-          <h3 className="text-base font-semibold text-zinc-800">
+          <h2 className="text-base font-semibold text-zinc-800">
             {activeSearch
               ? `No results found for "${activeSearch}"`
               : "No plans available"}
-          </h3>
-          <p className="mt-1 text-xs text-zinc-400 font-light">
+          </h2>
+          <p className="mt-1 text-xs text-zinc-500 font-light">
             Try checking your spelling or reset filters to see all plans.
           </p>
           {isFiltered && (

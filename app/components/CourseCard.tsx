@@ -44,7 +44,7 @@ const CourseCard = ({
           {description}
         </p>
 
-        <div className="mb-6 flex items-center gap-4 text-sm font-medium text-zinc-400">
+        <div className="mb-6 flex items-center gap-4 text-sm font-medium text-zinc-500">
           <div className="flex items-center gap-1">
             <Clock size={14} /> {duration}
           </div>
@@ -55,7 +55,7 @@ const CourseCard = ({
 
         <div>
           <div className="mb-2 flex items-center justify-between text-[11px] font-black uppercase tracking-tight">
-            <span className="text-zinc-400">Your Progress</span>
+            <span className="text-zinc-500">Your Progress</span>
             <span style={{ color: color }}>{progress}%</span>
           </div>
           <div className="mb-6 h-2.5 w-full rounded-full bg-zinc-200">

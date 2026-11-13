@@ -225,7 +225,7 @@ export default function PageContainer({
 
       element.classList.add(
         "border-l-2",
-        "border-[#8b5cf6]",
+        "border-[#7d49f5]",
         "pl-4",
         "sm:pl-5",
         "py-2",
@@ -267,8 +267,8 @@ export default function PageContainer({
     const content = (
       <div className="w-full relative my-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
         {loadingRemedial && !remedialContent && (
-          <div className="flex items-center gap-2.5 text-xs text-zinc-400 py-3 px-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50">
-            <Loader2 className="animate-spin text-[#8b5cf6]" size={14} />
+          <div className="flex items-center gap-2.5 text-xs text-zinc-500 py-3 px-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50">
+            <Loader2 className="animate-spin text-[#7d49f5]" size={14} />
             <span>Generating personalized concept refresher…</span>
           </div>
         )}
@@ -351,7 +351,7 @@ export default function PageContainer({
           ) : (
             <div className="p-6 sm:p-10 border border-dashed border-zinc-200 rounded-2xl text-center">
               <BookOpen className="mx-auto h-7 w-7 text-zinc-300 mb-2" />
-              <p className="text-xs sm:text-sm text-zinc-400 font-medium">
+              <p className="text-xs sm:text-sm text-zinc-500 font-medium">
                 No content is published for this page yet.
               </p>
             </div>
@@ -366,7 +366,7 @@ export default function PageContainer({
               type="button"
               onClick={onExit}
               disabled={isLoadingNext}
-              className="inline-flex min-h-[48px] w-full max-w-sm items-center justify-center gap-2 rounded-2xl bg-[#8b5cf6] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition-all duration-300 cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-50"
+              className="inline-flex min-h-[48px] w-full max-w-sm items-center justify-center gap-2 rounded-2xl bg-[#7d49f5] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition-all duration-300 cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98] disabled:opacity-50"
             >
               <span>Complete Module</span>
               <CheckCircle2 size={16} />
@@ -378,11 +378,11 @@ export default function PageContainer({
                 onClick={handleNextClick}
                 disabled={isLoadingNext}
                 aria-label="Next Page"
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-50 hover:bg-[#8b5cf6] text-[#8b5cf6] hover:text-white transition-all duration-300 cursor-pointer shadow-sm hover:scale-105 active:scale-95 disabled:opacity-50"
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-50 hover:bg-[#7d49f5] text-[#7d49f5] hover:text-white transition-all duration-300 cursor-pointer shadow-sm hover:scale-105 active:scale-95 disabled:opacity-50"
               >
                 <ArrowDown size={20} />
               </button>
-              <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">
                 Continue
               </span>
             </>
