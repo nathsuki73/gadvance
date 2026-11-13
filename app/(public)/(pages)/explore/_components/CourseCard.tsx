@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowUpRight, Clock3, Users } from "lucide-react";
+import { ArrowUpRight, Building2, Clock3, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { LearningPlan } from "../types";
 
@@ -48,8 +48,16 @@ const CourseCard = ({ module }: CourseCardProps) => {
       />
 
       {/* Header */}
-      <div className="relative flex items-start justify-end">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-purple-200 bg-white/60 text-zinc-500 transition-all duration-300 group-hover:border-primary/40 group-hover:bg-primary group-hover:text-white">
+      <div className="relative flex items-start justify-between gap-3">
+        {module.organization?.name ? (
+          <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-purple-200 bg-white/70 px-2.5 py-1 text-[11px] font-medium text-zinc-600">
+            <Building2 size={12} aria-hidden="true" className="shrink-0 text-primary/70" />
+            <span className="truncate">{module.organization.name}</span>
+          </span>
+        ) : (
+          <span />
+        )}
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-purple-200 bg-white/60 text-zinc-500 transition-all duration-300 group-hover:border-primary/40 group-hover:bg-primary group-hover:text-white">
           <ArrowUpRight
             size={15}
             className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"

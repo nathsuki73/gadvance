@@ -176,7 +176,11 @@ export default function WorkspacePage() {
           organizations={joinedOrganizations}
           isFetching={isOrgsFetching || leaveOrgMutation.isPending}
           onExploreOrgs={() => router.push("/organization")}
-          onGoToOrgPage={(orgId) => router.push(`/explore`)}
+          onGoToOrgPage={(orgId) =>
+            router.push(
+              `/explore?filter=organization&org=${encodeURIComponent(orgId)}`,
+            )
+          }
           onLeaveOrg={handleOpenLeaveModal}
         />
 

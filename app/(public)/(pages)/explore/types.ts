@@ -22,7 +22,9 @@ export type LearningPlan = {
   icon?: CourseIconType;
   duration?: string;
   enrolled?: number;
-  organization_id?: string | null; // 👈 Add this property
+  organization_id?: string | null;
+  /** The owning organization, when the plan belongs to one. */
+  organization?: { id: string; name: string } | null;
   is_public?: boolean;
 };
 

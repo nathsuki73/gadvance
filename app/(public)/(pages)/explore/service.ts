@@ -1,16 +1,60 @@
 import { apiFetch } from "@/app/lib/api-client";
 import type { LearningPlan } from "./course/[courseId]/types";
 
-export const searchContent = async (query: string = "") => {
-  const cleanQuery = query.trim();
+export type PlanFilter = "all" | "public" | "organization";
+
+export type ExploreOrganization = {
+  id: string;
+  title: string;
+  description: string;
+  membersCount: number;
+  isJoined?: boolean;
+};
+
+/** Every organization, for the Explore page's organization tags. */
+export const fetchExploreOrganizations = async (): Promise<
+  ExploreOrganization[]
+> => {
+  const res = await apiFetch("/api/organizations/explore");
+  if (!res || !res.ok) {
+    throw new Error("Failed to fetch organizations");
+  }
+  return res.json();
+};
+
+/**
+ * Learning plans for the Explore page. Filtering happens on the API, so the
+ * results are complete rather than a filtered slice of a short list:
+ * - "public": plans that belong to no organization
+ * - "organization": plans of one organization (`organizationId`) or of any
+ * The API still hides private plans from people outside the organization.
+ */
+export const searchContent = async ({
+  search = "",
+  filter = "all",
+  organizationId = "",
+}: {
+  search?: string;
+  filter?: PlanFilter;
+  organizationId?: string;
+} = {}) => {
+  const cleanQuery = search.trim();
   const searchParams = new URLSearchParams();
 
   searchParams.append("portal", "student");
 
   if (cleanQuery) {
     searchParams.append("search", cleanQuery);
-  } else {
-    searchParams.append("limit", "4");
+  }
+
+  if (filter === "public") {
+    searchParams.append("organization_id", "global");
+  } else if (filter === "organization") {
+    if (organizationId) {
+      searchParams.append("organization_id", organizationId);
+    } else {
+      searchParams.append("scope", "organization");
+    }
   }
 
   const endpoint = `/api/learning-plans?${searchParams.toString()}`;
