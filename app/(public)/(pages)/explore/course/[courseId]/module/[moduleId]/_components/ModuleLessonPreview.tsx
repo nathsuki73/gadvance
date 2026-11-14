@@ -44,17 +44,17 @@ type ModuleLessonPreviewProps = {
 const getItemIcon = (itemType?: string, assessmentType?: string | null) => {
   if (itemType === "assessment") {
     if (assessmentType === "pre_test") {
-      return <ClipboardCheck size={16} className="text-[#8b5cf6] shrink-0" />;
+      return <ClipboardCheck size={16} className="text-[#7d49f5] shrink-0" />;
     }
     if (assessmentType === "post_test") {
-      return <GraduationCap size={16} className="text-[#8b5cf6] shrink-0" />;
+      return <GraduationCap size={16} className="text-[#7d49f5] shrink-0" />;
     }
-    return <ClipboardCheck size={16} className="text-[#8b5cf6] shrink-0" />;
+    return <ClipboardCheck size={16} className="text-[#7d49f5] shrink-0" />;
   }
   if (itemType === "page") {
-    return <FileText size={16} className="text-[#8b5cf6] shrink-0" />;
+    return <FileText size={16} className="text-[#7d49f5] shrink-0" />;
   }
-  return <PlayCircle size={16} className="text-[#8b5cf6] shrink-0" />;
+  return <PlayCircle size={16} className="text-[#7d49f5] shrink-0" />;
 };
 
 const ModuleLessonPreview = ({ module }: ModuleLessonPreviewProps) => {
@@ -73,7 +73,7 @@ const ModuleLessonPreview = ({ module }: ModuleLessonPreviewProps) => {
       <div className="max-w-7xl mx-auto md:px-12 px-6">
         {/* Module Header Elements */}
         <div className="mb-12 border-l-4 border-purple-600 pl-6">
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400 mb-1">
+          <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 mb-1">
             Module
           </h2>
           <h3 className="text-2xl font-semibold text-zinc-900 tracking-tight">
@@ -104,13 +104,13 @@ const ModuleLessonPreview = ({ module }: ModuleLessonPreviewProps) => {
                         {sec.title}
                       </h4>
                       {sec.description && (
-                        <p className="text-xs text-zinc-400 font-light mt-1 leading-relaxed">
+                        <p className="text-xs text-zinc-500 font-light mt-1 leading-relaxed">
                           {sec.description}
                         </p>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 text-zinc-400 shrink-0">
+                    <div className="flex items-center gap-2 text-zinc-500 shrink-0">
                       {isOpen ? (
                         <ChevronDown size={20} />
                       ) : (
@@ -165,7 +165,7 @@ const ModuleLessonPreview = ({ module }: ModuleLessonPreviewProps) => {
               <h4 className="text-base font-semibold text-zinc-800">
                 No sections available
               </h4>
-              <p className="text-xs text-zinc-400 mt-1">
+              <p className="text-xs text-zinc-500 mt-1">
                 There are currently no sections or lessons published in this
                 module.
               </p>

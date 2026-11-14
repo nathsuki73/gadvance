@@ -33,7 +33,7 @@ const SearchBar = ({
     <div className="relative group w-full max-w-[400px]">
       {/* Left Icon */}
       <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-        <Search className="h-4 w-4 text-zinc-400 transition-colors group-focus-within:text-primary" />
+        <Search className="h-4 w-4 text-zinc-500 transition-colors group-focus-within:text-primary" />
       </div>
 
       {/* Input */}
@@ -43,7 +43,7 @@ const SearchBar = ({
         name="search"
         type="text"
         value={value}
-        placeholder="Search for courses, settings, profiles..."
+        placeholder="Search for plans, settings, profiles..."
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-full border border-transparent bg-zinc-100/50 py-2 pl-10 pr-16 text-sm outline-none transition-all placeholder:text-zinc-500 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 text-zinc-800"
         autoComplete="off"

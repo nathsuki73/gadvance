@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
@@ -16,6 +16,9 @@ import {
   saveOnboardingProfile,
 } from "../service";
 
+const MAX_BIO_LENGTH = 250;
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
 interface CustomSessionUser {
   name?: string | null;
   email?: string | null;
@@ -30,11 +33,10 @@ export default function AvatarAndBio() {
 
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Restore cached bio & avatar preview directly on initial state creation
   const [bio, setBio] = useState<string>(() => {
     if (typeof window === "undefined") return "";
     const p3 = getOnboardingCache<OnboardingP3>(ONBOARDING_CACHE_KEYS.p3);
-    return p3?.bio || "";
+    return (p3?.bio || "").slice(0, MAX_BIO_LENGTH);
   });
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(() => {
@@ -53,6 +55,13 @@ export default function AvatarAndBio() {
 
     if (!file.type.startsWith("image/")) {
       showToast("Please upload a valid image file (JPG or PNG).", "warning");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      showToast("Image must be below 2MB.", "warning");
+      e.target.value = ""; // allows re-selecting the same file
       return;
     }
 
@@ -62,7 +71,7 @@ export default function AvatarAndBio() {
 
   const handleBack = (): void => {
     setOnboardingCache<OnboardingP3>(ONBOARDING_CACHE_KEYS.p3, {
-      bio,
+      bio: bio.slice(0, MAX_BIO_LENGTH),
       avatarPreviewUrl: avatarPreview || undefined,
     });
     router.back();
@@ -72,6 +81,12 @@ export default function AvatarAndBio() {
     e: React.FormEvent<HTMLFormElement>,
   ): Promise<void> => {
     e.preventDefault();
+
+    if (bio.length > MAX_BIO_LENGTH) {
+      showToast(`Bio cannot exceed ${MAX_BIO_LENGTH} characters.`, "warning");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -89,14 +104,12 @@ export default function AvatarAndBio() {
       showToast("Profile set up successfully!", "success");
       clearOnboardingCache();
 
-      // 1. Update NextAuth session status
       const updatedUser: CustomSessionUser = {
         ...(session?.user as CustomSessionUser),
         status: "active",
       };
       await update({ user: updatedUser });
 
-      // 2. Refresh router cache & navigate
       router.refresh();
       router.push("/workspace");
     } catch (error: unknown) {
@@ -117,7 +130,7 @@ export default function AvatarAndBio() {
       <form className="space-y-6" onSubmit={handleFinalSubmit}>
         {/* Profile Photo Section */}
         <div>
-          <label className="block text-[10px] font-bold text-zinc-400 mb-3 uppercase tracking-widest">
+          <label className="block text-[10px] font-bold text-zinc-500 mb-3 uppercase tracking-widest">
             Profile Photo
           </label>
 
@@ -150,7 +163,7 @@ export default function AvatarAndBio() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="bg-violet-50 hover:bg-violet-100 text-[#8b5cf6] font-semibold text-xs px-4 py-2.5 rounded-full transition-colors active:scale-95"
+                  className="bg-violet-50 hover:bg-violet-100 text-[#7d49f5] font-semibold text-xs px-4 py-2.5 rounded-full transition-colors active:scale-95"
                 >
                   Choose File
                 </button>
@@ -158,26 +171,38 @@ export default function AvatarAndBio() {
                   {avatarFile ? avatarFile.name : "No file chosen"}
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400 font-light">
+              <p className="text-[11px] text-zinc-500 font-light">
                 JPG or PNG accepted.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Short Bio Field (Optional) */}
+        {/* Short Bio Field */}
         <div>
-          <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
-            Short Bio
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+              Short Bio
+            </label>
+            <span
+              className={`text-[10px] tabular-nums transition-colors ${
+                bio.length >= MAX_BIO_LENGTH
+                  ? "font-semibold text-red-500"
+                  : "text-zinc-500"
+              }`}
+            >
+              {bio.length} / {MAX_BIO_LENGTH}
+            </span>
+          </div>
           <textarea
             value={bio}
+            maxLength={MAX_BIO_LENGTH}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
               setBio(e.target.value)
             }
             rows={5}
             placeholder="Tell us a bit about yourself..."
-            className="w-full rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#8b5cf6] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all resize-none"
+            className="w-full rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#7d49f5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all resize-none"
           />
         </div>
 

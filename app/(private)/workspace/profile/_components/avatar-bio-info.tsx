@@ -13,6 +13,10 @@ const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 ).replace(/\/$/, "");
 
+// Define your maximum character limit here (e.g., 250 characters)
+const MAX_BIO_LENGTH = 250;
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
+
 // Helper function identical to AuthHeader's avatar resolver
 function resolveAvatarSrc(avatar?: string | null): string | null {
   if (!avatar) return null;
@@ -67,6 +71,13 @@ export default function AvatarBioInfo({
 
     if (!file.type.startsWith("image/")) {
       showToast("Please upload a valid image file (JPG or PNG).", "error");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      showToast("Image must be below 2MB.", "error");
+      e.target.value = ""; // clear the input so the same file can be re-selected
       return;
     }
 
@@ -77,6 +88,13 @@ export default function AvatarBioInfo({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Frontend safety check for bio length
+    if (bio.length > MAX_BIO_LENGTH) {
+      showToast(`Bio cannot exceed ${MAX_BIO_LENGTH} characters.`, "error");
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -156,7 +174,7 @@ export default function AvatarBioInfo({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-violet-50 hover:bg-violet-100 text-[#8b5cf6] font-semibold text-xs px-4 py-2 rounded-full transition-colors active:scale-95"
+                className="bg-violet-50 hover:bg-violet-100 text-[#7d49f5] font-semibold text-xs px-4 py-2 rounded-full transition-colors active:scale-95"
               >
                 Choose File
               </button>
@@ -164,23 +182,36 @@ export default function AvatarBioInfo({
                 {avatarFile ? avatarFile.name : "No new file chosen"}
               </span>
             </div>
-            <p className="text-[11px] text-zinc-400">JPG or PNG accepted.</p>
+            <p className="text-[11px] text-zinc-500">JPG or PNG accepted.</p>
           </div>
         </div>
       </div>
 
-      {/* Short Bio */}
+      {/* Short Bio with Character Limit */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="bio" className="text-xs font-semibold text-zinc-700">
-          Short Bio
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="bio" className="text-xs font-semibold text-zinc-700">
+            Short Bio
+          </label>
+          <span
+            className={`text-[11px] tabular-nums transition-colors ${
+              bio.length >= MAX_BIO_LENGTH
+                ? "font-semibold text-red-500"
+                : "text-zinc-500"
+            }`}
+          >
+            {bio.length} / {MAX_BIO_LENGTH}
+          </span>
+        </div>
+
         <textarea
           id="bio"
           value={bio}
+          maxLength={MAX_BIO_LENGTH}
           onChange={(e) => setBio(e.target.value)}
           rows={4}
           placeholder="Tell us a bit about yourself..."
-          className="w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50 resize-none"
+          className="w-full min-w-0 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-xs text-zinc-800 outline-none transition-all focus:border-[#7d49f5] focus:ring-2 focus:ring-violet-50 resize-none"
         />
       </div>
 
@@ -188,7 +219,7 @@ export default function AvatarBioInfo({
         <button
           type="submit"
           disabled={isSaving}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all disabled:opacity-70"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#7d49f5] hover:bg-[#7c3aed] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all disabled:opacity-70"
         >
           {isSaving ? (
             <>

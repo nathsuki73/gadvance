@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { getSession, signIn, useSession } from "next-auth/react";
 import {
   CheckCircle2,
   Clock,
@@ -14,7 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import logoIcon from "@/app/assets/logo.ico";
+import logoIcon from "@/app/assets/logo.png";
 import { useToast } from "@/app/components/context/ToastContext";
 
 type ErrorType = "expired" | "already_exists" | "invalid" | "network";
@@ -24,9 +25,29 @@ const VerifyEmailContent = () => {
   const router = useRouter();
   const { showToast } = useToast();
 
-  const registration = searchParams.get("registration");
-  const token = searchParams.get("token");
+  // New links carry the parameters in the URL fragment (#registration=…&token=…),
+  // which browsers never send to servers, so the token stays out of server,
+  // proxy, and analytics logs. Links sent before this change use the query.
+  // This component only renders in the browser (useSearchParams + Suspense).
+  const [{ registration, token }] = useState(() => {
+    const fragment = new URLSearchParams(
+      typeof window === "undefined" ? "" : window.location.hash.slice(1),
+    );
+    return {
+      registration: fragment.get("registration") ?? searchParams.get("registration"),
+      token: fragment.get("token") ?? searchParams.get("token"),
+    };
+  });
   const hasValidParams = Boolean(registration && token);
+
+  // The token is single use and already held in state: remove it from the
+  // address bar and history immediately so it cannot leak via screenshots,
+  // shared screens, or browser history.
+  useEffect(() => {
+    if (window.location.hash || window.location.search) {
+      window.history.replaceState(null, "", "/auth/verify-email");
+    }
+  }, []);
 
   const [status, setStatus] = useState<"verifying" | "success" | "error">(
     hasValidParams ? "verifying" : "error",
@@ -39,58 +60,61 @@ const VerifyEmailContent = () => {
   );
 
   const hasCalledApi = useRef(false);
+  // Wait for NextAuth to finish loading: calling signIn while the session
+  // provider is still initialising races on the CSRF cookie and fails.
+  const { status: sessionStatus } = useSession();
 
   useEffect(() => {
-    if (!hasValidParams || hasCalledApi.current) return;
+    if (!hasValidParams || hasCalledApi.current || sessionStatus === "loading") return;
     hasCalledApi.current = true;
 
     const executeVerification = async () => {
       try {
-        const backendUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        // Verifies the account and creates the session in one step. The
+        // exchange with the API happens on the server (NextAuth authorize).
+        const attempt = () =>
+          signIn("credentials", {
+            registration: registration!,
+            verificationToken: token!,
+            redirect: false,
+          });
 
-        const response = await fetch(
-          `${backendUrl}/api/auth/verify-email?registration=${encodeURIComponent(
-            registration!,
-          )}&token=${encodeURIComponent(token!)}`,
-          {
-            method: "GET",
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-            },
-            credentials: "include",
-          },
-        );
+        // Concurrent NextAuth requests on first load can leave a CSRF cookie
+        // that does not match the token. NextAuth rejects that before the
+        // link reaches the API, so the link is not used up and it is safe to
+        // retry once the cookie has settled.
+        let result = await attempt();
+        for (let retry = 0; retry < 2 && result?.url?.includes("csrf=true"); retry++) {
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          result = await attempt();
+        }
 
-        const data = await response.json();
+        // NextAuth can report ok without signing in (for example a CSRF
+        // failure redirects to the sign-in page), so confirm a session exists.
+        const session = result?.ok && !result.error ? await getSession() : null;
 
-        if (response.ok && data.success) {
+        if (session?.laravelJwt) {
           setStatus("success");
-          showToast("Account verified successfully! Welcome.", "success");
+          showToast("Email verified. You are signed in.", "success");
+          setTimeout(() => router.replace("/onboarding"), 1200);
+          return;
+        }
 
-          setTimeout(() => {
-            router.push("/onboarding");
-          }, 2000);
+        setStatus("error");
+        const code = result?.error ?? "";
+
+        if (code === "ALREADY_VERIFIED") {
+          setErrorType("already_exists");
+          setErrorMessage("This email is already verified.");
+        } else if (code === "LINK_EXPIRED") {
+          setErrorType("expired");
+          setErrorMessage("This verification link has expired or has already been used.");
+        } else if (code === "VERIFICATION_IN_PROGRESS") {
+          setErrorType("network");
+          setErrorMessage("This link is already being verified. Please refresh in a moment.");
         } else {
-          setStatus("error");
-          const rawErr = (data.error || "").toLowerCase();
-
-          if (response.status === 409 || rawErr.includes("already exists")) {
-            setErrorType("already_exists");
-            setErrorMessage("An account with this email is already verified.");
-          } else if (
-            rawErr.includes("expired") ||
-            rawErr.includes("not found")
-          ) {
-            setErrorType("expired");
-            setErrorMessage(
-              "This verification link has expired or has already been used.",
-            );
-          } else {
-            setErrorType("invalid");
-            setErrorMessage(data.error || "Unable to verify this email link.");
-          }
+          setErrorType("invalid");
+          setErrorMessage("Unable to verify this email link.");
         }
       } catch {
         setStatus("error");
@@ -102,7 +126,7 @@ const VerifyEmailContent = () => {
     };
 
     executeVerification();
-  }, [hasValidParams, registration, token, router, showToast]);
+  }, [hasValidParams, registration, token, router, showToast, sessionStatus]);
 
   return (
     <div className="min-h-screen flex bg-white font-sans text-zinc-900 overflow-hidden">
@@ -122,13 +146,13 @@ const VerifyEmailContent = () => {
         <div className="w-full max-w-md mx-auto lg:mx-0">
           {status === "verifying" && (
             <div className="flex flex-col items-center text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-violet-50 text-[#8b5cf6] rounded-2xl mb-6 shadow-sm">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-violet-50 text-[#7d49f5] rounded-2xl mb-6 shadow-sm">
                 <Loader2 size={32} className="animate-spin" />
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-zinc-900 mb-2">
                 Verifying Email...
               </h1>
-              <p className="text-zinc-400 text-sm font-light leading-relaxed">
+              <p className="text-zinc-500 text-sm font-light leading-relaxed">
                 Please wait a moment while we validate your activation code.
               </p>
             </div>
@@ -142,13 +166,13 @@ const VerifyEmailContent = () => {
               <h1 className="text-3xl font-bold tracking-tight text-zinc-900 mb-2">
                 Email Verified!
               </h1>
-              <p className="text-zinc-400 text-sm font-light leading-relaxed mb-8">
-                Your account is activated. Taking you to onboarding...
+              <p className="text-zinc-500 text-sm font-light leading-relaxed mb-8">
+                You are signed in. Taking you to set up your profile...
               </p>
 
               <Link
                 href="/onboarding"
-                className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
+                className="w-full bg-[#7d49f5] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 Continue Setup <ArrowRight size={14} />
               </Link>
@@ -182,7 +206,7 @@ const VerifyEmailContent = () => {
                   {errorType === "expired" &&
                     "Verification links expire after 30 minutes for security reasons. You can request a fresh link by signing up or choosing resend."}
                   {errorType === "already_exists" &&
-                    "Your email has already been verified! You can sign in directly with your password."}
+                    "Your email is already verified, so this link cannot sign you in again. Sign in with your password or Google."}
                   {errorType === "invalid" &&
                     "This link appears broken or incomplete. Please verify you clicked the complete link in your email."}
                   {errorType === "network" &&
@@ -194,7 +218,7 @@ const VerifyEmailContent = () => {
                 {errorType === "already_exists" ? (
                   <Link
                     href="/auth/signin"
-                    className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
+                    className="w-full bg-[#7d49f5] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
                   >
                     <LogIn size={14} /> Sign In Now
                   </Link>
@@ -202,7 +226,7 @@ const VerifyEmailContent = () => {
                   <>
                     <Link
                       href="/auth/signup"
-                      className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
+                      className="w-full bg-[#7d49f5] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
                     >
                       <RefreshCw size={14} /> Request New Link
                     </Link>
@@ -222,7 +246,7 @@ const VerifyEmailContent = () => {
       </div>
 
       <div
-        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
+        className="hidden lg:flex lg:w-1/2 bg-[#7d49f5] flex-col items-center justify-center p-12 text-white relative"
         style={{ clipPath: "ellipse(100% 100% at 100% 50%)" }}
       >
         <div className="text-center px-12 relative z-10">

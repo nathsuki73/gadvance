@@ -41,7 +41,7 @@ export function PhoneInput({
         className={
           isProfileUpdate
             ? "block text-xs font-semibold text-zinc-700 mb-1.5"
-            : "block text-[10px] font-bold text-zinc-400 mb-1.5 uppercase tracking-widest"
+            : "block text-[10px] font-bold text-zinc-500 mb-1.5 uppercase tracking-widest"
         }
       >
         Mobile Number{!isProfileUpdate && <span className="text-red-500"> *</span>}
@@ -51,8 +51,8 @@ export function PhoneInput({
       <div
         className={
           isProfileUpdate
-            ? "flex w-full items-center rounded-xl border border-zinc-200 bg-white focus-within:border-[#8b5cf6] focus-within:ring-2 focus-within:ring-violet-50 transition-all overflow-hidden"
-            : "flex w-full items-center rounded-xl border border-zinc-100 bg-zinc-50/50 focus-within:border-[#8b5cf6] focus-within:bg-white focus-within:ring-4 focus-within:ring-violet-50/50 overflow-hidden transition-all"
+            ? "flex w-full items-center rounded-xl border border-zinc-200 bg-white focus-within:border-[#7d49f5] focus-within:ring-2 focus-within:ring-violet-50 transition-all overflow-hidden"
+            : "flex w-full items-center rounded-xl border border-zinc-100 bg-zinc-50/50 focus-within:border-[#7d49f5] focus-within:bg-white focus-within:ring-4 focus-within:ring-violet-50/50 overflow-hidden transition-all"
         }
       >
         <div className="relative shrink-0" ref={ref}>
@@ -63,7 +63,7 @@ export function PhoneInput({
           >
             <span>{dialCode}</span>
             <ChevronDown
-              className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${
+              className={`h-3.5 w-3.5 text-zinc-500 transition-transform duration-200 ${
                 isOpen ? "rotate-180" : ""
               }`}
             />
@@ -79,7 +79,7 @@ export function PhoneInput({
                     onDialCodeChange(code);
                     setIsOpen(false);
                   }}
-                  className="flex w-full items-center justify-center rounded-lg py-2 text-xs font-semibold bg-violet-50/70 text-[#8b5cf6] hover:bg-violet-100 hover:text-[#8b5cf6] transition-colors cursor-pointer"
+                  className="flex w-full items-center justify-center rounded-lg py-2 text-xs font-semibold bg-violet-50/70 text-[#7d49f5] hover:bg-violet-100 hover:text-[#7d49f5] transition-colors cursor-pointer"
                 >
                   {code}
                 </button>

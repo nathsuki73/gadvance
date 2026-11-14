@@ -23,7 +23,7 @@ export default function JoinOrganizationPage() {
         <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
           <button
             onClick={() => router.back()}
-            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary-hover cursor-pointer"
+            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 transition-colors hover:text-primary-hover cursor-pointer"
           >
             <ArrowLeft
               size={16}
@@ -45,7 +45,7 @@ export default function JoinOrganizationPage() {
             <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
               Join an Organization
             </h1>
-            <p className="text-xs text-zinc-400 font-light leading-relaxed max-w-sm mx-auto">
+            <p className="text-xs text-zinc-500 font-light leading-relaxed max-w-sm mx-auto">
               Enter your 6-digit invitation code below to find and connect with
               your institution.
             </p>

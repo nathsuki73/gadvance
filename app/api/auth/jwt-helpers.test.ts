@@ -10,16 +10,22 @@ function makeFakeJwt(expiresInSeconds: number) {
   return `${header}.${payload}.fakesignature`;
 }
 
-test("does not flag refresh when token has 10 min left", () => {
-  expect(shouldRefreshLaravelToken(makeFakeJwt(600))).toBe(false);
+// The token is refreshed during its last 15 minutes. An expired token cannot
+// be refreshed by the API; the layouts sign the learner out instead.
+test("does not flag refresh when token has 20 min left", () => {
+  expect(shouldRefreshLaravelToken(makeFakeJwt(20 * 60))).toBe(false);
+});
+
+test("flags refresh when token has 10 min left", () => {
+  expect(shouldRefreshLaravelToken(makeFakeJwt(600))).toBe(true);
 });
 
 test("flags refresh when token has 2 min left", () => {
   expect(shouldRefreshLaravelToken(makeFakeJwt(120))).toBe(true);
 });
 
-test("flags refresh when token is already expired", () => {
-  expect(shouldRefreshLaravelToken(makeFakeJwt(-60))).toBe(true);
+test("does not flag refresh when token is already expired", () => {
+  expect(shouldRefreshLaravelToken(makeFakeJwt(-60))).toBe(false);
 });
 
 test("returns false for malformed token", () => {

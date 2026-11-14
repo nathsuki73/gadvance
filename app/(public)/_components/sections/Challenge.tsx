@@ -39,12 +39,12 @@ const TheChallengeSection = () => {
       <div ref={scrollRef} className="mx-auto max-w-7xl px-8 lg:px-12">
         {/* Header Section */}
         <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 ease-out will-change-transform max-w-3xl">
-          <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-[#8b5cf6]">
+          <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-[#7d49f5]">
             The Reality
           </h2>
           <h3 className="mt-10 text-4xl font-light leading-[1.1] tracking-tight text-zinc-900 sm:text-6xl">
             The gender gap in leadership <br className="hidden md:block" />
-            <span className="font-semibold italic font-serif text-[#8b5cf6]">still exists.</span>
+            <span className="font-semibold italic font-serif text-[#7d49f5]">still exists.</span>
           </h3>
           <p className="mt-12 max-w-2xl text-xl font-light leading-9 text-zinc-500">
             Despite progress, structural barriers continue to limit workplace
@@ -56,7 +56,7 @@ const TheChallengeSection = () => {
         <div className="mt-32 grid grid-cols-1 gap-x-24 gap-y-24 lg:grid-cols-2">
           {/* Issue 01 */}
           <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-300 ease-out will-change-transform flex flex-col border-t border-zinc-100 pt-12">
-            <span className="mb-6 text-[10px] font-bold uppercase tracking-[0.3em] text-[#8b5cf6]">
+            <span className="mb-6 text-[10px] font-bold uppercase tracking-[0.3em] text-[#7d49f5]">
               01 / Opportunity
             </span>
             <h4 className="text-2xl font-medium tracking-tight text-zinc-900">
@@ -71,7 +71,7 @@ const TheChallengeSection = () => {
 
           {/* Issue 02 */}
           <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-500 ease-out will-change-transform flex flex-col border-t border-zinc-100 pt-12">
-            <span className="mb-6 text-[10px] font-bold uppercase tracking-[0.3em] text-[#8b5cf6]">
+            <span className="mb-6 text-[10px] font-bold uppercase tracking-[0.3em] text-[#7d49f5]">
               02 / Environment
             </span>
             <h4 className="text-2xl font-medium tracking-tight text-zinc-900">
@@ -86,8 +86,8 @@ const TheChallengeSection = () => {
         </div>
 
         {/* Bottom statement */}
-        <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-700 ease-out will-change-transform mt-32 flex items-center gap-x-6 text-zinc-400">
-          <div className="h-px w-16 bg-[#8b5cf6]" />
+        <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-700 ease-out will-change-transform mt-32 flex items-center gap-x-6 text-zinc-500">
+          <div className="h-px w-16 bg-[#7d49f5]" />
           <p className="text-sm font-light tracking-wide">
             This gap impacts innovation, retention, and long-term organizational
             growth.

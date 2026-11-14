@@ -22,7 +22,7 @@ const CourseModulePreview = ({
 
   if (modulesList.length === 0) {
     return (
-      <div className="text-center py-12 text-zinc-400 font-light lowercase">
+      <div className="text-center py-12 text-zinc-500 font-light lowercase">
         no modules found for this learning plan.
       </div>
     );
@@ -31,8 +31,8 @@ const CourseModulePreview = ({
   return (
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-12 border-l-4 border-[#8b5cf6] pl-6">
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400 mb-1">
+        <div className="mb-12 border-l-4 border-[#7d49f5] pl-6">
+          <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 mb-1">
             Syllabus
           </h2>
 
@@ -60,16 +60,16 @@ const CourseModulePreview = ({
                       {index === 0 ? (
                         <BookOpen
                           size={16}
-                          className="text-[#8b5cf6] shrink-0"
+                          className="text-[#7d49f5] shrink-0"
                         />
                       ) : (
                         <PlayCircle
                           size={16}
-                          className="text-[#8b5cf6] shrink-0"
+                          className="text-[#7d49f5] shrink-0"
                         />
                       )}
 
-                      <h4 className="text-base font-medium text-zinc-800 group-hover:text-[#8b5cf6] transition-colors">
+                      <h4 className="text-base font-medium text-zinc-800 group-hover:text-[#7d49f5] transition-colors">
                         {module.title}
                       </h4>
                     </div>

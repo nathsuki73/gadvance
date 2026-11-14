@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/app/components/context/ToastContext";
 import {
   Building2,
   ArrowLeft,
@@ -27,6 +28,7 @@ export default function JoinOrganizationPage() {
   const searchParams = useSearchParams();
   const { status, update: updateSession } = useSession({ required: false });
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const urlCode = searchParams.get("code") || "";
   const [isJoining, setIsJoining] = useState(false);
@@ -85,7 +87,12 @@ export default function JoinOrganizationPage() {
         body: JSON.stringify({ code: urlCode.trim() }),
       });
 
-      if (!res) return;
+      if (!res) {
+        setActionError("Failed to connect to the server. Please try again.");
+        return;
+      }
+
+      const errData = await res.json().catch(() => ({}));
 
       if (res.ok) {
         await queryClient.invalidateQueries({ queryKey: ["userOrganization"] });
@@ -97,12 +104,21 @@ export default function JoinOrganizationPage() {
         });
 
         await updateSession();
+        showToast("Successfully joined the organization!", "success");
         router.push("/workspace");
       } else {
-        const errData = await res.json().catch(() => ({}));
-        setActionError(
-          errData.message || "Failed to join organization. Please try again.",
-        );
+        const message =
+          errData.message || "Failed to join organization. Please try again.";
+
+        if (
+          message.toLowerCase().includes("already") ||
+          message.toLowerCase().includes("part of")
+        ) {
+          showToast(message, "info");
+          router.push("/workspace");
+        } else {
+          setActionError(message);
+        }
       }
     } catch {
       setActionError("Failed to join organization. Please try again.");
@@ -135,7 +151,7 @@ export default function JoinOrganizationPage() {
         <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
           <button
             onClick={() => router.push("/workspace/organization")}
-            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary-hover cursor-pointer"
+            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 transition-colors hover:text-primary-hover cursor-pointer"
           >
             <ArrowLeft
               size={16}
@@ -215,7 +231,7 @@ export default function JoinOrganizationPage() {
                   Notice
                 </span>
 
-                <div className="p-4 rounded-2xl bg-zinc-100 text-zinc-400 mt-2">
+                <div className="p-4 rounded-2xl bg-zinc-100 text-zinc-500 mt-2">
                   <SearchX size={32} />
                 </div>
 

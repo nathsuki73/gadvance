@@ -79,11 +79,11 @@ const CoursesPage = () => {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-zinc-900">
-                Enrolled Courses
+                Enrolled Learning Plans
               </h1>
               <p className="mt-2 text-sm text-zinc-500 font-light max-w-xl">
-                Continue learning, explore new programs, and manage your
-                enrolled courses.
+                Continue learning, explore new plans, and manage your enrolled
+                learning plans.
               </p>
             </div>
 
@@ -94,7 +94,7 @@ const CoursesPage = () => {
             >
               <Search
                 size={16}
-                className="absolute left-3.5 text-zinc-400 pointer-events-none"
+                className="absolute left-3.5 text-zinc-500 pointer-events-none"
               />
               <input
                 id="enrolled-search-input"
@@ -102,9 +102,9 @@ const CoursesPage = () => {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search enrolled courses..."
-                aria-label="Search enrolled courses"
-                className="w-full pl-10 pr-4 py-2 rounded-full border border-zinc-200 text-sm bg-zinc-50/50 text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:border-transparent transition-all"
+                placeholder="Search enrolled plans..."
+                aria-label="Search enrolled plans"
+                className="w-full pl-10 pr-4 py-2 rounded-full border border-zinc-200 text-sm bg-zinc-50/50 text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#7d49f5] focus:border-transparent transition-all"
               />
               {query && (
                 <button
@@ -113,7 +113,7 @@ const CoursesPage = () => {
                     setQuery("");
                     setActiveSearch("");
                   }}
-                  className="absolute right-3 text-zinc-400 hover:text-zinc-600 transition-colors"
+                  className="absolute right-3 text-zinc-500 hover:text-zinc-600 transition-colors"
                   title="Clear input"
                 >
                   <X size={14} />
@@ -131,7 +131,7 @@ const CoursesPage = () => {
                 className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   filter === "all"
                     ? "bg-primary text-white shadow-xs"
-                    : "text-zinc-500 hover:text-[#8b5cf6] hover:bg-zinc-100/80"
+                    : "text-zinc-500 hover:text-[#7d49f5] hover:bg-zinc-100/80"
                 }`}
               >
                 <LayoutGrid size={13} />
@@ -144,7 +144,7 @@ const CoursesPage = () => {
                 className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   filter === "public"
                     ? "bg-primary text-white shadow-xs"
-                    : "text-zinc-500 hover:text-[#8b5cf6] hover:bg-zinc-100/80"
+                    : "text-zinc-500 hover:text-[#7d49f5] hover:bg-zinc-100/80"
                 }`}
               >
                 <Globe2 size={13} />
@@ -158,7 +158,7 @@ const CoursesPage = () => {
                   className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     filter === "organization"
                       ? "bg-primary text-white shadow-xs"
-                      : "text-zinc-500 hover:text-[#8b5cf6] hover:bg-zinc-100/80"
+                      : "text-zinc-500 hover:text-[#7d49f5] hover:bg-zinc-100/80"
                   }`}
                 >
                   <Building2 size={13} />
@@ -171,7 +171,7 @@ const CoursesPage = () => {
               <button
                 type="button"
                 onClick={handleReset}
-                className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-primary-hover transition-colors font-medium px-2 py-1 rounded-md hover:bg-purple-50"
+                className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-primary-hover transition-colors font-medium px-2 py-1 rounded-md hover:bg-purple-50"
               >
                 <RotateCcw size={12} />
                 <span>Reset Filters</span>
@@ -194,7 +194,7 @@ const CoursesPage = () => {
                   setQuery("");
                   setActiveSearch("");
                 }}
-                className="text-zinc-400 hover:text-primary-hover transition-colors"
+                className="text-zinc-500 hover:text-primary-hover transition-colors"
                 title="Clear search"
               >
                 <X size={14} />
@@ -215,19 +215,19 @@ const CoursesPage = () => {
           </div>
         ) : courses.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-zinc-200 py-16 text-center">
-            <h3 className="text-base font-semibold text-zinc-800">
+            <h2 className="text-base font-semibold text-zinc-800">
               {activeSearch
                 ? `No results found for "${activeSearch}"`
-                : "No courses available"}
-            </h3>
-            <p className="mt-1 text-xs text-zinc-400 font-light">
+                : "No plans available"}
+            </h2>
+            <p className="mt-1 text-xs text-zinc-500 font-light">
               Try checking your spelling or reset filters to see all courses.
             </p>
             <Link
               href="/explore"
               className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold bg-primary text-white rounded-xl hover:bg-primary-hover transition-all"
             >
-              <span>Explore Courses</span>
+              <span>Explore Plans Here</span>
               <ArrowRight size={14} />
             </Link>
           </div>

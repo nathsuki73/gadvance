@@ -53,7 +53,7 @@ const ActionConfirmationDialog = ({
             )}
           </h2>
 
-          <p className="mt-4 text-base text-zinc-400 font-light leading-relaxed lowercase">
+          <p className="mt-4 text-base text-zinc-500 font-light leading-relaxed lowercase">
             {isEnroll
               ? "you will be officially enrolled in this learning plan  and gain access to its structured learning modules."
               : "your enrollment will be removed from this learning plan and you will lose access to its modules."}

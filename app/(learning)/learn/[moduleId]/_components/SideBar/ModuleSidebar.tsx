@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Section, SectionItem } from "../../service";
 import SideBarNavItem from "./_components/SideBarNavItem";
 import { DonutProgress } from "./_components/DonutProgress";
+import Link from "next/link";
 
 type ModuleSidebarProps = {
   courseId: string;
@@ -19,6 +20,7 @@ type ModuleSidebarProps = {
   onToggleCollapse: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
+  disabled?: boolean;
 };
 
 export default function ModuleSidebar({
@@ -33,6 +35,7 @@ export default function ModuleSidebar({
   onToggleCollapse,
   mobileOpen,
   onCloseMobile,
+  disabled,
 }: ModuleSidebarProps) {
   const router = useRouter();
 
@@ -73,11 +76,13 @@ export default function ModuleSidebar({
         />
       )}
 
+      {/* 1. Removed disabled styles from <aside> so header/footer remain active */}
       <aside
         className={`fixed left-0 top-0 z-50 flex h-dvh w-72 flex-col border-r border-zinc-200 bg-zinc-50/90 backdrop-blur-md transition-all duration-300 ease-in-out sm:w-80 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 ${isCollapsed ? "lg:w-16" : "lg:w-80"}`}
       >
+        {/* Header (Collapse & Mobile Close buttons stay active) */}
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-zinc-200 bg-white/80 px-4">
           <div className="flex w-full items-center justify-between gap-2 lg:hidden">
             <span className="max-w-[200px] truncate text-sm font-semibold text-zinc-900">
@@ -121,8 +126,12 @@ export default function ModuleSidebar({
           </div>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto overflow-x-hidden px-3 py-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300">
-          {" "}
+        {/* 2. Applied disabled styles (pointer-events-none & opacity) only to the scrollable section items */}
+        <div
+          className={`flex-1 space-y-4 overflow-y-auto overflow-x-hidden px-3 py-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300 ${
+            disabled ? "pointer-events-none opacity-60 select-none" : ""
+          }`}
+        >
           {sections.map((section) => {
             const isExpanded = expandedSections.has(section.id);
             const items = section.items || [];
@@ -150,7 +159,7 @@ export default function ModuleSidebar({
                       </h3>
                     </div>
 
-                    <div className="flex items-center shrink-0 text-zinc-400">
+                    <div className="flex items-center shrink-0 text-zinc-500">
                       {isExpanded ? (
                         <ChevronDown size={14} />
                       ) : (
@@ -184,8 +193,6 @@ export default function ModuleSidebar({
                           collapsed={collapsedView}
                           onClick={() => {
                             if (isUnlocked) {
-                              // 🔑 FIX: Just call the parent! The parent instantly swaps the view
-                              // and updates the URL bar without triggering a reload.
                               onSelect(item);
                             }
                           }}
@@ -199,13 +206,13 @@ export default function ModuleSidebar({
           })}
         </div>
 
+        {/* Footer (Exit Module button stays active) */}
         <div className="shrink-0 border-t border-zinc-200 bg-white/80 p-3">
-          <button
-            onClick={() =>
-              router.push(`/explore/course/${courseId}/module/${moduleId}`)
-            }
+          <Link
+            href={`/explore/course/${courseId}/module/${moduleId}` as any}
+            prefetch={true}
             aria-label="Exit module"
-            className={`flex items-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition-colors hover:bg-zinc-50 cursor-pointer ${
+            className={`flex items-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition-colors hover:bg-zinc-50 cursor-pointer no-underline ${
               collapsedView
                 ? "h-10 w-full justify-center"
                 : "w-full justify-center gap-2 px-3 py-2.5"
@@ -215,7 +222,7 @@ export default function ModuleSidebar({
             {!collapsedView && (
               <span className="text-xs font-medium">Exit Module</span>
             )}
-          </button>
+          </Link>
         </div>
       </aside>
     </>

@@ -1,27 +1,28 @@
 "use client";
 
-import { use, useEffect, useState, useCallback, useRef } from "react";
-// 🔑 1. Import useRouter
+import { use, useState, useCallback, useMemo } from "react";
 import { useRouter, notFound, useSearchParams } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 
 import ModuleSidebar from "./_components/SideBar/ModuleSidebar";
 import AssessmentContainer from "./_components/AssessmentContainer/AssessmentContainer";
-import PageContainer from "./_components/PageContainer";
-import { getModuleStructure, ModuleStructure, SectionItem } from "./service";
+import PageContainer from "./_components/PageContainer/PageContainer";
+import { LearnPageSkeleton } from "./LearnPageSkeleton";
 import {
-  getLearningProgress,
-  saveLearningProgress,
+  SectionItem,
+  useModuleStructure,
+  useLearningProgressQuery,
+} from "./service";
+import {
+  completeAndGetNextItem,
   ProgressRecord,
-  syncLearningPlanProgress,
 } from "./service-user-progress";
 
 type LearnPageProps = {
   params: Promise<{ moduleId: string }>;
 };
 
-// helper — put above the component or in a utils file
 const getMaxUnlockedIndex = (items: SectionItem[], completed: Set<string>) => {
   let idx = 0;
   for (let i = 0; i < items.length; i++) {
@@ -31,161 +32,197 @@ const getMaxUnlockedIndex = (items: SectionItem[], completed: Set<string>) => {
       break;
     }
   }
-  return Math.min(idx, items.length - 1);
+  return Math.min(Math.max(0, idx), items.length - 1);
 };
 
 const LearnPage = ({ params }: LearnPageProps) => {
   const { moduleId } = use(params);
-  const router = useRouter(); // 🔑 2. Initialize router
+  const router = useRouter();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const targetItemId = searchParams.get("item");
-
-  const [module, setModule] = useState<ModuleStructure | null>(null);
-  const [activeItem, setActiveItem] = useState<SectionItem | null>(null);
-  const [completedItemIds, setCompletedItemIds] = useState<Set<string>>(
-    new Set(),
-  );
+  const fromItemId = searchParams.get("fromItem"); // 👈 Captured origin assessment item ID
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isQuestionActive, setIsQuestionActive] = useState(false);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const {
+    data: module,
+    isLoading: moduleLoading,
+    error: moduleError,
+  } = useModuleStructure(moduleId);
 
-  const touchedItemIds = useRef<Set<string>>(new Set());
+  const { data: progressData, isLoading: progressLoading } =
+    useLearningProgressQuery(moduleId);
 
-  // 1. Load module structure and progress ONCE on initial mount
-  useEffect(() => {
-    if (!moduleId) return;
+  const loading = moduleLoading || progressLoading;
+  const error = Boolean(moduleError);
 
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(false);
+  const completedItemIds = useMemo(() => {
+    const completed = new Set<string>();
+    if (progressData?.success && Array.isArray(progressData.data)) {
+      progressData.data.forEach((record: ProgressRecord) => {
+        if (record.progress >= 100) completed.add(record.learning_item_id);
+      });
+    }
+    return completed;
+  }, [progressData]);
 
-        const [structure, progressData] = await Promise.all([
-          getModuleStructure(moduleId),
-          getLearningProgress(moduleId),
-        ]);
+  const allItems = useMemo(() => {
+    return module?.sections?.flatMap((sec) => sec.items) ?? [];
+  }, [module]);
 
-        setModule(structure);
-
-        const completed = new Set<string>();
-        if (progressData?.success && Array.isArray(progressData.data)) {
-          progressData.data.forEach((record: ProgressRecord) => {
-            if (record.progress >= 100) completed.add(record.learning_item_id);
-          });
-        }
-        setCompletedItemIds(completed);
-
-        const allItems = structure.sections?.flatMap((sec) => sec.items) ?? [];
-
-        if (allItems.length > 0) {
-          const maxUnlockedIndex = getMaxUnlockedIndex(allItems, completed);
-          const allowedItem = allItems[maxUnlockedIndex];
-
-          const requestedId = searchParams.get("item");
-          const requestedItem = requestedId
-            ? allItems.find(
-                (i) => i.id === requestedId || i.content_id === requestedId,
-              )
-            : null;
-          const requestedIndex = requestedItem
-            ? allItems.findIndex((i) => i.id === requestedItem.id)
-            : -1;
-
-          if (requestedItem && requestedIndex <= maxUnlockedIndex) {
-            setActiveItem(requestedItem);
-          } else {
-            // no valid request, or it's beyond what they've unlocked — snap back
-            setActiveItem(allowedItem);
-            if (requestedId) {
-              router.replace(`/learn/${moduleId}?item=${allowedItem.id}`, {
-                scroll: false,
-              });
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error loading module structure:", err);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [moduleId]);
-
-  // 2. Synchronize activeItem instantly when query param changes
-  useEffect(() => {
-    if (!module) return;
-    const allItems = module.sections?.flatMap((sec) => sec.items) ?? [];
-    if (allItems.length === 0 || !targetItemId) return;
+  const activeItem = useMemo(() => {
+    if (allItems.length === 0) return null;
 
     const maxUnlockedIndex = getMaxUnlockedIndex(allItems, completedItemIds);
-    const foundItem = allItems.find(
-      (i) => i.id === targetItemId || i.content_id === targetItemId,
-    );
-    const foundIndex = foundItem
-      ? allItems.findIndex((i) => i.id === foundItem.id)
+    const allowedItem = allItems[maxUnlockedIndex];
+
+    const requestedItem = targetItemId
+      ? allItems.find(
+          (i) => i.id === targetItemId || i.content_id === targetItemId,
+        )
+      : null;
+    const requestedIndex = requestedItem
+      ? allItems.findIndex((i) => i.id === requestedItem.id)
       : -1;
 
-    if (foundItem && foundIndex <= maxUnlockedIndex) {
-      if (foundItem.id !== activeItem?.id) setActiveItem(foundItem);
-    } else if (foundItem) {
-      // requested item exists but isn't unlocked yet — bounce back
-      const allowedItem = allItems[maxUnlockedIndex];
-      router.replace(`/learn/${moduleId}?item=${allowedItem.id}`, {
+    if (requestedItem && requestedIndex <= maxUnlockedIndex) {
+      return requestedItem;
+    }
+
+    return allowedItem;
+  }, [allItems, completedItemIds, targetItemId]);
+
+  const currentIndex = useMemo(() => {
+    if (!activeItem) return -1;
+    return allItems.findIndex((i) => i.id === activeItem.id);
+  }, [allItems, activeItem]);
+
+  const isLastItem = currentIndex === allItems.length - 1;
+  const nextItem =
+    currentIndex !== -1 && !isLastItem ? allItems[currentIndex + 1] : null;
+
+  // 🔗 Resolves the assessment to return to (Origin assessment, or section assessment fallback)
+  const returnAssessmentItem = useMemo(() => {
+    if (fromItemId) {
+      const found = allItems.find(
+        (i) =>
+          (i.id === fromItemId || i.content_id === fromItemId) &&
+          i.item_type === "assessment",
+      );
+      if (found) return found;
+    }
+
+    if (activeItem) {
+      // Check for assessment in the same section
+      const sameSectionAssessment = allItems.find(
+        (i) =>
+          i.item_type === "assessment" &&
+          i.section_id === activeItem.section_id,
+      );
+      if (sameSectionAssessment) return sameSectionAssessment;
+    }
+
+    // Module-level assessment fallback
+    return allItems.find((i) => i.item_type === "assessment") ?? null;
+  }, [allItems, fromItemId, activeItem]);
+
+  const handleReturnToAssessment = useCallback(() => {
+    if (returnAssessmentItem) {
+      router.push(`/learn/${moduleId}?item=${returnAssessmentItem.id}`, {
         scroll: false,
       });
     }
-  }, [
-    targetItemId,
-    module,
-    activeItem?.id,
-    completedItemIds,
-    moduleId,
-    router,
-  ]);
+  }, [returnAssessmentItem, moduleId, router]);
 
-  // Touch latest visit tracking
-  useEffect(() => {
-    if (!moduleId || !activeItem || !module) return;
+  const completeMutation = useMutation({
+    mutationFn: async ({
+      itemId,
+      nextId,
+    }: {
+      itemId: string;
+      nextId?: string;
+    }) => {
+      const sectionId =
+        activeItem?.section_id ||
+        module?.sections?.find((sec) => sec.items?.some((i) => i.id === itemId))
+          ?.id;
 
-    const itemId = activeItem.id;
-    if (touchedItemIds.current.has(itemId)) return;
+      if (!sectionId) throw new Error("Section ID not found");
 
-    const sectionId =
-      activeItem.section_id ||
-      module?.sections?.find((sec) => sec.items?.some((i) => i.id === itemId))
-        ?.id;
+      const learningPlanId =
+        (module as any)?.learning_plan_id || module?.courseId;
 
-    if (!sectionId) return;
-
-    const touchModuleVisit = async () => {
-      touchedItemIds.current.add(itemId);
-      const isAlreadyCompleted = completedItemIds.has(itemId);
-
-      const response = await saveLearningProgress({
+      return await completeAndGetNextItem({
         module_id: moduleId,
         section_id: sectionId,
         learning_item_id: itemId,
-        progress: isAlreadyCompleted ? 100 : 0,
+        learning_plan_id: learningPlanId,
+        next_item_id: nextId,
+      });
+    },
+    onMutate: async ({ itemId }) => {
+      await queryClient.cancelQueries({
+        queryKey: ["learningProgress", moduleId],
       });
 
-      if (response.success) {
-        queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      const previousProgress = queryClient.getQueryData([
+        "learningProgress",
+        moduleId,
+      ]);
+
+      queryClient.setQueryData(["learningProgress", moduleId], (old: any) => {
+        if (!old) return old;
+        const existingData = Array.isArray(old.data) ? old.data : [];
+        const updatedData = [
+          ...existingData,
+          { learning_item_id: itemId, progress: 100, module_id: moduleId },
+        ];
+        const updatedIds = [...(old.completed_item_ids || []), itemId];
+
+        return {
+          ...old,
+          data: updatedData,
+          completed_item_ids: updatedIds,
+        };
+      });
+
+      return { previousProgress };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousProgress) {
+        queryClient.setQueryData(
+          ["learningProgress", moduleId],
+          context.previousProgress,
+        );
       }
-    };
+    },
+    onSuccess: (response) => {
+      if (response && response.success) {
+        queryClient.setQueryData(
+          ["learningProgress", moduleId],
+          (old: any) => ({
+            ...(old || {}),
+            success: true,
+            data: response.data,
+            completed_item_ids: response.completed_item_ids,
+          }),
+        );
 
-    touchModuleVisit();
-  }, [moduleId, activeItem, module, completedItemIds, queryClient]);
+        if (response.next_item) {
+          router.push(`/learn/${moduleId}?item=${response.next_item.id}`, {
+            scroll: false,
+          });
+        }
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+    },
+  });
 
-  const allItems = module?.sections?.flatMap((sec) => sec.items) ?? [];
-
-  // 🔑 3. Let Next.js handle Sidebar routing smoothly
   const handleSelectItem = (item: SectionItem) => {
     setMobileSidebarOpen(false);
     router.push(`/learn/${moduleId}?item=${item.id}`, { scroll: false });
@@ -193,51 +230,39 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
   const handleItemComplete = useCallback(
     async (itemId: string, progressValue = 100) => {
-      if (!activeItem || !moduleId) return;
+      if (
+        !activeItem ||
+        !moduleId ||
+        !module ||
+        progressValue < 100 ||
+        completeMutation.isPending
+      )
+        return;
 
-      const sectionId =
-        activeItem.section_id ||
-        module?.sections?.find((sec) => sec.items?.some((i) => i.id === itemId))
-          ?.id;
+      const nextId = nextItem ? nextItem.id : undefined;
 
-      if (!sectionId) return;
-
-      if (progressValue >= 100) {
-        setCompletedItemIds((prev) => new Set(prev).add(itemId));
-      }
-
-      // 1. Save the specific item progress
-      await saveLearningProgress({
-        module_id: moduleId,
-        section_id: sectionId,
-        learning_item_id: itemId,
-        progress: progressValue,
-      });
-
-      // 🚀 2. Trigger the Learning Plan milestone sync (updates overall course percentage & status)
-      const learningPlanId =
-        (module as any)?.learning_plan_id || module?.courseId;
-      if (learningPlanId && progressValue >= 100) {
-        await syncLearningPlanProgress(learningPlanId);
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      completeMutation.mutate(
+        { itemId, nextId },
+        {
+          onSuccess: () => {
+            if (nextItem) {
+              router.push(`/learn/${moduleId}?item=${nextItem.id}`, {
+                scroll: false,
+              });
+            }
+          },
+        },
+      );
     },
-    [activeItem, module, moduleId, queryClient],
+    [activeItem, moduleId, module, nextItem, completeMutation, router],
   );
 
-  // 🔑 4. Let Next.js handle Next Button routing smoothly
   const handleNext = () => {
     if (!activeItem) return;
-
-    const currentIndex = allItems.findIndex((i) => i.id === activeItem.id);
-    if (currentIndex !== -1 && currentIndex < allItems.length - 1) {
-      const nextItem = allItems[currentIndex + 1];
-      router.push(`/learn/${moduleId}?item=${nextItem.id}`, { scroll: false });
-    }
+    handleItemComplete(activeItem.id, 100);
   };
 
-  // 🔑 5. Let Next.js handle Remedial Hash Navigation smoothly
+  // 🚀 Attaches `fromItem` so the page knows which assessment you navigated from!
   const handleNavigateTo = (targetId: string, blockId?: string) => {
     const foundItem = allItems.find(
       (i) => i.id === targetId || i.content_id === targetId,
@@ -245,23 +270,34 @@ const LearnPage = ({ params }: LearnPageProps) => {
 
     if (foundItem) {
       const hash = blockId ? `#${blockId}` : "";
-      router.push(`/learn/${moduleId}?item=${foundItem.id}${hash}`, {
-        scroll: false,
-      });
+      const fromParam = activeItem ? `&fromItem=${activeItem.id}` : "";
+      router.push(
+        `/learn/${moduleId}?item=${foundItem.id}${fromParam}${hash}`,
+        {
+          scroll: false,
+        },
+      );
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb]">
-        <Loader2 size={32} className="animate-spin text-primary" />
-      </div>
-    );
+    return <LearnPageSkeleton />;
   }
 
   if (error || !module || !activeItem) {
     notFound();
   }
+
+  const handleExitModule = async () => {
+    try {
+      if (!completedItemIds.has(activeItem.id) && !completeMutation.isPending) {
+        await completeMutation.mutateAsync({ itemId: activeItem.id });
+      }
+      router.push(`/explore/course/${module.courseId}/module/${moduleId}`);
+    } catch (error) {
+      console.error("Failed to complete item before exiting:", error);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-white text-zinc-900">
@@ -277,6 +313,7 @@ const LearnPage = ({ params }: LearnPageProps) => {
         onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
+        disabled={isQuestionActive}
       />
 
       <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center border-b border-zinc-200 bg-white px-4 lg:hidden">
@@ -305,9 +342,12 @@ const LearnPage = ({ params }: LearnPageProps) => {
               sectionId={activeItem.section_id}
               assessmentId={activeItem.content_id}
               type={activeItem.assessment_type || "quiz"}
+              isLastItem={isLastItem}
               onComplete={() => handleItemComplete(activeItem.id, 100)}
               onNext={handleNext}
+              onExit={handleExitModule}
               onNavigate={handleNavigateTo}
+              onQuestionActiveChange={setIsQuestionActive}
             />
           ) : (
             <div className="flex h-[100dvh] w-full items-center justify-center bg-white p-6">
@@ -323,8 +363,14 @@ const LearnPage = ({ params }: LearnPageProps) => {
             pageId={activeItem.content_id || activeItem.id}
             title={activeItem.title}
             initialCompleted={completedItemIds.has(activeItem.id)}
+            isLastItem={isLastItem}
+            isLoadingNext={completeMutation.isPending}
             onComplete={() => handleItemComplete(activeItem.id, 100)}
             onNext={handleNext}
+            onExit={handleExitModule}
+            onGoToAssessment={
+              returnAssessmentItem ? handleReturnToAssessment : undefined
+            }
           />
         )}
       </div>

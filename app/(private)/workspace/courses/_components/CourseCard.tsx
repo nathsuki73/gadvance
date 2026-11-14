@@ -9,6 +9,26 @@ type CourseCardProps = {
   course: Course;
 };
 
+// Helper function to format total minutes into days, hours, and minutes
+const formatDuration = (totalMinutes: number): string => {
+  if (!totalMinutes || totalMinutes <= 0) return "0m";
+
+  const minutesInDay = 24 * 60;
+  const days = Math.floor(totalMinutes / minutesInDay);
+  const remainingMinutesAfterDays = totalMinutes % minutesInDay;
+
+  const hours = Math.floor(remainingMinutesAfterDays / 60);
+  const minutes = remainingMinutesAfterDays % 60;
+
+  const parts: string[] = [];
+
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`);
+
+  return parts.join(" ");
+};
+
 const CourseCard = ({ course }: CourseCardProps) => {
   const router = useRouter();
 
@@ -29,7 +49,7 @@ const CourseCard = ({ course }: CourseCardProps) => {
 
       {/* Header */}
       <div className="relative flex items-start justify-end">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-purple-200 bg-white/60 text-zinc-400 transition-all duration-300 group-hover:border-primary/40 group-hover:bg-primary group-hover:text-white">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-purple-200 bg-white/60 text-zinc-500 transition-all duration-300 group-hover:border-primary/40 group-hover:bg-primary group-hover:text-white">
           <ArrowUpRight
             size={15}
             className="transition-transform duration-300"
@@ -39,9 +59,9 @@ const CourseCard = ({ course }: CourseCardProps) => {
 
       {/* Content */}
       <div className="relative flex-1">
-        <h3 className="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight sm:leading-snug tracking-tight text-zinc-900 transition-colors duration-200 group-hover:text-primary wrap-break-word">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight sm:leading-snug tracking-tight text-zinc-900 transition-colors duration-200 group-hover:text-primary wrap-break-word">
           {course.title}
-        </h3>
+        </h2>
 
         <p className="mt-2 text-xs sm:text-sm leading-relaxed text-zinc-600 line-clamp-2">
           {course.description ||
@@ -57,7 +77,7 @@ const CourseCard = ({ course }: CourseCardProps) => {
         <div className="flex items-center gap-2.5 sm:gap-3.5 text-[11px] sm:text-xs font-medium text-zinc-500">
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
             <Clock3 size={13} strokeWidth={2} className="text-primary/60" />
-            {course.duration || "12h"}
+            {formatDuration(Number(course.duration) || 0)}
           </span>
           <span className="h-1 w-1 rounded-full bg-purple-300 shrink-0" />
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
@@ -67,7 +87,7 @@ const CourseCard = ({ course }: CourseCardProps) => {
         </div>
 
         <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-primary/80 transition-colors duration-200 group-hover:text-primary whitespace-nowrap">
-          view course
+          view plan
         </span>
       </div>
     </article>

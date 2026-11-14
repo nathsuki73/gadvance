@@ -59,17 +59,17 @@ type ModuleOverviewHeaderProps = {
 const getItemIcon = (itemType?: string, assessmentType?: string | null) => {
   if (itemType === "assessment") {
     if (assessmentType === "pre_test") {
-      return <ClipboardCheck size={14} className="text-[#8b5cf6] shrink-0" />;
+      return <ClipboardCheck size={14} className="text-[#7d49f5] shrink-0" />;
     }
     if (assessmentType === "post_test") {
-      return <GraduationCap size={14} className="text-[#8b5cf6] shrink-0" />;
+      return <GraduationCap size={14} className="text-[#7d49f5] shrink-0" />;
     }
-    return <ClipboardCheck size={14} className="text-[#8b5cf6] shrink-0" />;
+    return <ClipboardCheck size={14} className="text-[#7d49f5] shrink-0" />;
   }
   if (itemType === "page") {
-    return <FileText size={14} className="text-[#8b5cf6] shrink-0" />;
+    return <FileText size={14} className="text-[#7d49f5] shrink-0" />;
   }
-  return <PlayCircle size={14} className="text-[#8b5cf6] shrink-0" />;
+  return <PlayCircle size={14} className="text-[#7d49f5] shrink-0" />;
 };
 
 const ModuleOverviewHeader = ({
@@ -89,10 +89,6 @@ const ModuleOverviewHeader = ({
 
   const toggleSection = (id: string) => {
     setOpenSectionIds((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleContinueLearning = () => {
-    router.push(`/learn/${module.id}`);
   };
 
   return (
@@ -117,14 +113,14 @@ const ModuleOverviewHeader = ({
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={handleContinueLearning}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-purple-600/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] cursor-pointer"
+            <Link
+              href={`/learn/${module.id}` as any}
+              prefetch={true}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#7d49f5] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-purple-600/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] cursor-pointer no-underline"
             >
               {hasStarted ? "Continue Learning" : "Start Learning"}
               <ChevronRight size={14} strokeWidth={2.5} />
-            </button>
+            </Link>
           </div>
 
           <div className="mt-12 grid max-w-md grid-cols-2 gap-4">
@@ -169,7 +165,7 @@ const ModuleOverviewHeader = ({
                     >
                       <div className="pr-4">
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-mono font-semibold text-zinc-400">
+                          <span className="text-[11px] font-mono font-semibold text-zinc-500">
                             Section {secIdx + 1}:
                           </span>
                           <h3 className="text-sm font-semibold text-zinc-900 leading-tight">
@@ -177,7 +173,7 @@ const ModuleOverviewHeader = ({
                           </h3>
                         </div>
                         {sec.description && (
-                          <p className="text-[11px] text-zinc-400 font-light mt-0.5 leading-relaxed line-clamp-2">
+                          <p className="text-[11px] text-zinc-500 font-light mt-0.5 leading-relaxed line-clamp-2">
                             {sec.description}
                           </p>
                         )}
@@ -186,12 +182,12 @@ const ModuleOverviewHeader = ({
                       {isOpen ? (
                         <ChevronDown
                           size={16}
-                          className="text-zinc-400 shrink-0"
+                          className="text-zinc-500 shrink-0"
                         />
                       ) : (
                         <ChevronRight
                           size={16}
-                          className="text-zinc-400 shrink-0"
+                          className="text-zinc-500 shrink-0"
                         />
                       )}
                     </button>
@@ -231,7 +227,7 @@ const ModuleOverviewHeader = ({
             ) : (
               <div className="p-8 text-center border border-dashed border-zinc-200 rounded-2xl">
                 <Folder className="mx-auto h-8 w-8 text-zinc-300 mb-2" />
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-zinc-500">
                   No sections found for this module.
                 </p>
               </div>
@@ -251,7 +247,7 @@ type StatCardProps = {
 
 const StatCard = ({ icon, label, value }: StatCardProps) => (
   <div className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-xs">
-    <div className="flex items-center gap-2 text-zinc-400">
+    <div className="flex items-center gap-2 text-zinc-500">
       {icon}
       <span className="text-[9px] font-bold uppercase tracking-[0.25em]">
         {label}

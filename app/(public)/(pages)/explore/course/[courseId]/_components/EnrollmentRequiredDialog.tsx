@@ -25,10 +25,10 @@ const EnrollmentRequiredDialog = ({
         <div className="text-center mb-8">
           <h2 className="text-3xl font-light tracking-tight text-zinc-900 leading-tight lowercase">
             access is{" "}
-            <span className="italic font-serif text-[#8b5cf6]">locked</span>
+            <span className="italic font-serif text-[#7d49f5]">locked</span>
           </h2>
 
-          <p className="mt-4 text-base text-zinc-400 font-light leading-relaxed lowercase">
+          <p className="mt-4 text-base text-zinc-500 font-light leading-relaxed lowercase">
             please enroll in{" "}
             {courseTitle ? (
               <strong className="font-normal text-zinc-600">
@@ -57,7 +57,7 @@ const EnrollmentRequiredDialog = ({
               // Smoothly brings them back up to the top enrollment hero action banner
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="w-full flex items-center justify-center rounded-md bg-[#8b5cf6] px-6 py-4 text-white transition-all hover:bg-[#7c3aed] hover:shadow-lg hover:shadow-purple-50 font-medium lowercase"
+            className="w-full flex items-center justify-center rounded-md bg-[#7d49f5] px-6 py-4 text-white transition-all hover:bg-[#7c3aed] hover:shadow-lg hover:shadow-purple-50 font-medium lowercase"
           >
             enroll now
           </button>
@@ -65,7 +65,7 @@ const EnrollmentRequiredDialog = ({
 
         {/* Subtle branding anchor matching the layout */}
         <div className="mt-8 pt-6 border-t border-zinc-100 text-center">
-          <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-widest">
+          <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-widest">
             gadvance philippines
           </p>
         </div>

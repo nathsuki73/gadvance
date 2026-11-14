@@ -111,7 +111,7 @@ export default function CoursePage({ params }: CoursePageProps) {
         <div className="mx-auto flex max-w-7xl items-center px-6 py-6 md:px-12">
           <button
             onClick={handleBackToCourse}
-            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-primary cursor-pointer"
+            className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 transition-colors hover:text-primary cursor-pointer"
           >
             <ArrowLeft
               size={16}

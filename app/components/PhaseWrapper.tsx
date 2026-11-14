@@ -35,7 +35,7 @@ const PhaseWrapper = ({
         {showBackButton && (
           <button
             onClick={onBackClick}
-            className="w-1/3 py-4 border border-zinc-200 rounded-xl font-bold text-zinc-400 hover:bg-zinc-50 transition-colors"
+            className="w-1/3 py-4 border border-zinc-200 rounded-xl font-bold text-zinc-500 hover:bg-zinc-50 transition-colors"
           >
             Back
           </button>

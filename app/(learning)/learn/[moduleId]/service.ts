@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { getLearningProgress } from "./service-user-progress";
+
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
 export interface SectionItem {
@@ -25,15 +28,6 @@ export interface ModuleStructure {
   title: string;
   description: string;
   sections: Section[];
-}
-
-interface LaravelModuleData {
-  learning_plan_id?: string;
-  learning_plans?: Array<{ id: string }>;
-  id: string;
-  title: string;
-  description?: string;
-  sections?: Section[];
 }
 
 export async function getModuleStructure(
@@ -75,4 +69,28 @@ export async function getModuleStructure(
     description: laravelData.description || "",
     sections: laravelData.sections || [],
   };
+}
+
+/**
+ * 🔑 React Query Hook for Module Structure (Prevents Double-Fetch)
+ */
+export function useModuleStructure(moduleId: string) {
+  return useQuery({
+    queryKey: ["moduleStructure", moduleId],
+    queryFn: () => getModuleStructure(moduleId),
+    enabled: Boolean(moduleId),
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+}
+
+/**
+ * 🔑 React Query Hook for Learning Progress (Prevents Double-Fetch)
+ */
+export function useLearningProgressQuery(moduleId: string) {
+  return useQuery({
+    queryKey: ["learningProgress", moduleId],
+    queryFn: () => getLearningProgress(moduleId),
+    enabled: Boolean(moduleId),
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
 }

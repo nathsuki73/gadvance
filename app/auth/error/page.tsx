@@ -3,7 +3,7 @@
 import React, { use } from "react";
 import Link from "next/link";
 import { AlertCircle, ArrowLeft, Home } from "lucide-react";
-import logoIcon from "@/app/assets/logo.ico";
+import logoIcon from "@/app/assets/logo.png";
 
 export default function AuthErrorPage({
   searchParams,
@@ -70,7 +70,7 @@ export default function AuthErrorPage({
             <div className="flex flex-col gap-3 w-full">
               <Link
                 href="/auth/signin"
-                className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
+                className="w-full bg-[#7d49f5] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 <ArrowLeft size={14} />
                 Back to Sign In
@@ -89,7 +89,7 @@ export default function AuthErrorPage({
       </div>
 
       <div
-        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
+        className="hidden lg:flex lg:w-1/2 bg-[#7d49f5] flex-col items-center justify-center p-12 text-white relative"
         style={{ clipPath: "ellipse(100% 100% at 100% 50%)" }}
       >
         <div className="text-center px-12 relative z-10">

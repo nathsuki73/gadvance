@@ -44,7 +44,7 @@ export function SimpleDropdown({
         className={
           isProfileUpdate
             ? "block text-xs font-semibold text-zinc-700 mb-1.5"
-            : "block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest"
+            : "block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest"
         }
       >
         {label} {!isProfileUpdate && required && <span className="text-red-500">*</span>}
@@ -56,17 +56,17 @@ export function SimpleDropdown({
         onClick={() => setIsOpen(!isOpen)}
         className={
           isProfileUpdate
-            ? "flex w-full items-center justify-between rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+            ? "flex w-full items-center justify-between rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 focus:border-[#7d49f5] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
             : "flex w-full items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 text-sm text-zinc-700"
         }
       >
         <div className="flex items-center gap-2.5">
-          {Icon && <Icon className="h-4 w-4 text-zinc-400 shrink-0" />}
+          {Icon && <Icon className="h-4 w-4 text-zinc-500 shrink-0" />}
           <span className="font-medium">{value}</span>
         </div>
         <ChevronDown
-          className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${
-            isOpen ? "rotate-180 text-[#8b5cf6]" : ""
+          className={`h-4 w-4 text-zinc-500 transition-transform duration-200 ${
+            isOpen ? "rotate-180 text-[#7d49f5]" : ""
           }`}
         />
       </button>
@@ -84,8 +84,8 @@ export function SimpleDropdown({
               }}
               className={`w-full text-left rounded-lg px-3 py-2.5 text-xs font-medium transition-colors ${
                 opt === value
-                  ? "text-[#8b5cf6] bg-violet-50/70"
-                  : "text-zinc-600 hover:bg-violet-50 hover:text-[#8b5cf6]"
+                  ? "text-[#7d49f5] bg-violet-50/70"
+                  : "text-zinc-600 hover:bg-violet-50 hover:text-[#7d49f5]"
               }`}
             >
               {opt}

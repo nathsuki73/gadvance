@@ -17,6 +17,8 @@ import {
   computeAge,
 } from "./service";
 
+const MAX_NAME_LENGTH = 50;
+
 export default function OnboardingPageOne() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -45,19 +47,41 @@ export default function OnboardingPageOne() {
   const fallbackLast =
     rawNameParts.length > 1 ? rawNameParts.slice(1).join(" ") : "";
 
-  const googleFirst = persistedData?.firstName || fallbackFirst;
-  const googleLast = persistedData?.lastName || fallbackLast;
+  const googleFirst = (persistedData?.firstName || fallbackFirst)
+    .replace(/\d/g, "")
+    .slice(0, MAX_NAME_LENGTH);
+  const googleLast = (persistedData?.lastName || fallbackLast)
+    .replace(/\d/g, "")
+    .slice(0, MAX_NAME_LENGTH);
 
   const handleNext = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    const firstName = (formData.get("firstName") as string)?.trim();
-    const lastName = (formData.get("lastName") as string)?.trim();
+    const firstName = (formData.get("firstName") as string)
+      ?.trim()
+      .replace(/\d/g, "");
+    const middleName =
+      (formData.get("middleName") as string)?.trim().replace(/\d/g, "") || "";
+    const lastName = (formData.get("lastName") as string)
+      ?.trim()
+      .replace(/\d/g, "");
     const enteredAgeStr = (formData.get("age") as string)?.trim();
 
     if (!firstName || !lastName) {
       showToast("Please enter your first and last name.", "warning");
+      return;
+    }
+
+    if (
+      firstName.length > MAX_NAME_LENGTH ||
+      lastName.length > MAX_NAME_LENGTH ||
+      middleName.length > MAX_NAME_LENGTH
+    ) {
+      showToast(
+        `Name fields cannot exceed ${MAX_NAME_LENGTH} characters.`,
+        "warning",
+      );
       return;
     }
 
@@ -94,7 +118,7 @@ export default function OnboardingPageOne() {
 
     const pageOneData: OnboardingP1 = {
       firstName,
-      middleName: (formData.get("middleName") as string)?.trim(),
+      middleName,
       lastName,
       age: ageNumber.toString(),
       gender: gender.trim(),
@@ -119,12 +143,16 @@ export default function OnboardingPageOne() {
             label="First Name"
             name="firstName"
             defaultValue={googleFirst}
+            maxLength={MAX_NAME_LENGTH}
+            disallowNumbers={true}
             required
           />
           <InputField
             label="Last Name"
             name="lastName"
             defaultValue={googleLast}
+            maxLength={MAX_NAME_LENGTH}
+            disallowNumbers={true}
             required
           />
         </div>
@@ -132,7 +160,11 @@ export default function OnboardingPageOne() {
         <InputField
           label="Middle Name"
           name="middleName"
-          defaultValue={persistedData?.middleName || ""}
+          defaultValue={(persistedData?.middleName || "")
+            .replace(/\d/g, "")
+            .slice(0, MAX_NAME_LENGTH)}
+          maxLength={MAX_NAME_LENGTH}
+          disallowNumbers={true}
           placeholder="Optional"
         />
 

@@ -16,15 +16,17 @@ import {
   fetchRegions,
   fetchProvinces,
   fetchMunCities,
-  fetchBarangays,
+  useBarangays,
   RegionItem,
   ProvinceItem,
   MunCityItem,
-  BarangayItem,
 } from "./service";
 
 const COUNTRIES = ["Philippines"];
 const DIAL_CODES = ["+63"];
+
+const MAX_ADDRESS_LENGTH = 200;
+const POSTAL_CODE_LENGTH = 4;
 
 const formatPhoneNumber = (value: string): string => {
   let digits = value.replace(/\D/g, "");
@@ -44,6 +46,10 @@ export default function ContactLocation() {
     const initial = getInitialContactData();
     return {
       ...initial,
+      address: (initial.address || "").slice(0, MAX_ADDRESS_LENGTH),
+      postalCode: (initial.postalCode || "")
+        .replace(/\D/g, "")
+        .slice(0, POSTAL_CODE_LENGTH),
       phoneNumber: formatPhoneNumber(initial.phoneNumber || ""),
     };
   });
@@ -61,35 +67,43 @@ export default function ContactLocation() {
 
   const provinces = useMemo<ProvinceItem[]>(
     () => (formData.regionCode ? fetchProvinces(formData.regionCode) : []),
-    [formData.regionCode]
+    [formData.regionCode],
   );
 
   const selectedProvince = useMemo(
     () => provinces.find((p) => p.provCode === formData.provinceCode),
-    [provinces, formData.provinceCode]
+    [provinces, formData.provinceCode],
   );
 
   const isHUC = selectedProvince?.cityClass === "HUC";
 
   const muncities = useMemo<MunCityItem[]>(
     () => (formData.provinceCode ? fetchMunCities(formData.provinceCode) : []),
-    [formData.provinceCode]
+    [formData.provinceCode],
   );
 
   const effectiveMunCityCode = isHUC
     ? muncities[0]?.munCityCode
     : formData.munCityCode;
 
-  const barangays = useMemo<BarangayItem[]>(
-    () => (effectiveMunCityCode ? fetchBarangays(effectiveMunCityCode) : []),
-    [effectiveMunCityCode]
-  );
+  const {
+    barangays,
+    loading: barangaysLoading,
+    failed: barangaysFailed,
+  } = useBarangays(effectiveMunCityCode);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (name === "postalCode") {
-      const sanitized = value.replace(/\D/g, "").slice(0, 4);
+      const sanitized = value.replace(/\D/g, "").slice(0, POSTAL_CODE_LENGTH);
       setFormData((prev) => ({ ...prev, postalCode: sanitized }));
+      return;
+    }
+    if (name === "address") {
+      setFormData((prev) => ({
+        ...prev,
+        address: value.slice(0, MAX_ADDRESS_LENGTH),
+      }));
       return;
     }
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -113,13 +127,24 @@ export default function ContactLocation() {
     if (!formData.address.trim())
       return showToast("Please enter your Address Line.", "warning");
 
+    // ─── ADDRESS LINE VALIDATION ───
+    if (formData.address.length > MAX_ADDRESS_LENGTH) {
+      return showToast(
+        `Address Line cannot exceed ${MAX_ADDRESS_LENGTH} characters.`,
+        "warning",
+      );
+    }
+
     // ─── POSTAL CODE VALIDATION ───
     const trimmedPostal = formData.postalCode.trim();
     if (!trimmedPostal) {
       return showToast("Please enter your Postal Code.", "warning");
     }
     if (!/^\d{4}$/.test(trimmedPostal)) {
-      return showToast("Postal Code must be exactly 4 numeric digits.", "warning");
+      return showToast(
+        "Postal Code must be exactly 4 numeric digits.",
+        "warning",
+      );
     }
 
     // ─── CELLPHONE NUMBER VALIDATION ───
@@ -130,11 +155,10 @@ export default function ContactLocation() {
     if (!/^9\d{9}$/.test(rawDigits)) {
       return showToast(
         "Mobile Number must be 10 digits starting with 9 (e.g., 912-345-6789).",
-        "warning"
+        "warning",
       );
     }
 
-    // Pass only the raw 10 digits to prevent duplicate '+63'
     saveContactData({
       ...formData,
       postalCode: trimmedPostal,
@@ -270,9 +294,19 @@ export default function ContactLocation() {
         <SearchableDropdown
           label="Barangay"
           required
-          disabled={!formData.provinceCode || (!isHUC && !formData.munCityCode)}
+          disabled={
+            !formData.provinceCode || (!isHUC && !formData.munCityCode) ||
+            barangaysLoading ||
+            barangaysFailed
+          }
           placeholder="Search Barangay"
-          disabledPlaceholder="Select Location first"
+          disabledPlaceholder={
+            !formData.provinceCode || (!isHUC && !formData.munCityCode)
+              ? "Select Location first"
+              : barangaysFailed
+                ? "Could not load barangays. Retrying..."
+                : "Loading barangays..."
+          }
           query={barangayQuery}
           onQueryChange={setBarangayQuery}
           items={barangays}
@@ -295,23 +329,35 @@ export default function ContactLocation() {
 
         {/* Address Line */}
         <div>
-          <label className="block text-[10px] font-bold text-zinc-400 mb-1.5 uppercase tracking-widest">
-            Address Line <span className="text-red-500">*</span>
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+              Address Line <span className="text-red-500">*</span>
+            </label>
+            <span
+              className={`text-[10px] tabular-nums transition-colors ${
+                formData.address.length >= MAX_ADDRESS_LENGTH
+                  ? "font-semibold text-red-500"
+                  : "text-zinc-500"
+              }`}
+            >
+              {formData.address.length} / {MAX_ADDRESS_LENGTH}
+            </span>
+          </div>
           <input
             type="text"
             name="address"
+            maxLength={MAX_ADDRESS_LENGTH}
             value={formData.address}
             onChange={handleChange}
             placeholder="House No., Street Name, Subdivision"
-            className="w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#8b5cf6] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all"
+            className="w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#7d49f5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all"
           />
         </div>
 
         {/* Postal Code & Phone Number */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] font-bold text-zinc-400 mb-1.5 uppercase tracking-widest">
+            <label className="block text-[10px] font-bold text-zinc-500 mb-1.5 uppercase tracking-widest">
               Postal Code <span className="text-red-500">*</span>
             </label>
             <input
@@ -321,8 +367,8 @@ export default function ContactLocation() {
               value={formData.postalCode}
               onChange={handleChange}
               placeholder="4000"
-              maxLength={4}
-              className="w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#8b5cf6] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all"
+              maxLength={POSTAL_CODE_LENGTH}
+              className="w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 text-sm text-zinc-800 placeholder-zinc-300 focus:border-[#7d49f5] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-50/50 transition-all"
             />
           </div>
 

@@ -76,7 +76,7 @@ export default function ModuleProtectedLayout({
   if (status === "loading" || status === "unauthenticated") {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-6">
-        <div className="w-8 h-8 border-2 border-[#8b5cf6] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#7d49f5] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }

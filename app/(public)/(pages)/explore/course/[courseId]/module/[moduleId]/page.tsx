@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, use, useRef } from "react";
 import { notFound, usePathname, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Loader2,
@@ -17,8 +18,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-import { getModule } from "./service";
 import { getLearningPlanDetails } from "../../service";
+import Link from "next/link";
 
 export type SectionItem = {
   id: string;
@@ -53,14 +54,14 @@ export type ModuleResponse = {
 const getItemIcon = (itemType?: string, assessmentType?: string | null) => {
   if (itemType === "assessment") {
     if (assessmentType === "pre_test" || assessmentType === "post_test") {
-      return <GraduationCap size={15} className="text-[#8b5cf6] shrink-0" />;
+      return <GraduationCap size={15} className="text-[#7d49f5] shrink-0" />;
     }
-    return <ClipboardCheck size={15} className="text-[#8b5cf6] shrink-0" />;
+    return <ClipboardCheck size={15} className="text-[#7d49f5] shrink-0" />;
   }
   if (itemType === "page") {
-    return <FileText size={15} className="text-[#8b5cf6] shrink-0" />;
+    return <FileText size={15} className="text-[#7d49f5] shrink-0" />;
   }
-  return <PlayCircle size={15} className="text-[#8b5cf6] shrink-0" />;
+  return <PlayCircle size={15} className="text-[#7d49f5] shrink-0" />;
 };
 
 export default function ModulePage({
@@ -72,9 +73,6 @@ export default function ModulePage({
   const moduleId = resolvedParams.moduleId;
   const courseId = resolvedParams.courseId;
 
-  const [modules, setModules] = useState<ModuleResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
   const overviewRef = useRef<HTMLDivElement | null>(null);
@@ -88,54 +86,39 @@ export default function ModulePage({
     router.push(courseLink);
   };
 
+  // Derive course ID safely for the query key
+  let derivedCourseId = courseId;
+  if (!derivedCourseId) {
+    const parts = pathname.split("/course/")[1];
+    if (parts) derivedCourseId = parts.split("/")[0];
+  }
+
+  // TanStack Query handles caching, background re-fetching, and prevents full reloads on navigation
+  const {
+    data: modules = [],
+    isLoading: loading,
+    isError: error,
+  } = useQuery<ModuleResponse[]>({
+    queryKey: ["course-modules", derivedCourseId],
+    queryFn: async () => {
+      if (!derivedCourseId) return [];
+      const courseRes = await getLearningPlanDetails(derivedCourseId);
+      return (courseRes.data?.modules || []) as ModuleResponse[];
+    },
+    enabled: Boolean(derivedCourseId),
+    staleTime: 1000 * 60 * 5, // Cache stays fresh for 5 minutes (prevents refetching when going back/forth)
+    refetchOnWindowFocus: false,
+  });
+
+  // Sync activeIndex when modules load or moduleId changes
   useEffect(() => {
-    const fetchAllModules = async () => {
-      try {
-        setLoading(true);
-
-        let derivedCourseId = courseId;
-        if (!derivedCourseId) {
-          const parts = pathname.split("/course/")[1];
-          if (parts) derivedCourseId = parts.split("/")[0];
-        }
-
-        if (derivedCourseId) {
-          const courseRes = await getLearningPlanDetails(derivedCourseId);
-          const rawModules = courseRes?.data?.modules || [];
-
-          if (Array.isArray(rawModules) && rawModules.length > 0) {
-            const moduleRequests = rawModules.map((m: any) =>
-              getModule(m.id || m.module_id || "")
-            );
-            const settled = await Promise.all(moduleRequests);
-            const valid = settled
-              .filter((res) => res.success && res.data)
-              .map((res) => res.data as ModuleResponse);
-
-            if (valid.length > 0) {
-              setModules(valid);
-              const idx = valid.findIndex((m) => m.id === moduleId);
-              setActiveIndex(idx >= 0 ? idx : 0);
-              return;
-            }
-          }
-        }
-
-        const result = await getModule(moduleId);
-        if (!result.success || !result.data)
-          throw new Error("Failed to fetch module");
-        setModules([result.data as ModuleResponse]);
-        setActiveIndex(0);
-      } catch (err) {
-        console.error("Failed to load modules:", err);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllModules();
-  }, [moduleId, courseId, pathname]);
+    if (modules.length > 0) {
+      const idx = modules.findIndex(
+        (m: any) => String(m.id || m.module_id) === String(moduleId),
+      );
+      setActiveIndex(idx >= 0 ? idx : 0);
+    }
+  }, [modules, moduleId]);
 
   const handlePrev = (e?: React.MouseEvent) => {
     e?.preventDefault();
@@ -172,12 +155,12 @@ export default function ModulePage({
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
-        <Loader2 className="animate-spin text-[#8b5cf6]" size={32} />
+        <Loader2 className="animate-spin text-[#7d49f5]" size={32} />
       </div>
     );
   }
 
-  if (error || modules.length === 0) notFound();
+  if (error || (!loading && modules.length === 0)) notFound();
 
   return (
     <main className="w-full min-h-screen bg-white text-zinc-900 pb-20 flex flex-col justify-between">
@@ -195,7 +178,7 @@ export default function ModulePage({
               size={14}
               className="transition-transform duration-200 group-hover:-translate-x-1"
             />
-            <span>Back to My Courses</span>
+            <span>Back to My Learning Plans</span>
           </button>
         </div>
 
@@ -226,25 +209,24 @@ export default function ModulePage({
                           </p>
 
                           <div className="mt-6 sm:mt-8">
-                            <button
-                              type="button"
-                              onClick={() => router.push(`/learn/${mod.id}`)}
-                              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-purple-500/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] cursor-pointer"
+                            <Link
+                              href={`/learn/${mod.id}`}
+                              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#7d49f5] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-purple-500/20 transition-all hover:bg-[#7c3aed] active:scale-[0.98] cursor-pointer"
                             >
                               {modProgress > 0
                                 ? "Continue Learning"
                                 : "Start Learning"}
                               <ChevronRight size={14} strokeWidth={2.5} />
-                            </button>
+                            </Link>
                           </div>
 
                           {/* Stat Cards */}
                           <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-3 sm:gap-4 max-w-md">
                             <div className="rounded-2xl border border-zinc-100 bg-white p-3.5 sm:p-4 shadow-xs">
-                              <div className="flex items-center gap-2 text-zinc-400">
+                              <div className="flex items-center gap-2 text-zinc-500">
                                 <BookOpen
                                   size={16}
-                                  className="text-[#8b5cf6]"
+                                  className="text-[#7d49f5]"
                                 />
                                 <span className="text-[9px] font-bold uppercase tracking-[0.2em]">
                                   SECTIONS
@@ -256,8 +238,8 @@ export default function ModulePage({
                             </div>
 
                             <div className="rounded-2xl border border-zinc-100 bg-white p-3.5 sm:p-4 shadow-xs">
-                              <div className="flex items-center gap-2 text-zinc-400">
-                                <Clock3 size={16} className="text-[#8b5cf6]" />
+                              <div className="flex items-center gap-2 text-zinc-500">
+                                <Clock3 size={16} className="text-[#7d49f5]" />
                                 <span className="text-[9px] font-bold uppercase tracking-[0.2em]">
                                   PROGRESS
                                 </span>
@@ -277,8 +259,9 @@ export default function ModulePage({
                               <h2 className="text-lg sm:text-xl font-bold tracking-tight text-zinc-900">
                                 Overview
                               </h2>
-                              <p className="text-xs text-zinc-400 font-light mt-0.5">
-                                A structured overview of the lessons and assessments.
+                              <p className="text-xs text-zinc-500 font-light mt-0.5">
+                                A structured overview of the lessons and
+                                assessments.
                               </p>
                             </div>
                           </div>
@@ -306,7 +289,7 @@ export default function ModulePage({
                                           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2">
                                             {getItemIcon(
                                               item.item_type,
-                                              item.assessment_type
+                                              item.assessment_type,
                                             )}
                                             <span className="font-medium text-zinc-600 truncate">
                                               {item.title}
@@ -320,14 +303,14 @@ export default function ModulePage({
                                       ))}
                                     </div>
                                   ) : (
-                                    <div className="px-4 sm:px-6 py-3 text-xs text-zinc-400 font-light">
+                                    <div className="px-4 sm:px-6 py-3 text-xs text-zinc-500 font-light">
                                       No items in this section.
                                     </div>
                                   )}
                                 </div>
                               ))
                             ) : (
-                              <div className="rounded-2xl border border-dashed border-zinc-200 p-6 sm:p-8 text-center text-xs text-zinc-400 font-light">
+                              <div className="rounded-2xl border border-dashed border-zinc-200 p-6 sm:p-8 text-center text-xs text-zinc-500 font-light">
                                 No sections found for this module.
                               </div>
                             )}
@@ -347,7 +330,7 @@ export default function ModulePage({
               <div className="flex items-center justify-between px-1">
                 <div>
                   <h3 className="text-lg sm:text-xl font-bold tracking-tight text-zinc-900">
-                    Course Modules
+                    Learning Plan Modules
                   </h3>
                   <p className="text-xs text-zinc-500 font-light mt-0.5">
                     Click any module card to inspect it in the overview above.
@@ -372,7 +355,7 @@ export default function ModulePage({
                   <ChevronLeft size={20} strokeWidth={2.4} />
                 </button>
 
-                {/* Module Cards Track (Fixed wide 2-column layout on desktop, 1 per view on mobile, swipe disabled) */}
+                {/* Module Cards Track */}
                 <div
                   ref={listScrollRef}
                   style={{
@@ -387,7 +370,7 @@ export default function ModulePage({
                     const totalLessons =
                       m.sections?.reduce(
                         (acc, sec) => acc + (sec.items?.length || 0),
-                        0
+                        0,
                       ) || 0;
 
                     return (
@@ -397,7 +380,7 @@ export default function ModulePage({
                         onClick={() => handleSelectModule(idx)}
                         className={`group relative flex flex-col justify-between rounded-3xl p-6 sm:p-7 text-left transition-all duration-300 cursor-pointer snap-center flex-[0_0_100%] sm:flex-[0_0_calc((100%-1.5rem)/2)] h-[210px] sm:h-[225px] overflow-hidden ${
                           isCurrent
-                            ? "bg-white border-2 border-[#8b5cf6] shadow-lg shadow-purple-500/10"
+                            ? "bg-white border-2 border-[#7d49f5] shadow-lg shadow-purple-500/10"
                             : "bg-white/80 border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md"
                         }`}
                       >
@@ -407,7 +390,7 @@ export default function ModulePage({
                             <span
                               className={`font-mono text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 sm:py-1 rounded-lg shrink-0 ${
                                 isCurrent
-                                  ? "bg-[#8b5cf6] text-white"
+                                  ? "bg-[#7d49f5] text-white"
                                   : "bg-zinc-100 text-zinc-600 group-hover:bg-zinc-200/80"
                               }`}
                             >
@@ -426,28 +409,30 @@ export default function ModulePage({
                           </div>
 
                           {/* Title */}
-                          <h4 className="text-base sm:text-lg font-bold text-zinc-900 group-hover:text-[#8b5cf6] transition-colors truncate block w-full mt-1">
+                          <h4 className="text-base sm:text-lg font-bold text-zinc-900 group-hover:text-[#7d49f5] transition-colors truncate block w-full mt-1">
                             {m.title}
                           </h4>
 
-                          {/* Fixed 2-line height Description with ellipsis */}
+                          {/* Description */}
                           <p className="mt-1.5 sm:mt-2 text-xs font-light leading-relaxed text-zinc-500 h-9 line-clamp-2 break-all overflow-hidden text-ellipsis">
-                            {m.about ||
-                              m.description ||
-                              "this is a test description for the module card. it should be truncated after 2 lines and show an ellipsis if it exceeds the height limit."}
+                            {m.about || m.description || "..."}
                           </p>
                         </div>
 
                         {/* Card Bottom Meta */}
-                        <div className="w-full mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400 shrink-0">
+                        <div className="w-full mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-500 shrink-0">
                           <div className="flex items-center gap-3 truncate pr-1">
                             <span className="flex items-center gap-1 shrink-0">
-                              <BookOpen size={13} className="text-[#8b5cf6]" />
-                              {m.sections?.length == 1 ? `${m.sections?.length} Section` : `${m.sections?.length} Sections`}
+                              <BookOpen size={13} className="text-[#7d49f5]" />
+                              {m.sections?.length == 1
+                                ? `${m.sections?.length} Section`
+                                : `${m.sections?.length} Sections`}
                             </span>
                             <span className="flex items-center gap-1 shrink-0">
-                              <Layers size={13} className="text-[#8b5cf6]" />
-                              {totalLessons == 1 ? `${totalLessons} Lesson` : `${totalLessons} Lessons`}
+                              <Layers size={13} className="text-[#7d49f5]" />
+                              {totalLessons == 1
+                                ? `${totalLessons} Lesson`
+                                : `${totalLessons} Lessons`}
                             </span>
                           </div>
                         </div>
@@ -481,7 +466,7 @@ export default function ModulePage({
                     onClick={() => handleSelectModule(idx)}
                     className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                       idx === activeIndex
-                        ? "w-8 bg-[#8b5cf6]"
+                        ? "w-8 bg-[#7d49f5]"
                         : "w-2 bg-zinc-200 hover:bg-zinc-300"
                     }`}
                     aria-label={`Go to module ${idx + 1}`}

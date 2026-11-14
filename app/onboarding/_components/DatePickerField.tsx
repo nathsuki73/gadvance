@@ -110,7 +110,7 @@ export function DatePickerField({
 
   return (
     <div>
-      <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+      <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
@@ -120,18 +120,18 @@ export function DatePickerField({
         onClick={handleOpen}
         className={`w-full px-4 py-3.5 rounded-xl border transition-all text-sm flex items-center justify-between text-left select-none ${
           isOpen
-            ? "border-[#8b5cf6] ring-4 ring-violet-50/50 bg-white text-zinc-800"
+            ? "border-[#7d49f5] ring-4 ring-violet-50/50 bg-white text-zinc-800"
             : "border-zinc-100 bg-zinc-50/50 text-zinc-600 hover:border-zinc-200"
         }`}
       >
-        <span className={value ? "text-zinc-800 font-medium" : "text-zinc-400"}>
+        <span className={value ? "text-zinc-800 font-medium" : "text-zinc-500"}>
           {value ? formatDisplayDate(value) : "Select date"}
         </span>
 
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className={`w-4 h-4 transition-colors ${
-            isOpen ? "text-[#8b5cf6]" : "text-zinc-400"
+            isOpen ? "text-[#7d49f5]" : "text-zinc-500"
           }`}
           fill="none"
           viewBox="0 0 24 24"
@@ -153,13 +153,13 @@ export function DatePickerField({
 
           <div className="relative w-full max-w-xs bg-white border border-zinc-100 rounded-3xl shadow-2xl z-10 p-5 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-zinc-100">
-              <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+              <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
                 Select Date of Birth
               </span>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
+                className="p-1 rounded-lg text-zinc-500 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
               >
                 <svg
                   className="w-5 h-5"
@@ -181,7 +181,7 @@ export function DatePickerField({
               <select
                 value={calendarMonth}
                 onChange={(e) => setCalendarMonth(Number(e.target.value))}
-                className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-700 focus:outline-none focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50 cursor-pointer"
+                className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-700 focus:outline-none focus:border-[#7d49f5] focus:ring-2 focus:ring-violet-50 cursor-pointer"
               >
                 {MONTH_NAMES.map((m, idx) => (
                   <option key={m} value={idx}>
@@ -193,7 +193,7 @@ export function DatePickerField({
               <select
                 value={calendarYear}
                 onChange={(e) => setCalendarYear(Number(e.target.value))}
-                className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-700 focus:outline-none focus:border-[#8b5cf6] focus:ring-2 focus:ring-violet-50 cursor-pointer"
+                className="w-full bg-zinc-50 border border-zinc-100 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-700 focus:outline-none focus:border-[#7d49f5] focus:ring-2 focus:ring-violet-50 cursor-pointer"
               >
                 {yearsList.map((y) => (
                   <option key={y} value={y}>
@@ -205,7 +205,7 @@ export function DatePickerField({
 
             <div className="grid grid-cols-7 text-center mb-2">
               {DAYS_OF_WEEK.map((day) => (
-                <span key={day} className="text-[11px] font-bold text-zinc-400">
+                <span key={day} className="text-[11px] font-bold text-zinc-500">
                   {day}
                 </span>
               ))}
@@ -231,8 +231,8 @@ export function DatePickerField({
                     onClick={() => setTempDay(dayNum)}
                     className={`h-9 w-9 mx-auto rounded-xl flex items-center justify-center transition-all ${
                       isSelected
-                        ? "bg-[#8b5cf6] text-white font-bold shadow-md shadow-violet-200 scale-105"
-                        : "text-zinc-600 hover:bg-violet-50 hover:text-[#8b5cf6]"
+                        ? "bg-[#7d49f5] text-white font-bold shadow-md shadow-violet-200 scale-105"
+                        : "text-zinc-600 hover:bg-violet-50 hover:text-[#7d49f5]"
                     }`}
                   >
                     {dayNum}
@@ -252,7 +252,7 @@ export function DatePickerField({
               <button
                 type="button"
                 onClick={handleSave}
-                className="w-1/2 py-2.5 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-xs font-bold shadow-md shadow-violet-100 transition-all"
+                className="w-1/2 py-2.5 rounded-xl bg-[#7d49f5] hover:bg-[#7c3aed] text-white text-xs font-bold shadow-md shadow-violet-100 transition-all"
               >
                 Save
               </button>

@@ -23,7 +23,7 @@ const CourseSearchBar = ({ value, onChange, onSearch }: CourseSearchBarProps) =>
       className="group relative max-w-2xl mx-auto"
     >
       <Search
-        className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 transition-colors group-focus-within:text-[#8b5cf6]"
+        className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 transition-colors group-focus-within:text-[#7d49f5]"
         size={18}
         strokeWidth={2}
       />
@@ -37,14 +37,14 @@ const CourseSearchBar = ({ value, onChange, onSearch }: CourseSearchBarProps) =>
         text-sm text-zinc-900 shadow-sm transition-all duration-300 lowercase
         placeholder:text-zinc-300 placeholder:font-light
         hover:border-zinc-200 hover:shadow-lg hover:shadow-violet-100/20
-        focus:border-[#8b5cf6] focus:outline-none focus:ring-4 focus:ring-violet-50/50
+        focus:border-[#7d49f5] focus:outline-none focus:ring-4 focus:ring-violet-50/50
         md:py-3.5 md:text-base"
       />
 
       {/* Button is now type="submit" and visible on all screens */}
       <button 
         type="submit"
-        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-[#8b5cf6] px-5 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-[#7c3aed] active:scale-95"
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-[#7d49f5] px-5 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-[#7c3aed] active:scale-95"
       >
         find
       </button>

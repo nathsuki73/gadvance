@@ -69,7 +69,7 @@ export function SearchableDropdown<T>({
         className={
           isProfileUpdate
             ? "block text-xs font-semibold text-zinc-700 mb-1.5"
-            : "block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest"
+            : "block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest"
         }
       >
         {label} {!isProfileUpdate && required && <span className="text-red-500">*</span>}
@@ -89,13 +89,13 @@ export function SearchableDropdown<T>({
           placeholder={disabled ? disabledPlaceholder : placeholder}
           className={
             isProfileUpdate
-              ? "w-full rounded-xl border border-zinc-200 bg-white p-3.5 pr-10 text-sm text-zinc-800 placeholder-zinc-400 cursor-pointer select-none disabled:bg-zinc-100/50 disabled:cursor-not-allowed focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
-              : "w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 pr-10 text-sm text-zinc-800 placeholder-zinc-300 cursor-pointer select-none disabled:bg-zinc-100/50 disabled:cursor-not-allowed focus:border-[#8b5cf6] focus:bg-white focus:outline-none transition-colors"
+              ? "w-full rounded-xl border border-zinc-200 bg-white p-3.5 pr-10 text-sm text-zinc-800 placeholder-zinc-400 cursor-pointer select-none disabled:bg-zinc-100/50 disabled:cursor-not-allowed focus:border-[#7d49f5] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+              : "w-full rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 sm:p-4 pr-10 text-sm text-zinc-800 placeholder-zinc-300 cursor-pointer select-none disabled:bg-zinc-100/50 disabled:cursor-not-allowed focus:border-[#7d49f5] focus:bg-white focus:outline-none transition-colors"
           }
         />
         <ChevronDown 
-          className={`absolute right-3.5 h-4 w-4 text-zinc-400 pointer-events-none transition-transform duration-200 ${
-            isOpen ? "rotate-180 text-[#8b5cf6]" : ""
+          className={`absolute right-3.5 h-4 w-4 text-zinc-500 pointer-events-none transition-transform duration-200 ${
+            isOpen ? "rotate-180 text-[#7d49f5]" : ""
           }`} 
         />
       </div>
@@ -118,7 +118,7 @@ export function SearchableDropdown<T>({
                   }}
                   className={`w-full text-left rounded-lg px-3 py-2.5 text-xs transition-colors ${
                     isSelected
-                      ? "bg-violet-50 text-[#8b5cf6] font-semibold"
+                      ? "bg-violet-50 text-[#7d49f5] font-semibold"
                       : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
                   }`}
                 >
@@ -127,7 +127,7 @@ export function SearchableDropdown<T>({
               );
             })
           ) : (
-            <div className="px-3 py-2.5 text-xs text-zinc-400 text-center">
+            <div className="px-3 py-2.5 text-xs text-zinc-500 text-center">
               No options available
             </div>
           )}

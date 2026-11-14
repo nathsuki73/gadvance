@@ -83,7 +83,7 @@ export default function Notification({ open, onCloseAction }: Props) {
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-zinc-900">{n.title}</p>
-                  <span className="text-xs text-zinc-400">{n.time}</span>
+                  <span className="text-xs text-zinc-500">{n.time}</span>
                 </div>
                 <p className="mt-1 text-xs text-zinc-500">{n.body}</p>
               </div>

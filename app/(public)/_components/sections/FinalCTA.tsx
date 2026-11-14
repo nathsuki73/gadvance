@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useEffect, useRef } from "react";
 import { ArrowUpRight } from "lucide-react";
 
@@ -68,27 +69,22 @@ const FinalCTA = () => {
 
         {/* Description Animation */}
         <p className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-500 ease-out will-change-transform mx-auto mt-12 max-w-2xl text-xl font-light leading-relaxed text-zinc-500">
-          whether you are an institution looking to transform your culture or a
-          student ready to lead, gadvance provides the roadmap to get there.
+          whether you are a learner building your understanding of gender and
+          development or an organization training its people, gadvance adapts
+          each assessment to the learner.
         </p>
 
         {/* Buttons Animation - Scale and Fade */}
         <div className="scroll-anim opacity-0 translate-y-10 scale-95 transition-all duration-1000 delay-700 ease-out will-change-transform mt-16 flex flex-col items-center justify-center gap-6 sm:flex-row">
-          <button className="group relative flex w-full items-center justify-center gap-3 rounded-full bg-primary px-10 py-5 text-white transition-all hover:bg-primary-hover hover:shadow-xl hover:shadow-sky-100 active:scale-95 sm:w-auto">
+          <Link
+            href="/explore"
+            className="group relative flex w-full items-center justify-center gap-3 rounded-full bg-primary px-10 py-5 text-white transition-all hover:bg-primary-hover hover:shadow-xl hover:shadow-sky-100 active:scale-95 sm:w-auto"
+          >
             <span className="text-lg font-medium lowercase">
-              start your enrollment
+              explore courses
             </span>
-            <ArrowUpRight
-              size={20}
-              // className="transition-transform group-hover:-translate-y-1 group-hover:translate-x-1"
-            />
-          </button>
-
-          {/* <button className="w-full rounded-full border border-zinc-200 bg-white px-10 py-5 text-zinc-600 transition-all hover:border-zinc-300 hover:bg-zinc-50 active:scale-95 sm:w-auto">
-            <span className="text-lg font-medium lowercase">
-              contact our partnership team
-            </span>
-          </button> */}
+            <ArrowUpRight size={20} aria-hidden="true" />
+          </Link>
         </div>
       </div>
     </section>

@@ -1,6 +1,5 @@
-// app/(learn)/layout.tsx
-
 import React from "react";
+import { ToastProvider } from "@/app/components/context/ToastContext";
 
 type LearnLayoutProps = {
   children: React.ReactNode;
@@ -8,7 +7,9 @@ type LearnLayoutProps = {
 
 const LearnLayout = ({ children }: LearnLayoutProps) => {
   return (
-    <div className="min-h-screen text-zinc-900 antialiased">{children}</div>
+    <ToastProvider>
+      <div className="min-h-screen text-zinc-900 antialiased">{children}</div>
+    </ToastProvider>
   );
 };
 

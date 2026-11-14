@@ -28,7 +28,7 @@ export const DonutProgress = ({
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   const isComplete = percentage === 100;
-  const activeRingClass = isComplete ? "text-emerald-500" : "text-[#8b5cf6]";
+  const activeRingClass = isComplete ? "text-emerald-500" : "text-[#7d49f5]";
 
   return (
     <div

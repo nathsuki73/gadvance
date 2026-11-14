@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Mail, CheckCircle2, Loader2 } from "lucide-react";
 import { sendForgotPasswordLink } from "./actions"; // Updated action call
-import logoIcon from "@/app/assets/logo.ico";
+import logoIcon from "@/app/assets/logo.png";
 import { useToast } from "@/app/components/context/ToastContext";
 
 const ForgotPassword = () => {
@@ -84,14 +84,14 @@ const ForgotPassword = () => {
               <h1 className="text-3xl font-bold text-zinc-900 mb-2 mt-16 lg:mt-0 tracking-tight">
                 Forgot your password?
               </h1>
-              <p className="text-zinc-400 mb-8 text-sm font-light leading-relaxed">
+              <p className="text-zinc-500 mb-8 text-sm font-light leading-relaxed">
                 Enter your registered email address below and we&apos;ll send
                 you a secure link to reset your password.
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-widest">
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">
                     Email Address
                     <span className="text-red-500 ml-1">*</span>
                   </label>
@@ -102,7 +102,7 @@ const ForgotPassword = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="sample@gmail.com"
-                      className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#8b5cf6] transition-all text-zinc-700 placeholder-zinc-300 bg-zinc-50/50"
+                      className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-zinc-100 focus:outline-none focus:ring-4 focus:ring-violet-50/50 focus:border-[#7d49f5] transition-all text-zinc-700 placeholder-zinc-300 bg-zinc-50/50"
                     />
                     <Mail
                       size={18}
@@ -114,7 +114,7 @@ const ForgotPassword = () => {
                 <button
                   type="submit"
                   disabled={loading || !email.trim()}
-                  className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2"
+                  className="w-full bg-[#7d49f5] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-violet-100 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
@@ -145,7 +145,7 @@ const ForgotPassword = () => {
                   <span className="font-bold text-zinc-900">{email}</span>,
                   we&apos;ve sent a password reset link to your inbox.
                 </p>
-                <p className="text-xs text-zinc-400 mt-3 leading-relaxed">
+                <p className="text-xs text-zinc-500 mt-3 leading-relaxed">
                   Be sure to check your spam or junk folder if you don&apos;t
                   see it within a few minutes.
                 </p>
@@ -156,12 +156,12 @@ const ForgotPassword = () => {
                 {canResend ? (
                   <button
                     onClick={handleResend}
-                    className="text-[#8b5cf6] font-bold text-xs uppercase tracking-widest hover:underline"
+                    className="text-[#7d49f5] font-bold text-xs uppercase tracking-widest hover:underline"
                   >
                     Resend Reset Link
                   </button>
                 ) : (
-                  <p className="text-zinc-400 text-xs font-medium">
+                  <p className="text-zinc-500 text-xs font-medium">
                     Resend link in{" "}
                     <span className="text-zinc-900 font-mono font-bold">
                       {timer}s
@@ -175,7 +175,7 @@ const ForgotPassword = () => {
           <div className="mt-8 pt-6 border-t border-zinc-100">
             <Link
               href="/auth/signin"
-              className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-600 transition-colors"
+              className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500 hover:text-zinc-600 transition-colors"
             >
               <ArrowLeft
                 size={14}
@@ -189,7 +189,7 @@ const ForgotPassword = () => {
 
       {/* Right Side: Decorative Panel */}
       <div
-        className="hidden lg:flex lg:w-1/2 bg-[#8b5cf6] flex-col items-center justify-center p-12 text-white relative"
+        className="hidden lg:flex lg:w-1/2 bg-[#7d49f5] flex-col items-center justify-center p-12 text-white relative"
         style={{
           clipPath: "ellipse(100% 100% at 100% 50%)",
         }}

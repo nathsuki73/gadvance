@@ -1,4 +1,4 @@
-import { getSession } from "next-auth/react";
+import { apiFetch } from "@/app/lib/api-client";
 import {
   AssessmentViewData,
   Question,
@@ -7,21 +7,24 @@ import {
   AssessmentSettings,
 } from "./types";
 
-// Safe API Base URL resolution (prevents double '/api/api' path issues)
-const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const API_BASE_URL = `${rawBaseUrl.replace(/\/$/, "")}/api`;
-
 export type AnswerPayload = {
   question_id: string;
   choice_id: string;
+  time_spent_seconds?: number;
+  answered_at?: string;
 };
 
 export type AssessmentStateData = {
-  attempt_id: string;
-  status: "in_progress" | "completed" | "expired";
-  draft_answers: AnswerPayload[];
+  attempt_id: string | null;
+  status: "not_started" | "in_progress" | "completed" | "expired";
+  draft_answers: Record<string, string> | AnswerPayload[];
+  question_order: string[];
+  current_index: number;
   remaining_seconds: number | null;
   time_limit_minutes: number | null;
+  is_poll: boolean;
+  poll_distributions: Record<string, { votes: number; percentage: number }>;
+  voted_question_ids: string[];
 };
 
 export type PollDistributionItem = {
@@ -33,11 +36,17 @@ export type SubmissionResultData = {
   attempt_id?: string;
   score?: number;
   total_points?: number;
-  percentage?: number;
+  score_percentage?: number;
   passed?: boolean;
+  has_passed?: boolean;
   passing_score?: number;
   is_poll?: boolean;
-  poll_distributions?: Record<string, PollDistributionItem | number>;
+  poll_distributions?: Record<string, PollDistributionItem>;
+  remedial_suggestions?: Array<{
+    page_id: string;
+    block_id: string;
+    review_url: string;
+  }>;
 };
 
 export type ServiceResponse<T> = {
@@ -45,28 +54,19 @@ export type ServiceResponse<T> = {
   data?: T;
   message?: string;
   error?: string;
-  is_poll?: boolean;
-  poll_distributions?: Record<string, PollDistributionItem | number>;
+  code?: string;
+  score?: number;
+  total_points?: number;
+  score_percentage?: number;
+  has_passed?: boolean;
+  passing_score?: number;
+  poll_distributions?: Record<string, PollDistributionItem>;
+  remedial_suggestions?: Array<{
+    page_id: string;
+    block_id: string;
+    review_url: string;
+  }>;
 };
-
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
-
-  try {
-    const session = await getSession();
-    const token = (session as any)?.laravelJwt;
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-  } catch (error) {
-    console.error("[AssessmentViewService] Auth error:", error);
-  }
-
-  return headers;
-}
 
 function shuffleArray<T>(arr: T[]): T[] {
   const shuffled = [...arr];
@@ -77,19 +77,17 @@ function shuffleArray<T>(arr: T[]): T[] {
   return shuffled;
 }
 
-function normalizeAssessmentData(payload: any, id: string): AssessmentViewData {
-  // Unpack data wrapper if present
+export function normalizeAssessmentData(
+  payload: any,
+  id: string,
+): AssessmentViewData & {
+  user_voted_map?: Record<string, string>;
+  draft_answers?: Record<string, string>;
+} {
   const data = payload?.data ?? payload;
   const settingsObj = data.settings || {};
   const mode: AssessmentMode =
     settingsObj.type || data.type || data.assessment_type || "quiz";
-
-  const shuffleQuestions = Boolean(
-    settingsObj.shuffleQuestions ?? data.shuffle_questions,
-  );
-  const shuffleOptions = Boolean(
-    settingsObj.shuffleOptions ?? data.shuffle_options,
-  );
 
   const rawMaxAttempts = settingsObj.maxAttempts ?? data.max_attempts;
   const parsedMaxAttempts =
@@ -112,8 +110,8 @@ function normalizeAssessmentData(payload: any, id: string): AssessmentViewData {
     passingScore: Number(settingsObj.passingScore ?? data.passing_score ?? 70),
     timeLimitMinutes: parsedTimeLimit,
     maxAttempts: parsedMaxAttempts,
-    shuffleQuestions,
-    shuffleOptions,
+    shuffleQuestions: false,
+    shuffleOptions: false,
     showFeedbackImmediately: Boolean(
       settingsObj.showFeedbackImmediately ??
       data.show_feedback_immediately ??
@@ -136,21 +134,17 @@ function normalizeAssessmentData(payload: any, id: string): AssessmentViewData {
 
   const rawQuestions: any[] = data.questions || [];
 
-  let mappedQuestions: Question[] = rawQuestions.map((q: any) => {
+  const mappedQuestions: Question[] = rawQuestions.map((q: any) => {
     const rawOptions = q.options || q.choices || [];
 
-    let mappedChoices: Choice[] = rawOptions.map((o: any, idx: number) => ({
+    const mappedChoices: Choice[] = rawOptions.map((o: any, idx: number) => ({
       id: o.id || `choice-${idx}`,
       text: o.optionText || o.option_text || o.text || "",
       isCorrect: Boolean(o.isCorrect ?? o.is_correct),
       explanation: o.explanation || "",
-      votes: o.votes ?? 0, // 🔑 Map true vote count from backend DB
-      percentage: o.percentage ?? 0, // 🔑 Map true percentage from backend DB
+      votes: o.votes ?? 0, // 👈 Preserves backend vote counts
+      percentage: o.percentage ?? 0, // 👈 Preserves backend percentage
     }));
-
-    if (shuffleOptions) {
-      mappedChoices = shuffleArray(mappedChoices);
-    }
 
     const correctChoice = mappedChoices.find((c) => c.isCorrect);
 
@@ -169,10 +163,6 @@ function normalizeAssessmentData(payload: any, id: string): AssessmentViewData {
     };
   });
 
-  if (shuffleQuestions) {
-    mappedQuestions = shuffleArray(mappedQuestions);
-  }
-
   return {
     id: data.id || id,
     title: settings.title,
@@ -183,6 +173,9 @@ function normalizeAssessmentData(payload: any, id: string): AssessmentViewData {
     updatedAt: data.updated_at || data.updatedAt,
     previous_attempt: data.previous_attempt,
     user_has_completed: data.user_has_completed,
+    user_voted_map: data.user_voted_map || {}, // 👈 Required for reload hydration
+    draft_answers: data.draft_answers || {}, // 👈 Required for draft hydration
+    current_index: data.current_index ?? 0,
   };
 }
 
@@ -191,8 +184,14 @@ function normalizeAssessmentData(payload: any, id: string): AssessmentViewData {
  */
 export async function getAssessmentViewData(
   id: string,
+  sectionItemId?: string,
+  moduleId?: string,
 ): Promise<AssessmentViewData> {
-  if (typeof window !== "undefined") {
+  // 🛑 Only use local preview storage if explicitly in preview mode (avoid student state override)
+  if (
+    typeof window !== "undefined" &&
+    window.location.pathname.includes("/preview")
+  ) {
     const cachedPreview = localStorage.getItem(`assessment_preview_${id}`);
     if (cachedPreview) {
       try {
@@ -207,15 +206,28 @@ export async function getAssessmentViewData(
     }
   }
 
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_BASE_URL}/assessments/${id}`, {
+  const queryParams = new URLSearchParams();
+  if (sectionItemId) queryParams.append("section_item_id", sectionItemId);
+  if (moduleId) queryParams.append("module_id", moduleId);
+  const queryStr = queryParams.toString() ? `?${queryParams.toString()}` : "";
+
+  const res = await apiFetch(`/api/assessments/${id}${queryStr}`, {
     method: "GET",
-    headers,
+    cache: "no-store", // 👈 Ensure browser/Next.js doesn't cache the API fetch blindly
   });
 
-  if (!res.ok) {
+  if (!res || !res.ok) {
+    const errorJson = await res?.json().catch(() => null);
+    if (res?.status === 403 && errorJson?.code === "MODULE_UNPUBLISHED") {
+      const err = new Error(
+        errorJson.message || "Module is currently unpublished.",
+      );
+      (err as any).code = "MODULE_UNPUBLISHED";
+      throw err;
+    }
     throw new Error(
-      `Assessment #${id} not found or inaccessible (HTTP ${res.status}).`,
+      errorJson?.message ||
+        `Assessment #${id} not found or inaccessible (HTTP ${res?.status ?? "unknown"}).`,
     );
   }
 
@@ -229,85 +241,57 @@ export async function getAssessmentViewData(
 export async function getAssessmentState(
   assessmentId: string,
   sectionItemId: string,
+  moduleId?: string,
 ): Promise<ServiceResponse<AssessmentStateData>> {
-  const headers = await getAuthHeaders();
-
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/assessments/${assessmentId}/state?section_item_id=${sectionItemId}`,
+    const queryParams = new URLSearchParams({ section_item_id: sectionItemId });
+    if (moduleId) queryParams.append("module_id", moduleId);
+
+    const res = await apiFetch(
+      `/api/assessments/${assessmentId}/state?${queryParams.toString()}`,
       {
         method: "GET",
-        headers,
         cache: "no-store",
       },
     );
 
-    const json = await res.json();
+    if (!res) {
+      return { success: false, error: "Network error: No response received." };
+    }
+
+    const json = await res.json().catch(() => ({}));
+
+    if (!res || !res.ok) {
+      return {
+        success: false,
+        code: json?.code,
+        message: json?.message,
+        error: json?.message || "Failed to fetch assessment state.",
+      };
+    }
+
     return json;
-  } catch (error) {
+  } catch (error: any) {
     console.error("[AssessmentViewService] Fetch state error:", error);
     return {
       success: false,
-      error: "Network error fetching assessment state.",
+      error: error?.message || "Network error fetching assessment state.",
     };
   }
 }
 
-/**
- * 3. Auto-Save Choice Selections as Draft
- */
-export async function saveAssessmentDraft(
-  assessmentId: string,
-  sectionItemId: string,
-  answers: AnswerPayload[],
-  questionOrder: string[] = [],
-  currentIndex: number = 0,
-): Promise<ServiceResponse<void>> {
-  const headers = await getAuthHeaders();
-
-  try {
-    const res = await fetch(
-      `${API_BASE_URL}/assessments/${assessmentId}/save-draft`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          section_item_id: sectionItemId,
-          answers,
-          question_order: questionOrder,
-          current_index: currentIndex,
-        }),
-      },
-    );
-
-    const json = await res.json();
-    return json;
-  } catch (error) {
-    console.error("[AssessmentViewService] Save draft error:", error);
-    return { success: false, error: "Network error saving draft." };
-  }
-}
-
-/**
- * 4. Submit Assessment, Evaluate Grade, and Fill DonutProgress
- */
 export async function submitAssessment(payload: {
   assessmentId: string;
   moduleId: string;
-  sectionId: string;
+  sectionId?: string;
   sectionItemId: string;
   answers: AnswerPayload[];
-}): Promise<
-  ServiceResponse<SubmissionResultData & { remedial_suggestions?: any[] }>
-> {
-  const headers = await getAuthHeaders();
-
+}): Promise<ServiceResponse<SubmissionResultData & { answers?: any }>> {
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/assessments/${payload.assessmentId}/submit`,
+    const res = await apiFetch(
+      `/api/assessments/${payload.assessmentId}/submit`,
       {
         method: "POST",
-        headers,
         body: JSON.stringify({
           module_id: payload.moduleId,
           section_id: payload.sectionId,
@@ -317,86 +301,155 @@ export async function submitAssessment(payload: {
       },
     );
 
-    const json = await res.json();
+    if (!res) {
+      return { success: false, error: "Network error: No response received." };
+    }
 
-    // 🔑 FIX: Ensure Laravel's returned root 'data' or top-level properties are accessible
+    const json = await res.json().catch(() => ({}));
+
+    if (!res || !res.ok) {
+      return {
+        success: false,
+        code: json?.code,
+        message: json?.message,
+        error: json?.message || "Failed to submit assessment.",
+      };
+    }
+
     return {
       success: json.success ?? res.ok,
-      data: json.data ?? json,
-      poll_distributions: json.poll_distributions,
+      data: {
+        ...(json.data ?? json),
+        score: json.score ?? json.data?.score,
+        total_points: json.total_points ?? json.data?.total_points,
+        score_percentage: json.score_percentage ?? json.data?.score_percentage,
+        has_passed: json.has_passed ?? json.data?.has_passed,
+        passing_score: json.passing_score ?? json.data?.passing_score,
+        poll_distributions:
+          json.poll_distributions ?? json.data?.poll_distributions,
+        remedial_suggestions:
+          json.remedial_suggestions ?? json.data?.remedial_suggestions,
+        answers: json.answers ?? json.data?.answers,
+      },
       message: json.message,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("[AssessmentViewService] Submission error:", error);
-    return { success: false, error: "Network error submitting assessment." };
+    return {
+      success: false,
+      error: error?.message || "Network error submitting assessment.",
+    };
   }
 }
 
 /**
- * 5. Submit Individual Poll Vote
+ * 4. Submit Individual Poll Vote
  */
 export async function submitPollVote(
   assessmentId: string,
   itemId: string,
   questionId: string,
   choiceId: string,
+  moduleId?: string,
 ): Promise<
   ServiceResponse<{
-    poll_distributions: Record<string, { votes: number; percentage: number }>;
+    poll_distributions: Record<string, PollDistributionItem>;
   }>
 > {
-  const headers = await getAuthHeaders();
-
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/assessments/${assessmentId}/poll-vote`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          section_item_id: itemId,
-          question_id: questionId,
-          choice_id: choiceId,
-        }),
-      },
-    );
+    // The API moved poll votes to /polls/{id}/vote (Student\PollController).
+    const res = await apiFetch(`/api/polls/${assessmentId}/vote`, {
+      method: "POST",
+      body: JSON.stringify({
+        section_item_id: itemId,
+        module_id: moduleId,
+        question_id: questionId,
+        choice_id: choiceId,
+      }),
+    });
 
-    const json = await res.json();
+    if (!res) {
+      return { success: false, error: "Network error: No response received." };
+    }
+
+    const json = await res.json().catch(() => ({}));
+
+    if (!res || !res.ok) {
+      return {
+        success: false,
+        code: json?.code,
+        message: json?.message,
+        error: json?.message || "Failed to submit poll vote.",
+      };
+    }
+
     return {
       success: json.success ?? res.ok,
       data: json.data ?? json,
       poll_distributions: json.poll_distributions,
       message: json.message,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("[AssessmentViewService] Submit poll vote error:", error);
-    return { success: false, error: "Network error submitting poll vote." };
+    return {
+      success: false,
+      error: error?.message || "Network error submitting poll vote.",
+    };
   }
 }
 
-/**
- * 6. Reset Assessment Attempt for Retake
- */
+export type RetakeResponseData = {
+  attempt_id?: string;
+  assessment?: AssessmentViewData;
+};
+
 export async function retakeAssessment(
   assessmentId: string,
   sectionItemId: string,
-): Promise<ServiceResponse<void>> {
-  const headers = await getAuthHeaders();
-
+  moduleId?: string,
+): Promise<ServiceResponse<RetakeResponseData>> {
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/assessments/${assessmentId}/retake`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ section_item_id: sectionItemId }),
-      },
-    );
+    const res = await apiFetch(`/api/assessments/${assessmentId}/retake`, {
+      method: "POST",
+      body: JSON.stringify({
+        section_item_id: sectionItemId,
+        module_id: moduleId,
+      }),
+    });
 
-    const json = await res.json();
-    return json;
-  } catch (error) {
+    if (!res) {
+      return { success: false, error: "Network error: No response received." };
+    }
+
+    const json = await res.json().catch(() => ({}));
+
+    if (!res || !res.ok) {
+      return {
+        success: false,
+        code: json?.code,
+        message: json?.message,
+        error: json?.message || "Failed to reset assessment.",
+      };
+    }
+
+    // 🎯 Normalize the fresh assessment payload returned directly by the retake endpoint
+    const normalizedAssessment = json.data
+      ? normalizeAssessmentData(json.data, assessmentId)
+      : undefined;
+
+    return {
+      success: json.success ?? res.ok,
+      data: {
+        attempt_id: json.attempt_id ?? json.data?.id,
+        assessment: normalizedAssessment,
+      },
+      message: json.message,
+    };
+  } catch (error: any) {
     console.error("[AssessmentViewService] Retake error:", error);
-    return { success: false, error: "Network error resetting assessment." };
+    return {
+      success: false,
+      error: error?.message || "Network error resetting assessment.",
+    };
   }
 }

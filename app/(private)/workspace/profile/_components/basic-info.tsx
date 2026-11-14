@@ -11,6 +11,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { DatePickerField } from "@/app/onboarding/_components/DatePickerField";
 import { GenderSelect } from "@/app/onboarding/_components/GenderSelect";
 
+// Maximum length for name fields (standard database limit)
+const MAX_NAME_LENGTH = 50;
+
 interface BasicInfoProps {
   initialData?: ProfileData;
   onSuccess?: () => void;
@@ -51,9 +54,15 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
       const profileObj =
         initialData.profile || initialData.user_profile || initialData;
       setFormData({
-        firstName: initialData.first_name || "",
-        middleName: initialData.middle_name || "",
-        lastName: initialData.last_name || "",
+        firstName: (initialData.first_name || "")
+          .replace(/\d/g, "")
+          .slice(0, MAX_NAME_LENGTH),
+        middleName: (initialData.middle_name || "")
+          .replace(/\d/g, "")
+          .slice(0, MAX_NAME_LENGTH),
+        lastName: (initialData.last_name || "")
+          .replace(/\d/g, "")
+          .slice(0, MAX_NAME_LENGTH),
       });
 
       const bDay = initialData.date_of_birth || initialData.birthday || "";
@@ -70,8 +79,24 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
     }
   }, [initialData]);
 
+  // Strip digits on paste/change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    if (["firstName", "middleName", "lastName"].includes(name)) {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value.replace(/\d/g, "").slice(0, MAX_NAME_LENGTH),
+      }));
+      return;
+    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Block digits 0-9 from being typed
+  const handleKeyDownNoNumbers = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+    }
   };
 
   const handleBirthdayChange = (dateStr: string) => {
@@ -83,8 +108,24 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+    const cleanFirstName = formData.firstName.replace(/\d/g, "").trim();
+    const cleanMiddleName = formData.middleName.replace(/\d/g, "").trim();
+    const cleanLastName = formData.lastName.replace(/\d/g, "").trim();
+
+    if (!cleanFirstName || !cleanLastName) {
       showToast("Please enter your first and last name.", "error");
+      return;
+    }
+
+    if (
+      cleanFirstName.length > MAX_NAME_LENGTH ||
+      cleanLastName.length > MAX_NAME_LENGTH ||
+      cleanMiddleName.length > MAX_NAME_LENGTH
+    ) {
+      showToast(
+        `Name fields cannot exceed ${MAX_NAME_LENGTH} characters.`,
+        "error",
+      );
       return;
     }
 
@@ -114,7 +155,9 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
 
     try {
       const payload = {
-        ...formData,
+        firstName: cleanFirstName,
+        middleName: cleanMiddleName,
+        lastName: cleanLastName,
         birthday,
         date_of_birth: birthday,
         age: ageNumber.toString(),
@@ -156,48 +199,63 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
     <form onSubmit={handleSubmit} className="w-full space-y-4 sm:space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+          <label
+            htmlFor="firstName"
+            className="block text-xs font-semibold text-zinc-700 mb-1.5"
+          >
             First Name
           </label>
           <input
             id="firstName"
             name="firstName"
             type="text"
+            maxLength={MAX_NAME_LENGTH}
             value={formData.firstName}
             onChange={handleChange}
+            onKeyDown={handleKeyDownNoNumbers}
             required
-            className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+            className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#7d49f5] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+          <label
+            htmlFor="lastName"
+            className="block text-xs font-semibold text-zinc-700 mb-1.5"
+          >
             Last Name
           </label>
           <input
             id="lastName"
             name="lastName"
             type="text"
+            maxLength={MAX_NAME_LENGTH}
             value={formData.lastName}
             onChange={handleChange}
+            onKeyDown={handleKeyDownNoNumbers}
             required
-            className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+            className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#7d49f5] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+        <label
+          htmlFor="middleName"
+          className="block text-xs font-semibold text-zinc-700 mb-1.5"
+        >
           Middle Name
         </label>
         <input
           id="middleName"
           name="middleName"
           type="text"
+          maxLength={MAX_NAME_LENGTH}
           value={formData.middleName}
           onChange={handleChange}
+          onKeyDown={handleKeyDownNoNumbers}
           placeholder="Optional"
-          className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+          className="w-full rounded-xl border border-zinc-200 bg-white p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#7d49f5] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
         />
       </div>
 
@@ -205,7 +263,10 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
         <DatePickerField value={birthday} onChange={handleBirthdayChange} />
 
         <div>
-          <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+          <label
+            htmlFor="age"
+            className="block text-xs font-semibold text-zinc-700 mb-1.5"
+          >
             Age
           </label>
           <input
@@ -216,7 +277,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
             readOnly
             placeholder="Auto-calculated"
             required
-            className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#8b5cf6] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
+            className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 text-sm text-zinc-800 placeholder-zinc-400 focus:border-[#7d49f5] focus:outline-none focus:ring-2 focus:ring-violet-50 transition-all"
           />
         </div>
       </div>
@@ -227,7 +288,7 @@ export default function BasicInfo({ initialData, onSuccess }: BasicInfoProps) {
         <button
           type="submit"
           disabled={isSaving}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-70 active:scale-[0.98]"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#7d49f5] hover:bg-[#7c3aed] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-70 active:scale-[0.98]"
         >
           {isSaving ? (
             <>

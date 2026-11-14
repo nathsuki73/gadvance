@@ -1,0 +1,524 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import {
+  RotateCcw,
+  CheckCircle2,
+  CheckCircle,
+  ChevronRight,
+  BookOpenText,
+  ExternalLink,
+  BarChart3,
+} from "lucide-react";
+import { AssessmentSettings } from "../../types";
+import Link from "next/link";
+import { DetailedSummary, BktSkill } from "./DetailedSummary";
+
+interface ResultsSummaryProps {
+  scorePercentage: number;
+  score?: number;
+  totalPoints?: number;
+  correctCount: number;
+  totalGraded: number;
+  totalQuestions: number;
+  elapsedSeconds: number;
+  settings: AssessmentSettings;
+  onRetry: () => void | Promise<void>;
+  onNext: () => void;
+  isLastItem?: boolean;
+  onExit?: () => void;
+  isPassed: boolean;
+  remedialSuggestions?: Array<{
+    page_id: string;
+    block_id: string;
+    review_url?: string;
+  }>;
+  moduleId?: string;
+  bktSkillsBreakdown?: BktSkill[];
+  answersData?: Record<string, any>;
+}
+
+const SPRING_EASE = "cubic-bezier(0.34,1.56,0.64,1)";
+const STAGGER_MS = 220;
+
+export function ResultsSummary({
+  scorePercentage,
+  score,
+  totalPoints,
+  correctCount,
+  totalGraded,
+  totalQuestions,
+  elapsedSeconds,
+  settings,
+  onRetry,
+  onNext,
+  isLastItem = false,
+  onExit,
+  isPassed,
+  remedialSuggestions = [],
+  moduleId = "",
+  bktSkillsBreakdown = [],
+  answersData = {},
+}: ResultsSummaryProps) {
+  const [animatedPercentage, setAnimatedPercentage] = useState(0);
+  const [activeView, setActiveView] = useState<
+    "score" | "detailed" | "remedial"
+  >("score");
+
+  const [remedialUnlocked, setRemedialUnlocked] = useState(false);
+  const hasActivatedRemedialOnce = useRef(false);
+
+  const activateRemedial = () => {
+    setActiveView("remedial");
+    setRemedialUnlocked(true);
+  };
+
+  const hasAttemptsRemaining =
+    settings.maxAttempts == null || settings.maxAttempts > 1;
+
+  const answerEntries = Object.values(answersData || {});
+  const times = answerEntries.map(
+    (ans: any) => Number(ans?.time_spent_seconds) || 0,
+  );
+
+  const totalTimeSeconds = times.reduce((acc, curr) => acc + curr, 0);
+  const divisor = totalQuestions > 0 ? totalQuestions : times.length;
+  const averageTimeSeconds =
+    divisor > 0 ? Math.round(totalTimeSeconds / divisor) : 0;
+
+  const validTimes = times.filter((t) => t > 0);
+  const fastestTimeSeconds =
+    validTimes.length > 0 ? Math.min(...validTimes) : 0;
+  const slowestTimeSeconds =
+    validTimes.length > 0 ? Math.max(...validTimes) : 0;
+
+  const bestStreak = (() => {
+    const gradedEntries = answerEntries.filter(
+      (ans: any) => ans && typeof ans === "object" && "is_correct" in ans,
+    );
+
+    const sortedEntries = [...gradedEntries].sort((a: any, b: any) => {
+      const ta = typeof a?.answered_at === "string" ? a.answered_at : "";
+      const tb = typeof b?.answered_at === "string" ? b.answered_at : "";
+      return ta.localeCompare(tb);
+    });
+
+    let longest = 0;
+    let current = 0;
+    sortedEntries.forEach((ans: any) => {
+      if (ans?.is_correct) {
+        current++;
+        longest = Math.max(longest, current);
+      } else {
+        current = 0;
+      }
+    });
+    return longest;
+  })();
+
+  useEffect(() => {
+    if (
+      remedialSuggestions.length > 0 &&
+      activeView === "score" &&
+      !hasActivatedRemedialOnce.current
+    ) {
+      const timer = setTimeout(() => {
+        activateRemedial();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [remedialSuggestions, activeView]);
+
+  useEffect(() => {
+    if (activeView === "remedial") {
+      hasActivatedRemedialOnce.current = true;
+    }
+  }, [activeView]);
+
+  useEffect(() => {
+    let startTime: number | null = null;
+    const duration = 1300;
+    const targetRounded = Math.round(scorePercentage);
+
+    const animateScore = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+
+      const customEase =
+        progress < 0.5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+      const currentVal = Math.round(customEase * targetRounded);
+      setAnimatedPercentage(currentVal);
+
+      if (progress < 1) {
+        requestAnimationFrame(animateScore);
+      } else {
+        setAnimatedPercentage(targetRounded);
+      }
+    };
+
+    const frameId = requestAnimationFrame(animateScore);
+    return () => cancelAnimationFrame(frameId);
+  }, [scorePercentage]);
+
+  const radius = 58;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset =
+    circumference - (animatedPercentage / 100) * circumference;
+  const passingScoreAngle = (settings.passingScore / 100) * 360;
+
+  const donutCenter = 96;
+  const passingAngleRad = (passingScoreAngle * Math.PI) / 180;
+  const tickStartR = radius + 6;
+  const tickEndR = radius + 18;
+  const horizontalLength = 22;
+
+  const tickX1 = donutCenter + tickStartR * Math.sin(passingAngleRad);
+  const tickY1 = donutCenter - tickStartR * Math.cos(passingAngleRad);
+  const tickX2 = donutCenter + tickEndR * Math.sin(passingAngleRad);
+  const tickY2 = donutCenter - tickEndR * Math.cos(passingAngleRad);
+
+  const pointsRight = Math.sin(passingAngleRad) >= 0;
+  const labelLineX = pointsRight
+    ? tickX2 + horizontalLength
+    : tickX2 - horizontalLength;
+
+  return (
+    <div className="overflow-hidden p-2 space-y-6 flex flex-col items-center text-center w-full max-w-md mx-auto">
+      <div className="flex items-center justify-center gap-1.5 bg-zinc-100 p-1 rounded-2xl w-full max-w-sm shrink-0">
+        <button
+          type="button"
+          onClick={() => setActiveView("score")}
+          className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
+            activeView === "score"
+              ? "bg-white text-zinc-900 shadow-2xs"
+              : "text-zinc-500 hover:text-zinc-800"
+          }`}
+        >
+          Score Summary
+        </button>
+
+        {remedialSuggestions.length > 0 && (
+          <button
+            type="button"
+            onClick={activateRemedial}
+            className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
+              activeView === "remedial"
+                ? "bg-[#7d49f5] text-white shadow-2xs"
+                : "text-zinc-500 hover:text-zinc-800"
+            }`}
+          >
+            <BookOpenText size={12} />
+            <span>Study ({Math.min(remedialSuggestions.length, 3)})</span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setActiveView("detailed")}
+          className={`flex-1 py-1.5 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
+            activeView === "detailed"
+              ? "bg-[#7d49f5] text-white shadow-2xs"
+              : "text-zinc-500 hover:text-zinc-800"
+          }`}
+        >
+          <BarChart3 size={12} />
+          <span>Performance</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 grid-rows-1 w-full items-center justify-items-center">
+        <div
+          className={`col-start-1 row-start-1 w-full transition-opacity duration-300 flex flex-col items-center space-y-6 ${
+            activeView === "score"
+              ? "opacity-100 z-10 pointer-events-auto"
+              : "opacity-0 z-0 pointer-events-none select-none"
+          }`}
+        >
+          <div className="flex flex-col items-center justify-center gap-6 w-full py-2">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setActiveView("detailed")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ")
+                  setActiveView("detailed");
+              }}
+              className="relative flex items-center justify-center cursor-pointer group hover:scale-[1.02] transition-transform p-2 rounded-full focus:outline-hidden"
+              title="Click to view detailed BKT analytics breakdown"
+            >
+              <svg className="h-48 w-48 -rotate-90 transform overflow-visible">
+                <circle
+                  cx="96"
+                  cy="96"
+                  r={radius}
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  className="text-zinc-200/80"
+                  fill="transparent"
+                />
+                <circle
+                  cx="96"
+                  cy="96"
+                  r={radius}
+                  stroke="currentColor"
+                  strokeWidth="10"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="round"
+                  className="text-[#7d49f5] transition-all duration-300 ease-out group-hover:text-[#7c3aed]"
+                  fill="transparent"
+                />
+              </svg>
+
+              <svg
+                className="absolute inset-0 h-48 w-48 overflow-visible pointer-events-none"
+                viewBox="0 0 192 192"
+              >
+                <line
+                  x1={tickX1}
+                  y1={tickY1}
+                  x2={tickX2}
+                  y2={tickY2}
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  className="text-zinc-500 transition-all duration-700"
+                />
+                <line
+                  x1={tickX2}
+                  y1={tickY2}
+                  x2={labelLineX}
+                  y2={tickY2}
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  className="text-zinc-500 transition-all duration-700"
+                />
+              </svg>
+
+              <div
+                className="absolute transition-all duration-700 pointer-events-none"
+                style={{
+                  left: labelLineX,
+                  top: tickY2,
+                  transform: pointsRight
+                    ? "translate(4px, -50%)"
+                    : "translate(calc(-100% - 4px), -50%)",
+                }}
+              >
+                <div className="inline-flex flex-col items-center text-[10px] font-bold tracking-wider text-zinc-500 uppercase bg-white px-2 py-1 rounded shadow-2xs border border-zinc-200/60 leading-tight text-center">
+                  <span>Passing</span>
+                  <span className="text-zinc-800 font-black">
+                    {settings.passingScore}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="absolute flex flex-col items-center justify-center text-center">
+                <span className="text-3xl font-black tracking-tight text-[#7d49f5] group-hover:scale-105 transition-transform">
+                  {animatedPercentage}%
+                </span>
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5 group-hover:text-[#7d49f5] transition-colors">
+                  Score
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center justify-center space-y-2 text-center max-w-sm mt-1">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-[#7d49f5] border border-purple-200">
+                <CheckCircle size={13} />
+                <span>
+                  {isPassed ? "Goal Achieved!" : "Good Progress Made!"}
+                </span>
+              </span>
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                Click the score above anytime to view your detailed BKT mastery
+                breakdown.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={`col-start-1 row-start-1 w-full transition-opacity duration-300 flex flex-col ${
+            activeView === "detailed"
+              ? "opacity-100 z-10 pointer-events-auto"
+              : "opacity-0 z-0 pointer-events-none select-none"
+          }`}
+        >
+          <DetailedSummary
+            skillsBreakdown={bktSkillsBreakdown}
+            scorePercentage={scorePercentage}
+            correctAnswersCount={correctCount}
+            totalQuestionsCount={totalQuestions}
+            totalTimeSeconds={totalTimeSeconds}
+            averageTimeSeconds={averageTimeSeconds}
+            fastestTimeSeconds={fastestTimeSeconds}
+            slowestTimeSeconds={slowestTimeSeconds}
+            bestStreak={bestStreak}
+            onSwitchToStudy={activateRemedial}
+            hasRemedial={remedialSuggestions.length > 0}
+            isPassed={isPassed}
+            passingScore={settings.passingScore}
+          />
+        </div>
+
+        {remedialSuggestions.length > 0 && (
+          <div
+            className={`col-start-1 row-start-1 w-full transition-opacity duration-300 flex flex-col space-y-2.5 ${
+              activeView === "remedial"
+                ? "opacity-100 z-10 pointer-events-auto"
+                : "opacity-0 z-0 pointer-events-none select-none"
+            }`}
+          >
+            {remedialUnlocked && (
+              <AnimatedRemedialList
+                suggestions={remedialSuggestions}
+                moduleId={moduleId}
+              />
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-3 w-full pt-2 shrink-0">
+        {hasAttemptsRemaining && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-purple-100 hover:bg-purple-200 px-6 py-3 text-xs font-bold uppercase tracking-wider text-[#7d49f5] active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+          >
+            <RotateCcw size={16} />
+            <span>Try Again</span>
+          </button>
+        )}
+
+        {!settings.requirePassingToProceed || isPassed ? (
+          <button
+            type="button"
+            onClick={isLastItem && onExit ? onExit : onNext}
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#7d49f5] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-[#7d49f5]/20 transition-all cursor-pointer hover:bg-[#7c3aed] active:scale-[0.98]"
+          >
+            <span>{isLastItem ? "Complete Module" : "Continue"}</span>
+            {isLastItem ? (
+              <CheckCircle2 size={16} />
+            ) : (
+              <ChevronRight size={16} />
+            )}
+          </button>
+        ) : (
+          <div className="space-y-2 text-center w-full">
+            <button
+              type="button"
+              disabled
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-zinc-200 px-6 py-3 text-xs font-bold uppercase tracking-wider text-zinc-500 cursor-not-allowed opacity-75"
+            >
+              <span>{isLastItem ? "Complete Module" : "Continue"}</span>
+              {isLastItem ? (
+                <CheckCircle2 size={16} />
+              ) : (
+                <ChevronRight size={16} />
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AnimatedRemedialList({
+  suggestions,
+  moduleId,
+}: {
+  suggestions: Array<{
+    page_id: string;
+    block_id: string;
+    review_url?: string;
+    title?: string;
+    excerpt?: string;
+  }>;
+  moduleId: string;
+}) {
+  const items = suggestions.slice(0, 3);
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    items.forEach((_, idx) => {
+      const t = setTimeout(() => {
+        setVisibleCount((prev) => Math.max(prev, idx + 1));
+      }, idx * STAGGER_MS);
+      timers.push(t);
+    });
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  return (
+    <div className="space-y-4 w-full">
+      <div className="space-y-1 px-1 text-left">
+        <h3 className="text-sm sm:text-base font-bold text-zinc-800">
+          Let&apos;s review these key concepts
+        </h3>
+        <p className="text-xs text-zinc-500">
+          Click any section below to jump straight to the exact concept you
+          missed.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {items.map((item, idx) => {
+          const reviewUrl = `/learn/${moduleId}?item=${item.page_id}#${item.block_id}`;
+          const isVisible = idx < visibleCount;
+
+          const displayTitle = item.title || "Concept Review Section";
+          const displaySubtitle =
+            item.excerpt || "Click to review specific concept block";
+
+          return (
+            <div
+              key={idx}
+              style={{
+                opacity: isVisible ? 1 : 0,
+                transform: isVisible
+                  ? "scale(1) translateY(0px)"
+                  : "scale(0.85) translateY(10px)",
+                transitionProperty: "opacity, transform",
+                transitionDuration: "550ms",
+                transitionTimingFunction: SPRING_EASE,
+                pointerEvents: isVisible ? "auto" : "none",
+              }}
+            >
+              <Link
+                href={reviewUrl}
+                className="group relative flex items-center justify-between rounded-2xl border-2 border-zinc-200/80 bg-white p-4 text-xs font-medium text-zinc-800 transition-all hover:border-[#7d49f5] hover:bg-purple-50/20 hover:shadow-md hover:-translate-y-0.5 cursor-pointer w-full text-left"
+              >
+                <div className="flex items-center gap-3.5 pr-2">
+                  <div>
+                    <span className="block font-bold text-zinc-900 group-hover:text-[#7d49f5] transition-colors text-xs sm:text-sm line-clamp-1">
+                      {displayTitle}
+                    </span>
+                    <span className="block text-[11px] text-zinc-500 font-normal mt-0.5 line-clamp-1">
+                      {displaySubtitle}
+                    </span>
+                  </div>
+                </div>
+
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 px-3.5 py-2 text-xs font-bold text-[#7d49f5] group-hover:bg-[#7d49f5] group-hover:text-white transition-all shadow-xs shrink-0">
+                  <span>Review</span>
+                  <ExternalLink
+                    size={13}
+                    className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  />
+                </span>
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

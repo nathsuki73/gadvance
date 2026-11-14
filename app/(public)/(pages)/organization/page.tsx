@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/app/components/context/ToastContext";
 import {
   Search,
   Building2,
@@ -40,6 +41,7 @@ export default function OrganizationPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const [query, setQuery] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
@@ -51,16 +53,14 @@ export default function OrganizationPage() {
 
   const isAuthenticated = !!session?.user;
 
-  // 🎯 TanStack Query for fetching explore organizations with caching
   const { data: organizations = [], isLoading: isFetching } = useQuery({
     queryKey: ["exploreOrganizations", session?.user?.email],
     queryFn: fetchExploreOrganizations,
     enabled: status !== "loading",
-    staleTime: 1000 * 60 * 2, // Cache data for 2 minutes to prevent reloading on navigation
-    refetchOnWindowFocus: false, // Prevents refetching when switching browser tabs
+    staleTime: 1000 * 60 * 2,
+    refetchOnWindowFocus: false,
   });
 
-  // 🎯 Leave Organization Mutation
   const leaveOrgMutation = useMutation({
     mutationFn: async (orgId: string) => {
       const res = await apiFetch("/api/organizations/leave", {
@@ -72,15 +72,26 @@ export default function OrganizationPage() {
       }
       return res.json();
     },
-    onSuccess: () => {
-      // Invalidate relevant queries so cache updates automatically across pages
+    onSuccess: (res, orgId) => {
+      const leftOrg = organizations.find((o) => o.id === orgId);
+      const orgName = leftOrg ? leftOrg.title : "organization";
+
+      showToast(
+        `Success! You have successfully left the organization "${orgName}"`,
+        "success",
+      );
+
       queryClient.invalidateQueries({ queryKey: ["exploreOrganizations"] });
       queryClient.invalidateQueries({ queryKey: ["userOrganization"] });
       queryClient.invalidateQueries({ queryKey: ["joinedOrganizations"] });
       setSelectedOrgToLeave(null);
     },
-    onError: (err) => {
+    onError: (err: any) => {
       console.error("Leave organization failed:", err);
+      showToast(
+        err?.message || "Could not leave organization. Please try again.",
+        "error",
+      );
     },
   });
 
@@ -158,8 +169,8 @@ export default function OrganizationPage() {
                 Explore Organizations
               </h1>
               <p className="mt-2 text-sm text-zinc-500 font-light max-w-xl">
-                Connect with peer groups, join specialized learning hubs, and
-                collaborate across teams.
+                Join your school or workplace organization to access the learning
+                plans it has prepared for its members.
               </p>
             </div>
 
@@ -170,7 +181,7 @@ export default function OrganizationPage() {
             >
               <Search
                 size={16}
-                className="absolute left-3.5 text-zinc-400 pointer-events-none"
+                className="absolute left-3.5 text-zinc-500 pointer-events-none"
               />
               <input
                 id="org-search-input"
@@ -180,7 +191,7 @@ export default function OrganizationPage() {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search organizations..."
                 aria-label="Search organizations"
-                className="w-full pl-10 pr-4 py-2 rounded-full border border-zinc-200 text-sm bg-zinc-50/50 text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] focus:border-transparent transition-all"
+                className="w-full pl-10 pr-4 py-2 rounded-full border border-zinc-200 text-sm bg-zinc-50/50 text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#7d49f5] focus:border-transparent transition-all"
               />
               {query && (
                 <button
@@ -189,7 +200,7 @@ export default function OrganizationPage() {
                     setQuery("");
                     setActiveSearch("");
                   }}
-                  className="absolute right-3 text-zinc-400 hover:text-zinc-600 transition-colors"
+                  className="absolute right-3 text-zinc-500 hover:text-zinc-600 transition-colors"
                   title="Clear input"
                 >
                   <X size={14} />
@@ -234,7 +245,7 @@ export default function OrganizationPage() {
               <button
                 type="button"
                 onClick={handleReset}
-                className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-primary-hover transition-colors font-medium px-2 py-1 rounded-md hover:bg-purple-50"
+                className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-primary-hover transition-colors font-medium px-2 py-1 rounded-md hover:bg-purple-50"
               >
                 <RotateCcw size={12} />
                 <span>Reset Filters</span>
@@ -257,7 +268,7 @@ export default function OrganizationPage() {
                   setQuery("");
                   setActiveSearch("");
                 }}
-                className="text-zinc-400 hover:text-primary-hover transition-colors"
+                className="text-zinc-500 hover:text-primary-hover transition-colors"
                 title="Clear search"
               >
                 <X size={14} />
@@ -278,12 +289,12 @@ export default function OrganizationPage() {
           </div>
         ) : filteredOrganizations.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-zinc-200 py-16 text-center">
-            <h3 className="text-base font-semibold text-zinc-800">
+            <h2 className="text-base font-semibold text-zinc-800">
               {activeSearch
                 ? `No results found for "${activeSearch}"`
                 : "No organizations available"}
-            </h3>
-            <p className="mt-1 text-xs text-zinc-400 font-light">
+            </h2>
+            <p className="mt-1 text-xs text-zinc-500 font-light">
               Try checking your spelling or reset filters to see all
               organizations.
             </p>
@@ -314,9 +325,9 @@ export default function OrganizationPage() {
                   >
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-3">
-                        <h3 className="text-lg font-bold text-zinc-900 group-hover:text-primary transition-colors leading-tight">
+                        <h2 className="text-lg font-bold text-zinc-900 group-hover:text-primary transition-colors leading-tight">
                           {org.title}
-                        </h3>
+                        </h2>
                       </div>
 
                       <p className="text-sm text-zinc-600 leading-relaxed line-clamp-3">
@@ -325,7 +336,7 @@ export default function OrganizationPage() {
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between">
-                      <span className="text-xs text-zinc-400 font-medium">
+                      <span className="text-xs text-zinc-500 font-medium">
                         {org.membersCount}{" "}
                         {org.membersCount === 1 ? "member" : "members"}
                       </span>

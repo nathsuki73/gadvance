@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import ProtectedButton from "../../../components/ProtectedButton";
+import Link from "next/link";
 import Image from "next/image";
 import image2 from "@/app/(public)/assets/Subtract.png";
 
@@ -49,8 +49,8 @@ const Hero = () => {
           <div className="space-y-4">
             {/* 1. Header Animation */}
             <h1 className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 ease-out will-change-transform text-4xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-5xl md:text-6xl lg:text-7xl">
-              <span className="text-[#8b5cf6]">Empower.</span> Educate. <br />
-              Advance <span className="text-[#8b5cf6]">Gender Equality.</span>
+              <span className="text-[#7d49f5]">Empower.</span> Educate. <br />
+              Advance <span className="text-[#7d49f5]">Gender Equality.</span>
             </h1>
 
             {/* 2. Paragraph Animation */}
@@ -61,25 +61,26 @@ const Hero = () => {
             </p>
           </div>
 
-          {/* 3. Button Animation */}
+          {/* 3. Link Animation */}
           <div className="scroll-anim opacity-0 translate-y-10 transition-all duration-1000 delay-500 ease-out will-change-transform flex justify-center">
-            <ProtectedButton
-              onClick={() => {
-                window.location.href = "/workspace";
-              }}
-              className="rounded-md bg-[#8b5cf6] px-8 py-3 text-base sm:text-lg font-medium text-white transition-colors hover:bg-[#7c3aed]"
-              redirectUrl="/workspace"
+            <Link
+              href="/workspace"
+              className="rounded-md bg-[#7d49f5] px-8 py-3 text-base sm:text-lg font-medium text-white transition-colors hover:bg-[#7c3aed]"
             >
               Get Started
-            </ProtectedButton>
+            </Link>
           </div>
 
           {/* 4. Image Animation */}
           <div className="scroll-anim opacity-0 translate-y-20 transition-all duration-[1500ms] delay-700 ease-out will-change-transform">
             <Image
               src={image2}
-              width={1200}
-              height={1200}
+              // The file's real size. A different ratio here makes the page
+              // jump when the image finishes loading.
+              width={1536}
+              height={1024}
+              sizes="(min-width: 1024px) 672px, (min-width: 640px) 576px, 100vw"
+              priority
               alt="Hero illustration"
               className="w-full max-w-lg sm:max-w-xl lg:max-w-2xl object-contain -translate-y-10 sm:-translate-y-16 lg:-translate-y-24 pointer-events-none"
             />

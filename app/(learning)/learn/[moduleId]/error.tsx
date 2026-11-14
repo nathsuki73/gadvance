@@ -21,12 +21,12 @@ export default function Error({
         {/* Text & Button Column */}
         <div className="flex flex-col items-center justify-center space-y-4 md:items-start md:space-y-6">
           <div className="space-y-2">
-            <h1 className="text-5xl font-bold tracking-tight text-[#8b5cf6] sm:text-6xl lg:text-7xl">
+            <h1 className="text-5xl font-bold tracking-tight text-[#7d49f5] sm:text-6xl lg:text-7xl">
               Oops!
             </h1>
 
             <h2 className="text-2xl font-medium tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl">
-              Something went <span className="text-[#8b5cf6]">wrong.</span>
+              Something went <span className="text-[#7d49f5]">wrong.</span>
             </h2>
 
             <p className="max-w-xs text-xs text-zinc-600 sm:max-w-md sm:text-sm lg:max-w-lg lg:text-base">
@@ -40,7 +40,7 @@ export default function Error({
           <div className="flex flex-col w-full gap-3 sm:flex-row sm:w-auto">
             <button
               onClick={() => reset()}
-              className="inline-flex items-center justify-center rounded-md bg-[#8b5cf6] px-6 py-2.5 text-xs font-medium text-white transition-colors hover:bg-[#7c3aed] sm:px-8 sm:py-3 sm:text-base shadow-sm"
+              className="inline-flex items-center justify-center rounded-md bg-[#7d49f5] px-6 py-2.5 text-xs font-medium text-white transition-colors hover:bg-[#7c3aed] sm:px-8 sm:py-3 sm:text-base shadow-sm"
             >
               Try again
             </button>

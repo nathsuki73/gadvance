@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -18,26 +18,27 @@ import {
 } from "lucide-react";
 
 import Notification from "../Notification";
-import logoIcon from "@/app/assets/logo.ico";
-import { NavLink } from "./NavLink";
+import logoIcon from "@/app/assets/logo.png";
 import SearchBar from "./SearchBar";
 import LogoutConfirmationDialog from "./LogoutConfirmation";
 import { useQuery } from "@tanstack/react-query";
 import { getUserProfile } from "../../service";
 import { apiFetch } from "@/app/lib/api-client";
+import { NavLink } from "@/app/(public)/_components/header/NavLink";
 
 const SEARCH_DEBOUNCE_MS = 250;
 
 const AUTH_NAVS = [
   { href: "/workspace", label: "Workspace" },
-  { href: "/workspace/courses", label: "My Courses" },
+  { href: "/workspace/courses", label: "My Learning Plans" },
   { href: "/explore", label: "Explore" },
   { href: "/organization", label: "Organizations" },
+  { href: "/docs", label: "Help" },
 ] as const;
 
 const FALLBACK_USER = {
   name: "Learner",
-  email: "gadvanceproject@gmail.com",
+  email: "",
 };
 
 type SearchResult = {
@@ -76,10 +77,13 @@ function getInitials(name?: string | null): string {
 export default function AuthHeader() {
   const router = useRouter();
   const { data: session } = useSession();
+  const [isPending, startTransition] = useTransition();
 
   const headerRef = useRef<HTMLElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const activeAbortControllerRef = useRef<AbortController | null>(null);
+  const pointerOrigin = useRef({ x: 0, y: 0 });
+  const [isProfilePending, setIsProfilePending] = useState(false);
 
   // Overlay states
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -123,28 +127,84 @@ export default function AuthHeader() {
     setIsSearchOpen(false);
   };
 
-  const displayName = useMemo(() => {
-    const first =
-      session?.user?.firstName ||
-      session?.user?.first_name ||
-      profileInfo?.first_name ||
-      "";
-    const middle =
-      session?.user?.middleName ||
-      session?.user?.middle_name ||
-      profileInfo?.middle_name ||
-      "";
-    const last =
-      session?.user?.lastName ||
-      session?.user?.last_name ||
-      profileInfo?.last_name ||
-      "";
+  const handlePointerDown = (e: React.PointerEvent) => {
+    pointerOrigin.current = { x: e.clientX, y: e.clientY };
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim().length > 0) {
+      selection.removeAllRanges();
+    }
+  };
 
-    const composed = [first, middle, last].filter(Boolean).join(" ").trim();
-    if (composed) return composed;
+  const handleSafeLinkClick = (
+    e: React.MouseEvent<HTMLElement>,
+    href: string,
+  ) => {
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
+      return;
+    }
+
+    const moveX = Math.abs(e.clientX - pointerOrigin.current.x);
+    const moveY = Math.abs(e.clientY - pointerOrigin.current.y);
+    if (moveX > 6 || moveY > 6) {
+      e.preventDefault();
+      return;
+    }
+
+    if (isPending) {
+      e.preventDefault();
+      return;
+    }
+
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+    }
+
+    closeAllOverlays();
+
+    e.preventDefault();
+    startTransition(() => {
+      router.push(href);
+    });
+  };
+
+  function toTitleCase(value?: string | null): string {
+    if (!value) return "";
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(
+        /(^|[\s\-'])(\p{L})/gu,
+        (_, sep, char) => sep + char.toUpperCase(),
+      );
+  }
+
+  const displayName = useMemo(() => {
+    const first = toTitleCase(
+      session?.user?.firstName ||
+        session?.user?.first_name ||
+        profileInfo?.first_name,
+    );
+    const middle = toTitleCase(
+      session?.user?.middleName ||
+        session?.user?.middle_name ||
+        profileInfo?.middle_name,
+    );
+    const last = toTitleCase(
+      session?.user?.lastName ||
+        session?.user?.last_name ||
+        profileInfo?.last_name,
+    );
+
+    const givenNames = [first, middle].filter(Boolean).join(" ");
+
+    if (last && givenNames) return `${last}, ${givenNames}`;
+    if (last || givenNames) return last || givenNames;
 
     const sessionName = session?.user?.name;
-    if (sessionName && !sessionName.includes("@")) return sessionName;
+    if (sessionName && !sessionName.includes("@")) {
+      return toTitleCase(sessionName);
+    }
 
     return FALLBACK_USER.name;
   }, [session?.user, profileInfo]);
@@ -214,7 +274,6 @@ export default function AuthHeader() {
     }
   };
 
-  // Search input change handler
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
 
@@ -236,16 +295,19 @@ export default function AuthHeader() {
     }, SEARCH_DEBOUNCE_MS);
   };
 
-  // Form submit handler (triggers immediate execution when pressing Enter)
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     executeSearch(searchQuery);
   };
 
-  // Outside click listener
   useEffect(() => {
     const handleClickOutside = (e: PointerEvent) => {
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim().length > 0) {
+        return;
+      }
+
       if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
         closeAllOverlays();
       }
@@ -282,23 +344,6 @@ export default function AuthHeader() {
       }
       return next;
     });
-  };
-
-  const toggleNotifications = () => {
-    setShowNotifications((current) => {
-      const next = !current;
-      if (next) {
-        setShowProfileDropdown(false);
-        setShowMobileMenu(false);
-        setShowSearch(false);
-      }
-      return next;
-    });
-  };
-
-  const toggleProfileDropdown = () => {
-    setShowNotifications(false);
-    setShowProfileDropdown((current) => !current);
   };
 
   const handleResultClick = (url: string) => {
@@ -345,11 +390,10 @@ export default function AuthHeader() {
 
     return (
       <div className="absolute top-full left-0 mt-2 w-full max-w-[420px] rounded-2xl border border-zinc-100 bg-white p-2 shadow-2xl z-50 max-h-[350px] overflow-y-auto">
-        {/* Loading Skeleton / Spinner State */}
         {isSearching && (
           <div className="flex flex-col gap-2 p-2">
             <div className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-500">
-              <Loader2 className="h-4 w-4 animate-spin text-[#8b5cf6]" />
+              <Loader2 className="h-4 w-4 animate-spin text-[#7d49f5]" />
               <span>Searching titles and courses...</span>
             </div>
             <div className="space-y-2 px-1">
@@ -359,7 +403,6 @@ export default function AuthHeader() {
           </div>
         )}
 
-        {/* Results Found */}
         {!isSearching && searchResults.length > 0 && (
           <div className="flex flex-col gap-0.5">
             {searchResults.map((item, index) => (
@@ -370,15 +413,15 @@ export default function AuthHeader() {
                 className="flex w-full flex-col gap-0.5 rounded-xl px-4 py-2.5 text-left text-sm hover:bg-zinc-50 transition-all group"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-zinc-800 group-hover:text-[#8b5cf6] transition-colors">
+                  <span className="font-semibold text-zinc-800 group-hover:text-[#7d49f5] transition-colors">
                     {item.title}
                   </span>
-                  <span className="text-[10px] bg-zinc-100 group-hover:bg-[#8b5cf6]/10 group-hover:text-[#8b5cf6] text-zinc-500 rounded-md px-1.5 py-0.5 font-medium transition-colors">
+                  <span className="text-[10px] bg-zinc-100 group-hover:bg-[#7d49f5]/10 group-hover:text-[#7d49f5] text-zinc-500 rounded-md px-1.5 py-0.5 font-medium transition-colors">
                     {item.type}
                   </span>
                 </div>
                 {item.description && (
-                  <p className="text-xs text-zinc-400 truncate w-full">
+                  <p className="text-xs text-zinc-500 truncate w-full">
                     {item.description}
                   </p>
                 )}
@@ -387,16 +430,15 @@ export default function AuthHeader() {
           </div>
         )}
 
-        {/* Empty State */}
         {!isSearching && hasSearched && searchResults.length === 0 && (
           <div className="flex flex-col items-center justify-center py-6 px-4 text-center">
             <div className="p-2.5 rounded-full bg-zinc-50 mb-2">
-              <AlertCircle className="h-5 w-5 text-zinc-400" />
+              <AlertCircle className="h-5 w-5 text-zinc-500" />
             </div>
             <p className="text-sm font-semibold text-zinc-700">
               No results found
             </p>
-            <p className="text-xs text-zinc-400 mt-1 max-w-[240px]">
+            <p className="text-xs text-zinc-500 mt-1 max-w-[240px]">
               We couldn&apos;t find anything matching &ldquo;
               {searchQuery.trim()}&rdquo;
             </p>
@@ -415,7 +457,10 @@ export default function AuthHeader() {
         {/* Logo */}
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2.5 transition-transform"
+          draggable={false}
+          onPointerDown={handlePointerDown}
+          onClick={(e) => handleSafeLinkClick(e, "/")}
+          className="flex shrink-0 items-center gap-2.5 transition-transform select-none cursor-pointer"
         >
           <Image src={logoIcon} alt="Logo" width={32} height={32} />
           <span className="text-xl font-bold tracking-tight text-zinc-900 block">
@@ -423,24 +468,25 @@ export default function AuthHeader() {
           </span>
         </Link>
 
-        <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
-          {/* Desktop search */}
-          <div className="hidden sm:block sm:flex-1 sm:max-w-md relative">
-            <form onSubmit={handleSearchSubmit} className="relative w-full">
-              <SearchBar
-                value={searchQuery}
-                onChange={handleSearchChange}
-                id="desktop-search-input"
-              />
-              {renderSearchDropdown()}
-            </form>
-          </div>
+        {/* Desktop Search Bar (Hidden on Mobile) */}
+        <div className="hidden md:block md:flex-1 md:max-w-md relative mx-4">
+          <form onSubmit={handleSearchSubmit} className="relative w-full">
+            <SearchBar
+              value={searchQuery}
+              onChange={handleSearchChange}
+              id="desktop-search-input"
+            />
+            {renderSearchDropdown()}
+          </form>
+        </div>
 
+        <div className="flex items-center gap-2 md:gap-4">
           {/* Mobile search toggle */}
           <button
             type="button"
             onClick={toggleSearch}
-            className="rounded-full p-2 text-zinc-600 hover:bg-zinc-100 sm:hidden"
+            className="rounded-full p-2 text-zinc-600 hover:bg-zinc-100 md:hidden"
+            aria-label="Toggle search"
           >
             {showSearch ? (
               <X className="h-5 w-5" />
@@ -450,7 +496,7 @@ export default function AuthHeader() {
           </button>
 
           {/* Desktop nav */}
-          <nav className="hidden items-center gap-6 xl:flex">
+          <nav className="hidden items-center gap-6 md:flex">
             {AUTH_NAVS.map((link) => (
               <NavLink key={link.href} href={link.href}>
                 {link.label}
@@ -458,33 +504,28 @@ export default function AuthHeader() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 border-l border-zinc-100 pl-4 md:pl-4">
-            {/* Notifications */}
-            <div className="relative">
+          <div className="flex items-center gap-2 border-l border-zinc-100 pl-2 md:pl-4">
+            {/* Profile dropdown (Desktop Only) */}
+            <div className="relative hidden md:block">
               <button
                 type="button"
-                onClick={toggleNotifications}
-                aria-expanded={showNotifications}
-                className="relative rounded-full p-2 text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
-              >
-                <Bell className="h-5 w-5" strokeWidth={1.8} />
-              </button>
+                draggable={false}
+                onDragStart={(e) => e.preventDefault()}
+                onClick={(e) => {
+                  if (isProfilePending) return;
+                  setIsProfilePending(true);
 
-              <Notification
-                open={showNotifications}
-                onCloseAction={() => setShowNotifications(false)}
-              />
-            </div>
+                  requestAnimationFrame(() => {
+                    setShowNotifications(false);
+                    setShowProfileDropdown((current) => !current);
+                  });
 
-            {/* Profile dropdown */}
-            <div className="relative hidden xl:block">
-              <button
-                type="button"
-                onClick={toggleProfileDropdown}
-                className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-100 bg-zinc-50 p-0 hover:border-[#a78bfa]/30 transition-all"
+                  setTimeout(() => setIsProfilePending(false), 250);
+                }}
+                className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-100 bg-zinc-50 p-0 hover:border-[#a78bfa]/30 transition-all select-none cursor-pointer"
               >
                 {renderAvatar(
-                  "h-full w-full rounded-full object-cover",
+                  "h-full w-full rounded-full object-cover pointer-events-none",
                   "flex h-full w-full items-center justify-center rounded-full bg-[#c4b5fd] text-white text-xs font-bold",
                 )}
               </button>
@@ -496,11 +537,20 @@ export default function AuthHeader() {
                     : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
                 }`}
               >
-                <div className="px-3 py-2.5 border-b border-zinc-200 mb-1">
-                  <p className="text-xs font-bold text-zinc-800">
+                {/* Added min-w-0 to prevent flex/block overflow issues */}
+                <div className="px-3 py-2.5 border-b border-zinc-200 mb-1 min-w-0">
+                  {/* Added truncate and title for hover tooltip */}
+                  <p
+                    className="text-xs font-bold text-zinc-800 truncate"
+                    title={currentUser.name}
+                  >
                     {currentUser.name}
                   </p>
-                  <p className="text-[10px] text-zinc-400 font-light truncate mt-0.5">
+                  {/* Already has truncate */}
+                  <p
+                    className="text-[10px] text-zinc-500 font-light truncate mt-0.5"
+                    title={currentUser.email}
+                  >
                     {currentUser.email}
                   </p>
                 </div>
@@ -513,7 +563,7 @@ export default function AuthHeader() {
                 <button
                   type="button"
                   onClick={() => setShowLogoutDialog(true)}
-                  className="w-full flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-red-500 font-medium hover:bg-red-50 transition-colors lowercase"
+                  className="w-full flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-red-500 font-medium hover:bg-red-50 transition-colors lowercase cursor-pointer select-none"
                 >
                   <LogOut size={14} />
                   sign out
@@ -530,7 +580,8 @@ export default function AuthHeader() {
             <button
               type="button"
               onClick={toggleMobileMenu}
-              className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-50 xl:hidden"
+              className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-50 md:hidden"
+              aria-label="Toggle mobile menu"
             >
               {showMobileMenu ? (
                 <X className="h-6 w-6" />
@@ -551,7 +602,7 @@ export default function AuthHeader() {
         }`}
       >
         <div className="border-t border-zinc-100 pt-3 flex justify-center">
-          <div className="relative w-full max-w-md">
+          <div className="relative w-full">
             <form onSubmit={handleSearchSubmit} className="relative w-full">
               <SearchBar
                 value={searchQuery}
@@ -566,8 +617,10 @@ export default function AuthHeader() {
 
       {/* Mobile menu */}
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out xl:hidden ${
-          showMobileMenu ? "max-h-150 opacity-100 mt-4" : "max-h-0 opacity-0"
+        className={`overflow-hidden transition-all duration-300 ease-in-out md:hidden ${
+          showMobileMenu
+            ? "max-h-[500px] opacity-100 mt-4"
+            : "max-h-0 opacity-0"
         }`}
       >
         <nav className="flex flex-col gap-1 border-t border-zinc-100 pt-4">
@@ -578,22 +631,29 @@ export default function AuthHeader() {
                 "flex h-full w-full items-center justify-center rounded-xl bg-[#c4b5fd] text-white text-sm font-bold",
               )}
             </div>
-            <div>
-              <p className="text-sm font-semibold text-zinc-800 lowercase">
+            <div className="min-w-0 flex-1">
+              <p
+                title={currentUser.name}
+                className="text-sm font-semibold text-zinc-800 truncate"
+              >
                 {currentUser.name}
               </p>
-              <p className="text-xs text-zinc-400 font-light truncate">
+              <p
+                title={currentUser.email}
+                className="text-xs text-zinc-500 font-light truncate"
+              >
                 {currentUser.email}
               </p>
             </div>
           </div>
-
           {AUTH_NAVS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-xl px-3 py-2.5 text-base font-medium text-zinc-600 hover:bg-zinc-50"
-              onClick={() => setShowMobileMenu(false)}
+              draggable={false}
+              onPointerDown={handlePointerDown}
+              onClick={(e) => handleSafeLinkClick(e, link.href)}
+              className="rounded-xl px-3 py-2.5 text-base font-medium text-zinc-600 hover:bg-zinc-50 select-none"
             >
               {link.label}
             </Link>
@@ -602,10 +662,12 @@ export default function AuthHeader() {
           <div className="border-t border-zinc-50 mt-2 pt-3 flex flex-col gap-1">
             <Link
               href="/workspace/profile"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 font-medium"
-              onClick={() => setShowMobileMenu(false)}
+              draggable={false}
+              onPointerDown={handlePointerDown}
+              onClick={(e) => handleSafeLinkClick(e, "/workspace/profile")}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 font-medium select-none"
             >
-              <Settings size={16} className="text-zinc-400" />
+              <Settings size={16} className="text-zinc-500" />
               Profile Settings
             </Link>
             <button
@@ -614,7 +676,7 @@ export default function AuthHeader() {
                 setShowLogoutDialog(true);
                 setShowMobileMenu(false);
               }}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-500 font-medium hover:bg-red-50/50 text-left lowercase mt-1"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-500 font-medium hover:bg-red-50/50 text-left lowercase mt-1 cursor-pointer"
             >
               <LogOut size={16} />
               Sign out
@@ -635,12 +697,56 @@ function DropdownLink({
   icon: React.ReactNode;
   label: string;
 }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const pointerOrigin = useRef({ x: 0, y: 0 });
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    pointerOrigin.current = { x: e.clientX, y: e.clientY };
+
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim().length > 0) {
+      selection.removeAllRanges();
+    }
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
+      return;
+    }
+
+    const moveX = Math.abs(e.clientX - pointerOrigin.current.x);
+    const moveY = Math.abs(e.clientY - pointerOrigin.current.y);
+    if (moveX > 6 || moveY > 6) {
+      e.preventDefault();
+      return;
+    }
+
+    if (isPending) {
+      e.preventDefault();
+      return;
+    }
+
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+    }
+
+    e.preventDefault();
+    startTransition(() => {
+      router.push(href);
+    });
+  };
+
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-zinc-600 font-medium hover:bg-zinc-50 transition-colors lowercase"
+      draggable={false}
+      onPointerDown={handlePointerDown}
+      onClick={handleClick}
+      className="flex items-center gap-3 rounded-xl px-3 py-2 text-xs text-zinc-600 font-medium hover:bg-zinc-50 transition-colors lowercase select-none cursor-pointer"
     >
-      <span className="text-zinc-400">{icon}</span>
+      <span className="text-zinc-500">{icon}</span>
       {label}
     </Link>
   );

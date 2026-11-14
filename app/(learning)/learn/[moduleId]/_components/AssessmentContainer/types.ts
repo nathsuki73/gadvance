@@ -1,6 +1,6 @@
-export type AssessmentMode = "quiz" | "test" | "poll" | "survey";
+export type AssessmentMode = "quiz" | "test" | "poll";
 
-export type BloomLevel = 1 | 2 | 3 | 4 | 5 | 6;
+export type BloomLevel = 1 | 2 | 3 | 4 | 5;
 
 export interface Choice {
   id: string;
@@ -8,7 +8,7 @@ export interface Choice {
   isCorrect?: boolean;
   explanation?: string;
   percentage?: number;
-  votes?: number; // 👈 Add this optional property
+  votes?: number;
 }
 
 export interface Question {
@@ -36,6 +36,8 @@ export interface AssessmentSettings {
   allowReview?: boolean;
   requirePassingToProceed?: boolean;
   enableAdaptiveMapping?: boolean;
+  adaptiveQuestionLimit?: number;
+  adaptiveQuestionMinimum?: number;
   showFinalResults?: boolean;
   showRemediation?: boolean;
   showAnswerStats?: boolean;
@@ -60,4 +62,7 @@ export interface AssessmentViewData {
     }>;
   };
   user_has_completed?: boolean;
+  user_voted_map?: Record<string, string>;
+  draft_answers?: Record<string, string>;
+  current_index?: number;
 }
